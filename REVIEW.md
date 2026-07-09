@@ -208,6 +208,17 @@ Severity scale: **P0** = violates a hard acceptance criterion in normal use;
   than the adjacent sky (mean +12 luma) — the contamination mode on this
   asset is brightness, not hue.
 
+### D11 (P0) — Fill-source starvation on dark palettes: opaque black blobs
+- **Repro:** Frazetta (the CERTIFIED asset), +0.11x (`review/evidence/
+  fr_comp_r11.png`): solid black blobs along the troll and dancer
+  silhouettes; more at -0.11 and +0.06y.
+- **Root cause:** `fillSrc` requires `lum >= 45` (7487-7488, the "dark ink"
+  exclusion). On a painting whose background IS dark, this excludes most
+  real background from the fill sources; the pull-push and directional
+  fills then produce near-black; `bgFillSolid` makes it fully opaque. The
+  no-naked-hole guarantee (C4) is honored by painting opaque nothing.
+- **Criteria violated:** 1, 3 (and 4 in spirit).
+
 ## 2. Pixel-test results (T1–T4)
 
 Canvas 860x484; "interior" = pixels showing image content in the baseline
