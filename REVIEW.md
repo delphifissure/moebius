@@ -269,6 +269,19 @@ comb edges.
   horizontal-biased = smeared strokes) — figure color in the fill, C5
   confirmed by measurement on a second asset.
 
+**Third asset — silverwarrior (3000x3000), reduced matrix:**
+- T1 rest: **13,078 interior px changed (10,170 by >30/255)** — criterion 6
+  fails on all three assets tested.
+- T2: 0 transparent holes (0, ±0.11x, +0.06y).
+- The +0.11 composite (`sv_comp_r11.png`) shows the ORIGINAL failure mode at
+  full strength: a full-height column of 1-D horizontal ribbon streaks down
+  the warrior's right side, essentially untreated — as predicted by the
+  band-coverage numbers (92% of this asset's occluding edges are below the
+  0.10 seed threshold; of the 8% that seed, 89% hit the 28px cap). T4
+  concurs: gradient anisotropy gy/gx = 1.46 in the affected region
+  (horizontal striping) vs 1.00 in the surrounding background.
+- **The plug's operating envelope simply does not include this asset.**
+
 ## 3. Claims scorecard
 
 | claim | verdict |
