@@ -242,6 +242,21 @@ ink chunks documented in D3, which come from the sub-threshold-edge path).
 mild vertical anisotropy (gy/gx = 1.26) matching the horizontal-filament
 comb edges.
 
+**Second asset — Frazetta (851x1023, the certified asset), reduced matrix:**
+- T1 rest: **6,271 interior px changed (4,051 by >30/255)** — criterion 6
+  fails on this asset too (`fr_AN_T1.png`).
+- T2: 0 transparent holes at 0/±0.11x/+0.06y — BUT `fr_comp_r11.png` shows
+  multiple solid BLACK BLOBS along the troll and dancer silhouettes: the
+  fill is opaque yet content-free. Root cause: on a dark palette the fill
+  source rule `lum >= 45` (7488) excludes most of the painting from
+  `fillSrc`, so the band/rind fill starves and paints near-black. Criterion
+  4 passes only on a technicality; visually these are holes.
+- T3 on Frazetta shows the OTHER contamination mode, quantitatively: the
+  plug-affected region is WARMER than its surroundings (warm-hue fraction
+  16.6% vs 12.2%) and carries MORE gradient energy (gx 19.5 vs 13.5,
+  horizontal-biased = smeared strokes) — figure color in the fill, C5
+  confirmed by measurement on a second asset.
+
 ## 3. Claims scorecard
 
 | claim | verdict |
