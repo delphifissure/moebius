@@ -65,8 +65,18 @@ Severity scale: **P0** = violates a hard acceptance criterion in normal use;
   used to classify as gaps (and be re-inpainted identically in both renders)
   now take the plug/original branch of `finalCompositeMaterial`
   (5153-5156) — the composite arbitration itself changes rest pixels.
-  Attribution renders (plug-only vs cut-only, `review/evidence/sw_plugonly_c*`,
-  `sw_cutonly_c*`): TBD_ATTRIB.
+  **Attribution renders isolate both mechanisms and BOTH fail independently:**
+  plug-only (BG on, cut disarmed) changes **16,950** interior rest pixels;
+  cut-only (BG hidden, cut force-armed — the only delta vs pristine is
+  `u_useBandCut=true`) changes **14,827**. The damage maps
+  (`sw_AN_T1_plugonly_c.png`, `sw_AN_T1_cutonly_c.png`) are nearly identical:
+  silhouettes, staff, glider, seated group, and the entire ground↔sky
+  horizon band. The cut's foundational invariant — "at rest nothing is
+  stretched, so nothing cuts" (comment at 6455-6459) — is empirically false:
+  the mismatch trigger fires at rest on slow-ramp cliffs inside the band
+  (the `fwidth < bgBandCutMaxGrad` gate passes exactly where the ground
+  ramps gently into the horizon, and 8-bit live-baked depth plateaus give
+  |sampled − interpolated| > 0.01).
 - **Criteria violated:** 6 (and 2 — the plug affects pixels far outside
   disocclusions).
 
