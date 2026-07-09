@@ -76,7 +76,8 @@ Severity scale: **P0** = violates a hard acceptance criterion in normal use;
   the mismatch trigger fires at rest on slow-ramp cliffs inside the band
   (the `fwidth < bgBandCutMaxGrad` gate passes exactly where the ground
   ramps gently into the horizon, and 8-bit live-baked depth plateaus give
-  |sampled − interpolated| > 0.01).
+  |sampled − interpolated| > 0.01). Same pattern on the certified Frazetta
+  asset: plug-only 6,240 px, cut-only 2,973 px changed at rest.
 - **Criteria violated:** 6 (and 2 — the plug affects pixels far outside
   disocclusions).
 
