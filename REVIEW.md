@@ -179,7 +179,11 @@ Severity scale: **P0** = violates a hard acceptance criterion in normal use;
   (5346-5348) sees gaps only where the color pass discarded — which, with
   the plug opaque underneath, is nowhere near the reveal. At large offsets
   the contract degenerates exactly as the user's debug sheets show
-  (all-blue contract / all-white gap mask).
+  (all-blue contract / all-white gap mask). Captured live:
+  `review/evidence/sw_fgexcl_r11.png` — at +0.11 the red "FG occluder"
+  marking floods the whole lower third of the frame (flat dune included)
+  and half the mountain; blue "true gap" floods the margins and a displaced
+  ghost of the figure.
 - `renderPrimaryPass` (8028) is confirmed dead code.
 - The plug is invisible to the depth pass BY DESIGN (4808-4813) but visible
   to the color/gap pass — the two passes describe different scenes, and
