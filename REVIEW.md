@@ -49,10 +49,11 @@ Severity scale: **P0** = violates a hard acceptance criterion in normal use;
   after Build BG Layer) vs pristine app (BG off, cut off). Same pipeline both
   sides.
 - **Evidence:** `review/evidence/sw_AN_T1.png` (red = pixels changed >8/255):
-  TBD_T1_INTERIOR pixels differ inside the image footprint (of 416k canvas px),
-  hugging every silhouette; the staff column above the head and the glider are
-  wholly altered — precisely the criterion-6 erosion cases the author claimed
-  to have protected (claim C3 refuted at pixel level).
+  **17,637 pixels differ inside the visible image (14,037 by more than
+  30/255)** — ~5.5% of the image area, hugging every silhouette; the staff
+  column above the head and the glider are wholly altered — precisely the
+  criterion-6 erosion cases the author claimed to have protected (claim C3
+  refuted at pixel level).
 - **Root cause:** two compounding mechanisms.
   (a) The BG plug is opaque over band ∪ 4px cut ring ∪ occluder rind
   (moebius.js:7538-7545) and sits only 0.004 displacement behind the FG
@@ -139,7 +140,10 @@ Severity scale: **P0** = violates a hard acceptance criterion in normal use;
   threshold — the cut fires at rest inside the whole band (staff/glider
   erode); zoom out and real smears stop triggering. Rebuilding the layer
   re-arms, but nothing re-arms on camera zoom or canvas resize.
-- **Empirical:** zoom test TBD_ZOOM.
+- **Empirical:** at 2.5x zoom-in (camera z 0.2 → 0.08) rest-state interior
+  damage grows from 17,637 to 20,796 px (>8/255) — trend confirmed; the
+  uvRate margin math says the cliff is at ~3.3x, where the whole band cuts
+  at rest.
 - **Criteria violated:** 6 (conditional), 3 (conditional).
 
 ### D7 (P1) — Thin features tear at offset: white speckle holes near the staff
@@ -186,11 +190,43 @@ Severity scale: **P0** = violates a hard acceptance criterion in normal use;
 - `sw_v11_bg_right.png` (author's own evidence) and my `sw_bg_r11.png`:
   the plug silhouettes have comb/filament edges (D7) and the fill regions
   carry figure-adjacent tints where sub-threshold occluders fed `fillSrc`
-  (D3). T3 warm-fraction measurements: TBD_T3.
+  (D3). T3 measurement: the plug-affected region is systematically paler
+  than the adjacent sky (mean +12 luma) — the contamination mode on this
+  asset is brightness, not hue.
 
 ## 2. Pixel-test results (T1–T4)
 
-TBD_TESTS_TABLE
+Canvas 860x484; "interior" = pixels showing image content in the baseline
+render (pillarbox/margin counted separately, since scene extension fills it
+by design). Starwatcher unless noted.
+
+**T1 — rest fidelity** (composite w/ plug+cut vs pristine app, offset 0):
+| condition | interior px >8/255 | >30/255 | margin px added |
+|---|---|---|---|
+| rest, normal zoom | 17,637 | 14,037 | 108,750 (by design) |
+| rest, 2.5x zoom-in | 20,796 | 17,241 | — |
+FAIL against criterion 6 ("pixel-faithful at rest"). Damage map:
+`sw_AN_T1.png` — silhouette bands everywhere, staff column and glider wholly
+inside the changed set.
+
+**T2 — hole scan** (interior fully-transparent px):
+0 at every pose tested (0, ±0.11x, ±0.06y, 0.11x+0.06y, 0.18x, zoom center,
+zoom+0.05x). PASS — the no-naked-hole guarantee holds in this envelope
+(see C4 note: coverage is largely BY THE RIND WASH, not by fill).
+
+**T3 — FG contamination in the plug-affected region** (+0.11x; region =
+pixels the plug changed vs the pristine pipeline at the same pose, 21,222 px):
+mean color (81,119,156) vs adjacent background (69,105,147) — the fill is
+systematically PALER/brighter than the sky it must match; warm-hue fraction
+1.5% inside vs 5.1% outside (no net warm-figure tint at this offset on this
+asset — the visible contamination mode is the bright wash, plus the dark
+ink chunks documented in D3, which come from the sub-threshold-edge path).
+
+**T4 — streak/texture metric** (same region): mean |grad| inside = (9.5,
+12.1) vs (16.9, 16.8) in the surrounding background — the fill carries
+~40% less texture energy than the sky it continues (reads as smudge), with
+mild vertical anisotropy (gy/gx = 1.26) matching the horizontal-filament
+comb edges.
 
 ## 3. Claims scorecard
 
@@ -199,7 +235,7 @@ TBD_TESTS_TABLE
 | C1 "±0.11 opens onto clean smooth fill, no streaks" | **REFUTED** — reproduced author's own renders; wash + filaments + dark chunks at +0.11; worse at -0.11/vertical. |
 | C2 "BG plug alone streak-free, no figure colors" | **REFUTED** (D10). |
 | C3 "rest intact, no staff/glider erosion" | **REFUTED at pixel level** (D1). |
-| C4 "cut can never open a naked hole" | **HOLDS in the tested envelope** (T2: zero interior transparent px at all offsets ≤0.18 — TBD_CONFIRM), but only because the opaque rind is 3x wider than the band; the guarantee is coverage-by-wash, not coverage-by-fill. Speckle tearing (D7) still punches visual holes via z-fighting, not alpha. |
+| C4 "cut can never open a naked hole" | **HOLDS in the tested envelope** (T2: zero interior transparent px at all 9 poses tested, up to 0.18x), but only because the opaque rind is 3x wider than the band; the guarantee is coverage-by-wash, not coverage-by-fill. Speckle tearing (D7) still punches visual holes via z-fighting, not alpha. |
 | C5 "fill contains no FG color" | **REFUTED as suspected by the author** (D3). |
 | C6 "verified headless" | Harness runs the full composite (contrary to the brief's premise), but only Starwatcher, x-only, one zoom, one canvas — D4/D5/D6 all live outside that envelope. |
 | C7 coverage | Confirmed: x-only ±0.11 was the whole tested space. |
