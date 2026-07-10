@@ -716,3 +716,57 @@ margins; the outer ring welding to the source rim is the correct outpaint
 conditioning too (continuation of the visible world, not the occluded
 plate). Open fill-side items are now: lamp glow-attach preprocess
 (optional) only.
+
+---
+
+## Addendum 9 — the "black blob" doppelgänger: fixed (commit `d651918`)
+
+**Symptom.** A large dark-brown mass in the reveal beside the figure at
+off-axis poses (user report: "huge black blob at the foreground astronaut
+disocclusion"). Present at every recent pose render; depth there was
+CORRECT (far), so it passed the depth-composite audit unnoticed.
+Evidence: `evidence/doppelblob_before.png` / `doppelblob_after.png`.
+
+**Attribution chain (all instrumented, no guessing):**
+FG-only/BG-only renders put it on the plate → BG-only depth showed FAR →
+CPU fill probe of the *expected* source region was clean sky → a UV-map
+swap on the plate finally located the actual texels: source (564–619,
+740–803), inside the figure's torso footprint, rendered 87px right of
+rest by full far-plane parallax. Their fill path was `fb=3` — the flood's
+*carried rim colour*, value (45,33,35), uniform across the whole patch.
+
+**Root cause (a generality flaw, not a tuning problem).** The
+nearest-rim-first completion flood carries DEPTH correctly, but its
+colour rode along with territorial claim: a dark LOW rim — the figure's
+horizon-contact ink — claimed plate territory far above its own height
+and painted the sky behind the torso near-black. Any occluder standing
+across horizontally-stratified background (sky/horizon/ground) can
+reproduce this; it is foreground-adjacent ink smeared over background,
+exactly the contract's colour-contamination clause.
+
+**Fix — one rule, no new knobs.** Depth-consistent local continuation:
+every completed pixel's colour must come from real background at the
+pixel's OWN completed depth, found along its own row (preferred) or
+column. Sky rows pull sky from either side of the occluder; the horizon
+stripe continues itself; the under-leg dune corridor still pulls dune
+(the earlier leg fix is a special case of this rule). Reuses the existing
+0.06 depth tolerance and 400px march bound. The flood-carried rim colour
+remains only as fallback when no depth-compatible background is in reach
+— still never foreground. 376k of ~658k completed pixels recoloured on
+starwatcher; fill stage 2.0s → 5.5s at 1920×1323.
+
+**Verification.** Starwatcher (0.123,−0.055): blob replaced by continuing
+sky/horizon/plain; leg corridor and staff unchanged. Same code, same
+constants on the other two assets: Frazetta reveals carry cave-wall and
+passage tones (`doppelblob_fr_after.png`); silverwarrior reveals are
+sky/mountain whites (`doppelblob_sv_after.png` — its horizontal streaks
+are the documented D3 sub-threshold fur-edge rubber, colour-clean).
+
+**On generality (user concern, on record).** No per-image constants were
+introduced in this or any review-fix commit. The mechanisms are:
+parallax-budget band growth, nearest-rim-first depth completion,
+depth-consistent colour continuation, front-surface margin seeding,
+pre-tear on plug-backed cliffs. The two Otsu uses (thin-feature
+protection, flood floor) are self-computed per image, not hand-set. The
+remaining hand constants (0.06 depth tolerance, 0.10 tear step, 28px band
+cap, 400px march) are shared across all three test assets unchanged.
