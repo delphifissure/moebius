@@ -1,8 +1,79 @@
 diff --git a/moebius.js b/moebius.js
-index 602ce8a..e967439 100644
+index 602ce8a..a65565f 100644
 --- a/moebius.js
 +++ b/moebius.js
-@@ -6477,6 +6477,13 @@ let bgBandCutMaxGrad = 0.04;
+@@ -4825,8 +4825,8 @@ function renderNormalizedDepthPass() {
+                     precision highp float;
+                     
+                     // Gap detection uniforms (shared with main material)
+-                    uniform sampler2D u_depthMap;
+-                    uniform sampler2D u_texture;
++                    uniform sampler2D displacementMap; // (D8 fix: shared uniform actually bound in image mode)
++                    uniform sampler2D map;
+                     uniform sampler2D u_edgeMask;
+                     uniform vec2 u_textureSize;
+                     uniform vec2 u_resolution;
+@@ -4851,7 +4851,7 @@ function renderNormalizedDepthPass() {
+                     }
+                     
+                     float getDepth(vec2 uv) {
+-                        return texture2D(u_depthMap, uv).r;
++                        return texture2D(displacementMap, uv).r;
+                     }
+                     
+                     uniform bool u_isBackgroundLayer;
+@@ -4865,7 +4865,7 @@ function renderNormalizedDepthPass() {
+                             return;
+                         }
+ 
+-                        vec4 originalColor = texture2D(u_texture, vUv);
++                        vec4 originalColor = texture2D(map, vUv);
+                         
+                         bool isGap = false;
+                         bool isTunnel = false; // Track if gap was detected by tunnel logic
+@@ -4873,25 +4873,30 @@ function renderNormalizedDepthPass() {
+                         
+                         // TUNNEL DETECTION: Only flag pixels that are clearly interpolating
+                         // between FG and BG depths (not just any mismatch)
+-                        float sourceDepth = texture2D(u_depthMap, vUv).r;
++                        float sourceDepth = texture2D(displacementMap, vUv).r;
+                         vec2 texel = 1.0 / u_textureSize;
+                         
+                         // Sample neighbors to find local depth range in source
+-                        float d1 = texture2D(u_depthMap, vUv + vec2(-texel.x, -texel.y)).r;
+-                        float d2 = texture2D(u_depthMap, vUv + vec2( 0.0,     -texel.y)).r;
+-                        float d3 = texture2D(u_depthMap, vUv + vec2( texel.x, -texel.y)).r;
+-                        float d4 = texture2D(u_depthMap, vUv + vec2(-texel.x,  0.0)).r;
+-                        float d5 = texture2D(u_depthMap, vUv + vec2( texel.x,  0.0)).r;
+-                        float d6 = texture2D(u_depthMap, vUv + vec2(-texel.x,  texel.y)).r;
+-                        float d7 = texture2D(u_depthMap, vUv + vec2( 0.0,      texel.y)).r;
+-                        float d8 = texture2D(u_depthMap, vUv + vec2( texel.x,  texel.y)).r;
++                        float d1 = texture2D(displacementMap, vUv + vec2(-texel.x, -texel.y)).r;
++                        float d2 = texture2D(displacementMap, vUv + vec2( 0.0,     -texel.y)).r;
++                        float d3 = texture2D(displacementMap, vUv + vec2( texel.x, -texel.y)).r;
++                        float d4 = texture2D(displacementMap, vUv + vec2(-texel.x,  0.0)).r;
++                        float d5 = texture2D(displacementMap, vUv + vec2( texel.x,  0.0)).r;
++                        float d6 = texture2D(displacementMap, vUv + vec2(-texel.x,  texel.y)).r;
++                        float d7 = texture2D(displacementMap, vUv + vec2( 0.0,      texel.y)).r;
++                        float d8 = texture2D(displacementMap, vUv + vec2( texel.x,  texel.y)).r;
+                         
+                         float maxSourceDepth = max(sourceDepth, max(max(max(d1, d2), max(d3, d4)), max(max(d5, d6), max(d7, d8))));
+                         float minSourceDepth = min(sourceDepth, min(min(min(d1, d2), min(d3, d4)), min(min(d5, d6), min(d7, d8))));
+                         float sourceRange = maxSourceDepth - minSourceDepth;
+                         
+-                        // Only consider tunnel detection if there's a significant depth discontinuity nearby
+-                        if (sourceRange > 0.04) {
++                        // Only consider tunnel detection if there's a significant depth discontinuity nearby.
++                        // REVIEW: with the pre-torn FG these heuristics are obsolete
++                        // (torn cliffs are honest holes) and, once their samplers were
++                        // actually bound (D8 fix), they misfire on untorn sub-band
++                        // cliffs (striping at the dune/vehicle line). Explicitly off.
++                        const bool TUNNEL_HEURISTICS = false;
++                        if (TUNNEL_HEURISTICS && sourceRange > 0.04) {
+                             // Check if interpolated depth falls BETWEEN the extremes (tunnel interpolation)
+                             float marginFromMin = vNormalizedDepth - minSourceDepth;
+                             float marginFromMax = maxSourceDepth - vNormalizedDepth;
+@@ -6477,6 +6482,13 @@ let bgBandCutMaxGrad = 0.04;
  // 0.3 = "stretched more than ~3x". Lower = stricter (less cutting).
  let bgBandCutStretchFrac = 0.3;
  let bgBandCutDilatePx = 4;     // dilate the cut mask so far-side stretch fragments are covered too
@@ -16,7 +87,7 @@ index 602ce8a..e967439 100644
  // Coarse-extension data stashed at BG-build for the SD outpaint bundle
  // (native/extended res, top-row-first): { mx, my, pw, ph, EPW, EPH,
  //  depth:Float32(EPN), fill:Uint8(EPN*3), mask:Uint8(EPN) (1 = margin/outpaint) }
-@@ -7317,9 +7324,68 @@ function buildBackgroundLayer() {
+@@ -7317,9 +7329,68 @@ function buildBackgroundLayer() {
                  const dpx = cx.getImageData(0, 0, pw, ph).data;
                  const depth = new Float32Array(PN);
                  for (let i = 0; i < PN; i++) depth[i] = dpx[i * 4] / 255;
@@ -85,7 +156,7 @@ index 602ce8a..e967439 100644
                  if (bgPlugMode === 'directional') {
                      // Single directional plug computed straight from the depth: seal each
                      // disocclusion at the far side of its own edge, grown in by the edge's
-@@ -7372,22 +7438,49 @@ function buildBackgroundLayer() {
+@@ -7372,22 +7443,78 @@ function buildBackgroundLayer() {
                  // background/rim depth underneath. The visible plug becomes a
                  // cliff-free "world without the foreground" surface.
                  {
@@ -132,6 +203,35 @@ index 602ce8a..e967439 100644
 +                            fgm[j] = 1; rimV[j] = rimV[i]; rimC[j] = rimC[i]; q2.push(j);
                          }
                      }
++                    // PASS 2 — sub-Otsu occluders (seated group, sled, tents). The
++                    // Otsu floor kept pass 1 from leaking through ground contact,
++                    // but left mid-depth occluders uncompleted: the full-frame
++                    // plate carried THEIR colours, which parallax wrong when a
++                    // torn reveal opens beside them (dark scallops at the dune
++                    // crest). Near-class is already claimed, so this flood is
++                    // contained by the +0.06 continuity gate alone (their rims are
++                    // the local plain; nothing unclaimed rises 0.06 above it); a
++                    // generous budget is the hard stop.
++                    {
++                        const budg2 = new Int32Array(PN); const q3 = [];
++                        for (let i = 0; i < PN; i++) if (band[i]) {
++                            const x = i % pw, y = (i / pw) | 0;
++                            const nbs = [x>0?i-1:-1, x<pw-1?i+1:-1, y>0?i-pw:-1, y<ph-1?i+pw:-1];
++                            for (const j of nbs) if (j >= 0 && !band[j] && !fgm[j] && depth[j] >= plugDepth[i] + 0.06) {
++                                fgm[j] = 1; rimV[j] = plugDepth[i];
++                                rimC[j] = (rimSrc && rimSrc[i] >= 0) ? rimSrc[i] : j;
++                                budg2[j] = 400; q3.push(j);
++                            }
++                        }
++                        for (let h = 0; h < q3.length; h++) { const i = q3[h]; if (budg2[i] <= 0) continue;
++                            const x = i % pw, y = (i / pw) | 0;
++                            const nbs = [x>0?i-1:-1, x<pw-1?i+1:-1, y>0?i-pw:-1, y<ph-1?i+pw:-1];
++                            for (const j of nbs) if (j >= 0 && !band[j] && !fgm[j] && depth[j] >= rimV[i] + 0.06) {
++                                fgm[j] = 1; rimV[j] = rimV[i]; rimC[j] = rimC[i]; budg2[j] = budg2[i] - 1; q3.push(j);
++                            }
++                        }
++                        console.log('[RUNG-PLUG] completion pass 2 (sub-otsu occluders): +' + q3.length + 'px');
++                    }
 +                    // Reject rims that are themselves under an occluder (internal
 +                    // figure cliffs: arm-over-torso seeds carry FIGURE colours —
 +                    // bright dashes in the fill). Those pixels fall back to the
@@ -142,7 +242,7 @@ index 602ce8a..e967439 100644
                      let nFg = 0; for (let i = 0; i < PN; i++) nFg += fgm[i];
                      if (nFg > 0) {
                          // diffuse surrounding plug depth (background + pinned band rims)
-@@ -7456,7 +7549,10 @@ function buildBackgroundLayer() {
+@@ -7456,7 +7583,10 @@ function buildBackgroundLayer() {
                      if (fu && fu.u_bandMask) {
                          if (fu.u_bandMask.value && fu.u_bandMask.value.dispose) fu.u_bandMask.value.dispose();
                          fu.u_bandMask.value = cutDT;
@@ -154,7 +254,7 @@ index 602ce8a..e967439 100644
                          fu.u_bandCutMismatch.value = bgBandCutMismatch;
                          if (fu.u_bandCutMaxGrad) fu.u_bandCutMaxGrad.value = bgBandCutMaxGrad;
                          // expected UV rate: the mesh spans UV 0..1 over roughly the
-@@ -7467,6 +7563,62 @@ function buildBackgroundLayer() {
+@@ -7467,6 +7597,62 @@ function buildBackgroundLayer() {
                      }
                  }
  
@@ -217,7 +317,7 @@ index 602ce8a..e967439 100644
                  // --- FILL COLOR (Law 4): DEPTH-GUIDED EXEMPLAR (onion-peel). Fill each
                  // hole rim-first by copying the best-matching REAL background patch (SSD
                  // over known neighbours; sources restricted to true background at similar
-@@ -7518,7 +7670,15 @@ function buildBackgroundLayer() {
+@@ -7518,7 +7704,15 @@ function buildBackgroundLayer() {
                      // fill — solid and streak-free (the reflection above only sets bandReach,
                      // used by the optional fade). Keeps the interior clean, no striation.
                      if (bgFillMode === 'smooth') {
@@ -234,7 +334,7 @@ index 602ce8a..e967439 100644
                      }
                      // reach -> alpha: opaque for short reach, faded to transparent for long
                      // (streaks). smoothstep between the two configured thresholds.
-@@ -7532,6 +7692,17 @@ function buildBackgroundLayer() {
+@@ -7532,6 +7726,17 @@ function buildBackgroundLayer() {
                      };
                      const bandAlpha = new Uint8Array(PN);
                      for (let i = 0; i < PN; i++) bandAlpha[i] = band[i] ? _reachAlpha(bandReach[i]) : 0;
@@ -252,7 +352,7 @@ index 602ce8a..e967439 100644
                      // The FG stretch cut is allowed in the DILATED band (bandCutMask), so
                      // the plug must be opaque there too — a discard over transparent plug
                      // is a naked hole. RGB for the ring comes from the bleed below.
-@@ -7539,9 +7710,29 @@ function buildBackgroundLayer() {
+@@ -7539,9 +7744,33 @@ function buildBackgroundLayer() {
                      // The occluder rind (depth-completed, smooth) carries opaque
                      // background wash: never the figure's own colours, so nothing
                      // figure-tinted exists on the plug for bilinear edges to smear.
@@ -270,9 +370,13 @@ index 602ce8a..e967439 100644
 +                            if (rc >= 0) { fillRGB[i*3] = cpx[rc*4]; fillRGB[i*3+1] = cpx[rc*4+1]; fillRGB[i*3+2] = cpx[rc*4+2]; }
 +                            else { fillRGB[i*3] = smoothBase[i*3]; fillRGB[i*3+1] = smoothBase[i*3+1]; fillRGB[i*3+2] = smoothBase[i*3+2]; }
 +                        }
-+                        // soften the flat rim-colour patches (Jacobi, completed set only)
++                        // soften the flat rim-colour patches (Jacobi, completed set
++                        // only). 24 passes: along busy silhouettes (vehicle line at
++                        // the dune edge) adjacent rims alternate dark/light and 8
++                        // passes left a visible vertical comb; ~5px diffusion
++                        // radius kills the period.
 +                        let A2 = fillRGB, B2 = new Float32Array(PN * 3);
-+                        for (let p = 0; p < 8; p++) {
++                        for (let p = 0; p < 24; p++) {
 +                            B2.set(A2);
 +                            for (let y = 1; y < ph - 1; y++) for (let x = 1; x < pw - 1; x++) { const i = y*pw+x;
 +                                if (!(underMask[i] || band[i])) continue;

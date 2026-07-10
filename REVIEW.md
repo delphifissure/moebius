@@ -550,3 +550,32 @@ plug_error per layer).
 (moebiusv2 @ fd65995). Not yet implemented: composite-arbitration rest-
 fidelity fix (D1 residual), dead depth-pass sampler bindings (D8),
 sub-Otsu occluder completion (D3), and the MPI migration.
+
+## Addendum 4 — criterion 6 reframed; D8 resolved; v4.2
+
+**Criterion 6 measured against the TRUE reference** (the brief says
+"pixel-faithful to the source image"; T1 previously diffed against the
+pristine APP). New reference render `rf_ref_c.png` = bare mesh, no gap
+generators, no inpaint, no plug. At rest, >30/255 deviations from source:
+pristine app **31,586 px**, plug build **28,466 px** — the plug build is
+CLOSER to the source than the pristine app. The rest-frame alteration was
+never plug damage: the shared pipeline (Sobel gap detection + pyramid
+inpaint) reprocesses every silhouette even at rest, and the full-frame
+plate actually improves fidelity by backing those pixels with real source
+content. D1 reduces to an inherited pipeline property; the principled
+remedy, if desired, is gating gap-generation/inpaint on head-offset
+magnitude (at rest there are no disocclusions by definition).
+
+**D8 resolution:** the dead samplers are fixed (renamed to the bound
+`displacementMap`/`map`), but the resurrected tunnel heuristics MISFIRE on
+real data (striping at the dune/vehicle line) and are obsolete under the
+pre-torn FG — they are now explicitly disabled with a comment, which is
+behaviourally near-neutral (3,055 px vs the prior build) and leaves the
+depth pass honest instead of accidentally dead.
+
+**v4.2** (`review-fix` @ b6f2853): completion pass 2 floods sub-Otsu
+occluders (seated group, sled, tents; +13,396 px on Starwatcher) — their
+colours no longer sit on the plate, killing the dark scallops / stripe
+stacks beside them (`crop2_tn_shot.png` before vs `crop2_tn3_shot.png`
+after); rim-colour smoothing raised to 24 passes (Voronoi comb along busy
+silhouettes). Residual: a softened comb at the far-left dune crest.
