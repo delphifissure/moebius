@@ -642,3 +642,27 @@ depth-pure fix is tearing halo-edge triangles whose near side is halo-only
 (raw-far) — colour-safe by construction — or, definitively, MPI. Frazetta/
 silverwarrior depth composites (`frd/svd_depth_r11.png`) predate the
 binarization fix and need a re-run for the record.
+
+## Addendum 7 — final per-asset depth composites; two source depth-map defects on record
+
+Final build (`review-fix` @ 23e6a8f): depth composites at rest/+0.11/user
+pose for all three assets (`swm_*`, `fr2d_*`, `sv2d_*` in evidence/).
+
+- **Starwatcher**: rest figure solid; zero unplugged holes at all poses;
+  reveals weld to true local depth (nearest-rim-first flood — far fronts no
+  longer claim ground contacts, so the plate under the legs is dune, not
+  distant plain). Staff rigid in colour. Residual: thin-feature rubber
+  filaments in the depth channel (colour-invisible).
+- **Frazetta**: coherent cave/troll surfaces; the dancer's reveal opens
+  onto the dark passage correctly; residual edge filaments at her
+  silhouette. No holes, no floating slabs.
+- **silverwarrior**: no holes, no slabs; reveals carry near-depth filament
+  fuzz from its 92% sub-0.10 edges (untorn rubber, the D3 residual).
+
+**Source depth-map defects identified (upstream of any plug):** (1) the
+lamp glow is painted at SKY depth — off-axis it detaches from the staff;
+(2) the dune-crest colour boundary behind the figure has NO depth step
+(smooth ramp), so the pink/blue split inside leg reveals cannot be placed
+exactly by any depth-driven fill. Both belong to the depth-regeneration /
+SD / MPI stage. Open fill-side items: lamp glow-attach preprocess
+(optional), bottom-frame margin striping at look-up poses.
