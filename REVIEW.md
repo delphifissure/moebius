@@ -434,3 +434,38 @@ pinned rims only — the completed plug is a convex combination of those and
 therefore can never be nearer than the local background ("plug sits
 at/behind the furthest visible background", the user's invariant, by
 construction). Verification results below.
+
+### Addendum 2 verification results (branch `review-fix` in moebiusv2, patch: `review/moebius-otsu-completion-pretear.patch`)
+
+Two changes verified together on Starwatcher (8-shot matrix incl. the
+user's doppelganger pose (0.123, -0.055), vertical offsets, and rest):
+
+1. **Otsu full-occluder depth completion** (`completion set: otsu>=0.391
+   adds 278,930px`): the doppelganger at the user's pose is GONE
+   (`review/evidence/fx_userpose.png` vs the user's debug sheet). No
+   regression at +-0.11x, +-0.06y, or the bottom margin from burying the
+   near ground (`ft_comp_d06.png`). T2 stays 0 holes at all poses.
+2. **Pre-torn FG** (`fgPreTear=true`, `fgTearStep=0.06`): 29,064 of
+   5,073,836 triangles dropped (0.57% — silhouettes only). Rubber-band
+   triangles no longer exist; the band-gated cut and its three screen-space
+   heuristics stay disarmed. Rest-state cost of the tear itself: **+137 px**
+   vs the untorn pristine (slits are sub-pixel and land on the plug's bled
+   fill) — the tear is effectively free at rest, and it is zoom/resize/
+   canvas-independent by construction (retires D6's failure mode).
+
+Honest negative result: **T1 rest fidelity does not improve** (17,774 vs
+17,637 baseline, cut disarmed and all). With the plug isolated against the
+torn pristine it still changes 12,520 rest pixels. Conclusion: D1's
+dominant driver is neither the cut nor the plug geometry but the COMPOSITE
+ARBITRATION — with `u_bgLayerActive`, silhouette pixels that the Sobel gap
+generator flags take the plug-backed scene branch instead of the
+screen-space inpaint branch of `finalCompositeMaterial` (5153-5188), a
+systematic shift along every strong edge. Fixing criterion 6 therefore
+requires a composite-side change (e.g. gap pixels prefer original color
+whenever it is valid, regardless of plug state), not further mesh/plug
+work. D2 (wash texture) and D3 (sub-threshold edges) also remain, as
+expected — they are fill-side and seeding-side respectively.
+
+**Roadmap note (user decision):** pre-torn FG ships first; depth-segmented
+multiplane layers (MPI) are the agreed later step — the SD plate path and
+the app's existing layer support are the natural substrate for it.
