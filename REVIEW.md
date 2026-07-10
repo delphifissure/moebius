@@ -666,3 +666,53 @@ lamp glow is painted at SKY depth — off-axis it detaches from the staff;
 exactly by any depth-driven fill. Both belong to the depth-regeneration /
 SD / MPI stage. Open fill-side items: lamp glow-attach preprocess
 (optional), bottom-frame margin striping at look-up poses.
+
+---
+
+## Addendum 8 — bottom-frame margin striping: fixed (commit `168508e`)
+
+**Symptom.** At look-up poses (e.g. 0.123, −0.055) the dune's bottom
+silhouette lifts off the frame edge and the revealed strip along the bottom
+was a blue/gray gradient band with vertical striations and a black patch at
+the bottom-left corner — nothing like the pink sand that should continue
+below the frame. Evidence: `evidence/margin_striping_before.png`.
+
+**Root cause.** The scene-extension (outpaint) margin seeded its pull-push
+diffusion from the PLATE (`fillRGB` / `plugDepth`) — the world-*without*-
+foreground. At the bottom of the frame the plate is the inpainted content
+*behind* the dune: distant-sand blues, contact-shadow grays, starved blacks,
+and the fill flood's striations. Diffusing that outward put occluded-world
+colours at FAR depth in the margin, so under parallax the strip held still
+(far ≈ no shift) and stayed exposed as an off-colour striped band.
+
+Physically, a beyond-frame reveal shows the FRONT world continuing past the
+frame: below the bottom edge there is more near dune, and near content
+parallax-slides *with* the FG silhouette, closing the gap by itself.
+
+**Fix (two parts, both in the scene-extension block):**
+1. **Margin seeds = source colour + front-surface depth** (`cpx` / `depth`
+   instead of `fillRGB` / `plugDepth`). The bottom skirt becomes near-depth
+   pink sand that slides up with the dune edge and covers the reveal; the
+   top margin becomes sky at sky depth; sides continue their local edge
+   content. The centre keeps plate content unchanged.
+2. **3-texel WELD ring.** After part 1 a thin dark seam line remained
+   hugging the silhouette (`evidence/margin_striping_mid_seamline.png`):
+   the plate(far)→skirt(near) depth cliff sat exactly on the frame boundary,
+   and its one-texel transition quad rendered as a fold wall textured with
+   the plate↔skirt colour blend. The outermost 3 centre texels now take the
+   same front-surface colour+depth, moving the cliff inboard where the fold
+   is hidden behind the skirt. The ring is never legitimately visible as
+   plate: the FG edge rows cover it at rest, the skirt covers it in reveals.
+
+**Verification.** Look-up (0.123, −0.055): seam line and striping gone, the
+dune dissolves into a continuous sand skirt
+(`evidence/margin_striping_after.png`). Look-down (−0.123, 0.055): starry
+sky continues past the top edge, no seam (`evidence/margin_lookdown_after.png`).
+Rest: bottom-5-rows diff vs source 42/3510 px (sampling noise) — the ring
+is fully covered by the FG at rest, as argued.
+
+**Interaction with the SD plate.** `bgExtendExport` now carries the welded
+margins; the outer ring welding to the source rim is the correct outpaint
+conditioning too (continuation of the visible world, not the occluded
+plate). Open fill-side items are now: lamp glow-attach preprocess
+(optional) only.
