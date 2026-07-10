@@ -599,3 +599,46 @@ Cross-asset residuals: sub-0.10 edges still smear mildly everywhere (D3 —
 the seeding-threshold structural limit; MPI layer extraction is the fix);
 wash texture vs painterly detail (SD plate's job); build time on the 3000^2
 asset remains ~1-2 min unoptimized (see Addendum 3 budget).
+
+## Addendum 6 — depth-composite audit (user acceptance pass on DEPTH, not colour)
+
+Requested check: depth composites per asset; no unplugged holes, seamless
+welds aligned to the attached surfaces, no depth intruding toward the
+foreground. Tool: `depth_dump.js` (depth pass with plug included, magenta =
+unplugged). What it found, in order of discovery:
+
+1. **The bake corrupts the depth input** (root cause of most of what the
+   composites showed; predates this session — visible in the user's own
+   v3.12 sheets). Three distinct damage modes in `bakeEdges`' output, each
+   now fixed in `applyLiveBake`:
+   - dark/thin NEAR features eroded to far (staff shaft perforated) →
+     **plateau clamp** (a pixel on its local near plateau never moves far);
+   - a 1-2px **pepper skin** of intermediate values along every silhouette
+     (11,209px on Starwatcher) → poisoned the plug's rim depths (mid-gray
+     slabs floating in reveals = "depth intruding toward the foreground")
+     and shredded the tear → **skin binarization** (skin pixels snap to
+     local near-plateau or far-min);
+   - tear decisions moved to the RAW pre-bake depth.
+2. **Canvas depth textures replaced by Float32 DataTextures** (sharpened +
+   halo): browser canvas-upload colorspace conversion risk gone, no 8-bit
+   displacement quantization (retires the D9 quantization residual), and
+   the FG and plug read one depth space.
+3. Tear gates refined: background-backed cliffs only (internal FG-on-FG
+   overlaps keep rubber — a single plate texel cannot hold both the local
+   far surface and the deep background; the MPI argument in one sentence),
+   and a 3px no-tear zone around thin features.
+
+**Post-fix composite state (Starwatcher `swm_depth_c/r11.png`):** rest
+figure SOLID (hood, torso, staff+loop, glider, seated group); zero
+unplugged holes at all poses; +0.11 reveals weld to true sky/dune depth
+(mid-gray slabs gone). In colour at the user pose (`clr_shot.png`) the
+staff renders RIGID with its loop for the first time.
+
+**Remaining depth residuals, honestly:** bright FG rubber FILAMENTS in the
+reveals from protected thin features and halo edges — colour-invisible by
+design (sky-over-sky) but present in the depth channel; a small mottled
+patch right of the torso and bottom-edge striping in colour. The
+depth-pure fix is tearing halo-edge triangles whose near side is halo-only
+(raw-far) — colour-safe by construction — or, definitively, MPI. Frazetta/
+silverwarrior depth composites (`frd/svd_depth_r11.png`) predate the
+binarization fix and need a re-run for the record.
