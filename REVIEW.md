@@ -494,3 +494,59 @@ a small horizon-blue remnant at the upper thigh; D2 wash texture != starry
 sky (SD plate / MPI remains the answer); D3 sub-0.10 edges unchanged;
 Frazetta/silverwarrior not re-run against v4.1. The MPI migration remains
 the agreed endgame; the full-frame plate built here IS its back layer.
+
+## Addendum 3 — companion docs reconciled; scalability; MPI shape
+
+**Docs reviewed:** `HANDOFF.md`, `MOEBIUS_DISOCCLUSION_SPEC.md`,
+`PLUG_PORT_SPEC.md` (repo root).
+
+- `PLUG_PORT_SPEC.md`'s critical correction ("valid = ~fillset, not ~band —
+  figure-pixel anchors extrude the plug to figure depth") is the same bug
+  class as the interior-cliff/doppelganger fixed on `review-fix`; the
+  unbounded local-rim flood with Otsu floor is the directional-path
+  equivalent of that correction.
+- **Law 3 amendment (important — do not "correct" this back):** the spec
+  forbids any full-frame background surface because "the matte moves at a
+  different rate than the floor it continues." That failure mode belongs to
+  a FLAT matte at fixed depth. The `review-fix` plate is DEPTH-MATCHED
+  (source depth everywhere outside occluders), so it moves at exactly the
+  foreground's rate by construction; the mismatch cannot occur. Laws 1, 2
+  and 4 are enforced more strictly than in v3.12 (rind exclusion +
+  internal-rim rejection; welded local rims; rim-carried first pixels).
+- Law-1 landmine kept masked by D3: the plate carries sub-Otsu occluders
+  (tents, seated group) in source colours at their own depth. Safe while
+  those edges neither band nor tear; if the tear threshold is ever lowered,
+  those objects must be completed too (MPI does this per layer).
+- `HANDOFF.md` is historical (v3.10.4 PNG-record plumbing), but its theme —
+  right design, broken texture plumbing — is still live as D8 (unbound
+  `u_depthMap`/`u_texture` samplers in the depth pass).
+
+**Scalability (user requirement: weight-free, near-real-time on import,
+depth/layers confirmable, then SD offline):** every stage in the shipped
+pipeline is classical and weight-free (Otsu, BFS floods, erosion, chamfer,
+pull-push, Jacobi, weighted-median bake), O(N)-ish, parallelizable; the
+expensive work is once per asset, per-frame cost is one extra mesh draw.
+Measured today (single-thread JS): ~15-20s at 1920x1323, ~60-90s at 3000^2.
+Budget is dominated by four items with known cheap fixes: 120 full-res
+Jacobi sweeps -> multigrid on the existing pyramid (~10-20x); the 4
+extended-res pull-push runs of the margin -> quarter-res + upsample (~16x,
+the wash is smooth by design); the 15M-entry tear filter -> worker + per-
+asset cache; all off the main thread. Realistic optimized import: **~2-3s
+at 1920^2, ~5-8s at 3000^2**. The piece that does NOT scale is inherited:
+the 1-vertex-per-texel mega-mesh (9M verts / ~430MB index data at 3000^2)
+— which is precisely what MPI removes.
+
+**MPI shape (agreed direction):** depth-DISPLACED layers, not flat planes —
+each layer keeps {color, alpha, ITS OWN DEPTH MAP, completed content} and
+renders as a (much coarser) displaced mesh within its depth slab. Parallax
+stays continuous inside a layer (the ground ramp does not band); layer
+boundaries exist only at occlusion boundaries, which is where completion /
+SD fill lives; per-layer completed depth remains the ControlNet
+conditioning input, as with today's dir_bg_depth_completed.png. Layer
+correctness is confirmable at import with the same harness tests (T1/T2 +
+plug_error per layer).
+
+**Implementation state:** fixes v1-v4.1 are IN CODE on `review-fix`
+(moebiusv2 @ fd65995). Not yet implemented: composite-arbitration rest-
+fidelity fix (D1 residual), dead depth-pass sampler bindings (D8),
+sub-Otsu occluder completion (D3), and the MPI migration.
