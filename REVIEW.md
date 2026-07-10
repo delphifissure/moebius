@@ -397,3 +397,40 @@ give the cleanest confirmation of D1/D2/D7's shared mechanism:
   blue, scene depth all red — while the second sheet is healthy. The
   collapse is BISTABLE at a fixed pose: state/frame-ordering dependent,
   not pose-dependent.
+
+## Addendum 2 — "the directional plug grows the wrong way" hypothesis: REJECTED
+
+Hypothesis raised post-review: the growth rule `depth[j] >= rim[i]+STEP`
+walks into the FOREGROUND, and the physics demands growth into the
+background. Tested and rejected:
+
+- The plug is a SOURCE-SPACE layer. The background a head-move reveals is,
+  in source space, the background hidden UNDER the occluder's silhouette —
+  an LDI back layer. Band texels under the figure displace at rim depth, so
+  they parallax WITH the background and are already in the gap when the
+  figure slides off. Growing into the background instead would duplicate
+  already-visible content and leave NOTHING behind the figure — every
+  reveal would open onto void.
+- Empirical: T2 = 0 naked holes at all 9 poses exists BECAUSE the band is
+  under the figure; `band_after.png` shows fill coverage correlating with
+  under-figure band presence (figure filled, bandless mountain streaks);
+  the app's own seam metric (`sw_plugerr_r11.png`) shows green continuity
+  where band exists.
+- The real defect behind "the plug's boundary is figure-shaped and
+  parallaxes wrong" is the INTERIOR CLIFF (Addendum 1): past the bounded
+  rind the plug reverts to foreground depth and the uncut BG rubber sheet
+  climbs it. Growth direction is correct; completion extent is not.
+- The proposed revert to `buildPlugFromValid` + PNG masks only functions on
+  the certified Frazetta asset: `defaultBgBand/Valid.png` are 851x1023
+  troll-specific masks, and legacy mode stretches them onto whatever asset
+  is loaded (7334-7335). On Starwatcher that is the troll's band on the
+  wrong painting. Viable as a certified-asset regression baseline only.
+
+**Fix implemented on `review-fix` (moebiusv2) for verification:** the
+completion set becomes rind-flood ∪ Otsu-near side (global depth split,
+`bgOtsuThreshold` already in-file), so the plug depth is completed to
+background under the ENTIRE occluder. Diffusion sources remain background +
+pinned rims only — the completed plug is a convex combination of those and
+therefore can never be nearer than the local background ("plug sits
+at/behind the furthest visible background", the user's invariant, by
+construction). Verification results below.
