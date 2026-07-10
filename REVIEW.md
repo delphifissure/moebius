@@ -469,3 +469,28 @@ expected — they are fill-side and seeding-side respectively.
 **Roadmap note (user decision):** pre-torn FG ships first; depth-segmented
 multiplane layers (MPI) are the agreed later step — the SD plate path and
 the app's existing layer support are the natural substrate for it.
+
+### Fix-iteration results (final state of `review-fix` = `moebius-otsu-completion-pretear.patch`, 287-line diff)
+
+Iterations driven by the user's five observed defects at (0.123, -0.055)
+(staff black/carved, glider blobs, dune transparency between the legs,
+black at hill people, black behind mountains):
+
+| build | change | outcome |
+|---|---|---|
+| v1 | Otsu global completion + naive tear | doppelganger GONE; but tear deleted thin features (staff carved, glider blobs), global-depth completion put SKY wash behind the LEGS (dune "transparency"), un-backed tears painted ink at mountains |
+| v2 | per-edge rim flood (unbounded, Otsu floor) + plug-backed thin-protected tear | legs dune-colored past the band; mountains/hill-people revert to baseline (no black) |
+| v3 | FULL-FRAME plate (opaque everywhere, source content 0.004 behind FG) | the structural fix for thin occluders: a 2px staff hides 2px of sky but sweeps ~25px — only a full plate can fill that reveal. Staff/glider ink-black GONE; mountain rim clean |
+| v4/v4.1 | local rim COLOUR carried by the flood (band + completion, internal rims rejected, Jacobi-softened) + thin-feature 2px depth halo (geodesic thinness) | between-legs reveal now dune-pink; bright rim-dash artifact removed; staff renders rigid (faint at 860px harness scale) |
+
+Final pixel tests (Starwatcher): T2 = 0 transparent holes at all poses;
+T1 rest = 19,033 px vs untorn pristine (baseline 17,637) — rest fidelity
+is still owned by the COMPOSITE ARBITRATION (unchanged conclusion: the
+`u_bgLayerActive` branch of `finalCompositeMaterial` shifts Sobel-flagged
+silhouette pixels; must be fixed composite-side).
+
+Residuals, honestly stated: faint rigid-staff ghosting at harness scale;
+a small horizon-blue remnant at the upper thigh; D2 wash texture != starry
+sky (SD plate / MPI remains the answer); D3 sub-0.10 edges unchanged;
+Frazetta/silverwarrior not re-run against v4.1. The MPI migration remains
+the agreed endgame; the full-frame plate built here IS its back layer.
