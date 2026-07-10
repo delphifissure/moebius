@@ -369,3 +369,31 @@ The load-bearing defects D1–D4 are not parameter mistakes:
 - Setup: clone moebiusv2 @ f79bae2, pull bundle, copy `harness/`, symlink
   `moebius.js` + asset PNGs into `harness/`, swap `defaultImg*` per asset,
   `node review_drive.js <prefix> [basic]`.
+
+## Addendum (post-review, from the user's live v3.12.0 debug sheets)
+
+The user's own debug sheets (cam ~(0.12-0.13, -0.04..-0.06, 0.2), live=bake)
+give the cleanest confirmation of D1/D2/D7's shared mechanism:
+
+- The "COMPLETED DEPTH (plug)" panel still shows the figure at NEAR depth:
+  the depth completion carves only a ~84px rind (3x bgBandMaxGrowPx) into
+  the occluder (7375), so past the rind the plug's displacement map reverts
+  to foreground depth. The completion RELOCATES the plug's cliff 84px
+  inward; it does not remove it.
+- The BG plug mesh is itself a connected rubber sheet with NO cut. At the
+  rind's inner boundary it stretches from background depth up to foreground
+  depth — visible in the user's `view=final` sheet as an opaque dark
+  doppelganger standing beside the figure ("the plug protruding from the
+  background and intruding toward the foreground"), and in "live depth
+  incl. BG" as a figure-shaped slab at intermediate/invalid depths.
+- Unbounding the rind flood is NOT a safe fix: its continuity gate
+  (depth >= rim+0.06, 7387) leaks through the figure's ground contact into
+  the whole near ground (the author bounded it for exactly this reason,
+  7369-7371). Removing the interior cliff correctly requires an actual
+  FG/BG segmentation of each occluder — i.e. the "world without
+  foreground" plate of §4.
+- The user's third sheet (same build, near-identical pose as the second)
+  shows the D8 total collapse — gap mask all white, FG-sub contract all
+  blue, scene depth all red — while the second sheet is healthy. The
+  collapse is BISTABLE at a fixed pose: state/frame-ordering dependent,
+  not pose-dependent.
