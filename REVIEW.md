@@ -1012,3 +1012,100 @@ sweep radius is derived (4× budget ≈ max parallax). Rest-state cost:
 0.58% of pixels in torn-skin fills whose colour targets changed — both
 before and after are approximations of torn ink detail (measured
 comparably against source); the proper fix remains offset-gating.
+
+---
+
+## Addendum 16 — Synthetic ground-truth suite: two containment defects found and fixed (v: standing-content mask + slope-continuing bands)
+
+**Why a synthetic suite.** Every prior probe scored the plug against
+*derived* references (flanking anchors, source renders). Four analytic
+scenes with exact closed-form depth (`harness/synth/`: ground plane +
+box occluder; 4px pole + soft floating ball; 600×900 portrait; 400×300
+tiny) make the truth *computable*: behind a box standing on a linear
+ground ramp, the correct plug at row y IS gd(y).
+
+**What it caught (both invisible on the real assets):**
+
+1. **Completion-flood leak.** Addendum 15's floor rind replaced the
+   global Otsu class — but nothing replaced Otsu's *leak containment*.
+   The flood exited through the box's ground contact and claimed the
+   entire near ground.
+2. **Floor-rind ramp false-positive.** `depth − min(window) >
+   fgTearStep` integrates smooth slope: an ordinary ground plane
+   accumulates ~0.15 over the 112px window, so 58% of the synA plate
+   was swept into the rind. Combined effect: the plate's ground
+   collapsed to diffused far values (open ground measured 0.03–0.10 vs
+   truth 0.19–0.84) and the membrane lost every row anchor below the
+   horizon. The real images hid this because the band (float, correct)
+   covers all reveals within the parallax budget, and "too far" never
+   trips a protrusion test — the plate ground moved with sky parallax
+   in reveals, unnoticed.
+
+**Fix — standing-content mask** (all constants derived, none new): a
+pixel is occluder *body* iff it stands above its local floor (the old
+windowed test, 4×-budget radius = max-parallax exposure bound) AND is
+geodesically reachable within that radius from a **cliff seed** —
+`depth − min(±4px) > fgTearStep`, a tear-scale discontinuity that every
+tearable silhouette has (hard cliffs and NMS soft ramps alike) and a
+smooth ramp can never produce (its per-4px variation is bounded by the
+ramp-collapse binarization threshold). The flood is gated to the mask —
+a front reaching an occluder's feet cannot exit onto open ground,
+restoring the containment Otsu used to provide, now locally. The rind
+sweep is simply the mask remainder the flood didn't claim.
+
+**Second find — the band plateau, and why it resisted the membrane.**
+With the plate fixed, the suite still showed reveal-strip (band) errors
+= ground-slope × band-width (synA −0.049, synD −0.136 — the two scenes'
+slopes exactly predict both). The directional plug held its far rim
+value flat across the band; the membrane computed the exact correction
+but its one-sided gate (Addendum 15's concave-scene protection) caps
+nearer moves at one tear-step. Fix at the source: **slope-continuing
+initialisation** — every band pixel starts at the far surface's own
+gradient extrapolated from its rim source over the grown distance. Two
+non-obvious details: (a) the gradient must be sampled 4–8px *behind*
+the rim source — ramp collapse dips the first ~3px beside every cliff
+toward the window minimum, and sampling from the rim pixel itself reads
+that dip as a slope pointing *away* from the reveal (measured:
+rim − slope·dist, the exact wrong sign); (b) 120 Jacobi sweeps cannot
+converge a budget-deep strip from a flat init, so initialising only the
+inner ring is not enough — every band pixel gets the extrapolated
+value. Nearer-going extrapolation is clamped below the local occluder
+(no protrusion channel); sky has zero gradient and stays flat; a narrow
+slot cannot bridge its walls because the gradient measured is the
+slot's own far surface's.
+
+**Third: plate ceiling.** Swept floor strips kept a few-quantum NEARER
+bias from rind diffusion. Contract rule, now enforced: the plate stands
+in for the world *without* the removed content and may never sit nearer
+than the world's own surface at that pixel — anything nearer is the FG
+mesh's to carry. (`plug ≤ src` on swept pixels; no-op on occluder cores.)
+
+**Suite after** (was → is): synA footprint mean 0.028→0.0031, max
+0.198→0.025; synC 0.023→0.0022 / 0.136→0.0079; synD displayed-band mean
+0.035→0.0058 (residual max sits in rows where the box–ground gap is
+below fgTearStep — never revealed — and in the never-displayed interior
+beyond the band). Open-ground plate depth now equals source exactly.
+Zero contract protrusions and zero in-content transparent holes on all
+four scenes (hole counts in the raw suite output are letterbox bars
+outside the image, confirmed by 40px-margin classification). Soft-ball
+core depth error 0.0067 (~1.7/255): despeckle does not flatten
+legitimate soft objects.
+
+**Real-asset regression:** frazetta protrusions 758→373px and the worst
+offenders are no longer plate-borne; silverwarrior unchanged (556px @
+204 — the known sword/cape flank-mixing class, structural fix = slice-3
+per-layer plates); starwatcher 3px @ 25/255 (a 1–2px bilinear seam
+where the plate's dune edge meets sky at the horizon — magnitude ≈ half
+the horizon depth step), topo mean 0.0030 with 38px > step (0.0%).
+Build time unchanged: 42.8s. Visibly better at the test pose
+(`standmask_sw_pose.png` vs `membrane_pose_after.png`): the dark
+dune-seam crack bottom-right and the white blob at the second figure
+are gone — both were symptoms of the far-collapsed plate ground.
+
+**Generality note.** The suite is the "any picture" check the campaign
+needed: exact-math scenes across aspect ratios (1.5, 0.67, 1.33) and
+scales (400px to 1200px), a soft object the despeckle must not eat, and
+a thin pole. All fixes derive from existing constants (fgTearStep,
+bgBandStep, band budget, ramp-collapse window); nothing is tuned to a
+scene. Suite: `harness/synth/`, runner `harness/synth_run.js`, probes
+`harness/synth_probe*.js`.
