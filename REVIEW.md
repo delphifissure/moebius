@@ -927,3 +927,39 @@ point in slices 1–2. Activation is a single switch (`bgMPIMode = true` +
 rebuild); its one integration caveat — enable after load, not during the
 import auto-build (view-fit interaction, Addendum 12) — is a wiring bug
 to fix alongside the real UI toggle, not a tuning knob.
+
+---
+
+## Addendum 14 — performance pass: 137s → 43s, bit-identical (commit `478a3e9`)
+
+Instrumented every build stage, then applied ONLY exactness-preserving
+optimizations — no thresholds touched, no behaviour changed, and the
+proof is mechanical: the MPI-off rest render remains bit-identical to
+the pre-MPI baseline (0 of 416k px), and the MPI-on pose render is
+bit-identical to a re-run of the OLD code (0 px; the 143px seen against
+the archived shot reproduces exactly with the old code re-run — GPU
+run-to-run noise, not the optimizations).
+
+| stage | before | after | technique |
+|---|---|---|---|
+| continuation marches | 67.8s | 3.9s | skip tables across the completed set |
+| main Jacobi (24-pass) | 15.6s | 10.2s | compact list, planar channels, no buffer copies |
+| under-sheet floor | 11.1s | 0.8s | van Herk O(N) sliding min |
+| tear + MPI partition | 9.7s | 6.2s | flat masks, identity fast path, typed queues/buckets |
+| colour bleed | ~4s | ~0.3s | frontier generations, original neighbour priority |
+| thin-halo | 4.3s | 2.0s | window scan gated to Chebyshev-2 thin dilation |
+| despeckle + collapse | 3.7s | 1.8s | van Herk windowed min/max |
+| plug band + sweeps | 2.1s | 0.9s | compact interior sweeps (120× full-frame before) |
+| **total (starwatcher)** | **137.2s** | **42.7s** | |
+
+Frazetta: 30.2s; silverwarrior: 139.6s (3.5× the pixels — scales
+linearly, no pathology). This VM (swiftshader, shared CPU) is ~3–4×
+slower than a desktop, so the 1920×1323 real-hardware estimate is
+~10–15s. The remaining costs are the deliberately-kept 24-pass Jacobi
+(10.2s — a quality choice, not an accident), the canvas depth decode,
+and the extension pull-push; the path below ~5s is workers/WASM/GPU
+compute for those three, which changes machinery, not algorithms — a
+separate decision.
+
+The [PERF] log line ships in the build (one line per import), so any
+future regression is visible in the console immediately.
