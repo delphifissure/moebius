@@ -963,3 +963,52 @@ separate decision.
 
 The [PERF] log line ships in the build (one line per import), so any
 future regression is visible in the console immediately.
+
+---
+
+## Addendum 15 — pre-SD hardening: the two contract questions, measured and fixed (commit `8e7ee19`)
+
+The user asked two pointed questions: are there BG-plug→foreground
+protuberances, and do glancing-angle plugs approximate the topology of
+the surfaces they fill? Both were instrumented (new harness probes
+`protrude.js`, `topoprobe.js`) rather than answered from memory.
+
+**Protuberances — answer: none of consequence, after one real fix.**
+The contract-correct test (a backing pixel that wins the z-test violates
+only if nearer than every FG surface within parallax reach — off-frame
+near continuations legitimately occlude far content) gives starwatcher
+1px at worst 3/255: zero in practice. The cave asset exposed a REAL
+class: plate doppelgänger patches where dark-on-dark soft silhouettes
+never seed a band, the flood never enters, and the plate keeps near
+source depth (`protrusion_fr_dancer.png` — the dancer's thigh blob).
+Fixed by the FLOOR RIND: an occluder is anything standing above its
+LOCAL floor (min-filter at 4× the band budget = the maximum-parallax
+exposure radius) — which also removes the last global Otsu from the
+flood path. Cave violations halved; the residual 0.3–0.4% on the
+cave/warrior is a distinct diagnosed class (thin near objects whose rind
+diffusion mixes its two flanks — sky one side, armor the other) that
+per-layer plates solve structurally; recorded open for slice 3.
+
+**Topology — answer: it was real, and it is now fixed.** Measured before:
+mean |plug − surface continuation line| = 0.0243 depth units, with 11.2%
+of reveal pixels off by more than a tear-step (`topology_errmap_before.png`
+— the dominant mass is the ground carried UPWARD above the horizon
+behind the mountain: the depth analog of the doppelgänger colour bug).
+MEMBRANE CORRECTION: a completed pixel bounded on both row/column sides
+by same-class real surfaces takes the inverse-distance blend of their
+linear continuation lines (SAME gate = bgBandStep; one-sided reveals
+keep the flood). The ONE-SIDED GATE keeps the flood as the contract's
+lower bound — the membrane may move the plug farther, never more than a
+tear-step nearer (concave scenes: both anchors near walls, the bridge
+would cross the passage — measured on the cave before gating). After:
+starwatcher mean 0.0004, >step errors 39,843 → 0; reveal colours improve
+with it (fills target plugDepth). `membrane_pose_after.png` is the
+cleanest off-axis render of the session.
+
+**Generality note.** These changes REMOVE per-image machinery rather than
+add it: the flood's occluder class is now local (floor field) instead of
+global (Otsu); the membrane and gates reuse bgBandStep/fgTearStep; the
+sweep radius is derived (4× budget ≈ max parallax). Rest-state cost:
+0.58% of pixels in torn-skin fills whose colour targets changed — both
+before and after are approximations of torn ink detail (measured
+comparably against source); the proper fix remains offset-gating.
