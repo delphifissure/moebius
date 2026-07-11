@@ -1109,3 +1109,20 @@ a thin pole. All fixes derive from existing constants (fgTearStep,
 bgBandStep, band budget, ramp-collapse window); nothing is tuned to a
 scene. Suite: `harness/synth/`, runner `harness/synth_run.js`, probes
 `harness/synth_probe*.js`.
+
+---
+
+## Addendum 17 — MPI on by default
+
+The load-time caveat that kept `bgMPIMode = false` is retired. Measured
+with the flag as the parse-time default and the build run through the
+real UI button: rest and pose renders are **pixel-identical (0px)** to
+the post-load-enable path every probe in this review used, and camera
+state (z / zoom / fov) is untouched. The "view-fit flip" that motivated
+the off-default was a mis-attribution: the comparison target was the
+MPI-OFF build, which really does render differently — without the
+under-sheet (gated behind this flag) halo tears fall back to
+rubber-stretch streaks (visible beside the staff in `mdef_off_pose`),
+and the margins keep the pre-build JFA glow instead of the extended
+plate. The OFF path is the legacy render; the ON path is the one every
+contract measurement in Addenda 13–16 verified.
