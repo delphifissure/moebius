@@ -1145,3 +1145,23 @@ the monolithic mesh instead of leaving it hidden behind stale layers.
 Measured: fresh == rebuild, 0px diff at the pose, identical stage
 counts (`thin 2764 / haloed 2486 / mask 645988 / tear counts` repeat
 exactly).
+
+---
+
+## Addendum 19 — Per-layer decimation: 5.01M → 98k triangles (2.0%)
+
+Adaptive quad indexing over the shared vertex grid: a quadtree block
+(16→2 cells) is emitted as two large triangles when every cell belongs
+to the layer with both torn triangles present AND every texel's
+displacement deviates from the two coarse-triangle planes by ≤ 1.5
+8-bit quanta (below the depth map's own quantisation noise). Tears and
+layer borders keep their per-texel triangles exactly — silhouettes and
+reveal geometry are untouched, which is why the contract instruments
+cannot tell the difference: same 3 protrusion pixels, identical
+synthetic-suite numbers, identical hole counts. T-junction cracks are
+depth-bounded by the same ε → sub-pixel at maximum parallax, in front
+of the opaque plate. A/B renders differ only as dispersed sub-pixel
+speckle on stars/ink edges (0.4% of pixels at rest, no line patterns —
+`dec_diff_pose.png`). This retires the 5M-triangle scaling bottleneck:
+the whole 10-layer stack now draws fewer triangles than 4% of the old
+single mesh. `bgMPIDecimate`, default on.
