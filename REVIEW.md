@@ -770,3 +770,60 @@ pre-tear on plug-backed cliffs. The two Otsu uses (thin-feature
 protection, flood floor) are self-computed per image, not hand-set. The
 remaining hand constants (0.06 depth tolerance, 0.10 tear step, 28px band
 cap, 400px march) are shared across all three test assets unchanged.
+
+---
+
+## Addendum 10 — depth filaments, soft-cliff rubber, and the streaks (commit `2a40a45`)
+
+The user pointed at the streak block in the depth composites and named the
+mechanism: stretched pop-out pixels made transparent at glancing angles.
+Confirmed — the FG's band-gated stretch cut is disarmed under pre-tear, but
+`renderNormalizedDepthPass` has its own fwidth discard heuristics that chop
+any SURVIVING stretched wall into dash-row streaks. The fixes attack the
+walls themselves:
+
+1. **Halo-edge tear.** The thin-feature ribbon (feature + depth halo) stays
+   rigid; the triangles spanning its outer boundary — the colour-invisible
+   depth-channel filaments — are detected in the DISPLAYED (haloed) depth
+   (raw has no step there) and dropped when backed by far plate. Unlike the
+   earlier reverted halo-ring tear, the ribbon itself is never eaten.
+2. **Soft-cliff core tear.** The bake spreads some silhouettes into 3–10px
+   ramps whose per-triangle span never exceeds `fgTearStep` — the mesh
+   rubbers instead of tearing (silverwarrior's fur streaks, D3). A ±2px
+   window span finds the ramp; gradient non-maximum suppression tears only
+   its steepest 1–2px core, so the rest-state gap stays sharp-cliff thin.
+3. **Source-depth despeckle.** Soft mid-depth blobs floating over the far
+   field (sparkle haze) sit below every tear detector. Boundary-soft
+   raised components (ink-edged objects are rim-sharp and kept; big
+   regions capped) attach to a thin carrier, stay if leaning on a body,
+   flatten only if isolated. Footprint: 2.7k/0.4k/1.7k px on the three
+   assets.
+
+**The floating lamp (root-caused).** The source depth map contains the
+raised staff and its ring beautifully — but NOT the light at its tip
+(flat sky, both source and baked; probes on record). The light detaches
++65px at (0.123,−0.055). `bgGlowAttach` attaches emissive floor-depth
+blobs to their thin carrier and provably fixes it (evidence:
+`glowattach_on_staff.png` — lamp + full glow riding the staff; rest
+fidelity IMPROVED, 1,359 vs 2,262 diff px). It ships **default OFF**:
+four gating iterations (luma anomaly, thin carrier, 8px core distance,
+bridged components) established that colour brightness alone cannot
+separate detached lamp light from painted emissive background — frazetta's
+cave shafts and silverwarrior's sunburst over-claim under every variant.
+Missing-object depth belongs to the depth-regeneration stage; the flag is
+there for lamp-type imports until then.
+
+**Verification.** Starwatcher depth composite: boot/dune filaments reduced,
+crisper silhouette (`filaments_before/after_depth_user.png`); the staff
+shear-zone streaks that remain are the documented missing-light defect.
+Frazetta: reveals cave-toned, no regressions (`filaments_fr_after.png`).
+Silverwarrior: unchanged from baseline (`filaments_sv_after.png`).
+Rest state: byte-equivalent to baseline (light box 2,264 vs 2,262;
+bottom rows 42 = 42). All constants shared across assets, none tuned.
+
+**Wide-reveal fill smearing (status).** The remaining coarse smear inside
+wide reveals is the plate fill's textural quality (flat rim-consistent
+colours + Jacobi, deliberately colour-clean). Its proper replacement is
+the SD plate; a weight-free texture upgrade (depth-compatible reflection
+instead of flat colour) is sketched but deferred — it trades smear for
+mirror ghosts and needs its own evaluation round.
