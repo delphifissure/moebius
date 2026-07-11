@@ -1,5 +1,5 @@
 diff --git a/moebius.js b/moebius.js
-index 602ce8a..b1f06ff 100644
+index 602ce8a..f683775 100644
 --- a/moebius.js
 +++ b/moebius.js
 @@ -4825,8 +4825,8 @@ function renderNormalizedDepthPass() {
@@ -73,15 +73,32 @@ index 602ce8a..b1f06ff 100644
                              // Check if interpolated depth falls BETWEEN the extremes (tunnel interpolation)
                              float marginFromMin = vNormalizedDepth - minSourceDepth;
                              float marginFromMax = maxSourceDepth - vNormalizedDepth;
-@@ -6412,6 +6417,7 @@ let bgPlugMode = 'directional';
+@@ -6412,6 +6417,24 @@ let bgPlugMode = 'directional';
  // exports a proper outpaint plate (mask + extended colour + extended depth) to
  // replace it. Set false to keep the BG layer flush with the image rectangle.
  let bgSceneExtend = true;
 +let bgGlowAttach = false;  // opt-in: attach emissive blobs (lamp glow) to their thin carrier; over-claims on paintings with emissive backgrounds
++// ---- MPI (depth-segmented multiplane layers, slice 1) ----
++// Partition the torn FG into depth layers: connected components cut ONLY
++// along depth cliffs (> fgTearStep), so smooth surfaces (the dune ramp)
++// stay whole while occlusion boundaries split. Each layer is a mesh with
++// its own index subset over the SHARED geometry buffers and the SHARED
++// material/textures — slice 1 is render-identical to the single torn
++// mesh by construction; its value is the layer structure itself (per-
++// layer depth maps via the shared displacement texture, ordering, and
++// the export bundle for per-layer SD completion in slice 2).
++// Default OFF at load: the import auto-build runs before the initial
++// layout, and hiding the primary mesh at that moment flips the view fit
++// (observed: zoomed-out framing that persists for the whole session).
++// Enable AFTER load (UI toggle / harness evaluate), then rebuild.
++let bgMPIMode = false;
++let bgMPIMaxLayers = 10;   // top-K components by area; smaller ones join the nearest layer by mean depth
++let mpiLayers = null;      // [{mesh, meanD, tris, texels}] back-to-front
++let bgMPIExport = null;    // { pw, ph, layers, texLayer (per-texel layer id), meanD[] }
  // Band fill opacity. With the band tightened to a silhouette strip the fill is
  // short-range, so it should read as a SOLID, complete inpaint — no streaks AND
  // no transparent gaps inside the silhouette. Keep bgFillSolid = true for that.
-@@ -6477,6 +6483,13 @@ let bgBandCutMaxGrad = 0.04;
+@@ -6477,6 +6500,13 @@ let bgBandCutMaxGrad = 0.04;
  // 0.3 = "stretched more than ~3x". Lower = stricter (less cutting).
  let bgBandCutStretchFrac = 0.3;
  let bgBandCutDilatePx = 4;     // dilate the cut mask so far-side stretch fragments are covered too
@@ -95,7 +112,7 @@ index 602ce8a..b1f06ff 100644
  // Coarse-extension data stashed at BG-build for the SD outpaint bundle
  // (native/extended res, top-row-first): { mx, my, pw, ph, EPW, EPH,
  //  depth:Float32(EPN), fill:Uint8(EPN*3), mask:Uint8(EPN) (1 = margin/outpaint) }
-@@ -6711,7 +6724,62 @@ function applyLiveBake(L) {
+@@ -6711,7 +6741,62 @@ function applyLiveBake(L) {
          cx.clearRect(0, 0, w, h); cx.drawImage(cImg, 0, 0, w, h);
          const cpx = cx.getImageData(0, 0, w, h).data;
          const t0 = Date.now();
@@ -158,7 +175,7 @@ index 602ce8a..b1f06ff 100644
          const oc = document.createElement('canvas'); oc.width = w; oc.height = h;
          const octx = oc.getContext('2d');
          const oid = octx.createImageData(w, h);
-@@ -6728,7 +6796,12 @@ function applyLiveBake(L) {
+@@ -6728,7 +6813,12 @@ function applyLiveBake(L) {
              mid.data[i*4] = v; mid.data[i*4+1] = v; mid.data[i*4+2] = v; mid.data[i*4+3] = 255;
          }
          mctx.putImageData(mid, 0, 0);
@@ -172,7 +189,7 @@ index 602ce8a..b1f06ff 100644
          const mTex = new THREE.Texture(mc); mTex.needsUpdate = true;
          L.textures.depth = sTex;
          L.textures.edgeMask = mTex;
-@@ -7289,7 +7362,9 @@ function buildBackgroundLayer() {
+@@ -7289,7 +7379,9 @@ function buildBackgroundLayer() {
                  const cx = cv.getContext('2d', { willReadFrequently: true });
                  // read sharpened depth from the layer's depth texture (img/canvas =
                  // top-row-first, matching the band/valid PNGs read below)
@@ -183,7 +200,7 @@ index 602ce8a..b1f06ff 100644
                      cx.drawImage(dImg, 0, 0, pw, ph);
                  } else {
                      // DataTexture fallback — render to a temp target and read back.
-@@ -7317,9 +7392,307 @@ function buildBackgroundLayer() {
+@@ -7317,9 +7409,307 @@ function buildBackgroundLayer() {
                  const dpx = cx.getImageData(0, 0, pw, ph).data;
                  const depth = new Float32Array(PN);
                  for (let i = 0; i < PN; i++) depth[i] = dpx[i * 4] / 255;
@@ -491,7 +508,7 @@ index 602ce8a..b1f06ff 100644
                  if (bgPlugMode === 'directional') {
                      // Single directional plug computed straight from the depth: seal each
                      // disocclusion at the far side of its own edge, grown in by the edge's
-@@ -7359,6 +7732,90 @@ function buildBackgroundLayer() {
+@@ -7359,6 +7749,90 @@ function buildBackgroundLayer() {
                          ' valid[' + validSrc + '] ' + validN + 'px (' + (100*validN/PN).toFixed(1) + '%)');
                      plugDepth = MoebiusPlug.buildPlugFromValid(depth, band, valid, pw, ph, 220);
                  }
@@ -582,7 +599,7 @@ index 602ce8a..b1f06ff 100644
                  // ---- PLUG DEPTH COMPLETION: bury the plug's own cliff ----
                  // Outside the band the plug reverts to SOURCE depth, so the
                  // band's inner boundary is a figure-sized cliff in the PLUG's
-@@ -7372,22 +7829,61 @@ function buildBackgroundLayer() {
+@@ -7372,22 +7846,61 @@ function buildBackgroundLayer() {
                  // background/rim depth underneath. The visible plug becomes a
                  // cliff-free "world without the foreground" surface.
                  {
@@ -653,7 +670,7 @@ index 602ce8a..b1f06ff 100644
                      let nFg = 0; for (let i = 0; i < PN; i++) nFg += fgm[i];
                      if (nFg > 0) {
                          // diffuse surrounding plug depth (background + pinned band rims)
-@@ -7456,7 +7952,24 @@ function buildBackgroundLayer() {
+@@ -7456,7 +7969,24 @@ function buildBackgroundLayer() {
                      if (fu && fu.u_bandMask) {
                          if (fu.u_bandMask.value && fu.u_bandMask.value.dispose) fu.u_bandMask.value.dispose();
                          fu.u_bandMask.value = cutDT;
@@ -679,7 +696,7 @@ index 602ce8a..b1f06ff 100644
                          fu.u_bandCutMismatch.value = bgBandCutMismatch;
                          if (fu.u_bandCutMaxGrad) fu.u_bandCutMaxGrad.value = bgBandCutMaxGrad;
                          // expected UV rate: the mesh spans UV 0..1 over roughly the
-@@ -7467,6 +7980,147 @@ function buildBackgroundLayer() {
+@@ -7467,6 +7997,235 @@ function buildBackgroundLayer() {
                      }
                  }
  
@@ -821,13 +838,101 @@ index 602ce8a..b1f06ff 100644
 +                            ' dropped, ' + droppedHalo + ' halo-edge, ' + droppedCore + ' soft-core, ' +
 +                            keptThin + ' thin-feature kept, ' + keptUnbacked +
 +                            ' far-mismatch kept, of ' + (src.length / 3));
++
++                        // ---- MPI SLICE 1: depth-layer partition of the torn FG ----
++                        if (bgMPIMode) {
++                            const tM = Date.now();
++                            // cleanup from a previous build
++                            if (mpiLayers) { for (const Lr of mpiLayers) { scene.remove(Lr.mesh); Lr.mesh.geometry.dispose(); } mpiLayers = null; }
++                            L.mesh.visible = true;
++                            // connected components; adjacency broken across cliffs
++                            const compL = new Int32Array(PN);
++                            const qq3 = new Int32Array(PN);
++                            let nc = 0;
++                            for (let s = 0; s < PN; s++) {
++                                if (compL[s]) continue;
++                                nc++;
++                                let h3 = 0, t3 = 0; qq3[t3++] = s; compL[s] = nc;
++                                while (h3 < t3) {
++                                    const i = qq3[h3++]; const x = i%pw, y = (i/pw)|0;
++                                    const nbs = [x>0?i-1:-1, x<pw-1?i+1:-1, y>0?i-pw:-1, y<ph-1?i+pw:-1];
++                                    for (const j of nbs) {
++                                        if (j < 0 || compL[j]) continue;
++                                        if (Math.abs(depth[i] - depth[j]) > fgTearStep) continue;
++                                        compL[j] = nc; qq3[t3++] = j;
++                                    }
++                                }
++                            }
++                            const szC = new Float64Array(nc+1), sdC = new Float64Array(nc+1);
++                            for (let i = 0; i < PN; i++) { szC[compL[i]]++; sdC[compL[i]] += depth[i]; }
++                            const orderC = Array.from({length: nc}, (_, k) => k+1).sort((a,b) => szC[b]-szC[a]);
++                            const K = Math.min(bgMPIMaxLayers, nc);
++                            const keptC = orderC.slice(0, K);
++                            const layerOf = new Int32Array(nc+1);
++                            keptC.forEach((c, idx) => layerOf[c] = idx+1);
++                            const meanD = keptC.map(c => sdC[c]/szC[c]);
++                            // small components join the nearest kept layer by mean depth
++                            // (assignment decides only which mesh carries them and which
++                            // completion scope they belong to — their per-texel depth is
++                            // already correct in the shared displacement texture)
++                            for (let c = 1; c <= nc; c++) {
++                                if (layerOf[c]) continue;
++                                const m = sdC[c]/szC[c];
++                                let best = 0, bd = 9;
++                                for (let k2 = 0; k2 < K; k2++) { const d2 = Math.abs(meanD[k2]-m); if (d2 < bd) { bd = d2; best = k2; } }
++                                layerOf[c] = best+1;
++                            }
++                            const texLayer = new Uint8Array(PN);
++                            for (let i = 0; i < PN; i++) texLayer[i] = layerOf[compL[i]];
++                            // partition the torn index by majority texel layer (kept
++                            // triangles never span a cliff, so votes rarely split)
++                            const fIdx = g.index.array;
++                            const bucketsL = Array.from({length: K}, () => []);
++                            for (let t4 = 0; t4 < fIdx.length; t4 += 3) {
++                                let l0 = 0, l1 = 0, l2 = 0;
++                                for (let k2 = 0; k2 < 3; k2++) {
++                                    const vi = fIdx[t4+k2];
++                                    const tx = Math.round((vi % vw) * sx), ty = Math.round(((vi / vw) | 0) * sy);
++                                    const lv = texLayer[ty*pw+tx];
++                                    if (k2 === 0) l0 = lv; else if (k2 === 1) l1 = lv; else l2 = lv;
++                                }
++                                const lw = (l1 === l2) ? l1 : l0;
++                                bucketsL[lw-1].push(fIdx[t4], fIdx[t4+1], fIdx[t4+2]);
++                            }
++                            // back-to-front meshes over the SHARED attributes + material
++                            const rankOrder = Array.from({length: K}, (_, k) => k).sort((a,b) => meanD[a]-meanD[b]);
++                            mpiLayers = [];
++                            let texCount = new Float64Array(K+1);
++                            for (let i = 0; i < PN; i++) texCount[texLayer[i]]++;
++                            rankOrder.forEach((k2, rank) => {
++                                if (!bucketsL[k2].length) return;
++                                const lg = new THREE.BufferGeometry();
++                                lg.setAttribute('position', g.attributes.position);
++                                lg.setAttribute('uv', g.attributes.uv);
++                                if (g.attributes.normal) lg.setAttribute('normal', g.attributes.normal);
++                                lg.setIndex(new THREE.BufferAttribute(new fIdx.constructor(bucketsL[k2]), 1));
++                                const lm = new THREE.Mesh(lg, L.mesh.material); // shared material: uniforms stay in sync
++                                lm.position.copy(L.mesh.position);
++                                lm.rotation.copy(L.mesh.rotation);
++                                lm.scale.copy(L.mesh.scale);
++                                lm.renderOrder = (L.mesh.renderOrder || 0) + rank * 1e-3; // back-to-front hint; z-buffer decides
++                                scene.add(lm);
++                                mpiLayers.push({ mesh: lm, meanD: meanD[k2], tris: bucketsL[k2].length/3, texels: texCount[k2+1] });
++                            });
++                            // the partition replaces the monolithic torn mesh
++                            L.mesh.visible = false;
++                            bgMPIExport = { pw, ph, layers: K, texLayer, meanD };
++                            window._mpiDebug = { pw, ph, K, texLayer, meanD, comp: compL, nc };
++                            console.log('[MPI] ' + K + ' layers from ' + nc + ' components (' + (Date.now()-tM) + 'ms): ' +
++                                mpiLayers.map(Lr => Lr.tris + 't@' + Lr.meanD.toFixed(2)).join(', '));
++                        }
 +                    } catch (e) { console.warn('[RUNG-PLUG] pre-tear failed:', e); }
 +                }
 +
                  // --- FILL COLOR (Law 4): DEPTH-GUIDED EXEMPLAR (onion-peel). Fill each
                  // hole rim-first by copying the best-matching REAL background patch (SSD
                  // over known neighbours; sources restricted to true background at similar
-@@ -7491,6 +8145,8 @@ function buildBackgroundLayer() {
+@@ -7491,6 +8250,8 @@ function buildBackgroundLayer() {
                          for (const j of nbs){ if(j>=0 && band[j] && depth[i] > depth[rimSrc[j]>=0?rimSrc[j]:i]+0.06){ fillSrc[i]=0; break; } } } }
                      const tF = Date.now();
                      const smoothBase = bgPullPushFill(cpx, fillSrc, pw, ph); // fallback base
@@ -836,7 +941,7 @@ index 602ce8a..b1f06ff 100644
                      const fillRGB = new Float32Array(PN * 3);
                      for (let i = 0; i < PN; i++) { fillRGB[i*3]=cpx[i*4]; fillRGB[i*3+1]=cpx[i*4+1]; fillRGB[i*3+2]=cpx[i*4+2]; }
                      // DIRECTIONAL BACKGROUND EXTENSION: for each hole, march to the nearest
-@@ -7518,7 +8174,16 @@ function buildBackgroundLayer() {
+@@ -7518,7 +8279,16 @@ function buildBackgroundLayer() {
                      // fill — solid and streak-free (the reflection above only sets bandReach,
                      // used by the optional fade). Keeps the interior clean, no striation.
                      if (bgFillMode === 'smooth') {
@@ -854,7 +959,7 @@ index 602ce8a..b1f06ff 100644
                      }
                      // reach -> alpha: opaque for short reach, faded to transparent for long
                      // (streaks). smoothstep between the two configured thresholds.
-@@ -7532,6 +8197,17 @@ function buildBackgroundLayer() {
+@@ -7532,6 +8302,17 @@ function buildBackgroundLayer() {
                      };
                      const bandAlpha = new Uint8Array(PN);
                      for (let i = 0; i < PN; i++) bandAlpha[i] = band[i] ? _reachAlpha(bandReach[i]) : 0;
@@ -872,7 +977,7 @@ index 602ce8a..b1f06ff 100644
                      // The FG stretch cut is allowed in the DILATED band (bandCutMask), so
                      // the plug must be opaque there too — a discard over transparent plug
                      // is a naked hole. RGB for the ring comes from the bleed below.
-@@ -7539,9 +8215,91 @@ function buildBackgroundLayer() {
+@@ -7539,9 +8320,91 @@ function buildBackgroundLayer() {
                      // The occluder rind (depth-completed, smooth) carries opaque
                      // background wash: never the figure's own colours, so nothing
                      // figure-tinted exists on the plug for bilinear edges to smear.
@@ -967,7 +1072,7 @@ index 602ce8a..b1f06ff 100644
                      }
                      const order = { length: 0 }; // (retained name for the log below)
                      for (let i = 0; i < PN; i++) if (band[i]) order.length++;
-@@ -7620,14 +8378,22 @@ function buildBackgroundLayer() {
+@@ -7620,14 +8483,22 @@ function buildBackgroundLayer() {
                              const extValid = new Uint8Array(EPN);
                              const extCpx = new Uint8Array(EPN*4);   // RGBA, colour source
                              const extDpx = new Uint8Array(EPN*4);   // RGBA, depth encoded as gray
@@ -994,7 +1099,7 @@ index 602ce8a..b1f06ff 100644
                                  extDpx[di*4] = dz; extDpx[di*4+1] = dz; extDpx[di*4+2] = dz; extDpx[di*4+3] = 255;
                              }
                              const extColorSmooth = bgPullPushFill(extCpx, extValid, EPW, EPH);
-@@ -7649,6 +8415,24 @@ function buildBackgroundLayer() {
+@@ -7649,6 +8520,24 @@ function buildBackgroundLayer() {
                                  }
                                  extMask[di] = inCenter ? 0 : 1;
                              }
