@@ -1285,3 +1285,27 @@ anchor-colour fix, with correct-class depth structure underneath.
 `bgMPIStrips`, default on. The SD stage now upgrades TEXTURE inside
 this structure (per-layer export bundle = task 20), not structure
 itself.
+
+---
+
+## Addendum 23 — Per-layer SD completion set (slice 3b): the pre-SD queue is empty
+
+`exportSDBundle` now emits, for every MPI layer with strip content, a
+`layer{k}_color.png` (visible texels + coarse strip continuation,
+alpha = known — the SD context), `layer{k}_depth.png` (same coverage;
+strip depth is already slope-continued, so it doubles as ControlNet
+conditioning), and `layer{k}_mask_inpaint.png` (white = regenerate
+with THIS layer's context only). `meta.mpiLayers` carries per-layer
+mean depth and texel counts. Layers nothing occludes emit nothing —
+the reference asset emits 7 of 10 (the near dune correctly skips).
+The plate's own completion (`dir_*`) and the beyond-frame outpaint
+(`out_*`) keep their existing entries: SD consumes the full stack —
+farthest backdrop, intermediate layers, margins — and each result
+reimports at a depth the live pipeline already established.
+
+With this, everything on the pre-SD list is landed: standing-content
+mask + slope-continuing plugs (A16), MPI default-on (A17), rebuild
+idempotence (A18), 5.01M→98k decimation (A19), frame-edge floors +
+floor-default ceiling (A21), live per-layer plates (A22), and the
+per-layer export set (A23). The SD stage is now a pure texture
+upgrade slotting into verified structure.
