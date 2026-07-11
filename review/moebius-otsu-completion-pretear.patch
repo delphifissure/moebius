@@ -1,5 +1,5 @@
 diff --git a/moebius.js b/moebius.js
-index 602ce8a..96b5ff2 100644
+index 602ce8a..0be7fa0 100644
 --- a/moebius.js
 +++ b/moebius.js
 @@ -4825,8 +4825,8 @@ function renderNormalizedDepthPass() {
@@ -853,7 +853,7 @@ index 602ce8a..96b5ff2 100644
                  // ---- PLUG DEPTH COMPLETION: bury the plug's own cliff ----
                  // Outside the band the plug reverts to SOURCE depth, so the
                  // band's inner boundary is a figure-sized cliff in the PLUG's
-@@ -7372,22 +8022,117 @@ function buildBackgroundLayer() {
+@@ -7372,22 +8022,144 @@ function buildBackgroundLayer() {
                  // background/rim depth underneath. The visible plug becomes a
                  // cliff-free "world without the foreground" surface.
                  {
@@ -890,8 +890,35 @@ index 602ce8a..96b5ff2 100644
 +                    // ground, because the ground is not standing content.
 +                    const standCap = (bgBandMaxGrowPx | 0) * 4;
 +                    const standM = new Uint8Array(PN);
++                    let standFloor = null;   // shifted-window floor field (plate default under uncorrected rind)
 +                    {
-+                        const floorBig = bgSlide2D(depth, pw, ph, standCap, true);
++                        let floorBig = bgSlide2D(depth, pw, ph, standCap, true);
++                        // SHIFTED-WINDOW FLOORS at the frame border: the van Herk
++                        // window clips at the image boundary, so near content
++                        // touching the frame sees only itself as its floor and is
++                        // never swept — its depth then stays in the plate and
++                        // diffuses sideways (measured: wolf-depth plate content
++                        // floating in the gap between the warrior's wolves at the
++                        // frame bottom, 204/255 protrusion). A border texel takes
++                        // the floor of the nearest FULLY-WINDOWED interior texel —
++                        // the window slides inside the frame instead of clipping.
++                        // Smooth ramps stay safe: border rows gain floor-domain
++                        // membership but sweeping still requires geodesic reach
++                        // from a cliff seed, which a ramp never produces.
++                        {
++                            const lox = Math.min(standCap, (pw - 1) >> 1), loy = Math.min(standCap, (ph - 1) >> 1);
++                            const fe = new Float32Array(PN);
++                            for (let y = 0; y < ph; y++) {
++                                const cy = y < loy ? loy : (y > ph - 1 - loy ? ph - 1 - loy : y);
++                                const rs = y * pw, cs = cy * pw;
++                                for (let x = 0; x < pw; x++) {
++                                    const cx2 = x < lox ? lox : (x > pw - 1 - lox ? pw - 1 - lox : x);
++                                    fe[rs + x] = floorBig[cs + cx2];
++                                }
++                            }
++                            floorBig = fe;
++                        }
++                        standFloor = floorBig;
 +                        const floorNear = bgSlide2D(depth, pw, ph, 4, true);
 +                        const sq = new Int32Array(PN), sd = new Uint16Array(PN);
 +                        let qh = 0, qt = 0;
@@ -952,8 +979,8 @@ index 602ce8a..96b5ff2 100644
 +                                const tb = bkt(rimV[i]);
 +                                if (tb === bi) q2.push(j); else buckets[tb].push(j);
 +                            }
-                         }
-                     }
++                        }
++                    }
 +                    console.log('[RUNG-PLUG] completion flood: unified nearest-rim-first, gate 0.02, standing-mask contained');
 +                    // FLOOR RIND (generality): the flood only enters through BAND
 +                    // seeds — dark-on-dark soft silhouettes never seed a band, so
@@ -968,9 +995,9 @@ index 602ce8a..96b5ff2 100644
 +                        for (let i = 0; i < PN; i++) {
 +                            if (fgm[i] || band[i]) continue;
 +                            if (standM[i]) { fgm[i] = 1; nFloorAdd++; }
-+                        }
+                         }
 +                        if (nFloorAdd) console.log('[RUNG-PLUG] floor rind: +' + nFloorAdd + 'px standing content unclaimed by the flood');
-+                    }
+                     }
 +                    // Reject rims that are themselves under an occluder (internal
 +                    // figure cliffs: arm-over-torso seeds carry FIGURE colours —
 +                    // bright dashes in the fill). Those pixels fall back to the
@@ -980,7 +1007,7 @@ index 602ce8a..96b5ff2 100644
                      let nFg = 0; for (let i = 0; i < PN; i++) nFg += fgm[i];
                      if (nFg > 0) {
                          // diffuse surrounding plug depth (background + pinned band rims)
-@@ -7403,6 +8148,93 @@ function buildBackgroundLayer() {
+@@ -7403,6 +8175,106 @@ function buildBackgroundLayer() {
                          for (let i = 0; i < PN; i++) if (fgm[i]) plugDepth[i] = dsm[i*3] / 255;
                          underMask = fgm;
                          console.log('[RUNG-PLUG] plug depth completed under occluders (' + nFg + 'px rind, diffused)');
@@ -999,6 +1026,7 @@ index 602ce8a..96b5ff2 100644
 +                // dune (its row line IS dune). One-sided reveals keep the flood
 +                // value. Anchors are real visible surfaces, so the result is
 +                // bounded by them — no protrusion channel.
++                const mCorr = new Uint8Array(PN);   // membrane established a corrected value here
 +                {
 +                    const setP = new Uint8Array(PN);
 +                    for (let i = 0; i < PN; i++) setP[i] = (band[i] || (underMask && underMask[i])) ? 1 : 0;
@@ -1051,7 +1079,8 @@ index 602ce8a..96b5ff2 100644
 +                            // between them — measured as plate protrusions on the
 +                            // cave and warrior assets. Within one tear-step is
 +                            // allowed (contact smoothing).
-+                            if (v - plugDepth[i] <= fgTearStep && Math.abs(v - plugDepth[i]) > 0.002) { plugDepth[i] = v; corrected++; }
++                            if (v - plugDepth[i] <= fgTearStep && Math.abs(v - plugDepth[i]) > 0.002) { plugDepth[i] = v; mCorr[i] = 1; corrected++; }
++                            else if (Math.abs(v - plugDepth[i]) <= 0.002) mCorr[i] = 1; // already at the anchored continuation
 +                        }
 +                    }
 +                    console.log('[RUNG-PLUG] membrane correction: ' + corrected + 'px re-anchored to surface continuation lines');
@@ -1060,21 +1089,32 @@ index 602ce8a..96b5ff2 100644
 +                // PLATE CEILING (contract): the plate stands in for the world
 +                // WITHOUT the removed content — it can never sit NEARER than the
 +                // world's own surface at that pixel (anything nearer is the FG
-+                // mesh's to carry). Rind diffusion + membrane blending leave a
-+                // few-quantum NEARER bias on swept floor strips (measured as
-+                // plate protrusions at the pose); occluder cores are far behind
-+                // their source, so this is a no-op there.
++                // mesh's to carry). Two tiers:
++                //  - membrane-corrected pixels are bounded by their real surface
++                //    anchors already; only the source-depth cap applies (kills the
++                //    few-quantum nearer bias diffusion leaves on swept floors).
++                //  - UNCORRECTED rind pixels (the membrane's pair gate rejected
++                //    every line — mixed-class flanks, wide frame-edge occluders)
++                //    have NO anchored information; they default to the LOCAL
++                //    FLOOR. Measured on the warrior: the wolves' unswept cores
++                //    fed near depth into the diffusion between them, the gate
++                //    rightly rejected the 0.65|0.82 rows, and the old src-cap
++                //    then LOCKED IN wolf depth — the 204/255 protrusion. The
++                //    floor is the nearest legitimate backing surface.
 +                if (underMask) {
-+                    let nCeil = 0;
++                    let nCeil = 0, nFloorCap = 0;
 +                    for (let i = 0; i < PN; i++) {
-+                        if (underMask[i] && !band[i] && plugDepth[i] > depth[i]) { plugDepth[i] = depth[i]; nCeil++; }
++                        if (!underMask[i] || band[i]) continue;
++                        let cap = depth[i];
++                        if (standFloor && !mCorr[i] && standFloor[i] < cap) { cap = standFloor[i]; }
++                        if (plugDepth[i] > cap) { plugDepth[i] = cap; if (cap === depth[i]) nCeil++; else nFloorCap++; }
 +                    }
-+                    if (nCeil) console.log('[RUNG-PLUG] plate ceiling: ' + nCeil + 'px clamped to the source surface');
++                    if (nCeil + nFloorCap) console.log('[RUNG-PLUG] plate ceiling: ' + nCeil + 'px at source, ' + nFloorCap + 'px defaulted to the local floor (no membrane anchor)');
 +                }
                      }
                  }
                  // The plug array is top-row-first (like an <img>). The FG mesh's own
-@@ -7425,6 +8257,7 @@ function buildBackgroundLayer() {
+@@ -7425,6 +8297,7 @@ function buildBackgroundLayer() {
                  if ('colorSpace' in plugDT) plugDT.colorSpace = THREE.NoColorSpace;
                  _plugTex = plugDT;
                  console.log('[RUNG-PLUG] live plug computed: ' + (Date.now()-t0) + 'ms');
@@ -1082,7 +1122,7 @@ index 602ce8a..96b5ff2 100644
  
                  // --- BAND-GATED FG STRETCH CUT: bake the cut mask ---
                  // Dilate the band a few px so the far-side half of a stretched
-@@ -7456,17 +8289,400 @@ function buildBackgroundLayer() {
+@@ -7456,17 +8329,400 @@ function buildBackgroundLayer() {
                      if (fu && fu.u_bandMask) {
                          if (fu.u_bandMask.value && fu.u_bandMask.value.dispose) fu.u_bandMask.value.dispose();
                          fu.u_bandMask.value = cutDT;
@@ -1484,7 +1524,7 @@ index 602ce8a..96b5ff2 100644
                  // --- FILL COLOR (Law 4): DEPTH-GUIDED EXEMPLAR (onion-peel). Fill each
                  // hole rim-first by copying the best-matching REAL background patch (SSD
                  // over known neighbours; sources restricted to true background at similar
-@@ -7486,11 +8702,15 @@ function buildBackgroundLayer() {
+@@ -7486,11 +8742,15 @@ function buildBackgroundLayer() {
                      const fillSrc = new Uint8Array(PN);
                      for (let i = 0; i < PN; i++) { const lum=(cpx[i*4]+cpx[i*4+1]+cpx[i*4+2])/3;
                          fillSrc[i] = (!band[i] && !(underMask && underMask[i]) && lum>=45) ? 1 : 0; }
@@ -1503,7 +1543,7 @@ index 602ce8a..96b5ff2 100644
                      const fillRGB = new Float32Array(PN * 3);
                      for (let i = 0; i < PN; i++) { fillRGB[i*3]=cpx[i*4]; fillRGB[i*3+1]=cpx[i*4+1]; fillRGB[i*3+2]=cpx[i*4+2]; }
                      // DIRECTIONAL BACKGROUND EXTENSION: for each hole, march to the nearest
-@@ -7518,7 +8738,16 @@ function buildBackgroundLayer() {
+@@ -7518,7 +8778,16 @@ function buildBackgroundLayer() {
                      // fill — solid and streak-free (the reflection above only sets bandReach,
                      // used by the optional fade). Keeps the interior clean, no striation.
                      if (bgFillMode === 'smooth') {
@@ -1521,7 +1561,7 @@ index 602ce8a..96b5ff2 100644
                      }
                      // reach -> alpha: opaque for short reach, faded to transparent for long
                      // (streaks). smoothstep between the two configured thresholds.
-@@ -7532,6 +8761,17 @@ function buildBackgroundLayer() {
+@@ -7532,6 +8801,17 @@ function buildBackgroundLayer() {
                      };
                      const bandAlpha = new Uint8Array(PN);
                      for (let i = 0; i < PN; i++) bandAlpha[i] = band[i] ? _reachAlpha(bandReach[i]) : 0;
@@ -1539,7 +1579,7 @@ index 602ce8a..96b5ff2 100644
                      // The FG stretch cut is allowed in the DILATED band (bandCutMask), so
                      // the plug must be opaque there too — a discard over transparent plug
                      // is a naked hole. RGB for the ring comes from the bleed below.
-@@ -7539,10 +8779,236 @@ function buildBackgroundLayer() {
+@@ -7539,10 +8819,236 @@ function buildBackgroundLayer() {
                      // The occluder rind (depth-completed, smooth) carries opaque
                      // background wash: never the figure's own colours, so nothing
                      // figure-tinted exists on the plug for bilinear edges to smear.
@@ -1779,7 +1819,7 @@ index 602ce8a..96b5ff2 100644
                      const order = { length: 0 }; // (retained name for the log below)
                      for (let i = 0; i < PN; i++) if (band[i]) order.length++;
                      // Stash directional gap data for the SD-export bundle (native res, top-row-first)
-@@ -7554,12 +9020,39 @@ function buildBackgroundLayer() {
+@@ -7554,12 +9060,39 @@ function buildBackgroundLayer() {
                      // Bleed the band's fill colour a few px OUT into the surrounding
                      // non-band so the fill texture's bilinear edge blends fill->fill,
                      // not fill->black. Alpha stays sharp (= band); only RGB is bled.
@@ -1824,7 +1864,7 @@ index 602ce8a..96b5ff2 100644
                      const fill = new Uint8Array(PN * 4);
                      for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++) {
                          const i = y*pw+x, o = ((ph-1-y)*pw+x)*4;
-@@ -7569,7 +9062,8 @@ function buildBackgroundLayer() {
+@@ -7569,7 +9102,8 @@ function buildBackgroundLayer() {
                          fill[o]=fillRGB[i*3]; fill[o+1]=fillRGB[i*3+1]; fill[o+2]=fillRGB[i*3+2];
                          fill[o+3] = bandAlpha[i];
                      }
@@ -1834,7 +1874,7 @@ index 602ce8a..96b5ff2 100644
                      fillDT.needsUpdate = true; fillDT.flipY = false;
                      fillDT.minFilter = THREE.LinearFilter; fillDT.magFilter = THREE.LinearFilter;
                      if ('encoding' in fillDT) fillDT.encoding = THREE.sRGBEncoding;         // r128
-@@ -7620,14 +9114,22 @@ function buildBackgroundLayer() {
+@@ -7620,14 +9154,22 @@ function buildBackgroundLayer() {
                              const extValid = new Uint8Array(EPN);
                              const extCpx = new Uint8Array(EPN*4);   // RGBA, colour source
                              const extDpx = new Uint8Array(EPN*4);   // RGBA, depth encoded as gray
@@ -1861,7 +1901,7 @@ index 602ce8a..96b5ff2 100644
                                  extDpx[di*4] = dz; extDpx[di*4+1] = dz; extDpx[di*4+2] = dz; extDpx[di*4+3] = 255;
                              }
                              const extColorSmooth = bgPullPushFill(extCpx, extValid, EPW, EPH);
-@@ -7642,13 +9144,35 @@ function buildBackgroundLayer() {
+@@ -7642,13 +9184,35 @@ function buildBackgroundLayer() {
                                      extFill[di*3+1] = Math.max(0, Math.min(255, fillRGB[si*3+1]|0));
                                      extFill[di*3+2] = Math.max(0, Math.min(255, fillRGB[si*3+2]|0));
                                  } else {
@@ -1898,7 +1938,7 @@ index 602ce8a..96b5ff2 100644
                              // extended plug-depth texture (RedFloat, rows flipped for GL like the native one)
                              const eplug = new Float32Array(EPN);
                              for (let y = 0; y < EPH; y++) { const s = y*EPW, d = (EPH-1-y)*EPW;
-@@ -7697,7 +9221,8 @@ function buildBackgroundLayer() {
+@@ -7697,7 +9261,8 @@ function buildBackgroundLayer() {
                              bgExtGeom = new THREE.PlaneGeometry(gW, gH, segW, segH);
                              // stash for the SD outpaint bundle (top-row-first, extended res)
                              bgExtendExport = { mx, my, pw, ph, EPW, EPH, depth: extDepth, fill: extFill, mask: extMask };
@@ -1908,7 +1948,7 @@ index 602ce8a..96b5ff2 100644
                                  EPW + 'x' + EPH + ' (' + (Date.now()-tX) + 'ms)');
                          }
                      }
-@@ -7726,6 +9251,82 @@ function buildBackgroundLayer() {
+@@ -7726,6 +9291,82 @@ function buildBackgroundLayer() {
          bgLayerMesh.visible = show ? show.checked : true;
          scene.add(bgLayerMesh);
  

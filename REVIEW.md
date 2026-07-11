@@ -1203,3 +1203,47 @@ Two findings that outlive the attempt:
    floors near the image boundary need seeding from in-frame far
    content rather than edge replication, so frame-cut occluders sweep
    like interior ones.
+
+---
+
+## Addendum 21 — Frame-edge floors + floor-default ceiling: frazetta plate protrusions to ZERO
+
+Chasing the warrior's 204/255 cluster to its actual pixels (plate
+transect at the frame bottom, between the wolves) corrected Addendum
+20's account and produced the fix.
+
+**Correction to Addendum 20(b):** the protrusion test requires the FG
+to cover the flagged pixel (`fa >= 128`), so margins beyond the FG
+never enter the count — the metric was NOT blind the way claimed. The
+cluster is real content: the transect showed the plate carrying
+0.68→0.82 (wolf-ward ramp) under the swept gap, against a visible
+0.61-0.65 floor.
+
+**Mechanism, fully resolved:** (1) edge-clamped floor windows left the
+wolves' frame-touching rows unswept (self-floored); (2) the unswept
+core fed near depth into the rind diffusion; (3) the membrane's pair
+gate RIGHTLY rejected the mixed rows (0.65 | 0.82 anchors); (4) the
+plate ceiling then capped to source — the wolf itself — locking near
+depth into the plate. Every stage behaved as designed; the composition
+failed.
+
+**Fix:** shifted-window floors (border texels take the nearest
+fully-windowed interior floor — the window slides instead of clipping;
+ramps stay safe because domain membership without a cliff seed sweeps
+nothing) + a two-tier ceiling (membrane-anchored pixels keep the
+source cap; anchor-less pixels default to the LOCAL FLOOR — the
+nearest legitimate backing surface — instead of the occluder's depth).
+
+**Measured:** frazetta 373 → 25 flagged px, plate-borne 373 → **0**
+(worst 40/255, none plate); starwatcher 3 → 1 px (worst 3/255);
+synthetic suite: zero violations, zero in-content holes, and
+displayed-band accuracy BYTE-IDENTICAL (synA band 0.0035/0.0151, synD
+0.0058/0.0948) — the floor default only moves never-displayed interior
+pixels farther (footprint-interior means rise; that error mass sits
+beyond the per-edge reveal budget and is protrusion-proof by
+direction). The warrior's remaining 554px: the bottom margin
+legitimately continuing the wolves below the frame — near content
+sliding over far under parallax, correct 3D behaviour the radius-8
+heuristic cannot express (same class as the dune-corner skirt,
+Addendum 15). Visible cost there is the margin's coarse wash — SD
+texture territory, not structure.
