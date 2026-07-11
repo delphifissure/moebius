@@ -1165,3 +1165,41 @@ speckle on stars/ink edges (0.4% of pixels at rest, no line patterns —
 `dec_diff_pose.png`). This retires the 5M-triangle scaling bottleneck:
 the whole 10-layer stack now draws fewer triangles than 4% of the old
 single mesh. `bgMPIDecimate`, default on.
+
+---
+
+## Addendum 20 — Per-layer plates WITHOUT SD: first attempt, reverted, with two real findings
+
+Attempted a live (weight-free) slice-3: every layer extends its own
+surface under adjacent strictly-nearer layers (slope-continuing depth,
+carried colours), two overlap slots per texel, plate clamped behind the
+strips where it is nearer than every bordering continuation. Reverted —
+it regressed verified ground truth (synA plate mean 0.0031→0.0236, max
+→0.291; starwatcher 3→1,068 flagged px, real worst 94/255): the plate
+clamp corrupts correct plug values wherever slot competition picks the
+wrong pair, and gradient extrapolation seeded from thin-feature borders
+(glider, staff) produces poisoned depths. The strips CONCEPT stands
+(structure now, SD for texture later); the failure is in the two
+heuristics, not the architecture. Next iteration: strips as pure
+additive meshes with no plate clamp, seeds excluded within thinM
+dilation, slot depths validated against the membrane's row lines.
+
+Two findings that outlive the attempt:
+
+1. **The warrior's 204/255 residual is not (only) flank mixing.** The
+   worst cluster sits on the frame bottom edge under the wolves. Two
+   components: (a) REAL — the floor-rind/standing-mask floor field uses
+   an edge-clamped window, so near content touching the frame boundary
+   sees only itself as its floor, is never swept, and stays in the
+   plate at near depth (the visible grey smear band at the bottom
+   reveal); (b) MEASUREMENT — the protrusion test's FG-only pass hides
+   the plate, and the scene-extension margins are part of the plate
+   mesh, so legitimate near-depth front-surface margin continuations
+   at the frame edge are flagged (fgMax = 0 there). The +delta the
+   strips added was mostly class (b) on legitimate armor-behind-cape
+   continuations more than 8px from visible armor.
+
+2. **Frame-edge floor clipping** is the actual next targeted fix:
+   floors near the image boundary need seeding from in-frame far
+   content rather than edge replication, so frame-cut occluders sweep
+   like interior ones.
