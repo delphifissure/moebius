@@ -827,3 +827,55 @@ colours + Jacobi, deliberately colour-clean). Its proper replacement is
 the SD plate; a weight-free texture upgrade (depth-compatible reflection
 instead of flat colour) is sketched but deferred — it trades smear for
 mirror ghosts and needs its own evaluation round.
+
+---
+
+## Addendum 11 — the streaks, root-caused and removed (commit `cdb3a09`)
+
+The user pushed back: streaks better, not gone. The instrumented hunt that
+followed overturned two working theories before landing on the true one.
+
+**Theory 1 (wrong): fragment-discard dashes.** `u_useDepthGrad` was
+hard-on (`checked || true`) and shared with the depth pass — plausible
+dash generator. Disarmed under fgPreTear (kept, correct hygiene) — the
+streaks didn't move.
+
+**Theory 2 (wrong): surviving kept-walls.** A CPU replica of the tear
+decision per cell (`streaks_wallprobe.png`) showed the figure ringed by
+far-mismatch walls — the far-side gate compared the plate to the RAW
+triangle minimum, a mid-ramp value on every soft silhouette. Fixed
+(displayed-depth minimum). Counts moved; the composite didn't.
+
+**Theory 3 (right): terraced aprons.** FG-only depth attribution
+(`streaks_fg_attribution.png`) showed the streak fields ARE the FG mesh:
+the bake leaves 3–10px transition aprons along silhouettes, quantized
+into terrace treads. Every tread is an intermediate-depth texel band
+below `fgTearStep` — invisible to every tear rule by construction — and
+under parallax each tread shears horizontally by its own depth. The
+treads themselves are the streaks; cutting one line through the ramp
+(the NMS core tear) left the rest connected and shearing.
+
+**Fix — RAMP COLLAPSE.** Remove the intermediate depths, not more
+triangles: every ramp pixel (±2px window span > `fgTearStep`) binarizes
+to whichever side — window min or max — is closer in value. Aprons
+become 1-texel cliffs; the sharp tear handles them; smooth real slopes
+(span < step) are untouched; the bake's silhouette pepper collapses too,
+so the tear's span tests moved from raw to the collapsed displayed depth
+(which also made the far-side gate exact). 26k/14k/87k px binarized on
+the three assets — silverwarrior's 87k is its fur pathology, now
+collapsed instead of shearing.
+
+**Result.** `streaks_before_collapse.png` → `streaks_after_collapse.png`:
+the streak fields at the figure edge, boots and dune line are gone; the
+silhouette is crisp. `streaks_after_color.png` is the cleanest off-axis
+render of the session — the smudge field beside the figure vanished.
+Frazetta and silverwarrior regression-free (`streaks_fr_after.png`,
+`streaks_sv_after.png`, fur streaking visibly reduced). Rest state:
+light box 2,284 vs 2,262 baseline px, bottom rows 42 = 42, full frame
++0.3%.
+
+**Remaining (documented, bounded):** the eagle's interior micro-steps
+(its own internal depth gradation, correctly kept — plate behind is sky,
+not eagle-far); the missing-lamp shear zone (source depth defect,
+`bgGlowAttach` opt-in or depth-regen); silverwarrior residual fur
+streaks (reduced; full fix is per-layer plates in MPI).
