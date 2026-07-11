@@ -1,5 +1,5 @@
 diff --git a/moebius.js b/moebius.js
-index 602ce8a..1599818 100644
+index 602ce8a..3f6fed1 100644
 --- a/moebius.js
 +++ b/moebius.js
 @@ -4825,8 +4825,8 @@ function renderNormalizedDepthPass() {
@@ -409,10 +409,21 @@ index 602ce8a..1599818 100644
                      cx.drawImage(dImg, 0, 0, pw, ph);
                  } else {
                      // DataTexture fallback — render to a temp target and read back.
-@@ -7317,9 +7547,315 @@ function buildBackgroundLayer() {
+@@ -7317,9 +7547,326 @@ function buildBackgroundLayer() {
                  const dpx = cx.getImageData(0, 0, pw, ph).data;
                  const depth = new Float32Array(PN);
                  for (let i = 0; i < PN; i++) depth[i] = dpx[i * 4] / 255;
++                // REBUILD IDEMPOTENCE: after a build with thin features the
++                // layer's depth texture is the HALOED one; reading it back
++                // would bake the halo into the next build's input, so the
++                // band/plug would grow around 2px-fattened features and the
++                // halo would re-derive from its own output. Keep the pristine
++                // plug-input depth from the first build and restore it here —
++                // a rebuild then runs on byte-identical input. A newly loaded
++                // image installs a texture without the halo tag, so the base
++                // refreshes naturally.
++                if (dSrc._isPlugHalo && L._plugBaseDepth && L._plugBaseDepth.length === PN) depth.set(L._plugBaseDepth);
++                else L._plugBaseDepth = depth.slice();
 +                _mark('depth-read');
 +                let thinM = null;       // thin near-class features (staff, glider): protected + depth-haloed
 +                let haloM = null;       // pixels raised by the thin-feature depth halo (rigid ribbon skirt)
@@ -725,7 +736,7 @@ index 602ce8a..1599818 100644
                  if (bgPlugMode === 'directional') {
                      // Single directional plug computed straight from the depth: seal each
                      // disocclusion at the far side of its own edge, grown in by the edge's
-@@ -7329,6 +7865,7 @@ function buildBackgroundLayer() {
+@@ -7329,6 +7876,7 @@ function buildBackgroundLayer() {
                      let bandN = 0; for (let i = 0; i < PN; i++) bandN += band[i];
                      console.log('[RUNG-PLUG] inputs: directional plug ' + pw + 'x' + ph + ' (canvas ' + w + 'x' + h + ')' +
                          ' band ' + bandN + 'px (' + (100*bandN/PN).toFixed(1) + '%)');
@@ -733,7 +744,7 @@ index 602ce8a..1599818 100644
                  } else {
                      // legacy global fg/bg plug: band (PNG) + Otsu valid + harmonic
                      cx.clearRect(0, 0, pw, ph);
-@@ -7359,6 +7896,104 @@ function buildBackgroundLayer() {
+@@ -7359,6 +7907,107 @@ function buildBackgroundLayer() {
                          ' valid[' + validSrc + '] ' + validN + 'px (' + (100*validN/PN).toFixed(1) + '%)');
                      plugDepth = MoebiusPlug.buildPlugFromValid(depth, band, valid, pw, ph, 220);
                  }
@@ -767,7 +778,9 @@ index 602ce8a..1599818 100644
 +                    thinM = new Uint8Array(PN);
 +                    let nThin = 0;
 +                    for (let i = 0; i < PN; i++) if (nearM[i] && !R[i]) { thinM[i] = 1; nThin++; }
-+                    if (nThin > 0 && !L._thinHaloApplied) {
++                    // (no rebuild guard: the input depth is base-restored above,
++                    // so re-applying derives the identical halo texture)
++                    if (nThin > 0) {
 +                        const hd = depth.slice(); let changed = 0;
 +                        if (!haloM) haloM = new Uint8Array(PN);
 +                        // [PERF] the 5x5 max can only be nonzero within Chebyshev
@@ -810,6 +823,7 @@ index 602ce8a..1599818 100644
 +                            hTex.generateMipmaps = false;
 +                            if ('colorSpace' in hTex) hTex.colorSpace = THREE.NoColorSpace;
 +                            hTex.image2d = hc;
++                            hTex._isPlugHalo = true; // rebuild reads restore the pristine base instead of this
 +                            L.textures.depth = hTex;
 +                            if (L.mesh?.material?.uniforms?.displacementMap) L.mesh.material.uniforms.displacementMap.value = hTex;
 +                            L._thinHaloApplied = true;
@@ -838,7 +852,7 @@ index 602ce8a..1599818 100644
                  // ---- PLUG DEPTH COMPLETION: bury the plug's own cliff ----
                  // Outside the band the plug reverts to SOURCE depth, so the
                  // band's inner boundary is a figure-sized cliff in the PLUG's
-@@ -7372,22 +8007,117 @@ function buildBackgroundLayer() {
+@@ -7372,22 +8021,117 @@ function buildBackgroundLayer() {
                  // background/rim depth underneath. The visible plug becomes a
                  // cliff-free "world without the foreground" surface.
                  {
@@ -965,7 +979,7 @@ index 602ce8a..1599818 100644
                      let nFg = 0; for (let i = 0; i < PN; i++) nFg += fgm[i];
                      if (nFg > 0) {
                          // diffuse surrounding plug depth (background + pinned band rims)
-@@ -7403,6 +8133,93 @@ function buildBackgroundLayer() {
+@@ -7403,6 +8147,93 @@ function buildBackgroundLayer() {
                          for (let i = 0; i < PN; i++) if (fgm[i]) plugDepth[i] = dsm[i*3] / 255;
                          underMask = fgm;
                          console.log('[RUNG-PLUG] plug depth completed under occluders (' + nFg + 'px rind, diffused)');
@@ -1059,7 +1073,7 @@ index 602ce8a..1599818 100644
                      }
                  }
                  // The plug array is top-row-first (like an <img>). The FG mesh's own
-@@ -7425,6 +8242,7 @@ function buildBackgroundLayer() {
+@@ -7425,6 +8256,7 @@ function buildBackgroundLayer() {
                  if ('colorSpace' in plugDT) plugDT.colorSpace = THREE.NoColorSpace;
                  _plugTex = plugDT;
                  console.log('[RUNG-PLUG] live plug computed: ' + (Date.now()-t0) + 'ms');
@@ -1067,7 +1081,7 @@ index 602ce8a..1599818 100644
  
                  // --- BAND-GATED FG STRETCH CUT: bake the cut mask ---
                  // Dilate the band a few px so the far-side half of a stretched
-@@ -7456,17 +8274,317 @@ function buildBackgroundLayer() {
+@@ -7456,17 +8288,320 @@ function buildBackgroundLayer() {
                      if (fu && fu.u_bandMask) {
                          if (fu.u_bandMask.value && fu.u_bandMask.value.dispose) fu.u_bandMask.value.dispose();
                          fu.u_bandMask.value = cutDT;
@@ -1282,11 +1296,14 @@ index 602ce8a..1599818 100644
 +                            ' far-mismatch kept, of ' + (src.length / 3));
 +
 +                        // ---- MPI SLICE 1: depth-layer partition of the torn FG ----
++                        // cleanup from a previous build — UNCONDITIONAL, so a
++                        // rebuild with the partition toggled off restores the
++                        // monolithic mesh instead of leaving it hidden behind
++                        // stale layer meshes
++                        if (mpiLayers) { for (const Lr of mpiLayers) { scene.remove(Lr.mesh); Lr.mesh.geometry.dispose(); } mpiLayers = null; }
++                        L.mesh.visible = true;
 +                        if (bgMPIMode) {
 +                            const tM = Date.now();
-+                            // cleanup from a previous build
-+                            if (mpiLayers) { for (const Lr of mpiLayers) { scene.remove(Lr.mesh); Lr.mesh.geometry.dispose(); } mpiLayers = null; }
-+                            L.mesh.visible = true;
 +                            // connected components; adjacency broken across cliffs
 +                            const compL = new Int32Array(PN);
 +                            const qq3 = new Int32Array(PN);
@@ -1386,7 +1403,7 @@ index 602ce8a..1599818 100644
                  // --- FILL COLOR (Law 4): DEPTH-GUIDED EXEMPLAR (onion-peel). Fill each
                  // hole rim-first by copying the best-matching REAL background patch (SSD
                  // over known neighbours; sources restricted to true background at similar
-@@ -7486,11 +8604,15 @@ function buildBackgroundLayer() {
+@@ -7486,11 +8621,15 @@ function buildBackgroundLayer() {
                      const fillSrc = new Uint8Array(PN);
                      for (let i = 0; i < PN; i++) { const lum=(cpx[i*4]+cpx[i*4+1]+cpx[i*4+2])/3;
                          fillSrc[i] = (!band[i] && !(underMask && underMask[i]) && lum>=45) ? 1 : 0; }
@@ -1405,7 +1422,7 @@ index 602ce8a..1599818 100644
                      const fillRGB = new Float32Array(PN * 3);
                      for (let i = 0; i < PN; i++) { fillRGB[i*3]=cpx[i*4]; fillRGB[i*3+1]=cpx[i*4+1]; fillRGB[i*3+2]=cpx[i*4+2]; }
                      // DIRECTIONAL BACKGROUND EXTENSION: for each hole, march to the nearest
-@@ -7518,7 +8640,16 @@ function buildBackgroundLayer() {
+@@ -7518,7 +8657,16 @@ function buildBackgroundLayer() {
                      // fill — solid and streak-free (the reflection above only sets bandReach,
                      // used by the optional fade). Keeps the interior clean, no striation.
                      if (bgFillMode === 'smooth') {
@@ -1423,7 +1440,7 @@ index 602ce8a..1599818 100644
                      }
                      // reach -> alpha: opaque for short reach, faded to transparent for long
                      // (streaks). smoothstep between the two configured thresholds.
-@@ -7532,6 +8663,17 @@ function buildBackgroundLayer() {
+@@ -7532,6 +8680,17 @@ function buildBackgroundLayer() {
                      };
                      const bandAlpha = new Uint8Array(PN);
                      for (let i = 0; i < PN; i++) bandAlpha[i] = band[i] ? _reachAlpha(bandReach[i]) : 0;
@@ -1441,7 +1458,7 @@ index 602ce8a..1599818 100644
                      // The FG stretch cut is allowed in the DILATED band (bandCutMask), so
                      // the plug must be opaque there too — a discard over transparent plug
                      // is a naked hole. RGB for the ring comes from the bleed below.
-@@ -7539,10 +8681,236 @@ function buildBackgroundLayer() {
+@@ -7539,10 +8698,236 @@ function buildBackgroundLayer() {
                      // The occluder rind (depth-completed, smooth) carries opaque
                      // background wash: never the figure's own colours, so nothing
                      // figure-tinted exists on the plug for bilinear edges to smear.
@@ -1681,7 +1698,7 @@ index 602ce8a..1599818 100644
                      const order = { length: 0 }; // (retained name for the log below)
                      for (let i = 0; i < PN; i++) if (band[i]) order.length++;
                      // Stash directional gap data for the SD-export bundle (native res, top-row-first)
-@@ -7554,12 +8922,39 @@ function buildBackgroundLayer() {
+@@ -7554,12 +8939,39 @@ function buildBackgroundLayer() {
                      // Bleed the band's fill colour a few px OUT into the surrounding
                      // non-band so the fill texture's bilinear edge blends fill->fill,
                      // not fill->black. Alpha stays sharp (= band); only RGB is bled.
@@ -1726,7 +1743,7 @@ index 602ce8a..1599818 100644
                      const fill = new Uint8Array(PN * 4);
                      for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++) {
                          const i = y*pw+x, o = ((ph-1-y)*pw+x)*4;
-@@ -7569,7 +8964,8 @@ function buildBackgroundLayer() {
+@@ -7569,7 +8981,8 @@ function buildBackgroundLayer() {
                          fill[o]=fillRGB[i*3]; fill[o+1]=fillRGB[i*3+1]; fill[o+2]=fillRGB[i*3+2];
                          fill[o+3] = bandAlpha[i];
                      }
@@ -1736,7 +1753,7 @@ index 602ce8a..1599818 100644
                      fillDT.needsUpdate = true; fillDT.flipY = false;
                      fillDT.minFilter = THREE.LinearFilter; fillDT.magFilter = THREE.LinearFilter;
                      if ('encoding' in fillDT) fillDT.encoding = THREE.sRGBEncoding;         // r128
-@@ -7620,14 +9016,22 @@ function buildBackgroundLayer() {
+@@ -7620,14 +9033,22 @@ function buildBackgroundLayer() {
                              const extValid = new Uint8Array(EPN);
                              const extCpx = new Uint8Array(EPN*4);   // RGBA, colour source
                              const extDpx = new Uint8Array(EPN*4);   // RGBA, depth encoded as gray
@@ -1763,7 +1780,7 @@ index 602ce8a..1599818 100644
                                  extDpx[di*4] = dz; extDpx[di*4+1] = dz; extDpx[di*4+2] = dz; extDpx[di*4+3] = 255;
                              }
                              const extColorSmooth = bgPullPushFill(extCpx, extValid, EPW, EPH);
-@@ -7642,13 +9046,35 @@ function buildBackgroundLayer() {
+@@ -7642,13 +9063,35 @@ function buildBackgroundLayer() {
                                      extFill[di*3+1] = Math.max(0, Math.min(255, fillRGB[si*3+1]|0));
                                      extFill[di*3+2] = Math.max(0, Math.min(255, fillRGB[si*3+2]|0));
                                  } else {
@@ -1800,7 +1817,7 @@ index 602ce8a..1599818 100644
                              // extended plug-depth texture (RedFloat, rows flipped for GL like the native one)
                              const eplug = new Float32Array(EPN);
                              for (let y = 0; y < EPH; y++) { const s = y*EPW, d = (EPH-1-y)*EPW;
-@@ -7697,7 +9123,8 @@ function buildBackgroundLayer() {
+@@ -7697,7 +9140,8 @@ function buildBackgroundLayer() {
                              bgExtGeom = new THREE.PlaneGeometry(gW, gH, segW, segH);
                              // stash for the SD outpaint bundle (top-row-first, extended res)
                              bgExtendExport = { mx, my, pw, ph, EPW, EPH, depth: extDepth, fill: extFill, mask: extMask };
@@ -1810,7 +1827,7 @@ index 602ce8a..1599818 100644
                                  EPW + 'x' + EPH + ' (' + (Date.now()-tX) + 'ms)');
                          }
                      }
-@@ -7726,6 +9153,82 @@ function buildBackgroundLayer() {
+@@ -7726,6 +9170,82 @@ function buildBackgroundLayer() {
          bgLayerMesh.visible = show ? show.checked : true;
          scene.add(bgLayerMesh);
  

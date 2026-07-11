@@ -1126,3 +1126,22 @@ rubber-stretch streaks (visible beside the staff in `mdef_off_pose`),
 and the margins keep the pre-build JFA glow instead of the extended
 plate. The OFF path is the legacy render; the ON path is the one every
 contract measurement in Addenda 13–16 verified.
+
+---
+
+## Addendum 18 — Rebuild idempotence
+
+A second `buildBackgroundLayer()` call in the same session diverged from
+the first: the thin-feature halo had swapped the layer's depth texture
+for the haloed one, so a rebuild read the halo back as its own input,
+while the `_thinHaloApplied` guard skipped re-derivation and left
+`haloM` null for the tear loop's ribbon veto. Fixed by keeping the
+pristine plug-input depth from the first build and restoring it
+whenever the halo-tagged texture would be read back; the halo then
+re-applies from byte-identical input (guard removed). The MPI partition
+cleanup and primary-mesh visibility restore now also run
+unconditionally, so a rebuild with the partition toggled off restores
+the monolithic mesh instead of leaving it hidden behind stale layers.
+Measured: fresh == rebuild, 0px diff at the pose, identical stage
+counts (`thin 2764 / haloed 2486 / mask 645988 / tear counts` repeat
+exactly).
