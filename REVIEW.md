@@ -1247,3 +1247,41 @@ sliding over far under parallax, correct 3D behaviour the radius-8
 heuristic cannot express (same class as the dune-corner skirt,
 Addendum 15). Visible cost there is the margin's coarse wash — SD
 texture territory, not structure.
+
+---
+
+## Addendum 22 — MPI slice 3, live: per-layer plates without SD
+
+The answer to "can we have per-layer plates now, just lower fidelity
+than SD" is yes, and it is landed (v2 of the Addendum-20 attempt; both
+of that attempt's failed heuristics replaced):
+
+- Every layer extends ITS OWN surface under adjacent strictly-nearer
+  layers — depth by the band's slope-continuing extrapolation, colours
+  from validated same-row/column anchors (the v1 BFS-seed colours
+  arrived from up to 100px away and sat in reveals as flat foreign
+  slabs; anchor colours are tonally continuous at that height).
+- Two overlap slots per texel (sky AND armor continue behind a sword),
+  rendered as two sheets between the under-sheet and the plate.
+- PURELY ADDITIVE — no plate clamp. The plate's correctness is
+  Addendum 21's floor-default ceiling; the strips only add
+  correct-class content in front of it.
+- PAIR VALIDATION, the load-bearing new rule: a surface may extend
+  under an occluder only where it FLANKS it — the strip pixel's row or
+  column must exit into layer-consistent surface on both ends (frame
+  boundary counts). This is the membrane's both-sided anchor principle
+  applied to strips, and it is what separates armor-behind-sword
+  (legitimate) from bird-flank-under-sibling (the 0.37 flecks that
+  hung in the sky in v2's first run: 437 flagged px, worst 94/255 —
+  eliminated).
+
+Measured: synthetic suite zero violations, zero in-content holes,
+plate accuracy byte-identical (additive confirmed); frazetta unchanged
+(25 flagged, none plate); starwatcher 12px worst 19/255 (was 1px/3 —
+the additions are small continuations >8px from same-depth FG, the
+radius-8 heuristic's documented blind class); warrior unchanged.
+Reveal visuals: strips-on matches strips-off tonally after the
+anchor-colour fix, with correct-class depth structure underneath.
+`bgMPIStrips`, default on. The SD stage now upgrades TEXTURE inside
+this structure (per-layer export bundle = task 20), not structure
+itself.
