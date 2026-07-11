@@ -879,3 +879,51 @@ light box 2,284 vs 2,262 baseline px, bottom rows 42 = 42, full frame
 not eagle-far); the missing-lamp shear zone (source depth defect,
 `bgGlowAttach` opt-in or depth-regen); silverwarrior residual fur
 streaks (reduced; full fix is per-layer plates in MPI).
+
+---
+
+## Addendum 13 — MPI slice 2: the under-sheet (commit `936535f`)
+
+**The idea.** Everything the single backdrop plate cannot fix is INTERNAL
+overlap — cliffs whose far side is another part of the scene stack (arm
+over torso, fur over body, troll limb over cave), where one-depth-per-
+texel holds the backdrop instead of the local surface. The under-sheet is
+the second depth: the LOCAL LOWER ENVELOPE of the displayed depth — a
+separable min filter over the parallax-budget radius — one coherent
+smooth floor by construction. Sheet pixels exist where the front stands
+above its floor and the backdrop does not already carry that floor;
+colours are depth-consistent row-continuation at floor depth (sampling
+any visible surface there — the sheet's far side IS figure-class
+content); pixels with no continuation anywhere are pruned, because a
+tiny far sliver's true next surface is the backdrop. The sheet renders
+between plate and FG, and all three tear rules now accept it as backing
+— internal cliffs finally have a surface to open onto: far-mismatch
+rubber went from hundreds-to-thousands of kept walls to ~zero across
+all three assets.
+
+**Three intermediate designs failed and are recorded:** per-cliff
+carried-depth BFS bands fragment into micro-terraces on clutter (fur) —
+the streak problem reborn one level down; rim-ink fallback colours
+painted dark slabs where no continuation exists; any-vertex mesh
+inclusion created boundary triangles walling floor-to-front as
+semi-transparent smears. Each was diagnosed from render evidence and
+replaced by a structural rule, not a threshold.
+
+**Verification (same code, same constants, all three assets).**
+Starwatcher: overlap patches at the waist/arm clean — best MPI render of
+the session (`mpi2_sw_pose.png`). Frazetta: the dancer-adjacent slab
+gone, reveals cave-toned (`mpi2_fr_pose.png`). Silverwarrior: identical
+to its own MPI-OFF baseline (`mpi2_sv_pose.png` vs
+`mpi2_sv_baseline_off.png`) — the remaining fur smear is the documented
+D3 pathology, present with the sheet disabled, and needs strand alpha
+matting (SD-stage), not more geometry. Rest state: the sheet is
+invisible (fringe-class diff unchanged from slice 1: 66,531 vs 66,426).
+
+**"One button" audit (user requirement, on record).** Slice 2 introduces
+ZERO new constants: it reuses `fgTearStep`, `bgBandMaxGrowPx` (as the
+floor radius), the 0.06 depth tolerance, the 400px march bound, and the
+plate's 24-pass Jacobi. Nothing was set differently per asset at any
+point in slices 1–2. Activation is a single switch (`bgMPIMode = true` +
+rebuild); its one integration caveat — enable after load, not during the
+import auto-build (view-fit interaction, Addendum 12) — is a wiring bug
+to fix alongside the real UI toggle, not a tuning knob.
