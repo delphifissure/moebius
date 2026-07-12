@@ -1458,3 +1458,19 @@ wide poses (`v2_cutout_completion_wide.png`); the primary layer's
 plane counts are byte-identical to the single-layer build; the extra
 layer costs ~0.4s. Toggling back to v1 disposes the stacks and
 restores every layer's mesh.
+
+---
+
+## Addendum 28 — Command-drag + debug views under the plane stack
+
+View drag reworked to cmd/ctrl/shift + left-drag (the right-button
+binding conflicted with existing canvas handlers), capture-phase on
+window, verified with dispatched pointer events. Debug views fixed for
+v2: plane meshes carry `userData.v2Plane` and count as the displayed
+scene in the normalized depth pass (FG coverage after a v2 build:
+0 → 99.8% — gap mask / FG-sub / scene-depth sheets see the stack).
+"Show BG" toggles the whole stack vs the flat sources (and in v1 now
+covers under-sheet + strips, not just the plate); "BG only" — which
+under v1+MPI hid only the already-hidden original mesh and visibly did
+nothing — now hides the partition meshes (v1) or the primary's nearest
+bin (v2): a peek behind the front (`v2_solo_peek.png`).
