@@ -1907,3 +1907,66 @@ only a second completed surface (v2) can fill with content.
 
 Landed in `343c981` (drivers: `harness/tunnel_test.js`,
 `harness/viscrop.js`; asset `synU`).
+
+---
+
+## Addendum 36 — Quick bake: the realtime look, frozen; and the SD-region preview
+
+### Review of the realtime path (as requested, before building on it)
+
+Per frame, the realtime pipeline: classifies gaps in the layer
+fragment shader (depth-gradient + optional Sobel/luma/chroma
+generators), renders a normalized depth pass, runs FG-subtraction to
+build a local rim-depth contract, then fills the screen-space gaps
+with a depth-aware pull-push pyramid (~9 levels up + down at canvas
+resolution) and composites. Findings:
+
+1. **The flicker is structural, not a bug.** The fill re-seeds from
+   the rasterized frame every frame; subpixel camera motion changes
+   which texels count as rim seeds, and the pyramid average shifts
+   with them. No amount of tuning stabilizes a fill whose input
+   dithers — the fix is to compute it once in source space.
+2. **The cost is fixed, not content-driven.** Pyramid + FG-sub run at
+   full canvas every frame even when nothing moves. (With the quick
+   bake landed, the honest optimization was to skip the multipass
+   entirely rather than cache it.)
+3. **The fill itself is good** — depth-aware pull-push with the rim
+   contract is the right primitive, which is why the quick bake
+   reuses it verbatim rather than inventing a new fill.
+
+### The quick bake
+
+The user's sketch was right and has a clean closed form. The union of
+disocclusions over EVERY head pose in the movement budget: a texel is
+revealed iff nearer content exists within r px whose depth step
+exceeds r/RB, for some r ≤ RB — the cone test, evaluated with three
+separable sliding maxima at r = RB/4, RB/2, RB. O(N), a few hundred
+ms at source resolution. Plate depth = the far envelope under genuine
+standing content; plate colour = the SAME pull-push wash the realtime
+path shows, seeded once in source space (one-sided erosion + stroke
+rejection included). The FG keeps the stretch net so its rubber cuts
+onto the wash; quick-baked scenes then render SINGLE-PASS — the
+per-frame multipass is skipped entirely. Identical look, no flicker,
+and per-frame cost DROPS below the realtime path it replaces.
+
+Two pitfalls found by measurement, for the record: flooring the plate
+with a tight 0.02 gate floors under ordinary texture relief on
+organic depth maps, which invalidates ~all colour seeds and
+degenerates the wash to NaN-white (gate now 0.08 = genuine standing
+cliffs only); and the plate must render SOLID — the cloned material
+inherits the FG's gap generators, which classify the plate's own
+floor transitions as gaps and punch holes in the only backstop.
+
+### The SD-region preview
+
+The same mask drives the UX feature: regions where diffusion will
+paint are tinted on a depth ramp (far = cyan, near = amber), the
+region boundary gets a bright rim, and the foreground dims to 35% so
+the regions read through at rest. One uniform set, wired through all
+three layer shader modes, rendered in the single-pass path.
+
+Contract: 12/12 checks (plate + mask + wash present, plate solid, FG
+net armed, highlight toggles and compiles, single-pass flag, CPU side
+2.3s on the 4-core SwiftShader box — sub-second on a real GPU).
+
+Landed in `1c90c99` (driver: `harness/quickbake_test.js`).
