@@ -2050,3 +2050,44 @@ near-depth clone with a figure-coloured wash. Quick-bake contract
 12/12 unchanged.
 
 Landed in `6555c6f` (probe: `harness/qbflood_probe.js`).
+
+---
+
+## Addendum 39 — The highlight fills, the outlines come back, the filaments die
+
+Three reports from the user's live pass; two share a root.
+
+**1. The SD-regions highlight rimmed instead of filled.** The mask was
+the cone test's physics-minimal reveal band — correct for "what a
+28px head budget exposes", wrong for "what diffusion will paint". The
+honest mask is where the plate SYNTHESIZES content: wherever the cone
+envelope departs the source depth. One comparison per texel, and the
+highlight now fills the whole region (on a Δ=0.22 cliff that ring is
+~90px wide, not 8).
+
+**2 & 3. The lost black outlines and the 1px FG→BG filaments are the
+same defect.** A34's stroke repair lifts outline ink to occluder
+depth — but the estimator undershoots the colour silhouette, so a
+1–2px far channel separates the lifted stroke from its occluder. The
+outline was therefore a fragile 1px near-depth RIDGE: every quad
+touching it spans a cliff. The stretch net ate the stroke's own
+fragments (that is where the ink went — the source image was never
+touched; the bundle's src_color export is verbatim) and the survivors
+rendered as 1px rubber filaments. GAP CLOSING now lifts thin far
+channels that are near-on-both-sides and adjacent to an adopted
+stroke: the outline becomes CONTIGUOUS with its occluder — one
+silhouette, one cliff, at the stroke's outer edge. 737px closed on
+the synthetic; all four stroke-contract cases still pass (outline and
+staff lift, isolated and caravan stay).
+
+**Plus:** quick mode no longer trusts the thresholded fragment net
+alone — the FG geometry pre-tears every cliff-spanning triangle at
+build time (the plate backs every reveal, so holes are always safe);
+6,733 of 1.74M triangles dropped on the reference build. Sub-threshold
+1px ribbons cannot survive a geometric cut.
+
+Battery: stroke contract 4/4, plate probes clean (ring at local
+ground, max gradient = the cone slope, ring wash scene-coloured),
+quick-bake contract 12/12, frazetta protrusion at baseline.
+
+Landed in `f885888`.
