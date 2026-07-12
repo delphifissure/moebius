@@ -1970,3 +1970,38 @@ net armed, highlight toggles and compiles, single-pass flag, CPU side
 2.3s on the 4-core SwiftShader box — sub-second on a real GPU).
 
 Landed in `1c90c99` (driver: `harness/quickbake_test.js`).
+
+---
+
+## Addendum 37 — The caravan bug: stroke repair learns the difference between an outline and a bystander
+
+The user's grids caught the stroke repair over-adopting: the caravan
+figures walking up the dune — genuine BACKGROUND content — were being
+lifted to the dune ridge's depth and rendered ON TOP of the
+foreground. The failure is instructive because the two cases are
+locally identical: a dark stroke touching decisively-nearer content is
+EITHER an occluder's outline (A34: lift it — it belongs to the
+occluder) OR a small far figure standing just behind a ridge (leave
+it — it belongs to the scene). No per-texel gate can tell them apart;
+the staff and a caravan figure have the same local topology.
+
+The discriminator that works is the **connected component's contact
+fraction**. An outline HUGS its occluder: most of its texels have near
+content within 3px. A far figure touches the ridge only at its feet
+(~5% of its texels). And the staff — the case that motivated A34 —
+is CONNECTED to the figure's outline ring in the ink, so it rides the
+outline component's high contact fraction. Adoption now runs
+per-component (labelled at the propagation connectivity) and requires
+≥25% contact.
+
+synT extended with the caravan case: outline 0.622 and staff 0.678
+still lift (target 0.678), the isolated control stays at sky, and the
+caravan figures deviate 0.003 from the ground truth — they stay
+exactly where the scene put them. Frazetta protrusion battery
+unchanged at the A35 baseline.
+
+Landed in `0ce78d9`. If caravan-class content still floats above the
+foreground on an asset after this fix, the depth MAP itself
+near-classified it (salient-object pop is a known estimator failure —
+check the Scene Depth view); that class is upstream of everything
+this pipeline can repair locally and is the SD/depth-model loop's job.
