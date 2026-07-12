@@ -1497,3 +1497,35 @@ support inside 35 degrees, linear fade to black by 45, computed from
 the true camera-to-portal angle each frame, applied as a DOM overlay
 (captures untouched). The boundary is a design statement instead of an
 artifact; both constants are tunable globals.
+
+---
+
+## Addendum 30 — v2 earns default-on
+
+Three closing moves:
+
+1. **Completion colours de-ghosted.** The isotropic wash averaged the
+   whole surround into occluder-shaped grey ghosts. Claims now blend
+   the layer's own ROW-anchor continuation (columns only as fallback —
+   rows are same-surface continuation, the membrane lesson) 50/50 with
+   the wash, softened by 4 Jacobi passes. Ghosts now carry their
+   layer's sky/ground banding (`v2_ghost_banded.png`); texture detail
+   remains SD's slot.
+2. **The backdrop is complete everywhere.** Near-horizon rows failed
+   the nearer-by-a-step claim gate, leaving the backdrop's frame
+   margins alpha-0 in a band — the measured left-edge hole bar. The
+   primary's farthest bin now claims every non-visible texel
+   unconditionally. Result: **zero holes at all nine poses across the
+   35-degree support cone** (geometry coverage, middle 90%).
+3. **Rest fidelity** measured against the flat pre-build render: the
+   difference is a pure edge map — sub-pixel projection shift from
+   smoothed depth + bias — with no structural deltas.
+
+With the leg shear fixed (A29), look-down streaking structurally gone
+(A26), the cone fade defining the envelope (A29), and this addendum's
+zero-hole scan, `bgMPIFullPlanes` now defaults ON. The checkbox A/Bs
+against v1; all 57 v1 harness drivers are pinned to v1 so the original
+contract battery keeps meaning what it says (protrude re-verified
+unchanged after the flip). Remaining v2 work: SD bundle/import wired
+to the v2 layers, the bin-internal under-sheet analog, sky dome, and
+an async build for instant import.
