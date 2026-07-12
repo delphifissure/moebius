@@ -1433,3 +1433,28 @@ not yet run against v2; completion washes are quarter-res pull-push
 directly); the farthest-margin notch at 0.6 wants a curved backdrop
 (sky dome) for true near-180 pans; under-sheet-class internal overlaps
 within a bin are cut, showing the next layer's coarser completion.
+
+---
+
+## Addendum 27 — Multi-layer v2: composited layers get the same treatment
+
+Per the product direction: added media layers are NOT assumed
+perfectly baked — they are composited elements with their own internal
+depth and disocclusions, and they now receive the identical full-plane
+treatment. `bgBuildFullPlanesCore` runs per media layer: quantile bins
+over the layer's own ALPHA FOOTPRINT, flank-validated completion of
+its internal occlusions, smoothed intra-layer depth, transparent
+surround preserved so layers composite through each other in z. Two
+scoping rules matter: claims never leave the footprint (a cutout
+completes itself, not the scene behind it), and the wide backdrop
+margin belongs to the primary's farthest bin only (a cutout's farthest
+bin margin would clamp-smear its edge colours — measured as red bands
+before the fix).
+
+Verified with a fabricated cutout (near bar over far disk) composited
+over starwatcher: the disk claims 38,160px behind the bar and renders
+its own completion in the bar's reveal with independent parallax at
+wide poses (`v2_cutout_completion_wide.png`); the primary layer's
+plane counts are byte-identical to the single-layer build; the extra
+layer costs ~0.4s. Toggling back to v1 disposes the stacks and
+restores every layer's mesh.
