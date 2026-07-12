@@ -2150,3 +2150,71 @@ Quick-bake 12/12, plate probes 3/3. Bisect kill-flags (`_srNoGC`,
 debug affordances with a driver (`protrude_ab.js`).
 
 Landed in `44f8e99`.
+
+---
+
+## Addendum 41 — The outline was on the plate, and the repair was 97% blind
+
+The contact sheets showed it plainly: the figure's FULL outline baked
+into the background plate — it parallaxed with the background while
+the figure moved away from it. And under occluder footprints the
+plate depth still bulged toward the camera in the occluder's own
+shape. One measurement explained both.
+
+**The A37 component gate did not survive contact with real ink.** On
+a real drawing ALL ink is one connected web — outline, interior
+linework, ground contours, all touching somewhere. The component-
+global contact fraction on the reference asset was ~3% (2,599 of
+78,490 classified stroke px lifted), far under the 25% gate, so the
+repair went blind: the outline shipped at BG depth, counted as valid
+background, and was baked into the plate in full. synT passed 6/6 the
+whole time because its ink components are isolated — the synthetic
+modeled the geometry of the problem but not the CONNECTIVITY of real
+line art.
+
+**Fix 1 — adjacency-constrained flood.** The honest discriminator was
+always local, not component-global: an occluder's outline HUGS its
+occluder for its whole run; a far-side figure touches a ridge only at
+one end. Adoption now spreads while it keeps meeting near content at
+the adopted depth (within 2px), with a 2-hop grace budget past the
+last hug — EXCEPT along thin ribbons (bright on BOTH sides at ±2px),
+which carry adoption end-to-end like a wire. That is the staff: no
+near content anywhere along its run, but an unbroken ribbon back to
+the outline. A caravan figure is 5px wide — zero ribbon texels — and
+drains the budget within ~6px of its ridge contact. Same contract,
+no global state. Coverage on the reference asset: 11,290px (4.3×),
+phase-2 thick ink 90 → 730px; frazetta protrusion unchanged at its
+exact baseline.
+
+**Fix 2 — ink scrub in the plate fill.** Whatever the repair still
+misses must not survive in the plate: stroke-classified ink within
+4px of the removed set (plus its dark anti-aliased fringe) is
+recoloured from the ink-free pull-push base. The world-without-FG has
+no outline where the figure was; the FG mesh keeps drawing the real
+ink, so nothing is lost — there is just no second copy left behind to
+stick to the background. 5,495px scrubbed; the plate's outline ghost
+is gone from the fill dump. Ink far from any occluder (the mountain's
+own cracks) is genuine plate content and stays.
+
+**Fix 3 — cone clamp on the plate depth.** The existing plate ceiling
+capped at the SOURCE depth — i.e. the occluder's own nearness — so
+diffusion residue under wide occluders kept a shape-following near
+ghost ("depth stretching into the foreground"). Third tier, underMask
+only: the plate may never stand above the cone envelope of the
+surrounding real world (min over valid texels of depth + s·dist,
+exact two-pass chamfer, slope scaled from the 851px quick-bake
+contract). Reveals happen within the parallax budget of a silhouette,
+where the cone is tight — rim + s·dist; deep interiors flatten toward
+the far surround instead of echoing the occluder. 9,023px clamped on
+the reference asset. The band's verified rim values are untouched
+(the earlier plate-clamp incident is why this tier stays out of it).
+
+Battery: strokedepth 6/6 (identical counts — the flood reproduces the
+component gate's decisions where it was right), frazetta protrusion
+30px/35/0 (exact baseline), quickbake 12/12, qbflood 3/3, and a new
+7-check platebleed contract on synT (outline/staff scrubbed from the
+plate, completions at BG depth, survivors bounded to the ground-
+contact band residue). New probes: `platebleed_probe.js`,
+`starbleed_probe.js` (real-asset leak metrics + fill/plug/leak PNGs).
+
+Landed in `5c497b5`.
