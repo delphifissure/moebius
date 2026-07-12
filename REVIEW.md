@@ -1668,3 +1668,92 @@ regression after the frame-loop change: zero holes at all nine poses.
 
 Landed in `797e858` (drivers: `harness/dolly_test.js`,
 `harness/v2_conescan.js`).
+
+---
+
+## Addendum 33 — Session UX: realtime by default, explicit builds, a fade that fires on a MacBook
+
+Four user reports, one environment note.
+
+### 1. The load freeze is gone: realtime inpainting is the default again
+
+A31's auto-build ran the v2 plane build seconds after load —
+synchronously, freezing the tab. Wrong default: the realtime
+screen-space inpainting (pullpush) is fast on real GPUs and is what the
+session should open into. Now: **on load, nothing builds** — the app
+renders source parallax with realtime inpainting exactly as before the
+MPI work. The Build BG button runs whichever build the "Full planes
+(v2)" checkbox selects, behind a **loading overlay** (spinner + label,
+painted before the synchronous build via double-rAF, for both the v1
+bake and the v2 planes). After the first explicit build, a new upload
+auto-rebuilds behind the same overlay — the stack tracks the image once
+the user has opted into it, but never ambushes the first load.
+
+### 2. The fade now keys off the device camera, not just the virtual cone
+
+The 35–45° fade (A29) measured the VIRTUAL head angle — on a MacBook
+Air the face-cam geometry cannot produce 35°, so the fade never fired.
+Added a **per-device front-camera FOV LUT** (mac 54×32°, iphone 65×50°,
+ipad/Center-Stage 105×80°, generic 60×40°; platform-detected, coarse by
+necessity — browsers hide the camera model — and overridable via
+`window.bgDeviceFovOverride` or localStorage `bgDeviceFov`). The head's
+angular position inside the camera frame is computed from the
+normalized face position through the tan mapping, and the view fades
+over the **last 10 degrees before the head exits the camera FOV** —
+`hfov/2−10 .. hfov/2` horizontally, `vfov/2−10 .. vfov/2` vertically,
+exactly the rule requested. The virtual-cone fade still applies (drag
+and gyro paths); the final fade is the max of the two. A lost face
+freezes the fade at its last value rather than snapping.
+
+### 3. Debug views and "Enable Inpainting" work after every build
+
+Root cause was semantic: once a bake (v1) or plane stack (v2) exists it
+blankets every gap, so the pipeline-inspection views ('gaps',
+'inpaint_only', 'layer_mask', …) legitimately had nothing to show, and
+unchecking Enable Inpainting changed nothing — both READ as broken.
+Now any non-final debug view — and inpainting-OFF on the final view —
+**suppresses the baked/plane meshes for the frame and restores the flat
+sources**, so each view shows the realtime pipeline it names; returning
+to the final view restores the exact prior state. This required
+handling the two stacks that deliberately hide the source mesh (v1-MPI
+partition, v2 planes) — the suppression brings the source back while it
+inspects. Verified by a state-level contract driver (frameless, so it
+runs under SwiftShader): **9/9 checks pass in both v1 and v2 modes**,
+including exact restoration.
+
+### 4. v1 bake: FG was genuinely leaking into the baked BG at edges
+
+The user's screenshots showed FG paint left in the baked background
+along silhouettes. Mechanism confirmed in the color-seed shader: a
+texel could feed the color pyramid if the depth plug replaced nothing
+within **2px** — but estimated depth halos put the color silhouette
+2–3px OUTSIDE the depth silhouette, so anti-aliased FG paint passed the
+gate and seeded the wash. The erosion is now **4px**. A/B on the real
+portrait asset: the changed texels lie exactly along the silhouette
+fringe and the FG-colored speck clusters shrink visibly; the synthetic
+suite (razor-sharp, perfectly aligned edges) shows zero bleed under
+both radii, confirming the mechanism is specifically soft-edge/halo
+misalignment. The LIVE streaking in the same screenshots is the v1
+single-mesh apron — the structural limitation that motivated v2 (A26,
+A29); v1 remains the A/B reference, not the wide-angle path.
+
+### Environment note (for whoever runs the harness next)
+
+The remote box was replaced mid-session with a 4-core machine.
+SwiftShader there cannot deliver a first frame of the realtime
+multi-pass pipeline at 1200×900 — rAF starves indefinitely (GPU process
+grinding at 350% CPU) while the main thread stays responsive. All
+drivers now run at 800×600, and the new post-build contract test is
+deliberately frameless (direct render() calls + state inspection).
+Leaked headless browsers from killed runs poison subsequent runs —
+always `pkill` the browser and static server between attempts.
+
+Landed in `5dde8bb`.
+
+**Regression note:** the v2 nine-pose contract was re-run before and
+after this batch on the same asset (the portrait default — the box swap
+also lost the harness's untracked landscape default, so numbers are not
+comparable to A30's zero-hole run on that asset): pre-batch 7–44 hole
+px per pose, post-batch 7–46 — identical within frame noise, i.e. the
+batch does not touch geometry coverage; the residual is the documented
+frazetta T-junction speck class (A32).
