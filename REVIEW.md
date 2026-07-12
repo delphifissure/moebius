@@ -1570,3 +1570,101 @@ inside, exact at silhouettes, composited per media layer, fading at a
 declared envelope, built without weights in seconds on import, with a
 diffusion loop that can only ever repaint texture inside verified
 structure.
+
+---
+
+## Addendum 32 — Every layer covers the cone; the dolly zoom actually works
+
+Two requests: make the "sky dome" (edge-of-fill coverage) hold for
+ALL layers, not just the farthest backdrop — is equirectangular
+needed? — and examine the dolly-zoom scaling, using an off-axis dolly
+zoom as the correctness probe for movement scaling under the
+asymmetric frustum.
+
+### 1. All-layer cone coverage — flat planes suffice, equirect does not pay
+
+The A30/A31 margins were sized as a fraction of image width. On
+landscape assets that hid a latent bug: a portrait asset (frazetta)
+maps to a narrow world plane, so the same pixel margin buys far less
+world overhang — the full 45-degree scan leaked 31–74k hole pixels at
+the diagonal poses while SW stayed at zero. The margin was measuring
+the wrong thing: the cone is declared in world angle, so the overhang
+must be declared in world units.
+
+**World-normalized margins.** Backdrop bins now extend 0.10 world
+units past the image rect, near/frame-touching bins 0.05, converted
+to texels per asset (`px = world / planeW * pw`). On portrait assets
+this is a lot of texels — so margins are no longer carried in the
+per-texel plane geometry at all. Each bin's main mesh covers only its
+in-frame bbox; a coarse **skirt mesh** (8px-step grid, sharing the
+bin's material, uv projected past [0,1] under clamp-to-edge) carries
+the overhang for the cost of a few hundred triangles instead of
+millions. The backdrop bin additionally keeps every quadtree cell
+(span filter bypassed) so the back-stop can never hole. Added layers
+keep their alpha-footprint rule — cutouts get edge continuation only
+where they have content, and no backdrop margins (that combination is
+what smeared red bands in A27's first draft).
+
+Measured, full 45-degree 12-pose scan (middle 90%): SW **0 hole px at
+every pose** (unchanged); frazetta **74k → 10–42px**. The residual is
+1px-wide diagonal chains at decimation T-junction seams mid-image
+(~0.01% of a frame, inside the 35–45° fade band at the poses where
+they appear) — documented as a micro-residual, not coverage failure.
+
+**Equirectangular verdict: not needed.** The declared envelope (A29)
+is a 45-degree cone with fade from 35; within it, flat planes with
+world-sized skirts are measurably hole-free. An equirect/dome
+projection buys curvature only useful past ~60 degrees, at the cost
+of resampling every layer. If the envelope ever widens toward the
+"gyro past face-cam FOV" regime, revisit; below that the dome is
+paying for angles the fade has already declared black.
+
+### 2. Dolly zoom — the fov code was dead; the frustum was already exact
+
+The examination the user asked for, in three findings:
+
+**(a) The asymmetric frustum handles movement scaling exactly.**
+`frameCorners()` rebuilds the projection every frame from the eye and
+the fixed portal rect — Kooima's generalized perspective projection.
+Measured (analytic projection through the live camera): portal-plane
+points drift **0.000px** across the full dolly sweep (eye z 0.12 →
+0.42) at lateral offsets 0, 0.1, and 0.2, while a point 0.1 behind
+the portal travels 89–214px. The off-axis dolly-zoom invariant — the
+test the request named — holds to machine precision natively. This is
+also the capture-equivalence answer: an object shot at 18mm from d
+and at 36mm from 2d that lands at the same world depth parallaxes
+identically by construction, because the frustum scales motion by
+reconstructed world position only — the capture fov never enters the
+render side. (What a capture fov mismatch DOES change is the depth
+map the estimator produces; that is a reconstruction-calibration
+question, not a projection one.)
+
+**(b) The existing subject-lock/fov compensation was dead code.** It
+assigned `camera.fov` — which `frameCorners()` overwrites before any
+render, every frame. The `subjectFocalPlaneWorldZ` slider had no
+effect. Nobody had noticed because the portal plane (the default
+subject) is pinned for free by (a).
+
+**(c) The replacement is portal-native.** For a subject plane off the
+portal (z = q, portal at P, eye at e, d = e−q), a subject-plane point
+projects through the portal with factor t = (e−P)/(e−q); pinning it
+requires scaling content by **s = d·(e0−P) / (d0·(e−P))** about the
+eye-axis point on the subject plane — not the naive d/d0, and not
+about the world axis: only the eye-axis center pins the plane for the
+current eye, which is what makes the lock correct off-axis. At the
+base distance s = 1, so head-tracking parallax at rest is untouched;
+transforms capture on dolly start and restore exactly on stop. One
+frame-loop conflict surfaced: the per-frame layer-z reset
+(`layer.mesh.position.z = portalPlaneWorldZ`) was silently undoing
+the lock's z each frame — it now yields while the lock owns
+transforms.
+
+Verified through the real mesh matrices (not the lock's own math): a
+mesh-attached point whose base world position lies on the subject
+plane (q = −0.05) projects with **0.000px drift** across the dolly at
+offsets 0/0.1/0.2, portal-depth content breathes 77–185px, and
+dolly-off restores base transforms bit-exactly. v2 contract
+regression after the frame-loop change: zero holes at all nine poses.
+
+Landed in `797e858` (drivers: `harness/dolly_test.js`,
+`harness/v2_conescan.js`).
