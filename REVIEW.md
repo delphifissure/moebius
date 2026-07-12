@@ -2005,3 +2005,48 @@ foreground on an asset after this fix, the depth MAP itself
 near-classified it (salient-object pop is a known estimator failure —
 check the Scene Depth view); that class is upstream of everything
 this pipeline can repair locally and is the SD/depth-model loop's job.
+
+---
+
+## Addendum 38 — Quick bake round 2: the plate becomes a cone envelope
+
+The user's first live test caught the quick bake's plate cloning the
+astronaut: a radius-28 floor cannot floor a 200px-wide occluder — the
+interior is its own floor — so the plate carried the figure at NEAR
+depth, its clone-edge cliff rubber-banded into the floored ring (the
+interior-to-background smear), and the interior texels seeded figure
+colours into the wash.
+
+Two mask-based fixes failed for reasons worth recording. A compounding
+erosion (geometric radii, iterating on its own output) let big blobs
+act as CONDUITS: sky leaked through the horizon into the blob's sunk
+values and then cascaded onto the surrounding ground — the whole lower
+scene classified as standing. A single-shot per-radius test cannot
+cascade, but any slope-linear gate loses to the ground's own
+perspective gradient at large radii: at r=192 this scene's ground
+rises faster than the gate allows, and 100% of the ground classified
+as standing again.
+
+The final form drops the mask entirely by restating the requirement.
+The plate's real contract is not "floored under standing content" —
+it is **"no cliff anywhere"**, because cliffs are the only thing that
+rubber-bands. That has an exact, parameter-light construction: the
+plate is the LOWER ENVELOPE of the depth under a maximum slope —
+`min_i(d_i + s·dist(i,j))`, cone erosion, computed exactly by the
+classic two-pass Manhattan chamfer sweep in O(N). By construction the
+plate's gradient never exceeds s = 0.0025/px: nothing can smear.
+Continuous ground (slope < s) is untouched; a standing blob becomes a
+gentle ramp down to its surround; the untouched core of a very wide
+blob is covered at identical depth by the FG mesh and never shows;
+and the colour-seed pass invalidates exactly the ~(step/s)px ring
+where the envelope departs the source, so the reveal-ring wash is
+clean far colour.
+
+Probe on the astronaut-class synthetic (200×300 occluder): reveal
+ring at local ground (0.481 against 0.455 + ramp), maximum plate
+gradient 0.0025 — exactly the cone slope, i.e. zero cliffs — and the
+reveal-ring wash scene-coloured; pre-fix the same probe read a 0.678
+near-depth clone with a figure-coloured wash. Quick-bake contract
+12/12 unchanged.
+
+Landed in `6555c6f` (probe: `harness/qbflood_probe.js`).
