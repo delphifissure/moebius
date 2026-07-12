@@ -1474,3 +1474,26 @@ covers under-sheet + strips, not just the plate); "BG only" — which
 under v1+MPI hid only the already-hidden original mesh and visibly did
 nothing — now hides the partition meshes (v1) or the primary's nearest
 bin (v2): a peek behind the front (`v2_solo_peek.png`).
+
+---
+
+## Addendum 29 — Leg shear fixed (edge-aware smoothing) + the supported view cone
+
+**Leg shear** (user-reported): per-bin attribution showed the figure
+and the near dune share a quantile slice; the unclamped intra-bin blur
+welded them into one sheet whose depth ramped across the silhouette,
+so the leg SHEARED into the background under parallax. Fix: the
+smoothing is edge-aware — a texel may move at most half a tear-step
+from its own depth; more is a different surface, so silhouettes
+survive and the cell-cut separates the meshes. Verified at 0.35
+offset: legs and boots hold shape (`v2_legshear_fixed.png`); reveals
+show the soft completion wash instead of stretched limb content. A
+14-bin variant was tried and reverted (banded washes, seam lines) —
+the edge clamp alone is the fix; the v2 bin count is its own constant.
+
+**Supported view cone** (product rule, per user direction): a flat
+capture cannot fill 180 degrees, so the envelope is explicit — full
+support inside 35 degrees, linear fade to black by 45, computed from
+the true camera-to-portal angle each frame, applied as a DOM overlay
+(captures untouched). The boundary is a design statement instead of an
+artifact; both constants are tunable globals.

@@ -1,8 +1,8 @@
 diff --git a/moebius.js b/moebius.js
-index 602ce8a..ca5a6f4 100644
+index 602ce8a..b7a9e34 100644
 --- a/moebius.js
 +++ b/moebius.js
-@@ -38,6 +38,11 @@ let isClearing = false;
+@@ -38,6 +38,36 @@ let isClearing = false;
  let isAccumulatingGaps = false;  // True when "live sweep" is active
  let useStaticInfillAtlas = false; // True when baked atlas is active
  let isSweeping = false;           // Master lock for automated sweeps
@@ -11,10 +11,35 @@ index 602ce8a..ca5a6f4 100644
 +// your head. Double-click resets. Harness: window.setViewOffset(dx, dy).
 +let manualCamDX = 0, manualCamDY = 0;
 +let _viewDragActive = false, _viewDragLX = 0, _viewDragLY = 0;
++// SUPPORTED VIEW CONE: the layer stack is complete out to a bounded view
++// angle; past it, content genuinely runs out (a flat capture cannot fill
++// all 180 degrees). Rule: full support inside bgViewFadeStartDeg, linear
++// fade to black by bgViewFadeEndDeg, black beyond — the boundary is a
++// design statement instead of an artifact.
++let bgViewFadeStartDeg = 35, bgViewFadeEndDeg = 45;
++let _viewFadeEl = null;
++function updateViewFade() {
++    if (!canvasElement || !camera) return;
++    if (!_viewFadeEl) {
++        _viewFadeEl = document.createElement('div');
++        _viewFadeEl.style.cssText = 'position:fixed;background:#000;pointer-events:none;opacity:0;z-index:40;transition:none;';
++        document.body.appendChild(_viewFadeEl);
++    }
++    const r = canvasElement.getBoundingClientRect();
++    _viewFadeEl.style.left = r.left + 'px';
++    _viewFadeEl.style.top = r.top + 'px';
++    _viewFadeEl.style.width = r.width + 'px';
++    _viewFadeEl.style.height = r.height + 'px';
++    const dist = Math.max(1e-3, Math.abs(camera.position.z - portalPlaneWorldZ));
++    const off = Math.hypot(camera.position.x, camera.position.y);
++    const ang = Math.atan2(off, dist) * 180 / Math.PI;
++    const f = Math.min(1, Math.max(0, (ang - bgViewFadeStartDeg) / Math.max(1e-3, bgViewFadeEndDeg - bgViewFadeStartDeg)));
++    _viewFadeEl.style.opacity = f > 0.003 ? f.toFixed(3) : '0';
++}
  let infillAtlasMesh = null;       // The static mesh for the baked atlas
  
  // Targets (will be initialized in initializeSceneAndRenderer)
-@@ -4806,7 +4811,8 @@ function renderNormalizedDepthPass() {
+@@ -4806,7 +4836,8 @@ function renderNormalizedDepthPass() {
          // the depth pass (and footprint pass) by design — except when the debug
          // sheet explicitly asks to see the plug as geometry.
          if (isMediaLayer && object.material.uniforms.u_isBackgroundLayer &&
@@ -24,7 +49,7 @@ index 602ce8a..ca5a6f4 100644
              originalMaterials.set(object, object.material);
              object.material = new THREE.MeshBasicMaterial({ visible: false });
              return;
-@@ -4825,8 +4831,8 @@ function renderNormalizedDepthPass() {
+@@ -4825,8 +4856,8 @@ function renderNormalizedDepthPass() {
                      precision highp float;
                      
                      // Gap detection uniforms (shared with main material)
@@ -35,7 +60,7 @@ index 602ce8a..ca5a6f4 100644
                      uniform sampler2D u_edgeMask;
                      uniform vec2 u_textureSize;
                      uniform vec2 u_resolution;
-@@ -4851,7 +4857,7 @@ function renderNormalizedDepthPass() {
+@@ -4851,7 +4882,7 @@ function renderNormalizedDepthPass() {
                      }
                      
                      float getDepth(vec2 uv) {
@@ -44,7 +69,7 @@ index 602ce8a..ca5a6f4 100644
                      }
                      
                      uniform bool u_isBackgroundLayer;
-@@ -4865,7 +4871,7 @@ function renderNormalizedDepthPass() {
+@@ -4865,7 +4896,7 @@ function renderNormalizedDepthPass() {
                              return;
                          }
  
@@ -53,7 +78,7 @@ index 602ce8a..ca5a6f4 100644
                          
                          bool isGap = false;
                          bool isTunnel = false; // Track if gap was detected by tunnel logic
-@@ -4873,25 +4879,30 @@ function renderNormalizedDepthPass() {
+@@ -4873,25 +4904,30 @@ function renderNormalizedDepthPass() {
                          
                          // TUNNEL DETECTION: Only flag pixels that are clearly interpolating
                          // between FG and BG depths (not just any mismatch)
@@ -95,7 +120,7 @@ index 602ce8a..ca5a6f4 100644
                              // Check if interpolated depth falls BETWEEN the extremes (tunnel interpolation)
                              float marginFromMin = vNormalizedDepth - minSourceDepth;
                              float marginFromMax = maxSourceDepth - vNormalizedDepth;
-@@ -5877,6 +5888,62 @@ function _canvasToPngBytes(canvas) {
+@@ -5877,6 +5913,62 @@ function _canvasToPngBytes(canvas) {
  // interior gaps = flooded rim target plug, border = 0), the inpaint mask
  // (interior disocclusions), the outpaint mask (border void), the FG-occluder
  // mask, and a metadata json.
@@ -158,7 +183,7 @@ index 602ce8a..ca5a6f4 100644
  function exportSDBundle() {
      try {
          if (!renderer || !postProcessScene || !postProcessCamera) { alert('Renderer not ready'); return; }
-@@ -5982,6 +6049,11 @@ function exportSDBundle() {
+@@ -5982,6 +6074,11 @@ function exportSDBundle() {
              meta.outpaintMarginPx = [xE.mx, xE.my];
              meta.outpaintSourceRes = [xE.pw, xE.ph];
          }
@@ -170,7 +195,7 @@ index 602ce8a..ca5a6f4 100644
          files.push({ name: 'meta.json', bytes: new TextEncoder().encode(JSON.stringify(meta, null, 2)) });
  
          renderer.setRenderTarget(null);
-@@ -6412,6 +6484,43 @@ let bgPlugMode = 'directional';
+@@ -6412,6 +6509,44 @@ let bgPlugMode = 'directional';
  // exports a proper outpaint plate (mask + extended colour + extended depth) to
  // replace it. Set false to keep the BG layer flush with the image rectangle.
  let bgSceneExtend = true;
@@ -194,6 +219,7 @@ index 602ce8a..ca5a6f4 100644
 +// streaks and the margins keep the JFA glow.
 +let bgMPIMode = true;
 +let bgMPIFullPlanes = false; // MPI v2: FULL completed planes (wide-angle path) — replaces the v1 plug/tear pipeline when on
++let bgMPIV2Bins = 10;        // v2 quantile bins (separate from the v1 partition's top-K)
 +let mpiFullMeshes = null;    // v2 layer plane meshes
 +let bgMPIStrips = true;    // per-layer plates, live (MPI slice 3): pair-validated layer continuations under nearer layers
 +let bgMPIDecimate = true;  // adaptive quad indexing on flat layer interiors (EPS-bounded, tears kept per-texel)
@@ -214,7 +240,7 @@ index 602ce8a..ca5a6f4 100644
  // Band fill opacity. With the band tightened to a silhouette strip the fill is
  // short-range, so it should read as a SOLID, complete inpaint — no streaks AND
  // no transparent gaps inside the silhouette. Keep bgFillSolid = true for that.
-@@ -6477,6 +6586,13 @@ let bgBandCutMaxGrad = 0.04;
+@@ -6477,6 +6612,13 @@ let bgBandCutMaxGrad = 0.04;
  // 0.3 = "stretched more than ~3x". Lower = stricter (less cutting).
  let bgBandCutStretchFrac = 0.3;
  let bgBandCutDilatePx = 4;     // dilate the cut mask so far-side stretch fragments are covered too
@@ -228,7 +254,7 @@ index 602ce8a..ca5a6f4 100644
  // Coarse-extension data stashed at BG-build for the SD outpaint bundle
  // (native/extended res, top-row-first): { mx, my, pw, ph, EPW, EPH,
  //  depth:Float32(EPN), fill:Uint8(EPN*3), mask:Uint8(EPN) (1 = margin/outpaint) }
-@@ -6518,11 +6634,18 @@ function bgPullPushFill(cpx, valid, W, H) {
+@@ -6518,11 +6660,18 @@ function bgPullPushFill(cpx, valid, W, H) {
              const o=y*nW+x, wc=Math.min(1,sw); nww[o]=wc; if(sw>0){ ncw[o*3]=sr/sw*wc; ncw[o*3+1]=sg/sw*wc; ncw[o*3+2]=sb/sw*wc; } }
          levels.push({cw:ncw, ww:nww, W:nW, H:nH});
      }
@@ -250,7 +276,7 @@ index 602ce8a..ca5a6f4 100644
      for (let l=levels.length-2; l>=0; l--){ const fine=levels[l], coarse=levels[l+1];
          for (let y=0;y<fine.H;y++) for (let x=0;x<fine.W;x++){ const o=y*fine.W+x;
              if (fine.ww[o] < 0.999){ const s=sample(coarse,(x-0.5)/2,(y-0.5)/2); if(s){ const a=fine.ww[o];
-@@ -6532,6 +6655,37 @@ function bgPullPushFill(cpx, valid, W, H) {
+@@ -6532,6 +6681,37 @@ function bgPullPushFill(cpx, valid, W, H) {
      for (let i=0;i<W*H;i++){ const w=L0.ww[i]||1; out[i*3]=Math.max(0,Math.min(255,L0.cw[i*3]/w)); out[i*3+1]=Math.max(0,Math.min(255,L0.cw[i*3+1]/w)); out[i*3+2]=Math.max(0,Math.min(255,L0.cw[i*3+2]/w)); }
      return out;
  }
@@ -288,7 +314,7 @@ index 602ce8a..ca5a6f4 100644
  // DIRECTIONAL PLUG: the single plug that seals every disocclusion at the depth of
  // the FAR SIDE of its own edge (revealed rim) — background behind figures, nearer
  // surface for glancing foreground overlaps. Extrudes from the far background, grows
-@@ -6546,24 +6700,107 @@ function bgDirectionalPlug(depth, W, H, opts) {
+@@ -6546,24 +6726,107 @@ function bgDirectionalPlug(depth, W, H, opts) {
      for (let i=0;i<1024;i++){ const nd=i/1023; const t=Math.min(Math.max(nd/0.5,0),1); const slo=0.02*(1-(t*t*(3-2*t)));
          const t2=Math.min(Math.max((nd-0.5)/0.5,0),1); const shi=-0.04*(t2*t2*(3-2*t2)); const s=nd<0.5?slo:shi; lut[i]=DELTA*s/(0.20+s)*(W/0.16); }
      const pxAt = dv => lut[Math.min(1023,Math.max(0,(dv*1023)|0))];
@@ -410,7 +436,7 @@ index 602ce8a..ca5a6f4 100644
      return { plug, band, rimSrc };
  }
  (function(){
-@@ -6711,7 +6948,62 @@ function applyLiveBake(L) {
+@@ -6711,7 +6974,62 @@ function applyLiveBake(L) {
          cx.clearRect(0, 0, w, h); cx.drawImage(cImg, 0, 0, w, h);
          const cpx = cx.getImageData(0, 0, w, h).data;
          const t0 = Date.now();
@@ -473,7 +499,7 @@ index 602ce8a..ca5a6f4 100644
          const oc = document.createElement('canvas'); oc.width = w; oc.height = h;
          const octx = oc.getContext('2d');
          const oid = octx.createImageData(w, h);
-@@ -6728,7 +7020,12 @@ function applyLiveBake(L) {
+@@ -6728,7 +7046,12 @@ function applyLiveBake(L) {
              mid.data[i*4] = v; mid.data[i*4+1] = v; mid.data[i*4+2] = v; mid.data[i*4+3] = 255;
          }
          mctx.putImageData(mid, 0, 0);
@@ -487,7 +513,7 @@ index 602ce8a..ca5a6f4 100644
          const mTex = new THREE.Texture(mc); mTex.needsUpdate = true;
          L.textures.depth = sTex;
          L.textures.edgeMask = mTex;
-@@ -6759,6 +7056,304 @@ let srcBandSeedMaterial = null, bgCombineMaterial = null, bgColorSeedMaterial =
+@@ -6759,6 +7082,318 @@ let srcBandSeedMaterial = null, bgCombineMaterial = null, bgColorSeedMaterial =
  let bgMorphMaterial = null; // grayscale erode/dilate for the depth opening (unused since v3.1)
  let bgLakeMaterial = null;  // v3.7: outside-flag propagation + interior-lake fill
  
@@ -517,7 +543,7 @@ index 602ce8a..ca5a6f4 100644
 +    let NAv = 0;
 +    for (let i = 0; i < PN; i++) { if (alphaV && !alphaV[i]) continue; histV[Math.max(0, Math.min(255, (dV[i]*255)|0))]++; NAv++; }
 +    if (!NAv) return null;
-+    const KV = Math.max(2, Math.min(bgMPIMaxLayers, 255));
++    const KV = Math.max(2, Math.min(bgMPIV2Bins, 255));
 +    const cutV = new Float32Array(KV+1); cutV[KV] = 1.0001;
 +    {
 +        let acc = 0, kNext = 1;
@@ -636,6 +662,20 @@ index 602ce8a..ca5a6f4 100644
 +                if (yAdd < ph) { accF += rowF[yAdd*pw+x]; accM += rowM[yAdd*pw+x]; }
 +                if (ySub >= 0) { accF -= rowF[ySub*pw+x]; accM -= rowM[ySub*pw+x]; }
 +            }
++        }
++        // EDGE-AWARE clamp: smoothing kills noise, but it must not drag a
++        // texel across an intra-bin depth edge — the figure's legs share a
++        // quantile slice with the dune around them, and unclamped blur
++        // welded them into one sheet that SHEARED the leg into the
++        // background under parallax (user-reported). Half a tear-step of
++        // movement is smoothing; more is a different surface: keep the
++        // texel's own depth there, so the silhouette survives and the
++        // cell-cut separates the surfaces.
++        for (let i = 0; i < PN; i++) {
++            if (!reg[i]) continue;
++            const dEdge = Sf[i] - Ff[i];
++            if (dEdge > fgTearStep*0.5) Sf[i] = Ff[i] + fgTearStep*0.5;
++            else if (dEdge < -fgTearStep*0.5) Sf[i] = Ff[i] - fgTearStep*0.5;
 +        }
 +        // quarter-res pull-push completion colours
 +        const qw = Math.ceil(pw/4), qh = Math.ceil(ph/4), qN = qw*qh;
@@ -792,7 +832,7 @@ index 602ce8a..ca5a6f4 100644
  function buildBackgroundLayer() {
      try {
          const L = (typeof mediaLayers !== 'undefined') ? mediaLayers[0] : null;
-@@ -7263,10 +7858,16 @@ function buildBackgroundLayer() {
+@@ -7263,10 +7898,16 @@ function buildBackgroundLayer() {
          mat.uniforms.map.value = bgColorTarget.texture;
          // RUNG LIVE PLUG: compute correct plug on CPU from loaded PNGs.
          // No GPU readback, no encoding guesses — all three inputs are verified offline.
@@ -809,7 +849,7 @@ index 602ce8a..ca5a6f4 100644
          const _depthImgReady = L.textures.depth && (L.textures.depth.image || L.textures.depth.isDataTexture);
          if (_depthImgReady && (bgPlugMode === 'directional' || (typeof MoebiusPlug !== 'undefined' && bgBandImg && (bgValidImg || bgValidMode !== 'png')))) {
              try {
-@@ -7289,7 +7890,9 @@ function buildBackgroundLayer() {
+@@ -7289,7 +7930,9 @@ function buildBackgroundLayer() {
                  const cx = cv.getContext('2d', { willReadFrequently: true });
                  // read sharpened depth from the layer's depth texture (img/canvas =
                  // top-row-first, matching the band/valid PNGs read below)
@@ -820,7 +860,7 @@ index 602ce8a..ca5a6f4 100644
                      cx.drawImage(dImg, 0, 0, pw, ph);
                  } else {
                      // DataTexture fallback — render to a temp target and read back.
-@@ -7317,9 +7920,436 @@ function buildBackgroundLayer() {
+@@ -7317,9 +7960,436 @@ function buildBackgroundLayer() {
                  const dpx = cx.getImageData(0, 0, pw, ph).data;
                  const depth = new Float32Array(PN);
                  for (let i = 0; i < PN; i++) depth[i] = dpx[i * 4] / 255;
@@ -1257,7 +1297,7 @@ index 602ce8a..ca5a6f4 100644
                  if (bgPlugMode === 'directional') {
                      // Single directional plug computed straight from the depth: seal each
                      // disocclusion at the far side of its own edge, grown in by the edge's
-@@ -7329,6 +8359,7 @@ function buildBackgroundLayer() {
+@@ -7329,6 +8399,7 @@ function buildBackgroundLayer() {
                      let bandN = 0; for (let i = 0; i < PN; i++) bandN += band[i];
                      console.log('[RUNG-PLUG] inputs: directional plug ' + pw + 'x' + ph + ' (canvas ' + w + 'x' + h + ')' +
                          ' band ' + bandN + 'px (' + (100*bandN/PN).toFixed(1) + '%)');
@@ -1265,7 +1305,7 @@ index 602ce8a..ca5a6f4 100644
                  } else {
                      // legacy global fg/bg plug: band (PNG) + Otsu valid + harmonic
                      cx.clearRect(0, 0, pw, ph);
-@@ -7359,6 +8390,107 @@ function buildBackgroundLayer() {
+@@ -7359,6 +8430,107 @@ function buildBackgroundLayer() {
                          ' valid[' + validSrc + '] ' + validN + 'px (' + (100*validN/PN).toFixed(1) + '%)');
                      plugDepth = MoebiusPlug.buildPlugFromValid(depth, band, valid, pw, ph, 220);
                  }
@@ -1373,7 +1413,7 @@ index 602ce8a..ca5a6f4 100644
                  // ---- PLUG DEPTH COMPLETION: bury the plug's own cliff ----
                  // Outside the band the plug reverts to SOURCE depth, so the
                  // band's inner boundary is a figure-sized cliff in the PLUG's
-@@ -7372,22 +8504,144 @@ function buildBackgroundLayer() {
+@@ -7372,22 +8544,144 @@ function buildBackgroundLayer() {
                  // background/rim depth underneath. The visible plug becomes a
                  // cliff-free "world without the foreground" surface.
                  {
@@ -1527,7 +1567,7 @@ index 602ce8a..ca5a6f4 100644
                      let nFg = 0; for (let i = 0; i < PN; i++) nFg += fgm[i];
                      if (nFg > 0) {
                          // diffuse surrounding plug depth (background + pinned band rims)
-@@ -7403,6 +8657,106 @@ function buildBackgroundLayer() {
+@@ -7403,6 +8697,106 @@ function buildBackgroundLayer() {
                          for (let i = 0; i < PN; i++) if (fgm[i]) plugDepth[i] = dsm[i*3] / 255;
                          underMask = fgm;
                          console.log('[RUNG-PLUG] plug depth completed under occluders (' + nFg + 'px rind, diffused)');
@@ -1634,7 +1674,7 @@ index 602ce8a..ca5a6f4 100644
                      }
                  }
                  // The plug array is top-row-first (like an <img>). The FG mesh's own
-@@ -7425,6 +8779,7 @@ function buildBackgroundLayer() {
+@@ -7425,6 +8819,7 @@ function buildBackgroundLayer() {
                  if ('colorSpace' in plugDT) plugDT.colorSpace = THREE.NoColorSpace;
                  _plugTex = plugDT;
                  console.log('[RUNG-PLUG] live plug computed: ' + (Date.now()-t0) + 'ms');
@@ -1642,7 +1682,7 @@ index 602ce8a..ca5a6f4 100644
  
                  // --- BAND-GATED FG STRETCH CUT: bake the cut mask ---
                  // Dilate the band a few px so the far-side half of a stretched
-@@ -7456,17 +8811,402 @@ function buildBackgroundLayer() {
+@@ -7456,17 +8851,402 @@ function buildBackgroundLayer() {
                      if (fu && fu.u_bandMask) {
                          if (fu.u_bandMask.value && fu.u_bandMask.value.dispose) fu.u_bandMask.value.dispose();
                          fu.u_bandMask.value = cutDT;
@@ -2046,7 +2086,7 @@ index 602ce8a..ca5a6f4 100644
                  // --- FILL COLOR (Law 4): DEPTH-GUIDED EXEMPLAR (onion-peel). Fill each
                  // hole rim-first by copying the best-matching REAL background patch (SSD
                  // over known neighbours; sources restricted to true background at similar
-@@ -7486,11 +9226,176 @@ function buildBackgroundLayer() {
+@@ -7486,11 +9266,176 @@ function buildBackgroundLayer() {
                      const fillSrc = new Uint8Array(PN);
                      for (let i = 0; i < PN; i++) { const lum=(cpx[i*4]+cpx[i*4+1]+cpx[i*4+2])/3;
                          fillSrc[i] = (!band[i] && !(underMask && underMask[i]) && lum>=45) ? 1 : 0; }
@@ -2226,7 +2266,7 @@ index 602ce8a..ca5a6f4 100644
                      const fillRGB = new Float32Array(PN * 3);
                      for (let i = 0; i < PN; i++) { fillRGB[i*3]=cpx[i*4]; fillRGB[i*3+1]=cpx[i*4+1]; fillRGB[i*3+2]=cpx[i*4+2]; }
                      // DIRECTIONAL BACKGROUND EXTENSION: for each hole, march to the nearest
-@@ -7518,7 +9423,16 @@ function buildBackgroundLayer() {
+@@ -7518,7 +9463,16 @@ function buildBackgroundLayer() {
                      // fill — solid and streak-free (the reflection above only sets bandReach,
                      // used by the optional fade). Keeps the interior clean, no striation.
                      if (bgFillMode === 'smooth') {
@@ -2244,7 +2284,7 @@ index 602ce8a..ca5a6f4 100644
                      }
                      // reach -> alpha: opaque for short reach, faded to transparent for long
                      // (streaks). smoothstep between the two configured thresholds.
-@@ -7532,6 +9446,17 @@ function buildBackgroundLayer() {
+@@ -7532,6 +9486,17 @@ function buildBackgroundLayer() {
                      };
                      const bandAlpha = new Uint8Array(PN);
                      for (let i = 0; i < PN; i++) bandAlpha[i] = band[i] ? _reachAlpha(bandReach[i]) : 0;
@@ -2262,7 +2302,7 @@ index 602ce8a..ca5a6f4 100644
                      // The FG stretch cut is allowed in the DILATED band (bandCutMask), so
                      // the plug must be opaque there too — a discard over transparent plug
                      // is a naked hole. RGB for the ring comes from the bleed below.
-@@ -7539,10 +9464,237 @@ function buildBackgroundLayer() {
+@@ -7539,10 +9504,237 @@ function buildBackgroundLayer() {
                      // The occluder rind (depth-completed, smooth) carries opaque
                      // background wash: never the figure's own colours, so nothing
                      // figure-tinted exists on the plug for bilinear edges to smear.
@@ -2503,7 +2543,7 @@ index 602ce8a..ca5a6f4 100644
                      const order = { length: 0 }; // (retained name for the log below)
                      for (let i = 0; i < PN; i++) if (band[i]) order.length++;
                      // Stash directional gap data for the SD-export bundle (native res, top-row-first)
-@@ -7554,12 +9706,39 @@ function buildBackgroundLayer() {
+@@ -7554,12 +9746,39 @@ function buildBackgroundLayer() {
                      // Bleed the band's fill colour a few px OUT into the surrounding
                      // non-band so the fill texture's bilinear edge blends fill->fill,
                      // not fill->black. Alpha stays sharp (= band); only RGB is bled.
@@ -2548,7 +2588,7 @@ index 602ce8a..ca5a6f4 100644
                      const fill = new Uint8Array(PN * 4);
                      for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++) {
                          const i = y*pw+x, o = ((ph-1-y)*pw+x)*4;
-@@ -7569,7 +9748,8 @@ function buildBackgroundLayer() {
+@@ -7569,7 +9788,8 @@ function buildBackgroundLayer() {
                          fill[o]=fillRGB[i*3]; fill[o+1]=fillRGB[i*3+1]; fill[o+2]=fillRGB[i*3+2];
                          fill[o+3] = bandAlpha[i];
                      }
@@ -2558,7 +2598,7 @@ index 602ce8a..ca5a6f4 100644
                      fillDT.needsUpdate = true; fillDT.flipY = false;
                      fillDT.minFilter = THREE.LinearFilter; fillDT.magFilter = THREE.LinearFilter;
                      if ('encoding' in fillDT) fillDT.encoding = THREE.sRGBEncoding;         // r128
-@@ -7620,14 +9800,22 @@ function buildBackgroundLayer() {
+@@ -7620,14 +9840,22 @@ function buildBackgroundLayer() {
                              const extValid = new Uint8Array(EPN);
                              const extCpx = new Uint8Array(EPN*4);   // RGBA, colour source
                              const extDpx = new Uint8Array(EPN*4);   // RGBA, depth encoded as gray
@@ -2585,7 +2625,7 @@ index 602ce8a..ca5a6f4 100644
                                  extDpx[di*4] = dz; extDpx[di*4+1] = dz; extDpx[di*4+2] = dz; extDpx[di*4+3] = 255;
                              }
                              const extColorSmooth = bgPullPushFill(extCpx, extValid, EPW, EPH);
-@@ -7642,13 +9830,35 @@ function buildBackgroundLayer() {
+@@ -7642,13 +9870,35 @@ function buildBackgroundLayer() {
                                      extFill[di*3+1] = Math.max(0, Math.min(255, fillRGB[si*3+1]|0));
                                      extFill[di*3+2] = Math.max(0, Math.min(255, fillRGB[si*3+2]|0));
                                  } else {
@@ -2622,7 +2662,7 @@ index 602ce8a..ca5a6f4 100644
                              // extended plug-depth texture (RedFloat, rows flipped for GL like the native one)
                              const eplug = new Float32Array(EPN);
                              for (let y = 0; y < EPH; y++) { const s = y*EPW, d = (EPH-1-y)*EPW;
-@@ -7697,7 +9907,8 @@ function buildBackgroundLayer() {
+@@ -7697,7 +9947,8 @@ function buildBackgroundLayer() {
                              bgExtGeom = new THREE.PlaneGeometry(gW, gH, segW, segH);
                              // stash for the SD outpaint bundle (top-row-first, extended res)
                              bgExtendExport = { mx, my, pw, ph, EPW, EPH, depth: extDepth, fill: extFill, mask: extMask };
@@ -2632,7 +2672,7 @@ index 602ce8a..ca5a6f4 100644
                                  EPW + 'x' + EPH + ' (' + (Date.now()-tX) + 'ms)');
                          }
                      }
-@@ -7726,6 +9937,158 @@ function buildBackgroundLayer() {
+@@ -7726,6 +9977,158 @@ function buildBackgroundLayer() {
          bgLayerMesh.visible = show ? show.checked : true;
          scene.add(bgLayerMesh);
  
@@ -2791,7 +2831,7 @@ index 602ce8a..ca5a6f4 100644
          console.log('[BG-LAYER] built: band + plug depth + baked color, mesh added behind layer 0');
          return true;
      } catch (e) {
-@@ -7762,6 +10125,8 @@ function _wireDebugSheetControls() {
+@@ -7762,6 +10165,8 @@ function _wireDebugSheetControls() {
          });
      }
      document.getElementById('sdBundleBtn')?.addEventListener('click', exportSDBundle);
@@ -2800,7 +2840,7 @@ index 602ce8a..ca5a6f4 100644
      document.getElementById('bgLayerBuildBtn')?.addEventListener('click', buildBackgroundLayer);
      document.getElementById('bgColorImport')?.addEventListener('change', (e) => {
          const file = e.target.files && e.target.files[0];
-@@ -7779,15 +10144,35 @@ function _wireDebugSheetControls() {
+@@ -7779,15 +10184,35 @@ function _wireDebugSheetControls() {
          e.target.value = '';
      });
      document.getElementById('bgLayerToggle')?.addEventListener('change', (e) => {
@@ -2839,7 +2879,7 @@ index 602ce8a..ca5a6f4 100644
      });
      const _reachSlider = document.getElementById('fgReachSlider');
      const _reachValue = document.getElementById('fgReachSliderValue');
-@@ -8312,8 +10697,8 @@ function updateCameraAndProjection() {
+@@ -8312,9 +10737,10 @@ function updateCameraAndProjection() {
              gyroCamY = stableRollDegEquivalent * gyroSensitivityY;
          }
  
@@ -2848,9 +2888,11 @@ index 602ce8a..ca5a6f4 100644
 +        camera.position.x = faceTrackCamX + gyroCamX + manualCamDX;
 +        camera.position.y = faceTrackCamY + gyroCamY + manualCamDY;
      }
++    updateViewFade();
  
      camera.updateProjectionMatrix();
-@@ -9662,6 +12047,72 @@ async function snapshotAndFill() {
+     const pbl = new THREE.Vector3(-terrariumWidth/2,-terrariumHeight/2,portalPlaneWorldZ);
+@@ -9662,6 +12088,72 @@ async function snapshotAndFill() {
  /**
   * Imports SD inpainted images back into the scene as a patch mesh
   */
@@ -2923,7 +2965,7 @@ index 602ce8a..ca5a6f4 100644
  async function importSDInpaintedPatch() {
      console.log("--- Importing SD Inpainted Patch ---");
      
-@@ -12291,11 +14742,46 @@ function setupStaticControlListeners() {
+@@ -12291,11 +14783,46 @@ function setupStaticControlListeners() {
      }
  
      // --- Canvas Mouse Listeners (Unchanged) ---
@@ -2972,7 +3014,7 @@ index 602ce8a..ca5a6f4 100644
      }
      
      // --- NEW: Gap Accumulation Listeners ---
-@@ -12366,6 +14852,7 @@ function setupStaticControlListeners() {
+@@ -12366,6 +14893,7 @@ function setupStaticControlListeners() {
          exportAtlasesBtn.addEventListener('click', exportSDPipelineData);
      }
      
