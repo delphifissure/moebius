@@ -1757,3 +1757,86 @@ comparable to A30's zero-hole run on that asset): pre-batch 7–44 hole
 px per pose, post-batch 7–46 — identical within frame noise, i.e. the
 batch does not touch geometry coverage; the residual is the documented
 frazetta T-junction speck class (A32).
+
+---
+
+## Addendum 34 — The outline artifact is a depth-map defect; it is now repaired at the root
+
+The user's screenshots this round show three separable things, and only
+one of them was fixable where I had been looking.
+
+### 1. Diagnosis: why occluder outlines stick to the background
+
+The dark outlines (the man's silhouette line, the staff, the spaceship
+contour) sit at **background depth in the estimated depth map** — thin
+line art defeats monocular depth estimators. From that point on, every
+renderer is faithful to the wrong data: the strokes are geometrically
+background in the FG mesh, in the v1 partition, in the v2 bins, and in
+the bake — so they detach from their occluder under parallax and
+"stick" to the background. This is why the previous bake-side erosion
+(A33's 2px→4px) could not touch it: those texels were never
+plug-replaced, because per the depth map they ARE background. Measured
+directly: the CPU fill texture that the live BG mesh actually samples
+(`fillRGB` — NOT the GPU wash `bgColorTarget`, which only feeds the
+debug panel and SD export) carries the strokes verbatim outside the
+band, and 64% of a synthetic stroke path survived into the bake under
+the old code.
+
+### 2. The root fix: stroke depth repair in `applyLiveBake`
+
+A stroke texel — luma < 0.30, contrast on both sides across its width
+(dark-region rims have a flat interior side and are excluded), strong
+contrast on at least one side — that sits within 3px of decisively
+nearer non-stroke content (depth gap > 0.05) **adopts that nearer
+depth**, and the adoption propagates geodesically along the connected
+stroke set, hopping 1–2px classification breaks: staff → hand,
+outline → figure. Strokes with no near evidence anywhere along their
+run are left untouched — an isolated far silhouette has nothing to
+anchor to, and inventing depth for it would be worse. The repair runs
+before the sharpened depth ships, so the v1 tear, the partition, the
+v2 quantile bins, and both bake paths all see repaired depth; the GPU
+colour seed additionally rejects dark strokes so even unrepaired ones
+cannot wallpaper into the wash.
+
+Ground truth (synT: strokes drawn in COLOUR ONLY, depth left at sky —
+the exact estimator failure): occluder outline **0.622** and 190px
+staff **0.678** against target 0.678 (sky = 0.031); isolated control
+stroke stays 0.031. The two iterations that mattered: the seed radius
+had to be 3px because the depth silhouette rarely touches the stroke
+exactly, and the darkness ceiling had to come down from 0.45 to 0.30
+because frazetta's painterly darks misclassified and put a localized
++67px protrusion cluster on the contract — at 0.30 the frazetta
+protrude battery reads **exactly baseline** (23px, worst 40/255),
+synA plug truth is violation-free, and the v2 nine-pose contract is
+unchanged within noise.
+
+### 3. What the streak fields are — and are not
+
+The wide tunneling streaks in the same screenshots are the v1 tear's
+deliberate KEEP classes (thin ribbons, far-mismatch walls whose reveal
+the bake cannot back) stretching at angles v1 was never contracted
+for, plus the bake mesh's own internal cliffs, which are exempt from
+the stretch cut because cutting the LAST layer opens naked holes. The
+band-gated cut is disarmed under pre-tear by design (D1b: it misfires
+at rest). This is the single-completed-background ceiling documented
+in A26/A29 — it is the reason v2 exists, and it is not tunable away.
+v1 remains the A/B reference; the wide-angle path is the v2 stack.
+
+### 4. UX
+
+The build overlay now has a **progress bar and %**. The builds are
+synchronous main-thread blocks, so the bar is a compositor-thread
+transform animation calibrated to the last measured build duration
+(stored per mode) — it keeps moving through the freeze — and the %
+text ticks whenever the thread yields, snapping to 100 at completion.
+A literal per-stage % would require making the build yield (worker or
+generator restructuring); noted as the honest upgrade path. Also
+fixed: exporting the debug grid while a pipeline view (or
+inpainting-off) had suppressed the baked meshes produced degenerate
+all-hole/all-invalid panels — the export now restores the composed
+scene before refreshing its buffers (this was A33's suppression
+interacting with the exporter, visible in the user's second grid).
+
+Landed in `5395575` (drivers: `harness/strokedepth.js`,
+`harness/strokebleed.js`, `harness/gridfix_test.js`; synthetic assets
+`synS`/`synT`).
