@@ -2091,3 +2091,62 @@ ground, max gradient = the cone slope, ring wash scene-coloured),
 quick-bake contract 12/12, frazetta protrusion at baseline.
 
 Landed in `f885888`.
+
+---
+
+## Addendum 40 — Thick ink was still shipping at background depth
+
+User: "some of the black outline is still projected to the background."
+Correct — and it was the ink the repair COULDN'T reach. The two-sided
+thin gate (A34) classifies a stroke by seeing brighter content on
+both sides within 4px. Thick ink — staff ornaments, hook curls, knots
+10–20px across — fails that by construction, stayed unclassified, and
+shipped at BG depth: a piece of the outline visibly left behind on the
+plate, exactly what SD would then inpaint AROUND.
+
+**Phase 2: lift small dark components whole.** Same discriminator as
+the caravan fix (A37), one level up: a dark connected component lifts
+to its occluder iff it passes four gates —
+
+1. **Area cap** (≤4,000px): shadows and rock faces never qualify.
+2. **Adopted contact + through-test**: phase-1-lifted ink must not
+   merely brush one edge (a dark patch beside an outline) but reach
+   both extremes of the blob on some axis — the staff passes THROUGH
+   its ornament.
+3. **Whole-blob-far**: every member must sit at least one depth GAP
+   below the adopt depth. This is the gate that took three attempts
+   to find (see below).
+4. **Ring contrast** (≥0.15): ink sits on a brighter surround by
+   nature; dark-on-dark is painterly texture, not ink.
+
+A **continuation round** then re-anchors ink the blob orphaned — the
+staff ABOVE its ornament loses its phase-1 connection when the
+ornament breaks the classification chain; it re-seeds from phase-2
+texels only and rides the stroke graph as usual.
+
+**The gate that mattered.** First cut (contact-bbox through-test
+alone) lifted 139px on the frazetta and pushed protrusion from 30px
+to 49px, worst 35→64. A stricter opposite-sides test (external ink
+strictly above AND below the blob) fixed frazetta but killed the
+ornament: its orphaned upper staff is dark-and-unadopted, so it MERGES
+into the blob and the merged blob only has adopted ink below it.
+The candidate dump (new `p2probe.js`, `_srCapture`) showed the real
+difference: the frazetta regressor's members span depth 0.063→0.494 —
+it STRADDLES the silhouette, and some members already sit at the
+adopt depth. The ornament's members are uniformly at sky depth
+(0.031). Stuck ink is stuck WHOLE. A blob that already reaches the
+adopt depth is silhouette texture, and lifting its far part
+manufactures a near-depth island that protrudes. Requiring
+`adoptDepth − max(memberDepth) > GAP` accepts every true positive and
+refuses the frazetta blob outright.
+
+Contract grew to 6 cases (synT gained a 17×17 ornament on the staff
+and a footprint lying along the outline): outline lifts, staff lifts,
+isolated stroke stays, caravan figures stay, **ornament lifts (staff
+passes through), footprint stays (one-sided brush)** — 6/6. Frazetta
+protrusion back to baseline (30px violations, worst 35, plate-only 0).
+Quick-bake 12/12, plate probes 3/3. Bisect kill-flags (`_srNoGC`,
+`_srNoP2`, `_srNoCont`) and the candidate dump are left in as gated
+debug affordances with a driver (`protrude_ab.js`).
+
+Landed in `44f8e99`.
