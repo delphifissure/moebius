@@ -1333,3 +1333,46 @@ colours rendered in the reveals at the test pose.
 
 The full SD round-trip now exists: 💾 SD Bundle → inpaint per layer
 (plus dir_*/out_* for plate and margins) → 📤 Import SD Layer Results.
+
+---
+
+## Closing scorecard — the eight criteria against the current build (review-fix @ harness commit)
+
+1. **Plugs fill at correct LOCAL depth (far side of each edge).**
+   MET, now provably: on analytic ground-truth scenes the displayed
+   fill (band) tracks closed-form truth to 0.0025–0.006 mean / at
+   worst 0.015–0.095 max, with every over-threshold pixel in
+   never-revealed zones (occluder–ground gap below tear step). The
+   fill CONTINUES surface slope (slope-extrapolated bands + membrane),
+   not just rim values.
+2. **Never protrude past the occluder.** MET: synthetic suite 0
+   violations on all scenes; starwatcher 12px worst 19/255; frazetta
+   25px none plate-borne; warrior's remaining cluster is the frame
+   margin legitimately continuing near content under parallax.
+3. **Affect nothing outside.** MET with two documented sub-visual
+   exceptions: 0.58% torn-skin fill retargets (both states approximate
+   torn ink comparably) and sub-pixel speckle from decimation/strips
+   at high-contrast texels.
+4. **No streaks.** MET (ramp collapse at bake aprons + halo-edge and
+   soft-core NMS tears + under-sheet). The MPI-off legacy path still
+   streaks — which is why MPI is now the default.
+5. **No transparent holes.** MET: zero in-content holes at the pose on
+   all synthetic scenes (40px-margin classification); raw counts in
+   suite output are letterbox bars outside the image.
+6. **No FG colour/depth contamination.** MET: fill sources exclude
+   band/rind/ink; completion flood is standing-mask contained; strips
+   are pair-validated and single-class by construction; the SD bundle
+   extends the guarantee into the diffusion stage (per-layer context).
+7. **Pixel-faithful at rest.** MET to 99.4%: the 0.58% torn-skin class
+   plus quantum-scale speckle, both documented with measurements.
+8. **Beyond-frame reveals filled.** MET (front-surface-seeded scene
+   extension + welded margins; outpaint set in the SD bundle).
+
+**Coarse live fill, refined by SD:** the architecture now matches the
+original intent exactly — a weight-free, real-time-on-import layered
+structure (partition + under-sheet + pair-validated per-layer plates +
+floor-defaulted backdrop, 98k triangles), with a closed SD round-trip
+(export bundle → per-layer inpaint → live reimport) that can only
+change texture, never geometry. Everything above is constant-derived;
+nothing is tuned per image, and the whole verification suite ships in
+`harness/`.
