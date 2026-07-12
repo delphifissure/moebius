@@ -1840,3 +1840,70 @@ interacting with the exporter, visible in the user's second grid).
 Landed in `5395575` (drivers: `harness/strokedepth.js`,
 `harness/strokebleed.js`, `harness/gridfix_test.js`; synthetic assets
 `synS`/`synT`).
+
+---
+
+## Addendum 35 — Retraction: the tunneling was never a ceiling
+
+The user rejected A34's "structural ceiling" verdict with the correct
+argument: a stretched triangle renders content that is visible from NO
+viewpoint, so it can never be the right answer — anything opaque
+behind it (the bake, black) is strictly better. The retraction is
+warranted. What looked like one ceiling was three mechanisms, each
+individually closable:
+
+**1. The tear kept rubber on purpose.** The thin-feature collar and
+far-mismatch keep classes preserved cliff-spanning triangles to
+protect thin features and avoid mismatched reveals. Both rationales
+are obsolete: stroke repair (A34) makes thin features depth-coherent
+(their interiors no longer span cliffs — only their 1px boundary ring
+does, and tearing it cannot destroy them), and a mismatched reveal at
+least parallaxes like a surface. `bgTearAllRubber` (default on) drops
+every triangle spanning more than fgTearStep. Reference build log:
+**0 thin-feature kept, 0 far-mismatch kept**.
+
+**2. Ramps terraced below every threshold.** A silhouette ramp wider
+than ~5px survived the single ±2px binarization pass as a staircase of
+sub-threshold steps — invisible to per-triangle span tests (each
+triangle spans a third of the ramp) and to fwidth heuristics. The
+binarization now ITERATES until convergence, the plateaus eating the
+ramp from both sides, and chooses the snap side by **colour affinity**
+rather than depth proximity — depth-proximity snapping stranded
+occluder-coloured texels on the far plateau, which is the wide-band
+analog of the stroke problem and was measurably the residual debris.
+
+**3. The plate was exempt from everything.** The baked background mesh
+is a monolithic displaced grid whose own internal cliffs (mountain
+against sky, continuing under a reveal) rubber-band exactly like FG
+cliffs — and it sat outside the band cut (`!u_isBackgroundLayer`),
+outside the tear, outside the fragment discards. The stretch/mismatch
+net now applies to the plate (`u_bandCutAll`), and re-arms under
+pre-tear UNGATED by the band. A discarded plate fragment shows black:
+within one completed background, the content behind the last surface's
+own cliff genuinely exists in no capture, and black is the same honest
+statement the view-fade envelope makes. (v2's per-bin completions are
+still the path that fills those reveals with actual content.) The
+re-armed net is also the "transparency filter" that now catches the
+fine dark streaks in the no-inpainting view — the per-fragment
+discards had been hard-disabled under pre-tear.
+
+**Ground truth** (synU — the synthetic with Gaussian-blurred depth,
+giving the 18px ramped silhouettes real estimators produce): the solid
+tunnel wall on the occluder's reveal edge collapses into a clean
+backed reveal with thin residual slivers; reveal-zone debris roughly
+halves, with part of the remainder being edge texels now correctly
+reclassified ONTO the occluder (they parallax with it, which is the
+desired behaviour and outside what a colour-only count can see).
+Regressions: frazetta protrude at baseline (30px, worst 35/255 vs
+23px/40, same cluster — noise), synA plug truth violation-free,
+stroke-repair contract 3/3, v2 nine-pose contract unchanged.
+
+**Honest residuals:** sub-threshold slivers (a few px wide) at cliff
+edges — the heuristics are thresholded and a discard test cannot be
+made exact without exact geometry (which is the tear's job, and the
+tear cannot see sub-triangle ramps that the collapse missed); and
+black slivers where the plate's own cliffs open at wide angles, which
+only a second completed surface (v2) can fill with content.
+
+Landed in `343c981` (drivers: `harness/tunnel_test.js`,
+`harness/viscrop.js`; asset `synU`).
