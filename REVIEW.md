@@ -2218,3 +2218,50 @@ contact band residue). New probes: `platebleed_probe.js`,
 `starbleed_probe.js` (real-asset leak metrics + fill/plug/leak PNGs).
 
 Landed in `5c497b5`.
+
+---
+
+## Addendum 42 — Ink islands out of the plate, and constants that scale by meaning
+
+Two asks from the user: swallow the small lifted-ink islands the
+plate still carried, and answer whether "stroke ink within 4px"
+survives contact with other resolutions and other artists' brushes.
+The second question found a real trap.
+
+**Lifted-ink islands join the standing set.** Ink the repair anchors
+to an occluder is FG-class content even when its ride is too small or
+too low for the floor sweep — camp objects, sleds, small figures.
+Left in the plate it survived as a near-depth squiggle that the cone
+clamp cannot touch, because it reads as valid content. The adopted
+mask now feeds the standing-content mask directly: the completion
+flood / floor rind claims the ink, the plate depth completes under
+it, the fill recolours it (+2,375px on the reference asset).
+
+**Scaling by semantics, not wholesale.** The honest answer to "does
+4px scale?" is: only where the constant MEANS stroke width. First
+attempt scaled everything linearly — classifier taps, ribbon tap,
+hug/seed/propagation radii, hop budgets — and the 1920px reference
+asset answered with a 21 → 90/255 plate protrusion at the glider.
+Bisection (new `noScale` / `scaleOnly` debug flags) isolated it: the
+hug/seed radii encode the DEPTH ESTIMATOR's cliff-to-stroke offset,
+a property of the estimator that does not grow with resolution.
+Scaling them let ink adopt across gaps it never hugs. Final split:
+
+- SCALED with w/1200 (width-semantic): classifier cross taps — thick
+  brush at 1920+ fell outside the o≤4 window entirely; ribbon tap;
+  thick-blob connectivity + area cap; plate-side scrub reach and
+  fringe passes.
+- FIXED (estimator-semantic): hug radius, seed radius, propagation
+  radius, hop budget, gap-closing passes.
+
+Clamped at 1, so 851–1200px assets keep the tuned behaviour
+byte-identical — verified: strokedepth 6/6 with identical counts,
+frazetta protrusion at its exact baseline.
+
+Reference-asset (1920px) trajectory across the three rounds: ink
+lifted 2,689px (A40) → 12,020px (A41) → 26,776px now, classification
+78,490 → 90,195px, plate scrub 27,752px — and the protrusion contract
+IMPROVED over the unscaled baseline (46px / worst 21 vs 49 / 21).
+Full battery green: platebleed 7/7, quickbake 12/12, qbflood 3/3.
+
+Landed in `aa94256`.
