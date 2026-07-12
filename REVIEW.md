@@ -1401,3 +1401,35 @@ structural fix is per-layer depth smoothing in the MPI representation
 (a layer's INTERNAL depth may be smoothed aggressively — that is the
 MPI model — while cross-layer silhouettes stay exact), which is also
 the representation the newly stated wide-angle goal requires.
+
+---
+
+## Addendum 26 — MPI v2: full completed planes (the wide-angle path)
+
+Landed behind a UI toggle ("Full planes (v2)"). This branch REPLACES
+the v1 plug/tear/bake pipeline for a build: depth-quantile layer
+partition (connectivity was the wrong cut — the figure joins the
+ground at its feet and 99% of the image landed in one component; in v1
+the TEARS did the segmenting), per-layer full completion
+(flank-validated, unbounded reach, frame counts), intra-layer depth
+smoothing (masked box blur r=8), 2px weld skirts across bin seams,
+quarter-res pull-push completion colours under full-res visible
+texels, and geometry-only margins via GL clamp-to-edge sampling (15%
+for frame-touching layers, 50%/35% for the backdrop).
+
+Results: **build 9-10s vs ~43s**; ~230k triangles across 6 effective
+layers on starwatcher. The user's look-down hatch streaking
+(cam 0.124,+0.067) is **gone** — intra-layer smoothing removes the
+bake's noise apron structurally, exactly as predicted in Addendum 25
+(`v2_lookdown_streakfree.png`). Rest state faithful. Poses at 0.35 and
+0.6 offset (2-4x the v1 design envelope) hold coherent structure on
+both starwatcher and frazetta (`v2_wide06.png`,
+`v2_frazetta_wide.png`).
+
+Open before default-on: the protrusion instrument's FG pass sees no
+layers (covered=0 — needs a v2-aware reference pass); synthetic suite
+not yet run against v2; completion washes are quarter-res pull-push
+(the SD slot — the v2 bundle export should emit these layers
+directly); the farthest-margin notch at 0.6 wants a curved backdrop
+(sky dome) for true near-180 pans; under-sheet-class internal overlaps
+within a bin are cut, showing the next layer's coarser completion.
