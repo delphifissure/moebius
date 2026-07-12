@@ -1376,3 +1376,28 @@ floor-defaulted backdrop, 98k triangles), with a closed SD round-trip
 change texture, never geometry. Everything above is constant-derived;
 nothing is tuned per image, and the whole verification suite ships in
 `harness/`.
+
+---
+
+## Addendum 25 — Look-down streaks: reproduced, partially mitigated, root cause isolated
+
+User-reported streaking at cam(0.124, **+0.067**) reproduced exactly —
+positive-Y (look-down) poses were absent from every earlier battery
+(all used −0.055), and the class is look-down-asymmetric: depth DIPS
+stretch under look-down parallax and compress invisibly at look-up.
+Landed: a manual view-drag control (right-drag / shift-drag = head
+delta, double-click reset) so any pose is one gesture away, and a
+display-side shallow closing (radius 5, clamped to 2 tear-steps) that
+fills narrow ink-stroke dips without touching the plug pipeline
+(protrusion numbers byte-identical).
+
+FG/BG attribution at the pose shows the dominant streaking is deeper:
+a 20-60px-wide, high-amplitude noise APRON in the baked depth along
+the dune crest — the FG tears into hatched gaps there and the plate
+beneath shears on the same noise. A working-depth version of the
+closing reduced it but moved plate protrusion 12→109px and was
+reverted; local morphology cannot safely reach this class. The
+structural fix is per-layer depth smoothing in the MPI representation
+(a layer's INTERNAL depth may be smoothed aggressively — that is the
+MPI model — while cross-layer silhouettes stay exact), which is also
+the representation the newly stated wide-angle goal requires.
