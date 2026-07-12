@@ -1529,3 +1529,44 @@ contract battery keeps meaning what it says (protrude re-verified
 unchanged after the flip). Remaining v2 work: SD bundle/import wired
 to the v2 layers, the bin-internal under-sheet analog, sky dome, and
 an async build for instant import.
+
+---
+
+## Addendum 31 — Finish line: the import-to-parallax pipeline is closed
+
+The remaining v2 queue, resolved:
+
+1. **SD round-trip on planes.** The build records every plane; the
+   bundle emits `v2_{tag}_bin{k}_color/depth/mask_inpaint` per plane
+   with claimed content (5 of 6 on the reference asset; the depth file
+   is the smoothed plane field, already ControlNet-ready); the import
+   button detects the v2 stack and writes SD results into the LIVE
+   plane textures at claimed texels — colours only, structure
+   untouched, no rebuild. Verified: exactly the expected 1,185,625
+   backdrop claim texels applied and rendering in reveals immediately.
+2. **Auto-build.** The stack builds itself when media is ready and
+   when the primary depth source changes, guarded by post-build
+   texture identity (no rebuild loop). Upload a picture; the wide-angle
+   stack appears (~9s). "Click a button, it just works" is now "don't
+   even click."
+3. **Sky dome: assessed, skipped with cause.** Within the 45-degree
+   fade cone the flat backdrop + 50% margins cover every supported
+   pose (the zero-hole nine-pose scan is the evidence); a dome pays
+   only if the cone widens.
+
+**Remaining documented residuals** (all quality-of-polish, none
+structural): the bin-internal under-sheet analog (an intra-bin cliff's
+reveal shows the next plane's wash — narrow by construction, wash now
+band-coloured); worker-threading the ~9s build (currently a one-tick
+deferred synchronous build with a status label); completion texture
+detail (SD's job, and the loop for it now exists end to end).
+
+**The arc, end to end:** an adversarial review of a band-limited
+plug's eight-criterion contract became, via the synthetic ground-truth
+suite, the standing-content mask, the membrane, decimation, and the
+strips — and finally inverted into the architecture the product
+wanted all along: quantile relief planes, complete everywhere, smooth
+inside, exact at silhouettes, composited per media layer, fading at a
+declared envelope, built without weights in seconds on import, with a
+diffusion loop that can only ever repaint texture inside verified
+structure.
