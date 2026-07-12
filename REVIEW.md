@@ -1309,3 +1309,27 @@ idempotence (A18), 5.01M→98k decimation (A19), frame-edge floors +
 floor-default ceiling (A21), live per-layer plates (A22), and the
 per-layer export set (A23). The SD stage is now a pure texture
 upgrade slotting into verified structure.
+
+---
+
+## Addendum 24 — Per-layer SD reimport: the layer loop is closed
+
+`Import SD Layer Results` (beside the existing patch importer): one
+multi-file picker accepting any subset of SD-inpainted
+`layer{k}_color.png` files, filenames as the bundle exported them.
+Each file's pixels write live into the strip slot textures wherever
+that layer owns the slot — no rebuild, colours only. The strip DEPTH
+was the SD conditioning input and stays as the live pipeline
+established it, which is the whole design: SD can only ever change
+what the reveals look like, never where surfaces sit, so every
+verified contract property (protrusion, holes, plate accuracy,
+rest-state fidelity) survives the texture upgrade by construction.
+Transparent SD pixels keep the coarse live fill.
+
+Verified headless (factored `applyMPILayerImage`): a synthetic layer-1
+result updated exactly that layer's 2,540 strip texels (the bundle
+meta's count), other layers' slots stayed byte-identical, and the new
+colours rendered in the reveals at the test pose.
+
+The full SD round-trip now exists: 💾 SD Bundle → inpaint per layer
+(plus dir_*/out_* for plate and margins) → 📤 Import SD Layer Results.
