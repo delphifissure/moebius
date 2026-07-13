@@ -2603,3 +2603,57 @@ Battery: strokedepth 7/7, platebleed 7/7, qbflood 4/4, quickbake
 12/12, v2 nine-pose 8-48px. Stamp v3.13.2-a49.
 
 Landed in `4dfa2bc`.
+
+## Addendum 50 — The outline was never paint
+
+The user pinned it: "look at 'live depth incl. BG (plug in place)' —
+the red outline looks to be the same as the black outline in the
+final view." Red in that pane means NO GEOMETRY RENDERED — and that
+was the answer. Two addenda of wash chemistry (a48, a49) were aimed
+at the wrong surface.
+
+**Root cause.** The quick plate was built as
+`new THREE.Mesh(L.mesh.geometry, matQ)` — SHARING the FG mesh's
+geometry. The A39 pre-tear then drops every cliff-spanning triangle
+from that shared index. After the stroke repair lifts outline ink to
+occluder depth, every ink stroke IS a pair of cliffs — so the plate
+inherited a lattice of through-holes tracing the removed figure's
+entire line work. Black backdrop showing through hole-shaped slits =
+"black outlines plastered on the background." Every discard uniform
+on the plate said solid; the geometry wasn't. Proof by discriminating
+render: with a magenta clear colour the BG-solo "outline" turns pure
+magenta (holes), and restoring the full index erases it while the
+wash texture — verified clean the whole time — never changes.
+
+**Fix.** The plate (quick, and the v1 shared-geometry fallback) takes
+its own copy of the geometry with the full untorn index. The backstop
+now renders solid by construction; the pre-tear keeps cutting the FG
+only, which was its design.
+
+**Supporting fixes shipped with it:**
+- The quick wash's ink test was resolution-blind: the mask is source-
+  res, the wash runs at canvas res, and a NEAREST centre-hit misses
+  half-covered texels (residual stroke dashes at 1920+). The mask now
+  ships LINEAR with width-scaled dilation and the seed gates on
+  footprint coverage. A first cut (3px dilation, any-coverage gate)
+  washed the stars out of the sky — dialled back to majority coverage,
+  stars retained, dashes gone.
+- The v1 CPU fill's ink scrub now prefers the aggressive wash-ink
+  mask, so dark-on-dark outline ink is scrubbed from the plate fill
+  too (the strict mask is blind to it).
+- The debug sheet refreshed depth but never colour in single-pass
+  modes: pingPongRenderTargetB still held the LOAD-TIME frame, so the
+  "scene color" pane showed the default image regardless of what was
+  loaded — the second bug the user reported, now refreshed per export
+  with completion meshes hidden to match the depth pass.
+
+At-scale evidence (1920 viewport, BG-solo): star quick — line-art
+figure and caravan dashes gone, stars intact; troll quick — the white
+silhouette ring gone; v1 both assets — figures ride the strips with
+their ink, plate carries none.
+
+Battery: strokedepth 7/7, platebleed 7/7, qbflood 4/4 (inkMin 0.341),
+quickbake 12/12, protrude troll 34px/worst 35/plate-only 0, star
+28px/worst 11 — all identical to a49 baselines. Stamp v3.13.3-a50.
+
+Landed in `f1ad0a7`.
