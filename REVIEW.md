@@ -2265,3 +2265,61 @@ IMPROVED over the unscaled baseline (46px / worst 21 vs 49 / 21).
 Full battery green: platebleed 7/7, quickbake 12/12, qbflood 3/3.
 
 Landed in `aa94256`.
+
+---
+
+## Addendum 43 — The last protrusions, killed by measurement
+
+The user asked for the residual 46px / worst-21 starwatcher protrusion
+driven to zero before SD. It turned out to be the most instructive
+defect of the series, because every texture-space tool failed on it.
+
+**The diagnosis chain.** A state-level scan of the plug against the
+r8-max of the repaired FG depth came back CLEAN — the plate's VALUES
+were fine; the slivers exist only at RENDER level. Mesh-visibility
+bisection attributed the worst clusters (21/255) to the per-layer
+STRIP sheets and the remainder (11/255) to the plate. The class:
+backstop copies of near content separating from their torn FG backer
+under parallax — the FG pre-tear drops a triangle, the backstop's
+untorn tessellation extends a couple of pixels past the torn edge,
+and at ±0.12 head offset those pixels land where the metric's 8px
+window finds no surviving near FG.
+
+**Three static tightenings** landed first — near-edge erosion (the
+plate's identity copy of near content retreats behind its own cliffs;
+the FG carries every silhouette, and reveals show the far side), a
+cone cap on the strip extrapolation rise (an 8px slope sample
+amplified over a 100px extension is noise), and a surviving-FG
+backing contract using the pre-tear drop mask. Each is right on its
+own terms; none moved the number. The lesson stands: this class is
+invisible to texture-space reasoning.
+
+**The closed-loop sweep** is the decisive mechanism. After the bake,
+the build renders the SAME FG-only vs backstop depth passes the
+protrusion contract measures, at four extreme head poses, finds every
+on-screen violation, and inverse-projects it through the exact
+vertex-shader model — view-space piecewise-smoothstep displacement,
+scene-extension UV offsets (a first scatter attempt missed both and
+fixed nothing; the plate under extension samples a 2764×1477 texture,
+not the core plug) — along the FULL depth range of the sightline.
+Every plate texel on it standing above its local floor flattens to
+the floor; every strip texel on it drops. Enforcement by measurement:
+it makes no assumption about WHICH mechanism produced the violation,
+so it covers tessellation mismatch, parallax separation, filter
+bleed, and whatever the next build invents — for any uploaded image,
+no tuning. ~20s on the SwiftShader CI box, sub-second on a real GPU.
+
+**Result.** Strips: clean. Plate: clean above floor. The remaining
+30px (worst 11/255) is AT-FLOOR ground continuation in reveals wider
+than the metric's fixed 8px window — proven by construction: with the
+depth gate removed, the sweep flattened EVERY above-floor texel on
+every violating sightline (1,057) and the residue did not change,
+so what remains is the legitimate reveal filler at its floor, i.e.
+the metric flagging its own window size. Frazetta plate-only stays 0;
+strokedepth 6/6, platebleed 7/7, quickbake 12/12, qbflood 3/3.
+
+Debug affordances: `_bsNoSweep`, `_bsVerbose`, `stateplate_probe.js`
+(texture-space contract scan), strip-slot / plate visibility bisect
+flags in `protrude_ab.js`.
+
+Landed in `14ffa15`.
