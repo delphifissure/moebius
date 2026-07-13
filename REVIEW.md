@@ -2483,3 +2483,54 @@ Battery: strokedepth 7/7, platebleed 7/7, quickbake 12/12, qbflood
 better than baseline.
 
 Landed in `c76e39d`.
+
+---
+
+## Addendum 47 — State of the union, and the handoff
+
+The user confirmed v3.13.0-a46 with fresh bakes and the same visual
+complaints. A full-resolution render on the harness box finally
+REPRODUCES them — the previous "cannot reproduce" was the probe
+rendering at 760px where 1-3px artifacts vanish. Lesson recorded:
+verification renders must match the user's canvas scale.
+
+**What the remaining artifacts actually are** (at reproduction scale):
+
+1. THE "OUTLINE PLASTERED ON BACKGROUND" is mostly not ink depth any
+   more — it is the PLATE showing through the tear band that hugs
+   every silhouette (the full tear opens it by design), and the
+   pre-SD plate carries (a) blur-ghost traces where the ink scrub
+   recoloured from the pull-push base, and (b) the wash smear. The
+   fix class is PLATE FILL QUALITY, not more ink-depth surgery:
+   scrub fills should come from nearest lateral non-ink plate colour
+   (crisp continuation), and the reveal band inside the parallax
+   budget must never expose pull-push blur.
+
+2. THE CARAVAN/CAMP CONFETTI is dense clusters of 5-20px objects
+   being torn individually and revealing plate fill between the
+   fragments. Principled fix: TEARS MUST PAY FOR THEMSELVES — only
+   tear a cliff whose depth step can produce >= ~2px of reveal at the
+   maximum head pose (step x parallax budget). Small camp objects sit
+   ~0.02-0.1 above their ground: sub-pixel to marginal reveal, pure
+   loss to tear. Gate the pre-tear (and the stretch net threshold)
+   by reveal benefit and the confetti dies structurally.
+
+3. INK DEPTH itself is now mostly right (adopt-map verified:
+   silhouette ink adopts where a crisp cliff exists; interior ink
+   correctly stays at body depth; remaining detachment is sub-2px on
+   crisp-cliff assets). The troll-class assets remain depth-limited
+   (soft ramps, arm at BG depth) — that ceiling is the depth
+   estimator's, documented in Addendum 44.
+
+**Recommended order for the next session:** (1) reveal-benefit tear
+gate — biggest visible win, kills confetti; (2) plate scrub/band
+fill quality — kills the ghost traces; (3) then the SD stage, which
+replaces the wash entirely and is the designed answer to everything
+in class 1. The MPI layering remains the endgame for overlap-class
+errors (troll arm, arm-over-torso).
+
+All state lives in this repo: Addenda 32-47, the harness suite
+(strokedepth 7-check, platebleed 7-check, quickbake 12-check,
+qbflood, protrude/protrude_ab with kill-flags, adoptmap/p2probe/
+hline/stateplate probes), branches `review-fix` (code, at c76e39d)
+and this review branch. A fresh conversation loses nothing.
