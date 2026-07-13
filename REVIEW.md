@@ -2567,3 +2567,39 @@ at the user's own head offset shows a solid figure whose reveal band
 is wash, not outline. Stamp v3.13.1-a48.
 
 Landed in `2db7cb2`.
+
+---
+
+## Addendum 49 — Rejection is not adoption, and layers need footing too
+
+Two precise reports against a48, two fixes with one shared idea.
+
+**"Quick bake + BG solo still shows black outlines" (the troll).**
+Cause: the troll's outline is dark-on-dark — invisible to the strict
+stroke classifier, so nothing rejected it from the wash. The insight
+that unlocks it: REJECTION has the opposite risk profile from
+ADOPTION. A rejection false-positive means "fill this pixel from its
+neighbours" — slightly more blur, never a protrusion. So the
+local-contrast-scaled detector that A45 rightly reverted for LIFTING
+is resurrected as a rejection-only mask: the strict classifier keeps
+deciding what may move in DEPTH, the aggressive detector decides what
+may not be TRUSTED as colour. The troll's quick wash now has no
+contour trace; the starwatcher wash contract holds (inkMin 0.341).
+
+**"The party walking up the dune is pushed onto the dune layer"
+(Full Planes).** The v2 partition is per-texel depth quantiles — so a
+small standing component that the estimator painted 0.03 nearer than
+its ground jumps a WHOLE inter-layer parallax gap whenever a bin cut
+lands between figure and footing. Same invariant as the phase-2
+footing cap, one level up: a small component (area-capped) whose
+depth sits within a whisker of the bin directly below its bottom edge
+is RE-SEATED on that footing layer. Merges only run toward farther
+bins — the rule can never push content forward — and genuinely
+floating content (birds over sky) fails the depth gate. The v2
+nine-pose contract stays in band; the pose render shows the party
+seated on its ground.
+
+Battery: strokedepth 7/7, platebleed 7/7, qbflood 4/4, quickbake
+12/12, v2 nine-pose 8-48px. Stamp v3.13.2-a49.
+
+Landed in `4dfa2bc`.
