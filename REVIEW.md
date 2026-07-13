@@ -2708,3 +2708,57 @@ its layer" everywhere once it HAS a layer, which is the v2 Full
 Planes / MPI track (the a49 footing merge already seats it on one).
 
 Landed in `fbcf6cb`.
+
+## Addendum 52 — The baked realtime
+
+The user re-stated the original contract: "I asked for a version that
+simply had the realtime inpainting, but baked — without breaking
+everything up into a gazillion layers." Measured against that, the
+quick bake had drifted into architecture: geometric tears, per-frame
+classifiers, surgical depth. This addendum walks it back to the
+contract and fixes what the walk-back exposed.
+
+**Quick = intact mesh + baked fill.** The pre-tear is OFF by default
+(kept behind `window._qbPreTear`): the FG renders complete, like
+realtime. And a frame-loop bug died on the way: in baked scenes the
+render loop was RE-ARMING the per-fragment gap generators from the UI
+checkboxes every frame, silently overriding the bake's own "all
+discards off" decision. Realtime survives those discards because its
+per-frame fill repaints them from the figure's own colours; a bake
+exposes the world-without-that-content plate instead — that is what
+ghosted the party into wash. Baked scenes now run stretch-net-only
+(tightened to ~2x; always safe over an opaque plate).
+
+**The comb, measured to its root.** With geometry intact, the party
+region rendered as fine striations under parallax. Chased through
+three falsified hypotheses (wash aliasing, stretch-net threshold,
+apron binarization — the uvRate=1.0 nuke test and a magenta backdrop
+killed each) to the true cause: THE RAW ESTIMATOR DEPTH IS SHATTERED
+there — small figures come fragmented into interleaved 1-2px
+filaments of figure depth and ground depth. Realtime heals this
+per frame; a bake renders it. Two depth-side passes now cohere the
+shipped depth: a minority-snap 5x5 median (a px whose depth is the
+minority of its window is a filament and takes the median; >=3px
+structures and the staff survive), and the a52 floor snap (small
+standing components within a whisker of the cone envelope re-seat ON
+it — they become plate-native content and keep their ink). Shipping
+required writing the depth DataTexture's float array — image2d is
+only a CPU mirror, and three earlier "fixes" changed nothing on
+screen until that was caught.
+
+**v2 planes: the party rides its layer.** A farther-only boundary
+refinement after the footing merge re-seats px whose own depth
+matches a farther neighbouring bin (never forward, per the A49
+invariant). Result: the lead rider renders crisp, inked, coherent on
+its plane — the user's "outlined at the depth of their layers,"
+delivered in the mode built for it — and the nine-pose hole contract
+fell from the 8-48px band to 0-6px.
+
+Honest residual: quick-mode comb at strong parallax is reduced, not
+zero — the source depth there is noise, and each stronger coherence
+pass risks real thin features. v2 Full Planes is the mode that
+carries this asset class; quick remains the fast path whose rest
+frame is now source-perfect.
+
+Battery green across the board (protrusion unchanged, v2 nine-pose
+0-6px). Stamp v3.13.5-a52. Landed in `514e948`.
