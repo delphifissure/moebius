@@ -2323,3 +2323,63 @@ Debug affordances: `_bsNoSweep`, `_bsVerbose`, `stateplate_probe.js`
 flags in `protrude_ab.js`.
 
 Landed in `14ffa15`.
+
+---
+
+## Addendum 44 — The troll asset: ramps are not disocclusions, and ink can be dark-on-dark
+
+Three reports from the user's live pass on the troll painting. The
+depth map turned out to be the Rosetta stone for all three — it is
+EXTREMELY soft (10-30px silhouette ramps, everything blobby), her
+raised arm and the staff top fade to near-background depth, and the
+nearest content in the whole map is the ground strip at the frame
+bottom.
+
+**1. "Much of the floor is considered in need of inpainting."**
+Correct complaint, real bug. The quick-bake SD mask is envelope
+departure — and a steep ATTACHED ramp (the bright ground rising to
+the frame bottom) departs the cone exactly like an occluder. But a
+ramp is a continuous surface: no head pose reveals anything behind
+it, and the FG never tears there (tears need a cliff), so the plate
+is never even shown. The fix is quantitative, not heuristic: a cliff
+of step Δ depresses the envelope for exactly Δ/s px, so each cliff
+FUNDS Δ/s px of mask around it. The max-plus chamfer — the exact
+dual of the cone's min-plus sweep — propagates budget minus distance;
+departure no cliff can fund is attached-ramp relief and drops. A
+plain connectivity flood leaks (one rock edge on the ground keeps a
+floor-sized blob): 2,095px dropped by connectivity vs 103,337px by
+budget on the troll, quick-bake contract still 12/12.
+
+**2. "Her outline appears in the background instead of on her form."**
+The classifier was BLIND on this painting: 68% of its pixels sit
+under the ink-luma cap, and a stroke on a dark surround never clears
+the absolute contrast gates — 2,180 stroke px classified in an entire
+inked painting, so nothing lifted and nothing scrubbed. The gates now
+scale by the LOCAL luma dynamic range (window scaled with stroke
+width): bright regions keep the tuned thresholds exactly (scale = 1
+whenever local range ≥ 0.5 — every existing baseline is untouched by
+construction), compressed regions amplify up to 2.8×, and the ink cap
+relaxes to 0.45 only where the scale is active. Troll classification
+2,180 → 5,912px, lift 72 → 179px, plate scrub 287px, protrusion at
+its exact baseline. Honest ceiling: adoption needs a depth cliff to
+adopt FROM, and this asset's silhouettes are mush — the classifier
+now sees the ink, but the depth map often gives it nothing crisp to
+anchor to.
+
+**3. "Her hand is cut off — some in FG, some in BG."** Verified in
+the depth map: the estimator assigned her raised arm and the staff
+top BACKGROUND depth (they blend into the dark cave in the source).
+Everything downstream — the tear through her wrist, the arm chunk
+living in the plate — is faithful processing of wrong depth. No
+colour-side repair can lift a whole arm (it is not thin ink, and
+"which side of the wrist is her?" is not answerable from luma). This
+is the depth-estimation ceiling, and it is exactly the class the SD
+stage and the MPI layering are for. Two honest mitigations exist if
+wanted later: a sharper depth estimator at import time, or letting
+the SD pass regenerate depth alongside colour for flagged regions.
+
+Battery: strokedepth 6/6, platebleed 7/7, quickbake 12/12, qbflood
+3/3, troll protrusion 34/35/plate-0, starwatcher 30/11 with coverage
+stable (98,629 classified / 15,820 re-anchored / 16,290 scrubbed).
+
+Landed in `2fd0cf3`.
