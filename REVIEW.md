@@ -2383,3 +2383,59 @@ Battery: strokedepth 6/6, platebleed 7/7, quickbake 12/12, qbflood
 stable (98,629 classified / 15,820 re-anchored / 16,290 scrubbed).
 
 Landed in `2fd0cf3`.
+
+---
+
+## Addendum 45 — Stabilization: the wire rule was wrong, and the through-test was never real
+
+The user's live pass caught what five green batteries did not: on the
+reference asset the horizon line shipped at the FIGURE's depth, the
+caravan smeared over the dune, and outlines everywhere read as
+background. The protrusion contract measures backstops against the
+FG; nothing measured "is the ink at the RIGHT depth" — so two
+plausible mechanisms compounded unchecked. Both are now reverted, and
+the missing regression class has a synthetic control.
+
+**The ribbon rule was structurally wrong.** A41 let thin ink carry
+adoption end-to-end "like a wire" because the synthetic staff needed
+it. But a horizon line is ALSO a thin ribbon touching a near figure —
+the wire rule carried the figure's depth across the entire frame. An
+appendage and scenery are indistinguishable to a wire rule; no gate
+can save it. Adoption is hug-bounded again, and the staff case is
+remodeled honestly: real estimators either catch a staff (native near
+depth — synT now models this) or miss it entirely, in which case no
+colour-side rule can conjure it back.
+
+**The A44 contrast scale fed the fire** — 10x classification on real
+paintings, all of it eligible for mis-adoption. Reverted. Dark-on-dark
+ink waits for depth-side evidence, not looser luma gates.
+
+**The through-test had been vacuous since A40.** The "span evidence"
+branch counted a stroke's own same-depth neighbours as contact, so
+the contact bbox always equalled the blob bbox and every elongated
+blob "passed through". The whole-blob-far gate was silently doing all
+the work — and a horizon line is wholly far, so it sailed. Fixed
+three ways: contact only from ANCHOR ink (lifted or natively near);
+the spanned axis must have real extent (a 2px line "spanning" its own
+thickness never counts); and dark ink already standing above its
+local floor is excluded from blobs (a native staff must not merge
+into the far ornament it decorates). Reference-asset phase-2 lift:
+10,866 → 4,192px, every survivor anchored.
+
+**The control that should have existed all along:** synT now carries
+a thin scenery line crossing the frame behind the native-near staff.
+The contract asserts it stays on the surface it lies on. Two draft
+versions of this check failed against CORRECT behaviour — I had the
+synthetic scene's own geography wrong twice (the row sits on the
+scene's sky step; the first "lift" was my scan threshold sitting
+below the row's true depth, with a staff-halo pixel as the smoking
+gun that wasn't). The final check compares the line to the rows
+beneath it — no absolute ground truth to get wrong.
+
+Battery: strokedepth 7/7 (new control included), platebleed 7/7,
+quickbake 12/12, qbflood 3/3, troll protrusion at baseline
+(34/35/plate-0), starwatcher at baseline (30/11) with the legitimate
+outline lift retained (15,356px re-anchored, 14,007px scrubbed from
+the plate).
+
+Landed in `7e21c54`.
