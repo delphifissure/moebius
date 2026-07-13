@@ -2657,3 +2657,54 @@ quickbake 12/12, protrude troll 34px/worst 35/plate-only 0, star
 28px/worst 11 — all identical to a49 baselines. Stamp v3.13.3-a50.
 
 Landed in `f1ad0a7`.
+
+## Addendum 51 — Ink follows its layer
+
+The user read the a50 result correctly and named the design flaw:
+"the lines were not supposed to be deleted — they were supposed to
+move from the background and be distributed to the foreground
+layers." The a48-a50 arc had been treating detected ink as something
+to REMOVE; every surface it was removed from left the line work with
+one fewer place to live, until a50's solid, clean plate revealed the
+end state: line work deleted from the world.
+
+**Why the lines died.** A lifted stroke is a pair of depth cliffs,
+1-3px apart. Both pre-tear loops — the quick branch's blanket cliff
+test and the v1 ribbon rules under bgTearAllRubber — drop any
+triangle spanning a cliff, and for a stroke that thin EVERY triangle
+spans one. So the very strokes the A40-A46 adoption arc lifted onto
+their occluders were being torn out of the FG mesh at bake time. The
+"black outlines" of a44-a49 were this deletion made visible (backdrop
+through aligned holes in both meshes); a50 made the plate solid and
+ink-free, so the same deletion started rendering as clean wash — the
+lines just vanished.
+
+**Fix 1 — tear exemption.** Triangles touching adopted ink
+(L._inkAdopted) are exempt from every drop rule in both tear loops.
+Lifted outlines now ride their occluder in the composed view; the
+rubber they keep at the stroke's far side is cut per-fragment by the
+stretch net under parallax, over the opaque plate.
+
+**Fix 2 — depth-scoped wash rejection.** The quick wash's ink
+rejection was global, so it also blurred away ink that IS plate
+content — the horizon line, desert plants, the far camp. The ink
+mask is now intersected with a resolution-scaled dilation of the
+nearer-than-plate set (dQ − plateQ > 0.02): lifted strokes are
+themselves nearer and stay rejected, plastered outlines hugging a
+nearer body are within reach and stay rejected, and far-ground ink
+away from any nearer content stays crisp in the plate.
+
+At-scale evidence: star composed view carries the full line work
+(astronaut, staff, plane, party, camp); star BG-solo keeps
+horizon/plants/camp ink crisp while the removed-figure regions stay
+washed; troll composed and BG-solo both clean. Battery green,
+protrusion unchanged (troll 33px/worst 35/plate-only 0, star
+27px/worst 11). Stamp v3.13.4-a51.
+
+The residual: at strong parallax a mid-ground figure's edges still
+erode into reveal wash (the rider mid-reveal). That is the two-
+surface ceiling — the party can only be "outlined at the depth of
+its layer" everywhere once it HAS a layer, which is the v2 Full
+Planes / MPI track (the a49 footing merge already seats it on one).
+
+Landed in `fbcf6cb`.
