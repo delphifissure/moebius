@@ -2762,3 +2762,43 @@ frame is now source-perfect.
 
 Battery green across the board (protrusion unchanged, v2 nine-pose
 0-6px). Stamp v3.13.5-a52. Landed in `514e948`.
+
+## Addendum 53 — The pixel is content; the cliff is the artifact
+
+The user put the source artwork next to our renders and drew the
+line: "we cannot lose a single pixel — we just want to make
+transparent / inpaint the displacement cliff itself, not the pixel
+that's causing it." That sentence resolves the tension that has run
+through a39-a52. On a vertex-per-texel grid, "tear the cliff" and
+"delete the pixel" were THE SAME OPERATION for thin content: a 1px
+stroke has no interior triangles, so every triangle it owns spans a
+cliff, and dropping them all deletes the stroke. Every prior stance
+picked a side of that false dilemma — tear (lines die), don't tear
+(membranes comb), classify-and-discard (small figures ghost).
+
+**The decoupling.** Quick mode now: (1) tears EVERY cliff-spanning
+triangle, unconditionally — the connective membrane between depth
+levels is exactly what should be transparent, and the baked plate
+inpaints behind it; (2) ships every texel orphaned by the tear as a
+per-pixel CAP CARD — a flat quad over the texel's footprint whose
+corners all sample inside the texel, so it renders the pixel's own
+colour at the pixel's own depth, rigidly. No pixel lost, no rubber
+possible, no classifier needed on cards. The a51 ink exemption is
+superseded in quick mode (cards carry the strokes); despeckle and
+floor-snap remain as noise-coherence so the cards fan less.
+
+At scale: the star composed view at parallax carries the astronaut,
+staff, plane, mountain, camp and party complete — the party renders
+as pixel-true content at depth (a slight fan where the estimator
+shattered it, no comb, no wash-out); the troll and woman render
+complete with their ink. Battery green, timing back under budget
+after de-allocating the tear loop, protrusion and v2 contracts
+unchanged (nine-pose 0-6px).
+
+The honest residual is now purely an ESTIMATOR statement: where the
+depth map fragments small figures, their pixels fan slightly under
+parallax because that is where the depth says they are. Fixing that
+is depth-side coherence (or the v2 planes, which carry the party
+whole) — not rendering policy. Stamp v3.13.6-a53.
+
+Landed in `7be3838`.
