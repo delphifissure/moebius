@@ -2802,3 +2802,47 @@ is depth-side coherence (or the v2 planes, which carry the party
 whole) — not rendering policy. Stamp v3.13.6-a53.
 
 Landed in `7be3838`.
+
+## Addendum 54 — Where the quick bake's road ends, measured
+
+The user put the a53 party crop against the original and asked the
+only question that matters: "what is this mess?" It was a mess. The
+a53 principle (pixels render, cliffs tear) is right, but it missed
+its complement: CONNECTIVITY IS A SPATIAL REGULARIZER. Realtime looks
+coherent over the same shattered depth precisely because its mesh is
+connected — membranes hold neighbouring pixels together, and depth
+noise reads as invisible micro-relief. Disconnect (tear + per-pixel
+cards) and every pixel travels alone to its noisy depth: confetti.
+"Cliff" must mean a STRUCTURAL discontinuity between two coherent
+surfaces, not every noise step inside one object.
+
+**Rigidify (landed).** One object = one surface: connected components
+of the CLOSED standing mask (proud of the cone envelope, area-capped)
+take the median depth of their standing subset — rigid decals at
+their true standoff. Not a ground snap: the glider keeps flying, and
+lands perfectly as one rigid card.
+
+**The measurement that ends the heuristic road.** On the star asset
+the closed standing mask is ONE component of 632,874 px whose
+bounding box is the entire frame: silhouette halos chain the
+astronaut, the mountain, the crest and the party into a single blob.
+There is no component boundary a gate can find, because the depth
+field does not delineate the objects — the party's depth is 99
+distinct values in a 500px window. Every quick-mode filter in
+a52-a54 (despeckle, floor snap, minority median, closing, rigidify)
+nibbles at that; none can reconstruct object structure the input
+does not contain.
+
+**The verdict.** Three renderers, one scene, at the same pose:
+realtime = party coherent (per-frame heal, per-frame cost);
+quick bake = party at the estimator ceiling (everything else in the
+frame — astronaut, staff, plane, mountain, camp, ink — now renders
+source-true); v2 Full Planes = party crisp, whole, inked, on its own
+layer (10 quantile planes — not a gazillion — with footing merge and
+boundary refinement; nine-pose holes 0-6px). For scenes with small
+mid-ground figures, v2 IS the baked realtime. The remaining lift for
+quick mode is not another filter — it is either object segmentation
+(colour+depth) or a better depth estimate.
+
+Battery green, all contracts unchanged. Stamp v3.13.7-a54.
+Landed in `7ec8bad`.
