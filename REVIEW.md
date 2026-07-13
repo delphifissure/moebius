@@ -2534,3 +2534,36 @@ All state lives in this repo: Addenda 32-47, the harness suite
 qbflood, protrude/protrude_ab with kill-flags, adoptmap/p2probe/
 hline/stateplate probes), branches `review-fix` (code, at c76e39d)
 and this review branch. A fresh conversation loses nothing.
+
+---
+
+## Addendum 48 — "Look through quick bake": the outline was baked into the QUICK plate
+
+The user pointed at the right subsystem by name, and it explained the
+whole loop of the last three rounds: the outlines were showing up in
+QUICK BAKE — and every piece of ink machinery built since A41 (the
+scrub, the backstop sweep, the fill contracts) lives in the V1 path.
+The quick path had kept a toy: its wash's "dark-stroke rejection" was
+an inline GLSL luma probe at FIXED 2.5px and 5px offsets. At 1920px,
+painterly ink is 5-8px wide — the probes landed inside the ink
+itself, nothing was ever rejected, the entire outline seeded the wash
+and baked into the quick plate, and the stretch-net reveal band
+around every silhouette displayed it. The v1-vs-quick asymmetry also
+explains why v1-path batteries stayed green while the user kept
+seeing ghosts.
+
+Fix: the quick wash's seed pass now rejects the CPU stroke
+classifier's mask — the same resolution-scaled classifier the repair
+and the v1 scrub already use — bound as a texture with a 1px fringe.
+The fixed-offset probe survives only as a fallback for assets with no
+mask, and the v1 GPU-fallback call site explicitly clears the binding.
+
+Verified at reproduction scale (the A47 lesson, applied): on the
+1920px reference the quick wash is ink-free — the figure region reads
+as smooth wash with no contour trace, and a new fourth qbflood check
+pins it (minimum wash luma along the synT outline ring + staff:
+0.341, vs ink at ~0.06). Quick-bake contract 12/12; the pose render
+at the user's own head offset shows a solid figure whose reveal band
+is wash, not outline. Stamp v3.13.1-a48.
+
+Landed in `2db7cb2`.
