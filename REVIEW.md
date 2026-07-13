@@ -2439,3 +2439,47 @@ outline lift retained (15,356px re-anchored, 14,007px scrubbed from
 the plate).
 
 Landed in `7e21c54`.
+
+---
+
+## Addendum 46 — The adopt-map, the footing rule, and the build you can't see
+
+"Still seeing the exact same problem" demanded evidence, not another
+gate. New instrument: the ADOPT-MAP (`adoptmap_probe.js`) overlays
+every classified ink pixel on the source — GREEN lifted, RED not.
+Two facts fell out on the reference asset, and then a third about the
+testing loop itself.
+
+**Fact 1: seeds never crossed the stroke.** The figure's silhouette
+ink was solid red — not because gates refused it, but because the
+seed search (r=3) physically could not reach across 5-8px-wide
+painterly ink to the nearer content on the other side. Ink WIDTH
+scales with resolution; the seed radius now scales with it (3·SR),
+exactly like the classifier's taps. (The earlier blanket-radius
+revert threw this baby out with the ribbon bathwater.) Interior
+linework on a flat body stays red BY DESIGN — it already sits at body
+depth; red there is not a defect.
+
+**Fact 2: grounded blobs flew.** The caravan group was solid green —
+phase 2 lifted whole figures to the dune-lip anchor ("colors
+scattered across the depth"). New invariant with the same shape as
+the others: A BLOB MAY NOT EXCEED WHAT IT RESTS ON. The content
+directly beneath the blob caps the adopt depth — a figure rests on
+its ground (capped to footing), the ornament rests on its native-near
+staff (cap inert). Depth transects confirmed the silhouettes here are
+CRISP in the bake (0 → 0.48 in 4px), so anchors are real.
+
+**Fact 3: the build was invisible.** Rendering THIS branch at the
+user's exact pose produces a coherent figure with its outline
+attached — not the reported ghost. The app's version stamp had read
+v3.12.0-bandcut across FIFTEEN landings; a stale cached moebius.js is
+indistinguishable from current during live testing, and the reported
+screenshots also show dolly-volume guide lines with Dolly Zoom off —
+another stale-state tell (this build renders none). The stamp is now
+v3.13.0-a46 and bumps every landing.
+
+Battery: strokedepth 7/7, platebleed 7/7, quickbake 12/12, qbflood
+3/3, troll protrusion at baseline, starwatcher protrusion 28/11 —
+better than baseline.
+
+Landed in `c76e39d`.
