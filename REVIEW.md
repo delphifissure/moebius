@@ -3039,3 +3039,44 @@ The astronaut "subtle rays" are the same pull-push-over-a-large-hole
 wash ghost, likewise pre-existing at a53 and likewise SD/MPI territory.
 
 No stamp change; tree remains v3.13.9-a56 at `c1ad44b`.
+
+## Addendum 57b — Seated figures must STAND, not lie down (the party disocclusion)
+
+a56 fixed the party's absurd depth by seating each mislocated figure at
+`S = floor[i]` — the ground directly behind it. That killed the shatter,
+but it also welded the figure to the ground plane: zero relief. The user,
+back on a computer: "the party appears to be plastered to the background
+now and there's no inpainting behind it — obviously it's something that
+can parallax / disocclude." Correct. A figure at exactly ground depth has
+no relief, so under parallax it does not separate from the ground; it gets
+dragged and smeared with it (measured: the floor-seat party visibly
+stretches under a 0.20 pose, while the same figure as a card stays crisp).
+
+**The fix.** Seat the whole figure at ONE flat depth *lifted proud* of its
+ground, instead of at the ground. Still a single depth per island — so the
+shatter stays killed and the ink is kept — but the card now has relief: it
+parallaxes as a rigid unit and tears at its silhouette, revealing the
+inpainted ground behind it. The lift is the figure's OWN mean proud
+(`meanLift`, already computed and gated > 0.10 by a56), so it is
+estimator-honest and self-calibrated per figure with no constant and no
+per-image knob.
+
+**Why not a geometric billboard.** The first attempt planted the card at
+its feet-contact depth, so the head stood proud by (island height × floor
+slope) — physically a standing figure. Measured, that over-lifted: star
+protrusion 6→12, because a tall island's head relief can exceed the FG
+depth there. `meanLift` is bounded by what the estimator itself assigned,
+so the card never protrudes past the FG. Star protrusion returned to 6.
+
+**Measured (pose 0.123, −0.055).** Star plate protrusion holds at 6.
+Troll PLATE protrusion *improves* 27→0: giving the figures relief makes
+them tear, so their pixels ride cap-cards instead of protruding through
+the plate. The residual troll cap-card relief (worst 33 at a handful of
+px) is the standing disocclusion itself, not a plate fault — the protrude
+test flags it only because its FG-only baseline excludes cap-cards.
+Strokedepth gates 7/7 (horizon-line, caravan, footprint, isolated-stroke
+controls all hold — the seat's membership is unchanged; only the depth it
+assigns moved from ground to ground+lift). The floor decal remains
+available as an A/B opt-in via `window._seatFloorFlat`.
+
+Stamp v3.13.10-a57b. Landed in `db489c7`.
