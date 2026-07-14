@@ -2903,3 +2903,50 @@ build, uncertain because it depends on the outlines closing.
 
 Battery green; contracts unchanged. Stamp v3.13.8-a55. Landed in
 `1257378`.
+
+## Addendum 56 — The ink was the segmentation all along
+
+a55 ended by proving, three ways, that the mislocated party could not
+be isolated in the depth domain. But the party is INK ART — Moebius
+closes every form with a contour line, and the ink is INDEPENDENT of
+the broken depth. That is the segmentation the estimator couldn't give.
+
+**The mechanism.** Ink = stroke classifier ∪ near-black luma, dilated
+1px to seal hairline gaps. Flood the NON-ink cells; the two largest
+are the desert and the sky. Everything else is figure content —
+connected-component it into ISLANDS, so a figure's interior detail
+cells and its outline fuse into one island floating in the ground.
+Measured on the star party: the astronaut is a single 1,400,186-px
+island (kept, native depth); each party figure is a ~30,000-px island.
+Small islands (< 2% of frame) that are genuinely proud of their ground
+(mean lift > 0.10, so a figure floating above far ground qualifies
+but scenery ink lying on a surface does not) AND compact (area ≥ 0.12
+× bbox, so a thin horizon LINE is rejected while a filled figure
+passes) are re-seated on their local cone-erosion floor: one coherent
+flat decal at ground level, ink preserved, spread and shear gone. It
+runs at the SHARED bake source, so v1, quick and v2 all consume the
+corrected depth.
+
+**Result.** The party — "broken up across a much deeper depth than
+makes any sense," across sixteen prior rounds — now renders coherent
+and grounded in every mode. Because the seated pixels no longer
+protrude above their footing, real-asset protrusion IMPROVED as a side
+effect: star worst 11→6, troll 35→27; v2 nine-pose max 6→3. Two gates
+(proud + compact) hold the synthetic horizon-line control at its
+surface, so strokedepth stays 7/7. Full battery green.
+
+**Why this one worked when depth heuristics didn't.** Every a44–a55
+attempt tried to separate the party from the hero using depth (floor,
+lift, connectivity of the standing mask) — and the depth field does
+not delineate them (astronaut lift 0.25 > party 0.13; one 610k-px
+standing blob chains them). The ink delineates them perfectly, because
+the artist drew the boundary. The lesson for this class of asset:
+segment on the medium's own structure (the line work), not on the
+estimator's output.
+
+Residual, pre-existing and separate from the party: a faint
+staff-halo streak and dune-crest striation (thin-feature stretch the
+connected mesh leaves; the stretch net only partly catches it). Not a
+party problem.
+
+Stamp v3.13.9-a56. Landed in `bb67acf`.
