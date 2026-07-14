@@ -2846,3 +2846,60 @@ quick mode is not another filter — it is either object segmentation
 
 Battery green, all contracts unchanged. Stamp v3.13.7-a54.
 Landed in `7ec8bad`.
+
+## Addendum 55 — The party is the estimator's error, measured to the floor
+
+The user put the a53/a54 party crop beside the source: "broken up
+across a much deeper depth than makes any sense — totally absurd."
+Correct. This addendum stops iterating on renderer heuristics and
+MEASURES the party, three ways, then acts on the measurement.
+
+**The measurement.** Raw estimator depth at the star party: mean
+0.274, range 0.086–0.608, spread 0.52. The bare ground they stand on:
+0.12 (tight). The foreground astronaut: 0.307. So the estimator has
+floated a cluster of tiny mid-ground figures to nearly the HERO's
+depth — ~0.15 in front of their own footing — with pixels smeared
+across half the depth range. That near-spike-over-far-ground is the
+absurd fan; the bake's sharpening triples its incoherence (0.05 →
+0.16) on top.
+
+**Why it cannot be isolated (the reason 16 rounds of heuristics
+failed).**
+1. Connectivity: the standing mask (content proud of its floor) is a
+   SINGLE 610,637-px blob — 24% of the frame — chaining the party to
+   the mountain and crest through silhouette halos. No connected-
+   component gate can reach the party alone.
+2. Floor / lift: astronaut lift 0.25 > party lift 0.13; astronaut
+   floor 0.072 < party floor 0.191. Neither dimension separates the
+   mislocated party from the legitimately-near hero — a seat/clamp
+   keyed on either flattens the astronaut worse than it fixes the
+   party.
+3. A five-way config matrix (realtime / quick / +raw-depth /
+   +discards / +seat), rendered in one load: realtime is the only
+   coherent one, and it is coherent because it INPAINTS the figure
+   from its own neighbouring colours every frame. A bake's plate is
+   the world WITHOUT the figure; it can refill the reveal behind a
+   correctly-placed figure, but never the BODY of a mislocated one.
+
+**The conclusion, and the change.** The party cannot be correctly
+baked with a plate-behind architecture over broken depth — this is an
+estimator + architecture limit, not a filter that was missing.
+Realtime handles it; the bake is a performance optimisation that
+degrades exactly where the depth is wrong. So quick bake now DEFAULTS
+to the connected intact mesh ("realtime, baked" — the original
+request): the connected grid is a spatial low-pass, and the entire
+scene except the party — astronaut, staff, mountain, crystal crest,
+camp, glider — now matches realtime. The a53 tear+cap-cards (which
+shattered every 1-3px figure), a54 rigidify, and the a55 seat-on-floor
+(kept, since it is the right tool for assets where standing content IS
+separable) are moved behind opt-in flags.
+
+**Levers for the party specifically, none free:** (a) render these
+scenes realtime (looks right, per-frame cost); (b) v2 Full Planes
+(bins the party — imperfect but whole); (c) correct/author the party's
+depth (then the bake works); (d) ink-contour segmentation to isolate
+the party as its own seated plane — the one untried signal, larger
+build, uncertain because it depends on the outlines closing.
+
+Battery green; contracts unchanged. Stamp v3.13.8-a55. Landed in
+`1257378`.
