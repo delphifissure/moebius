@@ -2950,3 +2950,29 @@ connected mesh leaves; the stretch net only partly catches it). Not a
 party problem.
 
 Stamp v3.13.9-a56. Landed in `bb67acf`.
+
+## Addendum 56b — Tear back on: the seat and the tear stop fighting
+
+The ink-island seat (a56) fixed the party but exposed a trade a55 had
+made: a55 turned the quick pre-tear OFF (connected mesh) to stop the
+party shattering, and that reintroduced the astronaut/staff SILHOUETTE
+tunnel the tear exists to cut (the user: "tunnelling from itself to
+the background").
+
+These two had been in tension since a39 — the tear cuts big-object
+silhouettes but shatters small figures; the connected mesh keeps small
+figures but leaves silhouette taffy. The seat dissolves the tension:
+it flattens the party onto its ground BEFORE the tear runs, so the
+party no longer has internal cliffs for the tear to shatter. With that
+in place the tear is the default again — it cuts the astronaut's real
+silhouette (tunnel gone) and passes straight over the now-flat party
+(still coherent). Verified against the a53 baseline: the astronaut
+region matches pixel-for-pixel intent; the only residual is the faint
+pre-SD wash ghost that a53 had too. Intact mesh is now the opt-in
+(window._qbNoTear).
+
+Process note: the first a56b battery reported qbflood and timing
+FAILs; both were contamination in a hand-rolled inline battery (qbflood
+ran before the synT asset copy, so on leftover troll assets; the timing
+run was cold/contended). Clean isolated runs pass 4/4 and 12/12. Full
+battery green. Landed in `c1ad44b`.
