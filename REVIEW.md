@@ -2976,3 +2976,66 @@ FAILs; both were contamination in a hand-rolled inline battery (qbflood
 ran before the synT asset copy, so on leftover troll assets; the timing
 run was cold/contended). Clean isolated runs pass 4/4 and 12/12. Full
 battery green. Landed in `c1ad44b`.
+
+## Addendum 57 — The staff-lantern streak is the estimator, not the mesh (measured; no code shipped)
+
+The user, off-computer, flagged the two residuals a56 had named: "streaks
+from tip of staff/lantern to the background, and some more (subtle) rays
+from astronaut to bg or vice versa." I isolated each one and tried two
+fixes; neither cleared the measurement bar, so nothing shipped and the
+tree stays at the clean a56b baseline (`c1ad44b`). What follows is the
+diagnosis, because a characterized limit is worth more than a fragile
+patch.
+
+**Isolating the streak (streaksrc_probe).** Rendering the posed scene
+five ways — composite, FG-mesh only, cap-cards only, plate only — split
+the staff-lantern streak into two independent contributors:
+
+- *FG mesh taffy.* The mesh-only render shows a bright twisted braid
+  hanging below the lantern glow: the connected FG sheet stretching the
+  thin, bright staff tip across the sky it parallaxes over. The pre-tear
+  (mx−mn > 0.06) cuts the staff's body but a hairline bright ridge leaks.
+- *Plate wash ghost.* The plate-only render shows the glow AND a bright
+  vertical shaft baked into the plate itself — the isotropic pull-push
+  wash pulling the lantern's bloom down into the reveal below it. Same
+  mechanism as the astronaut's faint ghost; both were present at the a53
+  "used to work" baseline (not a regression).
+
+**Two fixes, both measured to fail.**
+
+1. *Depth bloom-push* — push bright pixels that float proud of a far
+   floor down onto it, so the lantern bloom flattens to sky depth. A/B
+   with the push toggled off was **pixel-identical** in the mesh-only
+   render: the staff shaft's own body fills its neighbourhood, so the
+   sky-surround gate that protects the astronaut also rejects the shaft,
+   and only the isolated tip glow flattens — which changes nothing. Plus
+   the luma≥175 gate is exactly the per-image knob this project forbids.
+   Reverted.
+
+2. *Wash glow-reject* — extend the wash-seed rejection (which already
+   drops near INK) to also drop near blown-highlight, so the sky
+   completes clean behind the glow. It fired (11,073 px scrubbed) but the
+   composite changed by **0 pixels**. The reason is the crux: the
+   scrubbed pixels are near astronaut/party highlights the wash refills
+   identically, and the *lantern glow is not near*. The monocular
+   estimator places the soft bright bloom at BACKGROUND depth — so it
+   bakes into the plate as legitimate "background," and every
+   depth-gated mechanism (the tear, the shader's ±4px near-reject, this
+   glow-reject) correctly leaves it alone. None of them can tell a
+   background-depth bright bloom is really foreground light. Reverted.
+
+**Why this is the same class as the party, minus the handle.** a56 fixed
+the party because it is INK-BOUNDED — the artist drew a contour the
+estimator's error couldn't erase, and segmentation rode that contour.
+The lantern glow is a soft bloom with no contour, sitting at an
+in-between depth with no cliff, no ink boundary, and no near
+classification. It evades tear, wash-reject, ramp-collapse (12 passes:
+no effect), and ink-island seat alike. Fixing it robustly needs either
+a better depth field (SD-refined) or explicit layer authoring (MPI) —
+the two stages already on the roadmap. This is a genuine, fully
+characterized limit of the weight-free bake, not a tuning miss.
+
+The astronaut "subtle rays" are the same pull-push-over-a-large-hole
+wash ghost, likewise pre-existing at a53 and likewise SD/MPI territory.
+
+No stamp change; tree remains v3.13.9-a56 at `c1ad44b`.
