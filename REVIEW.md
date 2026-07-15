@@ -3080,3 +3080,105 @@ assigns moved from ground to ground+lift). The floor decal remains
 available as an A/B opt-in via `window._seatFloorFlat`.
 
 Stamp v3.13.10-a57b. Landed in `db489c7`.
+
+---
+
+## Addendum 59 — angle-fade toggle, v2 BG-solo, v1 hole-only islands, and the dune self-occlusion case
+
+Four items off the last review pass.
+
+### 59-3 Angle-fade toggle (main canvas)
+
+The extreme-angle view-fade (canvas darkens past ~35–45° off-axis, where
+the disocclusion budget runs out) made it impossible to inspect the plug
+at wild angles — exactly the angles we most want to test. Added an
+**Angle fade** checkbox to the main canvas viewing row (next to Reset
+View / Dolly Zoom). Off ⇒ `bgViewFadeEnabled=false` and `updateViewFade`
+clears the overlay immediately, so the camera can be driven to any angle
+with the raw render visible. Default on (ships as before).
+
+### 59-4 v2 "BG solo"
+
+Was hiding only the primary's single nearest bin ("peek behind the
+front"), which barely changed the frame. Re-tied to the plug: solo now
+shows each layer's **farthest (rank 0) backdrop plane** — the a58e
+hole-only anamorphic islands — and hides every nearer plane plus the flat
+originals. Head-on you see almost nothing (the occluders' own content is
+gone); off-axis the backdrop islands appear exactly where a disocclusion
+opens. It is the v2 analog of quick-bake's "hide FG mesh, show plate."
+
+### 59-1 v1 plate → hole-only anamorphic islands
+
+The v1 "Build BG Layer" plate was a FULL clone of the frame at the
+cone-floor depth. Two consequences, both in the debug sheets: (a) its
+horizon sat too far back and **misaligned at high angle**, and (b) its
+stretched rubber ramps streamed as **taffy from every occluder to its
+disocclusion**. Applied the same treatment the quick-bake plate got in
+a58d: restrict the plate to the anamorphic disocclusion band
+(`{disocc || bud>0}`, disocc = where the plug departs source, bud = the
+max-plus chamfer that scales the band by the local depth gap = the
+parallax reach). With the plate hole-only, the horizon and open
+background come from the **FG mesh at source depth** (correctly aligned),
+and there is no full-clone surface to misalign and no connecting ramp to
+smear. Gated behind `window._noBgIslands` (reverts to the full clone) and
+skipped under scene-extension (oversized geometry, different UVs — a
+follow-up). Flush plug depth at the band edge (the a58c continuation) is
+a further refinement not yet ported to v1.
+
+### 59-2 The dune self-occlusion case (analysis)
+
+**The picture.** The party/caravan climbs the near face of a dune. Below
+and beyond the dune's crest is the distant field under the crystal
+mountain. Viewed from a high angle, an empty area opens between the dune
+crest and that distant field.
+
+**What the pipeline does today.** Every occluder's disocclusion is filled
+by the cone-floor / plate depth, which takes the FARTHER depth. At the
+dune crest there is a genuine depth cliff (near dune face → far distant
+field). The plug therefore snaps the region *behind the crest* to the
+distant-field depth. The party figures, standing on the dune, get the
+same treatment: the plug behind them is the far floor. So a high-angle
+parallax reveals distant-floor pixels immediately behind the crest and
+behind the figures — the figures read as **occluding empty space** (a
+deep void), and the crest reads as a thin cardboard cutout with the floor
+right behind it.
+
+**What is physically right.** The disocclusion a grounded occluder opens
+should continue the surface it is ATTACHED to, not the farthest
+background:
+
+- **Detached occluder (astronaut vs sky).** The attachment surface *is*
+  the far background. Flush-to-background (a58c) is correct: fill with the
+  sky continuation.
+- **Grounded occluder (party on dune).** The attachment surface is the
+  near ground. The fill should continue the **dune** down behind them,
+  not jump to the far floor. The a58c pull-push already does much of this
+  when the figure's silhouette is surrounded by dune — the hole
+  interpolates dune depth. It fails at the **crest**, where the near side
+  is dune and the far side is field, so the fill is dominated by the far
+  field.
+- **Self-occluding ridge (the crest itself).** The region behind the
+  crest is a disocclusion of the DUNE's own unseen back slope — data that
+  exists in no capture (true SD-inpaint territory). The physically
+  plausible fill is the dune surface continuing OVER the crest and sloping
+  **down to meet the distant floor**, i.e. a depth RAMP from crest-depth
+  to floor-depth across the disoccluded span — not a step straight to the
+  floor at the crest.
+
+**Statement of the rule.** *Disocclusion fill depth = continuation of the
+surface to which the disocclusion is attached at its silhouette boundary,
+resolved per-boundary:* continue the near attachment surface where the
+silhouette borders it (party's feet → dune), the far background where it
+borders only far (astronaut → sky), and across a self-occlusion crest
+synthesize the near surface descending as a ramp to the far floor rather
+than a cliff.
+
+**Hook that already exists.** The seat machinery (a55/a56) already
+identifies grounded figures and the ground floor they stand on. That is
+the natural place to source "continue the attachment surface": for a
+seated figure, seed the plug behind it from its seat-ground depth (dune),
+not the global far floor; and detect the self-occluding crest as a cliff
+whose near side is a large grounded surface, filling behind it with a
+crest→floor ramp. Proposed as the next code step, pending confirmation of
+this reading.
+
