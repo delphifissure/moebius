@@ -3238,3 +3238,46 @@ needs the seat to carry real depth variation — a separate change from the
 projection fix.
 
 Stamp v3.13.18-a59f.
+
+---
+
+## Addendum 61 — ray-reprojection made the default (a60): kills extreme-angle taffy
+
+The user found that the streaking is not only thin features: with a DISTANT
+object set as the focal plane and the view rotated (they showed cam
+(-0.233, 0.040, 0.056) — eye almost on the portal, H≈0.056 vs the 0.2 home
+distance), the whole scene shears into taffy/tunneling. Root cause is the one
+from Addendum 60: the legacy displacement is a VIEW-anchored Z push, so with a
+far focal plane everything nearer gets a huge displacement, and rotating shears
+every depth-gradient surface (dune, mountain slopes) because the push direction
+rotates with the view.
+
+**A/B on the exact extreme camera.** Reproject OFF reproduced the shearing;
+reproject ON (reference-eye sight-ray placement) was dramatically more coherent
+— the mountain sat at correct perspective, the astronaut stopped stretching,
+the dune stayed a solid surface. Residual taffy on the staff is the thin-feature
+(A57) issue, separate from the projection.
+
+**a60 landed reprojection as the DEFAULT** (`bgRayReproject = true`;
+`_rayReprojectNow()` resolves the UI checkbox vs a `window._rayReproject`
+boolean override). Both per-frame sync sites (the FG mediaLayers loop and the
+plug/plane `_syncBG` block) drive `u_useRayReproject` from it, so quick-bake, v1
+and v2 all reproject. Added a "Reprojection" checkbox to the main-canvas controls
+(next to Angle fade), default on.
+
+**Verified across all three paths** (starwatcher, software-GL harness):
+quick-bake center+right and the extreme camera; v2 full-planes center+right;
+v1 directional-plug center+right — all build and composite coherently under
+reprojection, no crashes/shader errors. v2 built its 12 planes normally.
+
+**Behaviour note.** Reprojection reproduces the SOURCE proportions at rest and
+lets the depth-pop come from head/eye motion (correct for a head-tracked window);
+the legacy push baked a pop in at rest. Toggle off for the legacy look.
+
+**Follow-ups (not yet done):** re-tune the outer/inner volume depths for the
+reprojected model; reconcile the reference plane with subjectFocalPlaneWorldZ
+under subject-lock/dolly (the split already pins the focal content, but the
+dolly-zoom "focal plane stays put" case wants explicit handling); the
+thin-feature staff/glider streaking (A57 class).
+
+Stamp v3.13.19-a60.
