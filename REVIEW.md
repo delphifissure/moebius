@@ -3349,3 +3349,29 @@ generalization sweep on a second asset (troll/frazetta) before calling the
 ground-seg constants safe; on-load framing question (A61) still parked.
 
 Stamp v3.13.19-a62. Code: d0ba77e (a61/a61b + prototype), f94ea0e (a62).
+
+### Addendum 62b — pixel-hunt closure + the port
+
+The user's close read of the SD mask found real misses: the helmet-top
+outline, the cape arc, the staff loop's inner edge, the ribbon. Measured,
+they split three ways:
+
+1. **Silhouette ink at/past the far depth** (helmet rim 23 raw — BELOW the
+   plain behind it): invisible to any depth-trusting mask (plate == own
+   depth). But the ink belongs to the occluder and orphans on reveal. Fixed
+   with the ink-adjacency closure: stroke px adjacent to a flagged px join
+   the SD region (stroke-width-bounded passes, diagonal-aware sandwich for
+   1–2px slivers) and inherit the neighbouring plate. +11k px; the flagged
+   spots verified closed.
+2. **The ribbon core at exact sky depth (0.0)**: A57 thin-feature dropout —
+   an FG-side depth problem, not maskable; still open.
+3. **The wreck hull**: the estimator says half-buried (hull 16 vs ground in
+   front 29) — the thin top-rim strip is the honest reveal; "hull interior"
+   has no occlusion in the depth to plate.
+
+Port: the plate computation is now `bgDirectionalPlate()`, shared by
+quick-bake, the v1 plug consumers, and the v2 under-sheet (plug-DEPTH
+consumers only — the floor rind keeps the min-envelope, which is
+containment, not a depth value). All three paths verified at 0.42 offset;
+v1's near dune is now free of plate mottle. On-load framing: settled as
+correct by the user. Stamp v3.13.19-a62b, code b0c7c11.
