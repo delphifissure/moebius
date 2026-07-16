@@ -3496,3 +3496,36 @@ save it). Fewer mechanisms won.
 Verified: star 13.9%, profiles physical end to end (plain values at the
 ridge lip, ramp meeting the surface, party/crest sane); warrior 8.9%
 banded coverage restored. Stamp v3.13.19-a63b, code a8b5fd8.
+
+## Addendum 64/65 — regression suite, the dolly measurement, and the lens law
+
+**A64 — standing regression suite** (`regress.js`, on review-fix): one
+command validates the plate system — SD%/ground% on ink/painterly/photo
+against a63b baselines, plus 3-path render-lit sanity on the reference.
+ALL PASS at commit. The photo range documents the dense-texture pocket
+cost of the opt-in-promotion decision as a known trade.
+
+**A64 — the dolly/subject-lock measurement** (off-axis, lateral 0.12,
+dolly z 0.05..0.35, under ray-reprojection): content at the split depth is
+pinned STRUCTURALLY — a reprojected texel with zero depth-offset has
+s = 1, S = Pw, independent of the reference eye — and measured drift in a
+0.4-0.6 depth bin is proportional to |d - 0.5| (6-12px bin-width effect)
+while far content breathes 26px. With the subject plane on the portal
+(the default), the mesh-scaling lock machinery is skipped entirely and
+lock-on/lock-off renders are bit-identical: the portal projection alone
+owns the invariant. The q != P case remains device work.
+
+**A65 — content-lens FOV normalization** (branch review-fix-lens, riskier
+interaction-path change per the user's split): the user's brief — 90deg
+~ viewer-native screen space; long-lens cuts must feel the same size
+(focal content in expected screen XY) while keeping authored depth
+compression. The law that satisfies it: head motion measured in
+focal-plane frame widths is lens-invariant. Frame width at the focal
+plane ~ 2*D*tan(fov/2); the portal absorbs D (the pin above), leaving
+gain = tan(fov/2)/tan(45deg) on face-track + gyro camera motion.
+90deg = 1.0 = bit-identical today; window.setLensFov(deg) per cut.
+Depth compression is deliberately NOT renormalized — it is authored
+content. Feel calibration across real cuts is device work.
+
+Stamps: v3.13.19-a64 suite on review-fix (5342588); a65 on
+review-fix-lens.
