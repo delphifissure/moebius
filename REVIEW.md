@@ -3566,6 +3566,13 @@ Measured (star, 1200x750, six poses): ghost columns gone at
 blur jitter, black-px counts flat (no new holes — the backdrop fills
 where the false claims used to hang).
 
+Cross-asset: warrior and photo v2 render clean of wash columns at the
+same six poses; the warrior's top-left black corner at +0.42 is
+pre-existing margin behavior (A/B: 6260 black px with the rule off vs
+6268 on, same bbox — while the rule removes 12k px of ghost claims).
+Full regression suite after the change: ALL PASS (9) — quick-bake masks
+untouched by construction, 3-path renders lit.
+
 The residual, honestly: a softer figure-shaped ghost remains at strong
 offsets. That is a different class — the estimator smears the
 silhouette over a shell of intermediate depths, those texels are
