@@ -3375,3 +3375,32 @@ consumers only — the floor rind keeps the min-envelope, which is
 containment, not a depth value). All three paths verified at 0.42 offset;
 v1's near dune is now free of plate mottle. On-load framing: settled as
 correct by the user. Stamp v3.13.19-a62b, code b0c7c11.
+
+### Addendum 62c — three-asset generalization sweep
+
+Same binary, zero per-image constants, quick-bake + dir-plate + closure on
+three assets:
+
+| asset | class | SD | verdict |
+|---|---|---|---|
+| starwatcher | ink line-art | 13.2% | reference — no regression |
+| silverwarrior | painterly (Frazetta) | 11.7% | field/sky clean, figures banded, 3D no holes |
+| sunflower photo | photograph | 21.5% | sky/clouds clean, near occluders flagged, 3D correct |
+
+One general fix fell out: the ground flood's depth barrier went from per-px
+to windowed range (±3) — soft painterly silhouettes never trip a per-px
+step (the same smearing physics as the cliff-seed budgets, same windowed
+answer). Luma stays per-px deliberately: windowing it would fuse textured
+ground (dune stipple) into a contiguous wall and strand the flood.
+
+One real limitation found and documented, not patched: on the warrior the
+bear/sled group touches the BOTTOM FRAME EDGE, so frame-edge ground
+seeding classifies the hugely-proud foreground group (134 raw over a 0
+field) as ground from within. It degrades gracefully — the fold pathway is
+depth-only and fills the figures anyway; interiors come out patchier than
+the ink asset. The open design question is content-free discrimination of
+a bottom-cropped foreground object from a true ground plane at the frame
+edge. Deliberately not answered with a heuristic tonight — it is the same
+class of taxonomy question as feet/fold and deserves the same treatment.
+
+Stamp v3.13.19-a62b (code e4c2446 adds the barrier as a62c).
