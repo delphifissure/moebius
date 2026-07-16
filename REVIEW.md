@@ -3462,3 +3462,37 @@ catch them (raising the flush threshold past the party rim's 0.09) is
 explicitly declined. Star mask 13.7% ~ baseline; party untouched.
 
 Stamp v3.13.19-a63, code 7cb9712.
+
+## Addendum 63b — gradient-true fill values: the discriminator is the measurement
+
+The ramp-vs-hard fill-value question closes the way the taxonomy predicted:
+no classifier. The fill continues the far anchor's own PLANE — sky and
+flat layers measure gradient ~0 and fill HARD at their depth; receding
+ground measures its recession and RAMPS. Extent stays owned by the hop
+budget.
+
+Making the values honest removed compensating errors the fixed +sCone rise
+had been hiding. Four fell in sequence, each pinned by an instrumented
+claim-record dump at the failing pixel (after three seed-side hypotheses
+died against unchanged output — the probe, not the theory, found every
+one):
+1. sky-lip fold gate (a horizon lip reveals more of the SAME surface,
+   never sky);
+2. plane carry — path-integrating the gradient let improve-and-repush
+   prefer descending zig-zags; a plane is path-independent;
+3. trust span + descent floor — a ±3px-window gradient extrapolated 150px
+   is noise amplification; never more than a tear step below its own
+   anchor;
+4. NEAREST-ANCHOR WINS — lowest-plane-wins systematically elected the
+   noisiest negative-gradient anchor in budget range. A reveal continues
+   its nearest occlusion boundary; value only tiebreaks.
+
+Pocket promotion (enclosed flush pockets -> ground) was built, measured,
+and deliberately left opt-in: nearest-anchor already fixes the free-fill
+corridors it targeted, and on painterly figures it amplifies boundary
+leaks (576k px over-promoted on the warrior; snapshot-vs-cascade did not
+save it). Fewer mechanisms won.
+
+Verified: star 13.9%, profiles physical end to end (plain values at the
+ridge lip, ramp meeting the surface, party/crest sane); warrior 8.9%
+banded coverage restored. Stamp v3.13.19-a63b, code a8b5fd8.
