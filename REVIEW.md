@@ -3404,3 +3404,34 @@ edge. Deliberately not answered with a heuristic tonight — it is the same
 class of taxonomy question as feet/fold and deserves the same treatment.
 
 Stamp v3.13.19-a62b (code e4c2446 adds the barrier as a62c).
+
+### Addendum 62d — the frame-edge rule: "ground is what you can walk down into the distance"
+
+The user flagged frame-cropped foreground characters as a must-solve
+(common composition; the warrior's bears seeded ground from within). The
+rule derivation, by counterexample:
+
+- "near content at the edge = object" — fails: the dune at the bottom edge
+  is the NEAREST thing in its scene and IS ground.
+- "recedes inward = ground" — fails: a figure STACK also recedes
+  front-to-back (bears 134 -> rider 72).
+- What survives: HOW it recedes. A support surface recedes SMOOTHLY at
+  plausible ground slopes; a figure pile recedes through silhouette
+  CLIFFS. Seed iff within a tear step of the far limit (sky, flat far
+  field — cannot hide a reveal), or a cardinal walk accumulates
+  tearStep/2 of recession with every step smooth at window scale.
+- False negatives are inert by construction: flat far scenery / studio
+  backdrops classify as object, but a front entering flush content is
+  never funded and lowers nothing. The rule's failure mode costs zero.
+
+Two coupled-constant lessons from the sweep (both measured, both now
+tied): the depth-barrier window must scale with resolution (smear scales
+with upscaled estimator output; ±3 missed a 30px fur/field smear at
+3000px and the flood leaked around the gate), and the fold probe must
+out-reach the barrier strip it probes across (RF = RWD + stroke; star's
+ridge band halved the mask when the strip outgrew the probe).
+
+After: starwatcher 13.6% (~baseline, band restored); warrior 8.6%,
+figure group = object with silhouette bands + band-limited interiors,
+field/sky clean; sunflower near-leaves correctly object. Stamp
+v3.13.19-a62d, code 975d358.
