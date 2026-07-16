@@ -3435,3 +3435,30 @@ After: starwatcher 13.6% (~baseline, band restored); warrior 8.6%,
 figure group = object with silhouette bands + band-limited interiors,
 field/sky clean; sunflower near-leaves correctly object. Stamp
 v3.13.19-a62d, code 975d358.
+
+## Addendum 63 — thin-lift: the ribbon class, solved within trust-the-depth-map
+
+The A57 residual: sub-stroke-thin ATTACHED features dropped to the far
+limit outright by the estimator (staff ribbon curls + upper-loop edges
+measure 0.0 — exact sky), rendering pinned to the background and
+detaching from the staff under parallax (reproduced at 1440px, ±0.25).
+
+The fix is deliberately NOT stroke-adopt revived. Adopt died because it
+could not distinguish a genuine dropout from a figure's outline skin.
+Three structural gates can — each anchored to a measurement made this
+session:
+1. flush-far (D <= tearStep): the party/helmet outlines dip only to
+   ~0.09 and are excluded before any shape test;
+2. far-surrounded ring: body-skin outlines have their figure on one side
+   and fail;
+3. near anchor: the component must touch decisively nearer content and
+   adopts that depth — unanchored far ink (mesas, horizon strokes, the
+   sunflower photo's bird flock) is untouched.
+Placed at the shared bake source so all four consumers get it.
+
+Verified: the loop renders solid and rides the staff (the dark sky-ghost
+is gone); residual thin wisps are px outside the gates — the trade to
+catch them (raising the flush threshold past the party rim's 0.09) is
+explicitly declined. Star mask 13.7% ~ baseline; party untouched.
+
+Stamp v3.13.19-a63, code 7cb9712.
