@@ -3529,3 +3529,49 @@ content. Feel calibration across real cuts is device work.
 
 Stamps: v3.13.19-a64 suite on review-fix (5342588); a65 on
 review-fix-lens.
+
+## Addendum 66 — the v2 ghost columns: pair validation reaches the plane claims
+
+The open v2 artifact from the a62b port verification, finally pinned.
+At offset, tall blocky gray columns stood in the sky beside the figure
+and the staff (and a figure-shaped blob beside the party) in the
+full-planes path. Isolation first: rebuilding v2 with the directional
+plate disabled is BIT-IDENTICAL (0 changed px at three poses) — the
+full-planes branch returns before every dirPlateV consumer, so the a62b
+"v2 port" only ever reached the non-full-planes MPI path. The columns
+are not an a62b regression; they are original full-planes behavior.
+
+Layer-solo renders found the owner: the layer-7 (mesa/far-dune bin)
+CLAIM region — the completion — extended straight up the figure/staff
+silhouette as a pillar hanging in front of sky. Mechanism, from the
+claim gate: a claim needed only ONE row-or-column anchor, and the
+one-sided inverse-distance lerp collapses to the anchor's own depth
+(the distance weight cancels), so a mid bin with ground anchors far
+BELOW funds claims all the way up any nearer silhouette — column-shaped
+because only column anchors exist there. This is exactly the
+bird-flank-under-sibling class the strips path killed with PAIR
+VALIDATION; the rule was never applied to full-plane claims.
+
+The fix is that rule, ported: a claim needs anchors on both sides of
+its row or its column. The frame edge counts as a flank only when the
+march to it crosses nothing but strictly-nearer content (occluders of
+the bin, dV > bin's near cut + tearStep) — so a frame-cropped figure
+still gets completed behind (the warrior's bears), while sky above the
+staff breaks the march and the column dies. The backdrop bin keeps its
+unconditional budV-band rule; visible texels are untouched.
+Opt-out window._noV2PairValid.
+
+Measured (star, 1200x750, six poses): ghost columns gone at
+±0.42/0.25/look-down (10-14k px removed per pose), rest pose 229px of
+blur jitter, black-px counts flat (no new holes — the backdrop fills
+where the false claims used to hang).
+
+The residual, honestly: a softer figure-shaped ghost remains at strong
+offsets. That is a different class — the estimator smears the
+silhouette over a shell of intermediate depths, those texels are
+VISIBLE content in mid bins (real figure colors at estimator-reported
+depths), and pair validation correctly does not touch visible texels.
+It is the v2 relief of the same smeared-transition physics the
+quick-bake path meets as soft cliffs, and its texture is SD's slot;
+carving visible texels out of bins by content would be the class of
+heuristic a61/a62 tore out.
