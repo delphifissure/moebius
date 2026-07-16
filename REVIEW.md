@@ -3281,3 +3281,71 @@ dolly-zoom "focal plane stays put" case wants explicit handling); the
 thin-feature staff/glider streaking (A57 class).
 
 Stamp v3.13.19-a60.
+
+## Addendum 62 — trust the depth map: heuristic teardown + the directional rising-plate (a61/a61b/a62)
+
+The user challenged the per-image hacks ("our code cannot be making custom
+solutions for all image edge-cases") and asserted the estimator had done a
+good job on the dune party. Measurement agreed, and the consequences ran
+deep — three landings:
+
+**a61 — ink-seat OFF.** The seat's founding premise ("estimator floats the
+party to a near-spike, 0.09–0.61 spread") is false on the shipped map: the
+party is a coherent mid-depth blob (80–111 raw over ~180 ground). The seat
+flattened good depth to one card, which under A60 ray-reprojection has no
+relief to rotate — the billboarding the user saw. Removing it made the bake
+consume raw depth like realtime: party rotates, no shear (there was never a
+spike to shear). Opt-in `window._inkSeat`.
+
+**a61b — stroke-adopt depth OFF.** Audit overlays: adopt rewrote 19% of the
+party region (mean 0.18 depth) by lifting ink outlines to the near dune the
+party stands on — shattering coherent figures into near-depth filigree (the
+true upstream source of the shatter the seat papered over). Where the
+estimator was right it was inert (staff 118→119; glider untouched). Not
+load-bearing anywhere measured. Opt-in `window._strokeAdopt`; the plug's
+wash-ink rejection is unchanged. Ramp-collapse: secondary, leaves smooth
+ground at 0% — kept. Standing-mask: plug-shaping, not a depth corruptor.
+
+**a62 — directional rising-plate (quick-bake), DEFAULT ON.** The user asked
+why the near dune was flagged as needing inpaint ("nothing can occlude it
+ever"). Root cause: `disocc = dQ − plate` with a symmetric min-envelope
+plate that drags open ground's floor down to the distant mid-ground; the
+A44 gate then patched it leakily (astronaut/party budgets spilled onto the
+connected same-depth dune). The mask bug and the fill bug were the same
+bug. The replacement builds the plate from occlusion physics, with the
+user's taxonomy (figure-on-ground / self-occluding fold / distinct layer)
+encoded:
+
+- plate starts AT the surface; far depth continues inward only under real
+  occluders → open ground physically cannot read proud;
+- ground segmentation (frame-edge flood bounded by luma edges + depth
+  cliffs) supplies the object footprints — general to ink and photo;
+- seeds at cliff far-lips + ground→object boundary px (catches silhouettes
+  whose depth step the estimator smeared; BOOT crosses the undershot skin);
+- the carried plate RISES at sCone/px (directional min-plus cone): wide
+  massifs keep silhouette bands (crystal mountain no longer floods solid),
+  fills ramp;
+- hop budget fixed at seed, no renewal — the A44 chamfer made directional
+  (margin-only death ran 330px on the dune ridge when the surface recedes);
+- fold case: ground-ground cliffs (crest, ridge lips) detected at the
+  boundary line via a two-ground probe (sky excluded: zero parallax funds
+  nothing); fold fronts may enter ground while tear-step funded — the
+  hidden-plain strip under the lip; figure fronts still stop at the feet.
+
+Verified: SD mask 12.8% vs base 12.6% with the right distribution (figures
+solid, outlines/whip covered, boot soles excluded — feet-level reveals are
+same-depth continuations needing no SD — crystals banded, corners and open
+dune clear, bounded ridge band); 3D at 0.42 offset: crest tear holes gone,
+near dune cleaner than baseline, leg/party disocclusions intact.
+
+Method note: the fold and budget fixes came from instrumented profiles
+(plate-vs-depth columns), not tuning — two hypotheses (sky-carry, ground
+misclassification) died against dumps before the real cause (margin death
+is unbounded when the surface recedes) was measured.
+
+Follow-ups: port the dir plate to the v1/v2 plate paths; ramp-vs-hard fill
+VALUE discriminator (far-anchor gradient — band extent already correct);
+generalization sweep on a second asset (troll/frazetta) before calling the
+ground-seg constants safe; on-load framing question (A61) still parked.
+
+Stamp v3.13.19-a62. Code: d0ba77e (a61/a61b + prototype), f94ea0e (a62).
