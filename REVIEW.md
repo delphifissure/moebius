@@ -3620,4 +3620,36 @@ Measured (near-dune subject, crest-line metric, n=76 columns):
 lock mid->far 1.0 px median vs free 7.0; lock mid->near 4.0 px vs free
 28.5. The old law's 43.5/34.0 for comparison. At q = P everything is
 gated off and the gain multiplies by exactly 1.0 — the a64
-bit-identical result stands. Stamp v3.13.19-a67.
+bit-identical result stands. Stamp v3.13.19-a67. The suite now guards
+this invariant (11 checks: lock crest <= 2px, free >= 2px so the metric
+is proven live).
+
+## Addendum 68 — painterly figure interiors: the mask is healthy, the debt is the plate stand-in at scale
+
+The a62c open question ("figure interiors patchier than the ink
+asset") measured, on the warrior at full 3000x3000:
+
+- Figure group (largest non-ground component): 1.05M px, and the SD
+  mask covers 638k of it — 61%, with 94% of that in ONE connected
+  component (598k px; second 38k; the rest is <=102px speckle). Row-gap
+  median between SD runs is 13px. The mask is NOT fragmented — the SD
+  stage gets one workable region per figure, and the uncovered 39% is
+  deep interior beyond any parallax reach, which is right-sizing, not
+  under-coverage.
+
+- The real finding is elsewhere: at cone-edge offsets (0.25-0.42
+  lateral) the quick path renders the reveal behind the figure as a
+  STAIRCASE — terraced plate depth, each plateau parallaxing as its own
+  band, textured with row-stretch carry. No holes (the a62c claim
+  holds); the geometry of the stand-in is the artifact. The terrace
+  scale implicates the extrapolation span cap (KE) in the gradient-true
+  fill: behind a 600px-wide occluder at 3000px resolution the anchor
+  planes clamp at KE and competing fronts meet in value plateaus.
+  SD cannot fix this class — SD repaints texture, but terraced DEPTH
+  still parallaxes as stairs after repainting. Filed as its own item:
+  smooth/relax the plate fill within large disocclusions (fill values
+  in the occluded region are ours to shape; the source depth map stays
+  untouched).
+
+  Mitigation note: these poses sit at/beyond the fade band (35-45deg),
+  so device fade covers the worst of it today.
