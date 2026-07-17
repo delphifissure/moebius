@@ -3582,3 +3582,42 @@ It is the v2 relief of the same smeared-transition physics the
 quick-bake path meets as soft cliffs, and its texture is SD's slot;
 carving visible texels out of bins by content would be the class of
 heuristic a61/a62 tore out.
+
+## Addendum 67 — the q != P subject pin: the mesh-scale law was wrong, the reprojection makes the right one trivial
+
+The a64 open item ("the q != P case remains device work") turned out to
+be measurable headlessly, and the measurement killed the shipped law.
+
+Setup: subject focal plane moved OFF the portal via the app's own
+peek->Z mapping — once onto the far volume plane (q = -0.02, sky), once
+onto the near dune (q = +0.0196, depth 0.745) — dolly sweep off-axis
+(lateral 0.12), pinned near/mid/far frames, lock on vs off.
+
+The old mesh-scaling pin (scale all meshes by s = d(e0-P)/(d0(e-P))
+about the eye-axis point on the subject plane) is portal-projection
+correct for STATIC world geometry, and measurably wrong under ray
+reprojection: the subject bin drifted exactly like lock-off (24.7 vs
+24.0 px) while other bands warped, and on the near-dune run the lock
+made every measurable band WORSE than free (crest medians 43.5/34.0 px
+vs 28.5/7.0). Mechanism: the scale moves the plane the shader displaces
+from — under reprojection content Z itself shifts with the transform,
+so the static-geometry derivation does not apply.
+
+The reprojection also hands over the correct law. With u_refEye
+z-tracking the live eye, a texel's portal hit is
+X = px - ex*zOff/(e-P-zOff): an ON-AXIS dolly is a structural no-op
+(the portal projection is the dolly-zoom compensation), and ALL dolly
+drift is the lateral-offset term. Content on the subject plane
+(zOff = q-P) drifts only through ex/(e-q) — so the pin is: scale the
+APPLIED lateral eye offset by g = (e-q)/(e0-q) while dollying. Subject
+pinned exactly for any live head position (the gain cancels e, not ex);
+portal stays pinned (its term has zOff = 0); head parallax about the
+subject becomes dolly-invariant; other depths breathe. g = 1 at engage,
+so activation is seamless. No mesh is touched; the scaling machinery is
+demoted to the non-reprojection legacy path.
+
+Measured (near-dune subject, crest-line metric, n=76 columns):
+lock mid->far 1.0 px median vs free 7.0; lock mid->near 4.0 px vs free
+28.5. The old law's 43.5/34.0 for comparison. At q = P everything is
+gated off and the gain multiplies by exactly 1.0 — the a64
+bit-identical result stands. Stamp v3.13.19-a67.
