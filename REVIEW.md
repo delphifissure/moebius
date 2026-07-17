@@ -3779,6 +3779,17 @@ seed. Figures-as-ground puts the plate FLUSH AT FIGURE DEPTH; the
 silhouette tear then exposes a near-depth plug wall wearing wash
 colours: bg-extruded-to-fg, the user's tunneling, at 22 degrees.
 
+Attribution, settled by measurement after the user pushed back
+("it was not doing this yesterday"): yesterday's exact commit (a64,
+5342588) produces BIT-IDENTICAL troll quick numbers (SD 20.3%, ground
+94.7%, 325,976 flood cells) — the quick path did not change. What
+changed is that the a71 dropdown made the quick button actually build
+quick: yesterday the checkbox tangle silently built v2 (the user's own
+first report), which renders the troll cleanly (verified at 0.25
+today). The dropdown exposed a long-standing quick-path defect; it did
+not create one. Interim guidance: v2 mode for figure-heavy
+compositions until A73 lands.
+
 The suite now carries the troll as a PINNING ROW (ranges lock the
 defective state so any change is visible; the A73 fix must move
 ground% far below 94.7 and re-pin). The taxonomy question underneath
