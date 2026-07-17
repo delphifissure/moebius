@@ -3693,3 +3693,42 @@ the row-carry wash whose fixed 4-pass softening is invisible at
 own division of labour; the geometry underneath it is now flank-true,
 which is the part SD could never have repainted. Stamp v3.13.19-a69,
 code 3d647e5.
+
+## Addendum 69b/70 — the device round: the gate the membrane forgot, and the wash doppelganger
+
+The user tested on device and caught two things the harness sweep
+missed (the star quick render was the one view never re-eyeballed
+after a69 — that discipline gap is the lesson of this addendum).
+
+**69b — same-class gate restored (426370b).** The first membrane cut
+dropped the original rule's same-class condition. Sky-left/plain-right
+rows across the astronaut lerped into a mid-depth shelf: the horizon
+glued to the figure, the plate deepened, the wider reveal exposed the
+ghost. Gate: flanks must agree within a tear step, else the flood's
+directional value stands (fold/skyline territory). Measured: star
+gated-vs-membrane-off now 461px apart at the device cam (inert where
+flanks disagree, still re-bases 101k same-surface px); warrior pits
+stay fixed; suite ALL PASS.
+
+**70 — the ghost itself predates a69, and it is the wash doppelganger
+(9754c23).** Discriminating renders split it: plate hidden -> dotted
+FG rubber dust only; FG hidden -> the plate carries a smooth BLUE
+ASTRONAUT COPY. The GPU wash's seed gate is a fixed-radius dilation;
+figure-fringe texels that read as plate depth seeded figure tones and
+pull-push spread them into a figure-shaped doppelganger — the exact
+class v1 killed years of addenda ago with depth-consistent
+continuation. The quick wash never got the rule; now it has:
+every disocc px's plate colour comes from real background at the px's
+OWN plate depth, along its row (columns as fallback,
+resolution-scaled bound, inverse-distance blend two-sided); misses
+take the nearest RESOLVED reveal colour, never figure paint. CPU pass
+at bake; wash kept only as fallback. Measured at the device cams:
+16.7k px repainted at (0.431,-0.065), 27.5k at (0.710,0.025), ghost
+gone from the reveal; suite masks byte-stable (colour-only pass).
+
+Still open, honestly: row striping where the plate depth ramps (each
+row legitimately continues a different-depth band; SD's slot), the
+dotted FG rubber dust (un-torn fringe quads in quick — the pre-tear
+trade from A52), and both device cams sit at 65-74 degrees, well past
+the 35-45 degree fade band, so the residuals there are outside the
+supported cone by the product's own rule. Stamp v3.13.19-a70.
