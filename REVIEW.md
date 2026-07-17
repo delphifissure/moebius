@@ -3732,3 +3732,46 @@ dotted FG rubber dust (un-torn fringe quads in quick — the pre-tear
 trade from A52), and both device cams sit at 65-74 degrees, well past
 the 35-45 degree fade band, so the residuals there are outside the
 supported cone by the product's own rule. Stamp v3.13.19-a70.
+
+## Addendum 71/72 — one bake control, the reveal consensus, and where the rubber actually lives
+
+**A71 — the bake dropdown (ab49b11).** The user could not get quick
+bake to build ("producing v2 instead"): mode lived across two
+checkboxes, quick silently overriding full-planes, and the debug sheet
+never recorded which path built. One control now — Bake [quick | v2
+depth layers | v1 plug bake] — drives the three flags atomically,
+rebuilds on change once a build exists, and the debug footer stamps
+mode= (plus baked:quick). Verified by driving the REAL moebius.html
+headlessly through the user's flow: quick -> plate, switch v2 -> 12
+planes auto-built, back to quick -> planes cleaned, FG restored; the
+in-app logs also confirmed a66 pair validation and the a70 colour pass
+live. The build sheets that motivated this are now self-identifying.
+
+**A72a — reveal colour consensus (a943063).** The a70 row rule made
+the reveal colours depth-true, and exposed the next layer down:
+adjacent rows anchor to different flanks and the decorrelation reads
+as comb striping (warrior at 0.25). Masked box consensus over reveal
+colours only — vertical 16px@1920 (the striping axis), horizontal
+6px@1920 (anchor handovers) — never crossing the disocc boundary, so
+silhouettes stay exact and sky->mountain->field gradients survive.
+Comb gone; suite ALL PASS throughout.
+
+**A72b, open, with the design settled by measurement.** The remaining
+putty (the user's frazetta column at ~36deg — INSIDE the fade band) is
+FG rubber: the quick cliff tear is per-triangle (span > tearStep), so
+an estimator smear distributed over N px presents span/N per quad and
+never trips — the same physics a62c met at the flood barrier. Two
+facts pin the fix's location: (1) tearing the smear quads would only
+convert the rubber sheet into a cap-card dust curtain (fringe colours
+at fringe depths, splatted); (2) snapping dQ inside the quick branch
+moves NOTHING — the FG mesh displaces from the bake's shared depth
+texture, not quick's local copy. So the repair belongs at the SHARED
+BAKE SOURCE, and the discriminator that survives the pseudo-glancing
+taxonomy is the plate itself: a px is smear-fringe iff it stands a
+tear step proud of its OWN plate continuation with a genuinely nearer
+surface inside the smear window; snap it to whichever real side is
+closer. A true glancing ramp has plate == surface and is untouched by
+construction. Not landed tonight — it touches every path and deserves
+a fresh session with the suite around it. The frazetta/troll asset
+should also be committed to the repo so the fix is verified against
+the exact reported sheet, not the warrior proxy.
