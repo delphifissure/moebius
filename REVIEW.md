@@ -3653,3 +3653,43 @@ asset") measured, on the warrior at full 3000x3000:
 
   Mitigation note: these poses sit at/beyond the fade band (35-45deg),
   so device fade covers the worst of it today.
+
+## Addendum 69 — the staircase autopsy: far-plane pits (fixed) + colour striation (SD's slot)
+
+The a68 "terraced plate" hypothesis (KE clamp) died against the
+profile, the way hypotheses here usually die. The plateQ dump under the
+warrior figure showed something worse than terraces: the plate pinned
+at SKY depth (0.000-0.031) under surfaces at 0.35-0.75 — at x=2000 a
+0.6-deep far-plane pit, with 0.6 cliffs where correct islands
+survived. Mechanism, from the fill's own rules: hop budgets scale with
+the boundary's depth step (bigger step = wider legitimate reveal), so
+the figure-vs-sky boundary at the helmet funds fronts that outlive the
+small-step mountain/field flank fronts — "nearest LIVING anchor" is
+the sky, and nearest-anchor-wins cannot save you when the right
+anchors are dead.
+
+The fix is the membrane's both-sided rule reaching the directional
+plate, which is also the user's city-roof taxonomy verbatim: a reveal
+continues its FLANKING surfaces, row by row — sky rows stay sky,
+mountain rows carry mountain, the skyline behind a figure emerges
+naturally. Every flood-claimed px with ground on both row sides takes
+the lerp of its two flank surfaces (== the membrane's inverse-distance
+blend), clamped never proud of the occluder's own surface. Rows only —
+columns would drag roof texture down, the exact failure the taxonomy
+names. One-sided px keep the flood value; unclaimed interiors keep
+plate == surface, so the SD mask can only get more honest, not larger.
+
+Measured after: pits gone (x=2000: 0.000 -> 0.17-0.65 tracking the
+flank field; x=1200 mid rows 0.008 -> 0.40), fill step sizes 6x
+smaller, SD components inside the figure 587 -> 178, masks star 14.0
+(stable) / warrior 8.5 / photo 23.3 — the photo drop is pit flags
+dying, verified against a clean 0.35-offset render before re-basing
+the suite range. Suite ALL PASS (11).
+
+And the honest split at the end: the staircase LOOK in the warrior
+renders barely moved, because what remains is plate COLOUR striation —
+the row-carry wash whose fixed 4-pass softening is invisible at
+3000px. That component is texture, which is SD's slot by the project's
+own division of labour; the geometry underneath it is now flank-true,
+which is the part SD could never have repainted. Stamp v3.13.19-a69,
+code 3d647e5.
