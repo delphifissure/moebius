@@ -3756,6 +3756,45 @@ colours only — vertical 16px@1920 (the striping axis), horizontal
 silhouettes stay exact and sky->mountain->field gradients survive.
 Comb gone; suite ALL PASS throughout.
 
+## Addendum 73 — the troll was never in the net: cave-class ground collapse, and the two honest regressions
+
+The user's device round ("truly terrible and strange tunneling in the
+troll pic — supposed to be generalized") closed the loop on a blind
+spot: the troll IS the app's shipped default asset
+(defaultImgColor/Depth.png, 851x1023, the certified-record asset of the
+a44-a51 era) — and the one image the a62+ generalization sweeps and the
+regression suite NEVER covered, because every harness probe overwrites
+that exact filename with the asset under test. The dir-plate replaced
+the record-era treatment sight-unseen on the very asset the records
+were built for.
+
+Diagnosis, measured: ground = 94.7% — the walkable-ground flood
+swallows the FIGURES. Not smear leakage this time (the silhouettes are
+sharp: 0.36 -> 0.02 within 3px, the windowed barrier catches them);
+the flood enters through GENUINE depth-continuous contacts — the big
+troll's arms merge into the branches, the woman into the snake and
+water — and dark-on-dark defeats the luma bound. Cave topology also
+means every frame edge recedes smoothly inward, so all four edges
+seed. Figures-as-ground puts the plate FLUSH AT FIGURE DEPTH; the
+silhouette tear then exposes a near-depth plug wall wearing wash
+colours: bg-extruded-to-fg, the user's tunneling, at 22 degrees.
+
+The suite now carries the troll as a PINNING ROW (ranges lock the
+defective state so any change is visible; the A73 fix must move
+ground% far below 94.7 and re-pin). The taxonomy question underneath
+is the hard one the a62c addendum deliberately left open — content-free
+discrimination of a standing object from continuing surface when the
+object genuinely touches its surroundings at matching depth. The
+record era answered it per-asset; the general answer is still owed.
+
+Also confirmed from the same device round: the star's horizon shelf
+"attached to the astronaut" PREDATES a69 (present with the membrane
+off) — boundary-seed fronts at the figure's FEET carry near-dune depth
+up behind the torso. The membrane's row rule was accidental partial
+medicine, which is why the artifact seemed to move. Both re-landings
+(membrane + row colours) wait on a tunneling invariant in the suite
+and the figure-against-sky reveal-content call.
+
 **A72b, open, with the design settled by measurement.** The remaining
 putty (the user's frazetta column at ~36deg — INSIDE the fade band) is
 FG rubber: the quick cliff tear is per-triangle (span > tearStep), so
