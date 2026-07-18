@@ -3894,3 +3894,38 @@ Remaining from the bisect: the a63b/troll half — true fix is A73
 ground segmentation (true anchors defuse the descent floor by
 construction). arc-fix stays LOCAL pending the user's call on push
 vs. re-landing the validated arc as one series.
+
+## Addendum 76 — rise-debt falsified: the troll's figures are entered at matching depth, not climbed
+
+arc-fix is pushed (21104b1, the a75 lift bound). The A73 attempt that
+followed did not survive its own measurement and was removed the same
+hour it landed.
+
+The design: make walkability local — the ground flood accrues DEBT for
+every step toward the viewer, recession pays it down (floored at zero),
+and claims over more than a step-height (2 tear steps) are refused, so
+a standing figure must be climbed and is excluded path-independently.
+
+The measurement: troll ground 94.7 -> 92.9 (a 1.8-point dent), star SD
+taxed 13.9 -> 13.0. Why it failed, and why it HAD to fail on this
+composition: the cave walls at the frame edges are themselves
+near-depth, so the flood descends inward with zero debt everywhere; and
+the figures are entered through contacts that sit AT body depth (arms
+into branches — the same genuine contacts that defeated the luma and
+barrier bounds). There is no climb to tax. Contact-at-matching-depth
+composition defeats every LOCAL depth rule for figure-vs-surface;
+the a62d bear-stack logic (figure piles recede through cliffs) does
+not transfer.
+
+What this redirects to: stop trying to segment the trolls out of
+"ground" and instead profile WHERE the near-depth plate behind the
+woman actually comes from (the instrumented-claim-record method that
+found nearest-anchor-wins). With figures classed as ground, the
+woman/passage boundary is ground-on-both-sides = a FOLD, whose carry
+is supposed to be the FARTHER lip — if the fill behind her is coming
+out near instead, the defect is in the fold/boundary VALUE pathway on
+this topology, which is a narrower and more answerable question than
+cave-class segmentation. That is the next probe, not another rule.
+
+Code state: rise-debt reverted (falsified premise, removed); arc-fix
+still carries exactly a72b + a75.
