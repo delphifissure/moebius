@@ -4017,3 +4017,41 @@ troll (30..40, was the defect-documenting 15..26) and photo (33..43)
 with comments naming this addendum. Condition before the commit: the
 photo asset A/B shots must show no new artifact class at offset cams —
 the mask number alone is a budget metric, not a correctness verdict.
+
+## Addendum 79 (2026-07-18): A72 smear-fringe snap LANDED — the design Addendum 71/72 pinned, with one added gate
+
+Implemented at the quick-branch bake source (immediately after the
+directional plate, before rigidify/ship/tear — verified against the
+code that in-branch dQ edits DO ship to the shared depth texture at
+the "ship the cleaned depth" block, so the FG mesh and the
+per-triangle tear both see the sharpened depth; the earlier "moves
+nothing" note in Addendum 71/72 does not hold on the current tree).
+
+The rule, exactly as pinned, plus a third gate the taxonomy demanded:
+a px is smear-fringe iff (1) it stands a tear step PROUD of its own
+plate continuation (glancing ramps have plate == surface — untouched
+by construction), (2) a genuinely NEARER surface exists inside the
+smear window (RS = 2x the barrier half-window), and (3) NO real cliff
+exists in that window — the proudness is carried entirely by a
+sub-cliff ramp (the span/N physics). Gate 3 is new: without it, a
+real mid-depth surface within RS of a genuine cliff would be eaten;
+with it, hard steps stay the tear's property. Snap goes to whichever
+real side is closer. window._noSmearSnap reverts.
+
+Measured on the shipped default (troll): 3650px re-concentrated,
+cliff tear 6043 -> 8982 spanning triangles (the tear now trips at the
+snapped silhouettes — the intended conversion), orphans 21 -> 131 cap
+cards at real depths/colours, SD 34.7 -> 34.6 (unchanged). Suite with
+the snap active: ALL PASS (13), star/warrior/photo masks unchanged to
+0.1pt. Wide-cam A/B shots (+-0.35): pre/post near-identical — the
+large wall smears at grazing view are ground-classified glancing
+ramps, exempt BY DESIGN (they are the "realtime look", not rubber).
+
+Honest verification state: the mechanism is landed and surgical, but
+the user's exact frazetta putty column (~36deg device sheet) has not
+been re-reproduced pose-for-pose in the harness — the kill is argued
+from the design's own physics (silhouette smears now tear instead of
+stretching), not yet observed on the reported sheet. Next device
+round on arc content is the arbiter; if the column survives there,
+the residual is wall-class (glancing ramp), which is a different
+conversation (the fade band exists precisely to hide it).
