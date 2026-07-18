@@ -3867,3 +3867,30 @@ an a60-era plug behavior needing its own workstream. Recommendation:
 hold the rollback as deployed baseline, get fresh device sheets on it,
 and re-approach the arc only with the troll row + a tunneling
 invariant in the suite as gates.
+
+## Addendum 75 — the user's bisect pays off: the parallax-reach bound on thin-lift
+
+The user read the 15-commit grid closer than its author: the star's
+horizon-attachment enters at exactly a63, and the troll's gloop enters
+at a62c (mask-collapse exposing raw rubber, cured by a62d) and returns
+at a63b (the descent floor clamping fill values a tear-step under
+FIGURE-classified anchors — a locally sound rule on a wrong premise).
+
+The a63 inference: the horizon is a thin ink line at far depth and the
+astronaut stands ACROSS it, so the thin-lift's contact gate adopts it
+exactly like the ribbon. The missing property was never shape but
+EXTENT — an accessory lives entirely within parallax reach of its
+contact; scene linework runs frame-wide away from it.
+
+a75 (branch arc-fix, 21104b1, on the a72b arc): all-or-nothing
+parallax-reach bound — if any component px is farther than
+MAXD = 150px@1920 (euclidean) from every anchor-contact px, the lift
+is skipped and the feature keeps its far depth. Measured: star at the
+device cam changes by EXACTLY 407px vs the unfixed arc tip, all in
+the horizon band beside the figure; the ribbon still lifts and rides
+the staff (probe); suite ALL PASS (8) including the pinned troll row.
+
+Remaining from the bisect: the a63b/troll half — true fix is A73
+ground segmentation (true anchors defuse the descent floor by
+construction). arc-fix stays LOCAL pending the user's call on push
+vs. re-landing the validated arc as one series.
