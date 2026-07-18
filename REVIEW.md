@@ -4055,3 +4055,42 @@ stretching), not yet observed on the reported sheet. Next device
 round on arc content is the arbiter; if the column survives there,
 the residual is wall-class (glancing ramp), which is a different
 conversation (the fade band exists precisely to hide it).
+
+## Addendum 80 (2026-07-18): A78 — the false disocclusions are BUDGET-GEOMETRY SPILL from the a76 law; the reveal extent needs per-pixel physics
+
+User device round on the merged a76+a77 build (main PR#39; sheets
+still stamped a72b — the stamp string was not bumped at a76/a77, fixed
+as 428e3ef): holes all plugged, but "several regions that appear to be
+false disocclusions in the SD view", plus residual taffy near the
+staff and the horizon reading as attached to the astronaut.
+
+Pose-exact repro at the sheet cams (star 0.182,-0.056; troll
+0.147,0.008) with the claim-record maps classifies the SD complaint
+decisively: around the troll figures the claimed region extends in
+huge DIAMOND-shaped blocks, and across star's near floor as a zigzag
+band — chamfer shapes, the geometry of the 4-neighbour hop budget,
+visible in no image feature. Root cause: under farther-value-wins the
+winning plane's claim extent is bounded ONLY by its seed's hop budget
+(set from the LIP's window depth-step, (gmx-gmn)/sCone), swept
+ISOTROPICALLY from the seed. Nearest-anchor previously hid this spill
+by confining every plane to its Voronoi cell — the a76 flip exposed
+an extent rule that was never physical.
+
+The physical rule the record proposes (to prototype next): a revealed
+pixel funds its own reach — a claim at chamfer distance h from its
+lip is valid iff h <= (dQ[px] - fill) / sCone: the pixel's OWN
+prominence over the fill, not the lip window's maximum, is what a
+head move must overcome to uncover it. Wall pixels 100px from a fold
+with only 0.2 of prominence stop qualifying; the woman's body at 0.35
+prominence keeps its full band. Star's horizon strip and bottom band
+partially predate a76 (the a60-era omnidirectional-mask classes the
+user already flagged on the a60 build) — the prototype must measure
+per-region deltas against the nearest-law baseline before claiming
+them.
+
+Also carried from this round: residual staff-area taffy (a77's snap
+exempts the lifted thin features that ARE the near surface — fringe
+behaviour at modest offset needs its own probe) and
+horizon-on-astronaut (a75 is in the build; the suspect is the
+a60-era ghost/wash band edge at horizon height — the parked taxonomy
+workstream, to verify pose-exact, not assume).
