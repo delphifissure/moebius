@@ -3968,3 +3968,52 @@ Method note: the scratch harness was NOT lying — its a60 baseline was
 faithful. The contradiction was a category mismatch in the reports,
 resolved by insisting on shots over adjectives. rp probe left in
 harness/a60_realpage.js for future real-page A/Bs.
+
+## Addendum 78 (2026-07-18): A73 root cause — nearest-anchor Voronoi steps ARE the gloop; farther-value-wins (floored planes) is the cure
+
+Instrumented claim records in bgDirectionalPlate (the method that found
+nearest-anchor-wins) finally profiled the troll's bg-extruded-to-fg fill
+end to end. The chain, each link measured on the shipped default asset:
+
+1. DESCENT FLOOR EXONERATED. The a63b floor determines only 0.6% of
+   claim values, and a full A/B with the floor disabled reproduces the
+   defect bit-for-bit (nearAnchor 30.7 vs 30.8%, plate stats identical).
+   The bisect's a63b conviction stands, but the mechanism inside the
+   commit is elsewhere.
+2. SEEDS ARE FINE. The seed-field dump shows the woman's silhouette
+   ringed with FAR (passage-depth) fold seeds — 2203 in her bbox — and
+   the passage itself 84.8% ground-classified. The fold machinery
+   carries the far lip exactly as designed.
+3. THE CONFLICT RULE IS THE DEFECT. With ground collapsed (94.7%),
+   internal detail cliffs seed fold anchors AT BODY DEPTH inside every
+   figure (1471 near seeds in the woman's bbox). Nearest-anchor-wins
+   hands interior reveal pixels to those anchors by proximity: 30.7%
+   of all claims are won by near (>0.35) anchors, and the plate maps
+   show fan-shaped Voronoi wedges stepped at different depths. The
+   plate renders SOLID (backstop contract) — every step between wedges
+   is a stretched wall of texture. That wall is the gloop. Star is
+   immune because its figures are not ground-classified: no body-depth
+   fold anchors exist to win (nearAnchor 8%, all legitimate).
+4. THE CURE. Farther-value-wins with distance as tiebreak — the old
+   law's intent — is safe again because the descent floor bounds every
+   plane's bid to its anchor's measured depth minus one tear step: the
+   runaway-to-zero that motivated nearest-anchor (three measured
+   incarnations) cannot recur. A/B measured: troll near-plate claims
+   34.7 -> 15.4%, both probe cams render clean (stretch walls replaced
+   by flat wash openings); star renders pixel-comparable at both
+   device cams, SD 13.8 -> 15.2% (inside the suite range).
+
+Cost, quantified: the plate deepens where far anchors now claim their
+full hop budget — troll SD 20.3 -> 34.7% (the reveal behind figures in
+a fold-heavy cave is genuinely the passage), photo 28ish -> 38.2%,
+star +1.4pts, warrior in range at 9.6. Deeper plate = more SD budget
+(and the a70 lesson says wide reveals lean harder on inpaint quality) —
+that trade is documented here, not hidden in a range edit.
+
+Landing (arc-fix): farther-value-wins becomes the default with
+window._nearestAnchorWins as the A/B hatch; the _foldProbe claim-record
+instrumentation stays (gated, zero-cost off); suite ranges re-baseline
+troll (30..40, was the defect-documenting 15..26) and photo (33..43)
+with comments naming this addendum. Condition before the commit: the
+photo asset A/B shots must show no new artifact class at offset cams —
+the mask number alone is a budget metric, not a correctness verdict.
