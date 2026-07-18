@@ -3825,3 +3825,45 @@ construction. Not landed tonight — it touches every path and deserves
 a fresh session with the suite around it. The frazetta/troll asset
 should also be committed to the repo so the fix is verified against
 the exact reported sheet, not the warrior proxy.
+
+
+## Addendum 74 — the rollback and the 15-commit validation grid
+
+Per user directive: review-fix rolled back to the exact a60 tree
+(f4e5a0f; the remote refuses force-push, so it is a revert-style commit;
+the a61..a72b arc stays reachable via main's merge history and the
+harness). Then every behavior-relevant commit of the arc was rebuilt
+and measured on the two device scenes (quick bake, star at
+0.318/-0.051, troll at 0.217/0.026) — 15 commits, mask numbers plus a
+render per cell (harness/val/, grids delivered).
+
+What the grid shows:
+
+1. STAR: stable across the ENTIRE arc — SD 12.6..14.1, ground 78..80,
+   and the renders are near-identical from a60 to a72b. Critically,
+   the ghost silhouette and horizon shelf beside the astronaut are
+   VISIBLE IN THE a60 BASELINE RENDER TOO: that artifact class
+   predates the directional plate entirely. No commit in the arc
+   introduced or materially changed it at this cam.
+
+2. TROLL: the mask tells the structural story — ground jumps to
+   96.9% at the FIRST dir-plate commit (a62) and stays 94.7% through
+   a72b (the cave-class ground collapse; a62c briefly whipsawed SD
+   20->3.4->19). But at this 22-degree cam the RENDERS are visually
+   similar from a60 through a72b: modest pale wash behind the woman,
+   no catastrophic extrusion in the harness.
+
+3. The severe device artifacts (the user's sheets) are NOT fully
+   reproduced by the harness at the same cams and default settings.
+   Open question for the device round after the rollback merges:
+   fresh debug sheets on the a60 build at the same poses — if the
+   severity persists there, the differentiator is device-side state
+   (slider settings, screen cone, asset scaling), not the arc.
+
+Verdicts: no single commit in a61..a72b is convicted by this grid at
+the probe cams; the one measured structural defect of the arc is the
+a62 cave-class ground collapse (A73, pinned); the star ghost/shelf is
+an a60-era plug behavior needing its own workstream. Recommendation:
+hold the rollback as deployed baseline, get fresh device sheets on it,
+and re-approach the arc only with the troll row + a tunneling
+invariant in the suite as gates.
