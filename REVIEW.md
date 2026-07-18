@@ -3929,3 +3929,42 @@ cave-class segmentation. That is the next probe, not another rule.
 
 Code state: rise-debt reverted (falsified premise, removed); arc-fix
 still carries exactly a72b + a75.
+## Addendum 77 (2026-07-18): a60 harness-vs-device reconciliation CLOSED — ghost class is a60-native everywhere
+
+The suspected contradiction (device a60 "clean" vs harness a60 ghosted)
+is dissolved by two pieces of evidence that arrived together:
+
+1. The user's corrected a60 device sheets (stamp v3.13.19-a60, quick,
+   fgReach=60) show the translucent ghost figure beside the astronaut
+   at BOTH cams — left cam clearly, right cam as a ghost over sky.
+   The earlier "clean" verbal report referred to the hard artifact
+   classes (no extrusion in the troll, no shelf on either side of
+   star), and those genuinely ARE absent at a60.
+2. A new real-page probe (harness/a60_realpage.js) that drives the
+   REAL a60 moebius.html — not the frozen scratch page — through the
+   user's exact flow (tick quick checkbox, click Build) confirmed the
+   page's live defaults match the device stamp (reach=60, inner=0.04,
+   outer=0.02) and rendered the star at the device cams
+   (val/RP_a60_L.png, RP_a60_R.png): ghost figure present both sides,
+   no hard shelf. Real page == scratch page == device.
+
+Consolidated per-class verdict, now measured at real scale on all
+three rigs:
+
+- GHOST FIGURE + pale band (translucent doppelganger over sky): a60-era
+  and older; present on device, scratch harness, and real page alike.
+  Oldest surviving artifact class; the parked a70 colour work is its
+  targeted cure and stays gated behind a tunneling invariant + the
+  user's reveal-content taxonomy call.
+- HARD HORIZON SHELF attached to the astronaut: arc-era, enters a63
+  (thin-lift adopting the horizon ink line), absent at a60, fixed on
+  arc-fix by a75's parallax-reach bound (407px surgical change).
+- TROLL BG-EXTRUDED-TO-FG gloop: arc-era, enters a62c / returns a63b
+  per the user's grid bisect, absent at a60 (user-confirmed on
+  device). Still open; next probe is the instrumented fold/boundary
+  VALUE profile behind the woman (Addendum 76 redirect).
+
+Method note: the scratch harness was NOT lying — its a60 baseline was
+faithful. The contradiction was a category mismatch in the reports,
+resolved by insisting on shots over adjectives. rp probe left in
+harness/a60_realpage.js for future real-page A/Bs.
