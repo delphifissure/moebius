@@ -4094,3 +4094,33 @@ behaviour at modest offset needs its own probe) and
 horizon-on-astronaut (a75 is in the build; the suspect is the
 a60-era ghost/wash band edge at horizon height — the parked taxonomy
 workstream, to verify pose-exact, not assume).
+
+## Addendum 81 (2026-07-19): A78 prominence bound LANDED — the SD mask is figure-shaped again
+
+The per-pixel rule from Addendum 80, implemented as a claim gate in
+bgDirectionalPlate (both claim branches, window._noPromBound reverts):
+a claim at distance d from its lip is valid iff d*sCone <= dQ[px] -
+fill — the pixel's own prominence over the fill funds its reach, with
+tearStep/sCone (~24px) as the implied minimum that keeps small
+figures' bands.
+
+Measured: the troll's diamond blocks are GONE — the claim map now
+hugs the figures (mask 34.7 -> 23.5); star's horizon strip — the
+exact class the user flagged as incorrect — is gone (15.2 -> 14.1);
+photo returns to its ORIGINAL a63b range (38.2 -> 29.1, range 24..33
+restored); warrior 9.6 -> 9.2. The a76 gloop cure SURVIVES: at both
+troll probe cams the woman renders clean with tighter wash than the
+unbounded law (her 0.35 prominence funds ~140px, wider than her
+body). Near-plate claims 19.8% (was 34.7 defective, 15.4 unbounded
+a76 — the bound gives a little back because trimmed far claims let
+some near anchors keep pixels at the fringes; the renders stay
+clean). Suite: ALL PASS (13) with troll re-pinned 19..29 and photo
+back at 24..33.
+
+Still standing, pre-arc classes now cleanly separated from the a76
+spill: star's bottom sawtooth band (the near floor genuinely
+self-funds ~0.3 prominence over the mid-plain fill from footprint-
+dent lips — present under BOTH laws and in the a60-era masks; its
+sawtooth SHAPE is budget geometry but its existence is not a76's
+doing) and the ghost/wash band. Both belong to the A79/ghost
+workstream, not this one.
