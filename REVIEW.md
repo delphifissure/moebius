@@ -4191,3 +4191,36 @@ What remains of the user's perception, honestly separated:
    the designed answer there; residual staff-area taffy inside the
    band is the A79 chase (cap cards and stretch net exonerated by
    A/B; thin-lift halo is the remaining suspect).
+
+## Addendum 84 (2026-07-19): A79 staff taffy ATTRIBUTED — torn thin-feature confetti; rigidify is the responding cure (default flip = user call)
+
+The residual in-band taffy at the staff top (user's a77-round sheet,
+star 0.182,-0.056) survived four A/B exonerations, each pose-exact:
+cap cards hidden — identical; stretch net at 2x aggression —
+identical; thin-lift OFF — WORSE (the lift was already consolidating
+these features, as designed); and the a51 ink exemption was never
+reached because the carrier is not exempt quads. What the render
+structure says instead: the net/glider are sub-pixel line art whose
+spanning quads correctly tear (staff-vs-sky is a huge cliff), and the
+"taffy" is the torn remains rendering as dotted disintegration — the
+a53 confetti class, for line art instead of figures.
+
+The purpose-built cure responds: with window._enableRigidify = true
+(a54, deliberately OPT-IN), 40377px in 15 small standing components
+take their median standoff, the glider renders as one coherent unit
+and the net veil consolidates visibly at the same pose. Not perfect
+(some residue at the staff loop), but the class clearly yields.
+
+NOT flipped by default tonight: rigidify billboards every small
+standing component scene-wide (flattens internal relief — the reason
+it sits behind a flag, and the a61 seat/billboard work partially
+supersedes it for grounded content; the glider/net are airborne, so
+the seat never covers them). Whether the confetti cure is worth the
+flattening is the user's trade to make, with the three-way zoom
+delivered (lift-on baseline / lift-off / rigidify).
+
+Perf note for the device round: the a79 viewpoint scan adds real
+bake time at 1920-wide bakes in the software-GL harness (star total
+58.7s there; device GPU-adjacent JS will be far faster but watch the
+stamp's bake ms) — if it reads slow on device, drop TS to 3
+magnitudes or halve directions; the union degrades gracefully.
