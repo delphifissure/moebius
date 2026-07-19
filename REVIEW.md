@@ -4124,3 +4124,25 @@ dent lips — present under BOTH laws and in the a60-era masks; its
 sawtooth SHAPE is budget geometry but its existence is not a76's
 doing) and the ghost/wash band. Both belong to the A79/ghost
 workstream, not this one.
+
+## Addendum 82 (2026-07-19): USER DECISION — figure-against-sky reveals keep the wash; SD owns the reveal content
+
+The taxonomy question parked since a70 is answered by the user: when
+a figure stands against sky and the camera moves, the revealed strip
+KEEPS THE WASH (which renders as the translucent doppelganger in the
+live look), and the SD inpaint pass is responsible for painting the
+reveal correctly in final output.
+
+Consequences, recorded so nobody re-litigates this by accident:
+- The ghost figure and its horizon-height band edge (the user's
+  "horizon picked up by the astronaut", confirmed pose-exact as the
+  ghost's outline, not a geometry defect) are ACCEPTED in the
+  live/realtime look. They are SD input, not defects.
+- a70 depth-consistent reveal colours and the a69 membrane stay
+  OPT-IN indefinitely (window._plateRowColor / _plateMembrane); the
+  planned re-landing behind a tunneling invariant is CANCELLED unless
+  the user reopens it.
+- The ghost-class workstream is closed as a structural matter. What
+  remains of the A79 device round is only the residual staff-area
+  taffy (attribution probe running: cap-card dust vs stretch-net
+  quads vs a51 tear-exempt adopted-ink rubber).
