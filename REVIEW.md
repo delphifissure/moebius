@@ -4224,3 +4224,33 @@ bake time at 1920-wide bakes in the software-GL harness (star total
 58.7s there; device GPU-adjacent JS will be far faster but watch the
 stamp's bake ms) — if it reads slow on device, drop TS to 3
 magnitudes or halve directions; the union degrades gracefully.
+
+## Addendum 85 (2026-07-19): A81 — the "tons of taffy" was single-axis rubber the stretch net was STRUCTURALLY blind to; minor-axis cut landed
+
+Correction on the record first: Addendum 83's "clean in-band" census
+was wrong — judged on 593px thumbnails where 1-2px filaments vanish.
+The user insisted ("just look at it", then "you're missing the taffy
+from the staff"), and at 2x scale the streaks are unmistakable:
+horizontal filaments trailing every silhouette (staff, net, glider,
+ghost rim, crystal face), present INSIDE the fade cone at 0.20 and
+faintly at 0.14. Eyes on the grid beat thumbnails, again.
+
+Root cause, and it is structural: the stretch net's test was
+  uvRate = max(length(dFdx(vUv)), length(dFdy(vUv))) < threshold.
+Lateral parallax stretches ONE axis — a horizontally stretched
+filament keeps a normal VERTICAL UV rate, so max() reports "not
+stretched" no matter the threshold. That is why every tightening
+(a52's 2x, the A79 probe's 0.5px) left the streaks untouched: the
+rubber was invisible to the metric, not below its threshold.
+
+The fix: also cut when the MINOR axis collapses —
+  min(dFdx, dFdy) < threshold * 0.3.
+The factor is the measured class separator: filament rubber runs
+10-50x single-axis stretch; glancing cave walls and mild anamorphic
+content (the protected realtime look) sit at 1.5-2.5x. The first cut
+(factor 0.5) speckled the troll walls white — measured, reverted to
+0.3, walls restored, streaks still dead. Star at 0.20: staff/net/
+glider trails gone, sky clean, faint white rims at cut fringes are
+the honest reveal of the wash behind (SD's territory by the user's
+Addendum-82 decision). Suite ALL PASS (13); lit% 75.9 -> 75.6 (the
+cut fragments, as expected).
