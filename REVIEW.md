@@ -4146,3 +4146,48 @@ Consequences, recorded so nobody re-litigates this by accident:
   remains of the A79 device round is only the residual staff-area
   taffy (attribution probe running: cap-card dust vs stretch-net
   quads vs a51 tear-exempt adopted-ink rubber).
+
+## Addendum 83 (2026-07-19): A80 viewpoint scan landed + the range question ANSWERED BY GEOMETRY — sCone was fade-end all along
+
+The user directive from the a77-stamped device round: the SD regions
+exceed what disocclusion will ever expose — "scan all possible head
+positions within a range" (a feature memory; the closest ancestors
+are the cone envelope and mask.B's parallax budget, both analytic
+approximations of that union, never the union itself).
+
+LANDED: the exact scan, in the quick SD-mask stage after the cliff
+gate and before ink closure. For 8 directions x 4 magnitudes
+(window._scanRange rescales; 1.0 = the sCone maximum), forward-warp
+the FG depth into a z-buffer (2x2 splat, shifts anchored at the
+scene's median depth — anchored at zero the whole frame translates
+out and everything tests visible, the first cut's measured mistake)
+and keep a claimed texel iff at some pose nothing nearer lands on its
+own shifted position. window._noVpScan reverts. Suite ALL PASS (13).
+
+THE FINDING: the scan trims almost nothing at full range (star 14.1
+unchanged, troll -0.9, photo -0.4, warrior -0.5) — the a78 claim
+mask already IS the visible union for the sCone range, because the
+prominence bound and the visibility sweep are the same physics
+(d*sCone <= prominence). And the range itself is now pinned by the
+projection law instead of estimates: the vertex shader places
+content in a [-outer, +inner] = [-0.02, +0.04] world volume, shift =
+-ex*zOff/(0.2 - zOff), portal fit 1920px — at the fade-cone END
+(45deg, ex = 0.2) the relative parallax computes to ~396px per unit
+depth in bake space. sCone = 0.0025 encodes 400. The mask has been
+serving exactly the fade-supported pose range all along.
+
+What remains of the user's perception, honestly separated:
+1. The mask shows the union over ALL directions at once; any single
+   pose exposes roughly one side of each figure. A mask ~2x wider
+   than any one view is CORRECT for inpainting (either direction can
+   happen) — this is presentation, not a defect.
+2. Vertical head travel to +-0.2 is rare in practice; the vertical
+   sweep contributes area users may never see. Trimming vertical
+   range is a legitimate product choice (e.g. _scanRange as a vector,
+   or vertical t at half), NOT decidable unilaterally here.
+3. The remaining putty in the show-SD state and the 0.691-offset
+   sheet are beyond/at the fade boundary (45deg fades to black on
+   device; debug sheets bypass the DOM fade overlay) — the fade is
+   the designed answer there; residual staff-area taffy inside the
+   band is the A79 chase (cap cards and stretch net exonerated by
+   A/B; thin-lift halo is the remaining suspect).
