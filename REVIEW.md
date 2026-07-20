@@ -4254,3 +4254,39 @@ glider trails gone, sky clean, faint white rims at cut fringes are
 the honest reveal of the wash behind (SD's territory by the user's
 Addendum-82 decision). Suite ALL PASS (13); lit% 75.9 -> 75.6 (the
 cut fragments, as expected).
+
+## Addendum 86 (2026-07-20): night of verdicts — SV cut lands; membrane, wash-alpha, and the hole alarm resolved
+
+1. ROTATION-FREE STRETCH CUT LANDED (a81 commit). The a80 minor-axis
+   test used min of the two SCREEN-ALIGNED derivative lengths — still
+   blind to diagonal stretch. Replaced with the minor singular value
+   of the UV Jacobian (|det|/major): direction-independent by
+   construction, same measured 3x class boundary. Suite ALL PASS (13)
+   with it active; no visible change on any asset at the guard poses
+   (the warrior "spokes" that motivated it turned out to be the
+   painting's own crepuscular rays — a misaligned source crop, my
+   error, corrected on the spot).
+
+2. MEMBRANE: NOT the cure for the warrior banding. A/B under the
+   full a76/a78/a80 stack (118984px re-based on the warrior): the
+   staircase strips in the reveal column are pixel-comparable with
+   the membrane on. The banding needs its own profile (plate depth
+   quantization in wide reveals — a fresh workstream, to be
+   instrumented with the claim-record tooling, not guessed at).
+
+3. THE TROLL "EMPTY SPOTS", full resolution after two wrong turns:
+   (a) the mid-image pale patches are RENDERED WASH (the SD-mask
+   regions, per the user's keep-wash contract); (b) my "4.85% naked
+   interior" alarm was a measurement-box error — the transparent
+   zones are the FRAME BORDERS where the warped mesh pulls inside
+   the canvas at 0.2 offset (black on device, white on the delivered
+   PNGs — which is also what the user's "white spots" most likely
+   were); (c) true interior naked holes are ~0.1% scattered flecks.
+   Wash-alpha hypothesis falsified cleanly (baked colour is 100%
+   opaque). The border zones are the margins/fade system's designed
+   territory, not a defect of the bake.
+
+Method note, three corrections in one night (thumbnail census, spoke
+rays, hole box): every one came from reviewing evidence at the wrong
+scale or the wrong crop. The suite catches number drift; only
+full-scale eyes catch look drift. Both are now standing practice.
