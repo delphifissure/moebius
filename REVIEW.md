@@ -4290,3 +4290,28 @@ Method note, three corrections in one night (thumbnail census, spoke
 rays, hole box): every one came from reviewing evidence at the wrong
 scale or the wrong crop. The suite catches number drift; only
 full-scale eyes catch look drift. Both are now standing practice.
+
+## Addendum 87 (2026-07-20): the warrior banding is NESTED-LIP STRIP STRUCTURE — frontier theory tested and rejected same hour
+
+The claim-record profile of the warrior plate first suggested the
+staircase was the a78 prominence frontier (the torso is wider than
+2x its reach, leaving an unclaimed core at figure depth with a hard
+step at the claim boundary). A 2x value-overshoot was implemented to
+push that step beyond visibility — and the RENDER falsified the
+premise: bands unchanged. Two reasons, both now measured: the torso
+frontier hides behind the INTACT foreground figure (its interior
+plate never shows), and the visible bands sit in the bear/sled
+region, where the plate map shows mid-value anchors — the bands are
+the FLAT CONTINUATION PLANES of a nested-occluder pile (bear over
+sled over snow over valley), each lip's plane at its own depth,
+meeting in steps at partially-visible positions. The overshoot was
+REVERTED the same hour (masks back to ALL PASS at the exact a78
+values; the 6-point mask growth it caused was a real cost with no
+realized benefit).
+
+The banding workstream's honest state: this is a DESIGN question —
+how stacked flat continuations should meet inside one solid plate
+(per-strip gradient carry between lips? accept the strips as SD
+input?) — not a one-line fix. Parked pending that conversation,
+with the plate map as the evidence base. Membrane already ruled out
+by A/B (Addendum 86).
