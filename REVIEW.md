@@ -4315,3 +4315,34 @@ how stacked flat continuations should meet inside one solid plate
 input?) — not a one-line fix. Parked pending that conversation,
 with the plate map as the evidence base. Membrane already ruled out
 by A/B (Addendum 86).
+
+## Addendum 88 (2026-07-20/23 round): defaults exonerated; the comb was the stretch cut's binary edge; graded cut landed
+
+The user's device round on stock main (their "wrong default settings?"
+hypothesis) produced three corrections and one fix:
+
+1. MY ATTRIBUTION ERROR, corrected: the sheet fields (relax=harmonic,
+   seed=2, det=slope, fgSubRan) are OUR OWN footer — the build was
+   stock. The "local delta" claim is withdrawn.
+2. DEFAULTS EXONERATED BY A/B: relax (harmonic vs min) and seed
+   (concentrated vs sharp) render pixel-identically in quick mode at
+   the reported cam — the shipped defaults are render-inert here.
+   The audit finding stands separately: they feed the FG-band build
+   and were never varied in the arc (constants-inventory debt).
+3. THE COMB ATTRIBUTED: one bake, runtime-uniform A/B — stretch cut
+   ON = comb banding across the troll wall at 0.358; OFF = comb gone.
+   The a80/a81 binary threshold oscillates row-by-row on terraced
+   grazing walls at beyond-fade poses. In-band (0.20) remains clean.
+   Also caught: a80/a81 landed without an explicit escape hatch
+   (u_bandCutUvRate=0 serves as one; noted as a process slip).
+4. FIX LANDED (a82): graded cut — hard discard only past 5x stretch,
+   screen-dithered fade across 5x..2.8x, in-band (<=2.5x) untouched.
+   The binary edge the comb formed along no longer exists. Verified:
+   comb dissolved at 0.358; suite ALL PASS (13), lit% 75.6 -> 74.9
+   (the widened graded band cuts slightly more, in range).
+
+Also this round: the CPU-warp fast workflow proved both its value
+(pure-arc baselines at exact cams in seconds) and its limit (blind to
+fragment-level effects — it cleared a defect the GL A/B then
+convicted; every CPU-warp verdict on fragment behavior must be
+GL-confirmed).
