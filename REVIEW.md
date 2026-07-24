@@ -4371,3 +4371,30 @@ the a78 prominence bound keeps reveal bands narrow and figure-shaped,
 which was not true when "tunneling" was reported against the colours.
 Recommendation: flip _plateRowColor default ON behind the suite, with
 the wash as the escape hatch. Awaiting the user's call; not landed.
+
+## Addendum 90 (2026-07-23 round, cont.): the foreground speckle — the cut fired where no backstop exists; mask-gated cut landed
+
+User report ("tons of banding in the foreground, can't you see all the
+transparent pixels?") — correct, and it exposed both a design hole and
+a verification hole:
+
+1. DESIGN HOLE: the stretch cut's safety premise ("the plate backs
+   every reveal, so a discard shows real content") is FALSE on
+   un-revealed ground and at frame margins — there a discard is a
+   naked pixel. At the user's poses (+0.09 VERTICAL offset) the near
+   dune is the most vertically stretched content in frame, so the
+   graded band dithered across the whole foreground as a transparent
+   speckle field.
+2. VERIFICATION HOLE: all in-band cut verification used horizontal
+   offsets only. Vertical-offset poses were never in the check set.
+   They are now (the user's exact cams are the reference poses).
+
+FIX (a83): the directional cut is gated by the SD mask — only
+fragments whose bake proved a genuine reveal behind them may discard
+(same physics as the smear snap's proud-of-plate gate). Ground
+stretch outside the mask is the protected realtime look. Verified:
+star foreground solid at both user cams (speckle gone); troll comb
+still dead AND its wall dither gone too (same un-backed-cut disease);
+filament streaks still die (they live inside the mask); suite ALL
+PASS (13), quick lit% 74.9 -> 75.7 (un-cutting solid ground, as
+expected).
