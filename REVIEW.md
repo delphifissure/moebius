@@ -5376,3 +5376,52 @@ design task, not a constant, and it is the next thing to do.
 STATE: mask 0.6% PASS, plate tear 0.2% PASS, FG torn 0.4% PASS, fold
 16.1% (8-bit path, unchanged for all current assets) / 27.5% (16-bit
 path, new capability with a named open issue).
+
+## Addendum 107 (2026-07-24): the fill was already invariant — a fourth instrument error, and Addendum 106 corrected
+
+Task was "fix the fill's smoothing". The fill did not need smoothing.
+It needed an input that was not quantised below its own working
+precision — which a99 had already delivered. Addendum 106's conclusion
+that float ingest made things worse was MY NORMALISATION, not the code.
+
+THE DIMENSIONAL ERROR. Creases are the skeleton where cone fronts meet:
+a Voronoi-like diagram whose SITES lie on the lip curve (count ~ pw)
+inside an AREA ~ pw^2. Voronoi total edge length goes as
+sqrt(sites * area) = sqrt(pw * pw^2) = pw^1.5 — NOT pw. Normalising
+crease cells per unit WIDTH therefore manufactures a spurious sqrt(pw)
+factor. Predicted ratio for 1200/600 is sqrt(2) = 1.414; observed with
+float ingest 1.357.
+
+CORRECTLY NORMALISED (by pw^1.5):
+    8-bit ingest (a97)           0.1061 / 0.1308   18.9%  FAIL
+    16-bit float ingest (a99)    0.1191 / 0.1241    4.0%  PASS
+    16-bit + band-limit (a100)   0.1199 / 0.1258    4.7%  PASS (worse)
+
+So a99 fixed the fill's crease invariance outright: 18.9% -> 4.0%.
+a100's premise — that the fill needed a deliberate band-limit because
+a86 had been smoothing it by accident — was FALSE. Defaulted off, kept
+behind window._fillBandLimit.
+
+FOUR INSTRUMENT ERRORS NOW, ALL MINE:
+  1. resampled photographs as the two "resolutions" (Addendum 102)
+  2. 1D edge populations normalised by 2D area (Addendum 102)
+  3. an AREA population (plate tear) normalised per width (Addendum 103)
+  4. a pw^1.5 skeleton population normalised per width (here)
+Each one produced a confident wrong verdict, and three of them sent me
+after code that was not broken. The general rule I should have applied
+from the first measurement: BEFORE comparing a count across scales,
+derive how that count scales with the thing being varied. A metric
+without a dimensional analysis is not evidence.
+
+STATE (analytic scene, 16-bit ingest, correct normalisations):
+    mask (area)             0.6%  PASS
+    plate tear (area)       0.2%  PASS
+    FG torn (per width)     0.4%  PASS
+    fill creases (pw^1.5)   4.0%  PASS
+    source-inherited folds (per width, 10% of population)  37%  FAIL
+The remaining failure is the source-inherited population — cells where
+the INPUT itself folds. On a 16-bit analytic scene those are the
+figure's true silhouette cells, and their count depends on how the
+ellipse rasterises at each resolution. That is a property of the test
+scene's geometry, not of the renderer, and chasing it further would be
+measuring the test rather than the code.
