@@ -4772,3 +4772,74 @@ PRIORITY (highest expected pain first):
   4. Derive k from shader constants (kills the a88 class at source).
   5. Unify the 1200/1920 calibration bases.
   6. Mesh density policy for >=4K and mobile.
+
+## Addendum 97 (2026-07-24): INVARIANCE PASS — every constant I introduced, by dimension, with citation
+
+Addendum 96 audited the FILE's constants and gave MY OWN a pass. The
+user called that out. Re-audit of a76-a88 against the axes the project
+must survive — resolution, aspect, depth normalisation, source BIT
+DEPTH, canvas/zoom framing, and time — with the code cited.
+
+THREE OF MINE WERE WRONG (fixed in a89):
+
+1. METRIC MISMATCH (a85 cone fill; moebius.js:9283 old form
+   `carry[i] + sCone`, neighbour set :9244 is 4-connected).
+   The rise was accumulated PER HOP over a 4-connected flood — a
+   MANHATTAN metric — while the prominence bound it replaced (:9343,
+   `dxp*dxp + dyp*dyp`) and the physical fold limit are EUCLIDEAN. A
+   diagonal path pays 2*sCone over sqrt(2) px = 1.414x the intended
+   slope. Consequence: after a88 fixed the resolution scaling,
+   DIAGONAL fill still folded at ex = 0.2/1.414 = 0.141, inside the
+   cone. Fixed: evaluate from the carried anchor, v = av + sCone*|p-a|
+   — isotropic, path-independent (a zig-zag cannot inflate it, the
+   disease that motivated the a63b descent floor), same metric as the
+   bound it subsumes.
+
+2. BIT-DEPTH ASSUMPTION (a86 dequantiser; the run-merge test was
+   `<= 1.001/255`). The premise is "runs one quantum apart are one
+   sloped surface". Hardcoding 1/255 means: on a 16-bit depth PNG the
+   pass is a SILENT NO-OP (every real step is far more than one 8-bit
+   level apart), and any genuinely smooth slope with sub-1/255
+   neighbour differences would be interpolated as if it were
+   quantisation. Fixed: detect the grid the samples actually sit on
+   (255 / 4095 / 65535), skip cleanly and log when depth is
+   continuous. NOTE: the whole a86 mechanism only exists because the
+   pipeline ingests 8-bit depth; a float depth path removes the need
+   for it rather than tuning it.
+
+3. TIE-BREAK EPSILON (a76; `QUANT = 0.002`). That is half an 8-bit
+   level (1/255 = 0.0039) — an 8-bit assumption wearing a decimal
+   costume. On a 16-bit source it is 131 quanta, so real value
+   differences would be swallowed as ties and the farther-value-wins
+   law would silently degrade to nearest-anchor. Fixed: QUANT =
+   tearStep/32, which also follows any depth-range renormalisation.
+
+VERIFIED INVARIANT (checked, no change needed):
+ * a78 prominence bound: (px^2)*(depth/px)^2 <= depth^2 — dimensionally
+   homogeneous on both sides; correct under any resolution once sCone
+   is correct.
+ * a88 sCone isotropy: square pixels give the same px-per-world-unit in
+   x and y, so one sCone serves both axes on non-square images.
+ * a80-a83 band ratios (0.2 / 0.16 of the threshold): dimensionless.
+
+STILL OUTSTANDING IN MY OWN WORK (named, not yet fixed):
+ * a83 stretch cut threshold u_bandCutUvRate = 1.0/w assumes THE MESH
+   SPANS THE CANVAS. Under zoom, dolly or letterboxing the expected UV
+   rate changes and the tier boundaries move with framing rather than
+   with content. Not a resolution bug — a FRAMING bug.
+ * a79 scan: z-tolerance 0.02 and the 2x2 splat are pixel/depth
+   constants that were never derived; the pose count (8 dirs x 4
+   magnitudes) is fixed regardless of how many pixels of reach the
+   range implies, so it undersamples as range or resolution grows.
+ * a84 contact-ramp threshold reuses u_bandCutMismatch (0.01 depth) —
+   Family D (depth-normalised), inherits the video/flat-subject risk.
+ * k = 396 px per depth unit at the fade-end still lives in a COMMENT
+   and a88 depends on it (Addendum 96, Family E).
+
+PROCESS NOTE: the general lesson is not "check resolution". It is that
+every constant needs its UNITS declared at the site, and a unit that
+mentions px, a depth value, or a canvas dimension is a promise that
+something upstream will never change. The suite should assert the
+invariance directly — bake the same asset at 2 resolutions and 2 bit
+depths and require the mask/coverage metrics to match within
+tolerance — rather than pinning per-asset numbers that hide the drift.
