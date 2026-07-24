@@ -5333,3 +5333,46 @@ CONSEQUENCES.
 I am not going to force this metric under tolerance by tuning a
 threshold or widening the tolerance. The number is honest where it is,
 and it now points at a specific architectural fix.
+
+## Addendum 106 (2026-07-24): float depth ingest (a99) — and what it revealed about a86
+
+BUILT. Depth entered through canvas getImageData, 8-bit by construction,
+so no file could deliver more than 255 levels regardless of its content.
+a99 decodes 16-bit PNG directly — parse chunks, inflate IDAT with
+DecompressionStream, reverse the PNG filters, read 16-bit samples as
+float. No library. Quantum 1/65535 = 1.5e-5, measured at 0.004x the
+per-texel fold limit against 0.97x for 8-bit at the same width: a 250x
+headroom improvement. Returns null for 8-bit / interlaced / non-PNG, so
+every current asset takes the old path byte-for-byte unchanged.
+
+BUG FOUND WHILE TESTING IT: the decode was fire-and-forget while the
+bake is synchronous, so the first bake raced it and silently used the
+8-bit path — the decode logged success, the bake never saw the data.
+Awaited now. Worth noting as a pattern: an async improvement wired into
+a sync pipeline defaults to "no effect, no error".
+
+MEASURED (analytic scene regenerated as TRUE 16-bit, 1200 vs 600):
+    population             8-bit ingest       16-bit ingest
+    inherited from source   0.39/0.20 47.5%    0.49/0.31 37.3%  improved
+    fill creases            3.67/3.21 12.8%    4.13/3.04 26.3%  WORSE
+    total                   4.07/3.41 16.1%    4.62/3.35 27.5%  WORSE
+
+The source-inherited population improved as predicted. The TOTAL got
+worse, and the reason is the interesting part: with a genuine 16-bit
+grid the a86 dequantiser correctly does not run, and the fill's crease
+population immediately became more resolution-sensitive. a86 has been
+doing TWO jobs — reconstructing the quantisation ramp (documented) and
+incidentally SMOOTHING fine relief so the fill's anchor competition is
+stable (never documented, never intended). Remove the quantisation and
+the fill's true sensitivity to micro-relief is exposed.
+
+So the honest position on "get fold under tolerance": it is not under
+tolerance, and the float ingest did not deliver it. What the ingest did
+deliver is a correct foundation and a clearer problem statement — the
+fill needs its own scale-aware smoothing of the depth field, chosen on
+purpose, rather than inheriting one from an 8-bit accident. That is a
+design task, not a constant, and it is the next thing to do.
+
+STATE: mask 0.6% PASS, plate tear 0.2% PASS, FG torn 0.4% PASS, fold
+16.1% (8-bit path, unchanged for all current assets) / 27.5% (16-bit
+path, new capability with a named open issue).
