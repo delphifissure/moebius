@@ -5229,3 +5229,50 @@ dequantiser, whose run lengths are inherently resolution-dependent.
 
 STATE: mask 0.6% PASS, FG torn 0.4% PASS, plate tear 0.4% PASS, fold
 24% FAIL (one open metric, cause narrowed to the fill's dequantiser).
+
+## Addendum 104 (2026-07-24): the dequantiser was innocent — the tie-break window was the drift
+
+Task was "fix the dequantiser drift". The dequantiser turned out not to
+be the cause, and saying so cost two measurements rather than a fix.
+
+EXONERATION. Disabled a86 at both resolutions on the analytic scene:
+fold drift 24.1% with it ON, 26.2% with it OFF. Not the cause, and
+mildly beneficial (fewer folds at 1200: 4.45 vs 4.54). Hypothesis
+dropped.
+
+SECOND HYPOTHESIS ALSO FALSIFIED. If the fold metric were merely
+counting cells sitting exactly at the k*g = 1 boundary — plausible,
+since cone-filled cells sit at 0.99 by construction — the drift would
+collapse as the severity threshold rises. It does not: 24.1% / 29.4% /
+25.9% / 15.1% at k*g >= 1.0 / 1.1 / 1.5 / 2.0. These are real folds.
+
+ACTUAL CAUSE (a97). QUANT, the value-competition tie window, was
+tearStep/32 — a fixed DEPTH compared against candidates that differ by
+CONE STEPS, and the cone step scales with resolution. The window was
+worth 0.23 / 0.47 / 0.75 / 1.17 cone steps at pw 600 / 1200 / 1920 /
+3000. At 3000 px, candidates more than a WHOLE legitimate increment
+apart were still treated as tied and resolved by distance instead of
+value. Which anchor won a pixel therefore depended on source
+resolution, and with it the fill's crease skeleton — and creases are
+precisely the fold population: a crease between two opposing cone
+claims steps by up to 2*sCone, i.e. k*step ~ 2, a guaranteed fold.
+
+FIX: QUANT = sCone/4, a quarter of the smallest legitimate increment
+the fill can make. MEASURED: fold drift 24.1% -> 16.1% (k*g>=1),
+29.4% -> 19.8% (>=1.1), 25.9% -> 21.5% (>=1.5), 15.1% -> 15.4%
+(>=2.0). Improved, still above the 15% tolerance. Landed as progress
+with the residual stated — not claimed as a pass.
+
+NOTE ON MY OWN a89. QUANT = tearStep/32 was introduced by me, in the
+addendum that claimed to fix the units of the tie-break. It replaced an
+8-bit assumption with a cliff-scale assumption and I called it derived.
+It was neither wrong-for-the-old-reason nor right — the correct
+reference was the cone step all along, and one addendum of self-audit
+did not catch it. That is the third of my own constants to fail
+re-examination (a85 metric, a86 bit depth, a89 tie-break).
+
+SCOREBOARD (analytic scene, 1200 vs 600):
+    mask (area)        0.6%  PASS
+    plate tear (area)  0.2%  PASS
+    FG torn (per width) 0.4% PASS
+    fold (per width)   16.1% FAIL (was 24.1%)
