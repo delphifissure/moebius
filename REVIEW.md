@@ -4843,3 +4843,73 @@ something upstream will never change. The suite should assert the
 invariance directly — bake the same asset at 2 resolutions and 2 bit
 depths and require the mask/coverage metrics to match within
 tolerance — rather than pinning per-asset numbers that hide the drift.
+
+## Addendum 98 (2026-07-24): AUDIT PLAN + PHASE 1 RESULTS — and a88's own premise is now in doubt
+
+PLAN (standing, to be worked in order):
+ Axes the system must survive: R resolution (pw x ph), A aspect /
+ non-square, B source bit depth, N depth normalisation (per image AND
+ per frame), F framing (canvas size, zoom, dolly, letterbox), T time.
+ Unit taxonomy: ratio (safe) / depth (fails N,B) / src-px (fails R,A) /
+ canvas-px (fails F) / world (fails view setup) / iterations-as-reach
+ (fails R,F SILENTLY) / colour (fails colour space, medium).
+ Phase 1 mechanical census (done). Phase 2 triage by blast radius.
+ Phase 3 fix provable, record the rest. Phase 4 invariance TEST: same
+ asset at two resolutions and two bit depths, metrics must match — the
+ test that would have caught a88 and a89 on the day they landed.
+
+PHASE 1 — constlint.py (committed, harness/constlint.py). Census of
+moebius.js: 501 unclassified, 209 shader, 127 depth-units, 101 colour,
+70 src-px, 51 iterations-as-reach, 38 correctly scaled, 8 canvas-px.
+
+FINDING 1 — THE SAME PHYSICAL CONSTANT HAS FIVE DEFINITIONS AND THREE
+REFERENCE WIDTHS:
+   L8076   sCone  = 0.0015 * 1920 / w
+   L8404   sConeV = 0.0015 * 1920 / pw
+   L9944   sCone  = 0.0025 * 1920 / pw     (a88, quick bake)
+   L12031  passed = 0.0025 * 1920 / pw     (a88, v1 dir-plate)
+   L12179  sCone  = 0.0025 *  851 / pw     (v1 plug)
+   L12785  riseCap= 0.0025 *  851 / pw
+ 851 is the TROLL's width; 1920 is the STAR's. Two assets were each
+ used as "the" reference, so the same cone slope differs by 851/1920 =
+ 0.44x between call sites, and the 0.0015 family differs again by
+ 0.6x. A88 only fixed the sites it touched.
+
+FINDING 2 — the codebase ALREADY knows the metric lesson: 1.41421356
+(sqrt 2) appears at 14 sites as the diagonal chamfer weight in the
+budget/distance propagations (L8417, L10192, L10452, L13553, ...).
+The a85 cone I wrote ignored it. My a89 fix is the same lesson,
+arrived at late.
+
+FINDING 3 (the serious one) — k IS NOT A CONSTANT, so no fixed sCone
+can be right. Derived from the code's own geometry, not comments:
+ * displacement is SMOOTHSTEP (L1661-1668, portalNorm 0.5, outer 0.02,
+   inner 0.04), so d(zOff)/d(depth) is 0 at both ends and peaks at
+   1.5x the mean — k varies 2x ACROSS THE DEPTH RANGE alone, and is
+   ~2x larger in the near half than the far half.
+ * the world->px scale is pw / layerWidth, and layerWidth depends on
+   the image ASPECT vs the frame (L2533, terrarium 0.16 x 0.09):
+   star 0.1306, warrior 0.0900, troll 0.0749, photo 0.1353 — a 2.3x
+   spread between star and warrior at equal pw.
+ * D (camera distance, 0.2 default) and FOV are user/device variable;
+   ex = 0.2 corresponds to exactly 45 deg, confirming the fade-end
+   pairing, but a dolly changes D and therefore k.
+ A first-principles evaluation gives k ~ 0.43 * pw at the mean slope
+ versus the 0.206 * pw the a88 comment asserted — a factor ~2 apart,
+ and BOTH are wrong as single numbers because k is a field.
+
+STATUS OF a88: it fixed a real defect (the constant did not scale with
+resolution at all) and its direction is certainly right, but its
+MAGNITUDE rests on a comment-sourced k that a derivation now
+contradicts by ~2x. Do not treat a88's number as settled. The correct
+form is not a better constant: the fill's slope cap must be computed
+from the LOCAL displacement derivative — the same smoothstep the
+vertex shader uses, evaluated at that pixel's depth, divided by the
+plane's px-per-world scale. That makes it invariant to R, A, depth
+position, and (if read at bake time) to the volume-depth sliders too.
+
+NEXT (Phase 2/3, in order): (1) unify all five sCone sites on one
+derived function; (2) the depth-unit family (Family D, Addendum 96) —
+blocks video; (3) the iterations-as-reach truncation; (4) build the
+Phase 4 invariance test and put it in the suite BEFORE any further
+constant is touched.
