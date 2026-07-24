@@ -4567,3 +4567,62 @@ upstream.
 VERIFICATION: [pending — warrior user cams, star cams, troll comb
 cams (the graded-cut interaction must be re-checked: terraced
 grazing walls were 8-bit staircases too), full suite]
+
+## Addendum 94 (2026-07-24 round, cont.): the disocclusion sheet — the PLATE never tears; a87 plate tear
+
+User evidence: a device sheet at cam (-0.268, 0.002) whose MESH
+FOOTPRINT panel is white across the entire reveal column — something
+is COVERING the disocclusion rather than leaving it open. User:
+"clearly still loads of stretching / tunneling connecting bg to fg
+instead of just leaving the disocclusion hole".
+
+ELIMINATION (6-agent parallel audit + direct buffer measurement; the
+agents' silhouette theory was itself falsified by measurement, see 1):
+1. FG TEAR — NOT the culprit. The agents measured the RAW depth PNG
+   (66.7% of the outline sub-tear: aprons 3-6px, steps 8-15/255 all
+   just under tearStep 0.06 = 15.3/255) and concluded the mesh never
+   tears. Measuring the field the tear ACTUALLY reads (dQ exported
+   from a real bake) refutes it: 682/682 silhouette crossings exceed
+   tearStep. The live-bake sharpener (A35 binarization + 4-pass ramp
+   collapse) does collapse the aprons before the quick bake reads
+   them. Recorded because it was nearly acted on: the raw map is not
+   the baked map.
+2. Cap cards: 3,100 verts (775 quads) — three orders of magnitude
+   too small for the sheet. Cards-off render: pixel-identical.
+3. Plate colour: smooth in both fill laws. Plate mesh: 9,000,000
+   verts = full resolution, no decimation terracing.
+4. CONVICTED — the plate. A50 gave the plate the FULL UNTORN index
+   (correctly: sharing the pre-torn FG index re-drew lifted ink
+   strokes as through-holes). But a full index also spans the
+   PLATE'S OWN cliffs, and those are real: 93.2% of plate steps >
+   tearStep sit exactly on the claimed/unclaimed frontier, where a
+   ground continuation (~0.35) abuts visible sky (0.00). Rendered
+   solid, that step stretches ~290px at the user's cam — the sheet.
+   (0.3% sit on a dQ cliff: the plate is not carrying the figure's
+   silhouette; it is carrying its own fill frontier.)
+
+FALSIFIED en route: extending the cone envelope over the unclaimed
+interior (grassfire from the claim frontier, clamped to the surface).
+Simulated exactly on the exported buffers: plate steps 10,183 ->
+12,186 (WORSE), sheet width 728px -> 704px. The min() with the
+surface creates new creases wherever the envelope meets visible
+content. Not implemented.
+
+FIX (a87): build the plate's index from the PLATE's depth, dropping
+spanning triangles whose own 3-vertex span exceeds tearStep. Same law
+as the FG tear and as the fill's a76 value rule — depth steps belong
+at silhouettes, which tear, never inside a rendered surface. A50's
+reason for the full index is preserved: this index is built from P,
+where adopted ink was never a cliff. Behind a torn plate cliff is a
+reveal of a reveal: no capture carries it, the flood already claimed
+it into the SD mask, and absence is honest until SD paints.
+
+MEASURED (CPU warp, warrior at the user's cam): canvas coverage
+98.8% -> 98.7% — the far side of each cliff covers its own hole — and
+the streaked sheets disappear. Hatch: window._noPlateTear.
+
+STATUS: committed to arc-fix (9f10180), NOT merged to main. GL
+confirmation and the suite are blocked by repeated container kills
+(~15 consecutive Chromium runs killed at exit 144). CPU warp is
+measured-blind to fragment-level effects (Addendum 86 rule), so the
+plate tear is NOT verified for the stretch-cut interaction yet.
