@@ -4398,3 +4398,53 @@ still dead AND its wall dither gone too (same un-backed-cut disease);
 filament streaks still die (they live inside the mask); suite ALL
 PASS (13), quick lit% 74.9 -> 75.7 (un-cutting solid ground, as
 expected).
+
+## Addendum 91 (2026-07-24 round): the leg streamers — contact rubber is the mask gate's blind class; ramp-exempted hard cut
+
+User report: "two obvious bits stretching from the astronaut leg to
+the background... seriously, why are these things still a problem"
+(localhost screengrab + sheet cam (-0.409, 0.074)).
+
+REPRODUCED in GL at the exact sheet cam: the rear boot drags a
+striped rubber band diagonally down the dune; the front boot smears
+at contact.
+
+ROOT CAUSE (measured, then convicted by A/B):
+1. The boot-ground contact is a SUB-TEAR SOURCE RAMP: per-texel depth
+   steps 0.016..0.024 at the ramp vs 0.002..0.004 on open ground
+   (tearStep 0.06). It never tears, so it stretches as one connected
+   band under offset — classic contact rubber.
+2. Because it never tears, it never disoccludes: no reveal is baked
+   behind it, so it CANNOT appear in the SD mask at any dilation
+   radius. The a83 mask gate therefore protects exactly this class
+   forever. (Mask dilation was considered and is dead on arrival —
+   there is no mask within any radius of a depth-continuous contact.)
+3. A/B conviction (a100 harness, one bake, two shots): stock = boot
+   streamer present; u_sdMask swapped for a 1x1 white texture (the
+   pre-a83 cut authority) = streamer DELETED — and the near dune
+   erupts in the pre-a83 white speckle field. Both premises confirmed
+   in one experiment: the gate causes the streamers, and removing the
+   gate is not shippable.
+4. Also checked: the plate is 100% opaque in canvas space (bufcache
+   alpha scan), so pre-a83 naked pixels were a SCREEN-space coverage
+   problem (warped plate pulling inside the frame), not missing plate
+   content — a canvas-space plate-alpha gate would be all-pass and
+   fix nothing. Rejected.
+
+FIX (a84): the contact-rubber exemption. A fragment may cut WITHOUT
+mask backing iff BOTH:
+- it is in the HARD stretch tier (>=5x, the true-rubber class from
+  the measured 10-50x vs 1.5-2.5x gap) — the dithered 2.8..5x band
+  stays strictly mask-gated, because that band on legitimate grazing
+  ground is precisely what speckled the near dune (a83) and the troll
+  walls (a80); AND
+- it sits on a cliff-scale source ramp: central-difference depth step
+  at +-1 texel > u_bandCutMismatch (0.01), the midpoint of the
+  measured 6x class gap above and this shader block's existing
+  cliff-disagreement scale. Smooth ground that happens to stretch
+  hard at extreme poses keeps its gate.
+Hatch: window._noContactCut (uniform u_cutContactRamp).
+
+VERIFICATION (GL, full scale): [pending — star streamer cams, +-y
+speckle poses, troll wall cams, full suite; results recorded below
+before landing]
