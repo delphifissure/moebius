@@ -4445,6 +4445,26 @@ mask backing iff BOTH:
   hard at extreme poses keeps its gate.
 Hatch: window._noContactCut (uniform u_cutContactRamp).
 
-VERIFICATION (GL, full scale): [pending — star streamer cams, +-y
-speckle poses, troll wall cams, full suite; results recorded below
-before landing]
+VERIFICATION (GL, full scale, a101 harness — one bake per asset, the
+u_cutContactRamp uniform toggled at runtime so every pair is
+pixel-comparable):
+- star (-0.409, 0.074): boot streamer cut back to the boot; the dark
+  filament debris smeared across the ghost/reveal band is ALSO gone
+  (same rubber class — hard-stretched fringes whose UVs fall just
+  outside the scan-pruned mask). 2,923 px changed, +158 px deleted.
+- star (-0.2, 0.05) in-range: heel fringe reduced, no new holes.
+- star (0, +0.2) / (0, -0.2) vertical: +224 / +22 px deleted total,
+  NO dune speckle field (the a83 disease was thousands of dithered
+  px; the dither band's mask gate held, as designed).
+- troll (1.053, -0.014) and (0.358, 0) — both BEYOND the 0.2 design
+  boundary: a few small white slashes appear where rubber smear used
+  to be (+691 / +306 px). Documented trade: outside the supported
+  cone a deleted rubber fragment has no guaranteed screen-space
+  backing (the warped plate has pulled inside the frame), so absence
+  replaces gloop. In-range troll is untouched. This is the same
+  statement as the view fade; the open target-range decision (user)
+  governs whether these poses are ever content-bearing.
+- Full suite: ALL PASS (13); star SD 14.1, ground 78.2; warrior 8.7 /
+  83.7; photo 28.7 / 64.0; troll 23.5 / 94.7; quick lit 75.6, v1
+  83.4, v2 100.0; dolly locks 1.0 / 5.0 px.
+Landed as a84 (stamp v3.13.19-a84).
