@@ -5115,3 +5115,59 @@ bucket, not a defect count. Split by what each is compared against:
 0-1) and 5 to a per-texel DIFFERENCE (the mixed-unit class). The
 headline number was overstated by ~25x, which is its own failure of
 rigour and is recorded as such.
+
+## Addendum 102 (2026-07-24): the analytic instrument, and a rejection overturned
+
+TWO INSTRUMENT DEFECTS FOUND AND FIXED, then one earlier verdict
+reversed as a consequence.
+
+INSTRUMENT DEFECT 1 — resampled input. Comparing a photograph at two
+resolutions compares two DIFFERENT depth maps: NEAREST downsampling
+changed the troll's own fold-eligible cell population by 24.3%, larger
+than the 21.1% output drift being attributed to the code. Fixed with
+harness/synth.py: an analytic scene (sky, receding ground, steep wedge,
+hard-cliff figure, thin bar) whose features are FRACTIONS of the frame,
+evaluated at each target resolution — the same scene at two sizes, not
+a filtered copy of one.
+
+INSTRUMENT DEFECT 2 — 1D populations normalised by 2D area. Fold cells
+and torn cells live on EDGES: their count scales with pw, while total
+cells scale with pw^2, so "percent of cells" carries a spurious 1/pw.
+Verified on the analytic inputs: as a percent of area 0.249 vs 0.496 (a
+50% apparent drift, entirely artefact); per unit WIDTH 2.24 vs 2.23
+(0.4%). Several earlier FAIL verdicts were partly this.
+
+VERDICT ON THE CLEAN INSTRUMENT (1200 vs 600):
+    mask % (area, scale-free)   18.24 / 18.00    1.3%  PASS
+    FG torn / width              6.72 /  6.75    0.4%  PASS
+    fold cells / width           4.46 /  3.39   24.0%  FAIL
+    plate torn / width           88.2 / 61.7    30.1%  FAIL
+a91's derived tear is invariant to 0.4% — the derivation approach is
+confirmed to work, on a scene built to test exactly that.
+
+REJECTION OVERTURNED (a92 -> a95). The reveal-width seed threshold was
+reverted in Addendum 100 on evidence from BOTH faulty instruments.
+Re-tested cleanly: mask drift 1.3% -> 0.6% (improved), fold and
+plate-torn unchanged. The mask is the user-facing quantity — it IS the
+SD region — so the form is reinstated. The lesson is not about this
+constant: a falsification is only as good as the instrument that
+produced it, and two of mine were wrong. Every earlier "measured"
+verdict in this log that depended on resampled inputs or area-
+normalised edge counts deserves the same re-examination.
+
+HYPOTHESIS FALSIFIED AND KEPT ANYWAY, LABELLED (a94). The per-cell tear
+was moved from 1.0*sCone to sqrt(2)*sCone because a mesh triangle's
+extent is (1,1) texels and the fill produces surfaces AT sCone by
+design, so the tighter threshold tears the fill's own legitimate
+output. This was predicted to explain the plate-tear drift; it did not
+(30.3% -> 30.0%, count moved 2%). The geometric argument stands
+independently and the change is strictly more conservative, so it is
+kept and labelled rather than presented as a fix.
+
+OPEN: fold and plate-torn per unit width remain at 24% / 30% drift with
+no surviving explanation. Tested and eliminated: seed threshold (a92/
+a95), cell extent (a94), window floors (a93, which fixed the mask), the
+derived tear (a91, invariant). The remaining candidates are the plug
+construction (which overwrites the plate inside the SD region) and the
+8-bit dequantiser, whose run lengths are inherently resolution-
+dependent. Named, not attributed.
