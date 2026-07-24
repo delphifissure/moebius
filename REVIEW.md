@@ -4346,3 +4346,28 @@ Also this round: the CPU-warp fast workflow proved both its value
 fragment-level effects — it cleared a defect the GL A/B then
 convicted; every CPU-warp verdict on fragment behavior must be
 GL-confirmed).
+
+## Addendum 89 (2026-07-23 round, cont.): the "horizon attached to the astronaut" is the WASH ERASING THE HORIZON — the parked reveal colors cure it
+
+GL reproduction at the user's exact cams (-0.242,0.091 / 0.343,0.088)
+on stock main: the plate DEPTH behind the astronaut is correct
+(plain and sky at their right depths) — but the flat wash colour
+erases the horizon line inside every reveal band, so the horizon
+visually terminates at the band's edge, which follows the figure's
+silhouette. The twice-reported "attachment" was never geometry; it
+is a line-continuity property of the reveal COLOUR.
+
+Evidence shot: the same cams with window._plateRowColor = true (the
+a70 depth-consistent reveal colours, opt-in since a72b): the horizon
+CONTINUES through the band — plain below, sky above, boundary at the
+right height — and the doppelganger largely dissolves into
+background-consistent fill. Residuals: mild streaking in the fill,
+dither sparkle at these beyond-fade poses (a82's graded band is wide
+out there).
+
+DECISION REQUIRED (user's Addendum-82 keep-wash ruling stands until
+they reverse it): the context that produced that ruling has changed —
+the a78 prominence bound keeps reveal bands narrow and figure-shaped,
+which was not true when "tunneling" was reported against the colours.
+Recommendation: flip _plateRowColor default ON behind the suite, with
+the wash as the escape hatch. Awaiting the user's call; not landed.
