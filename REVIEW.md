@@ -5171,3 +5171,61 @@ derived tear (a91, invariant). The remaining candidates are the plug
 construction (which overwrites the plate inside the SD region) and the
 8-bit dequantiser, whose run lengths are inherently resolution-
 dependent. Named, not attributed.
+
+## Addendum 103 (2026-07-24): PLUG PATH AUDIT — an 8-bit round-trip inside the SD region
+
+Audit of the plug (the plate everywhere INSIDE the SD region — the part
+the failing metrics were measuring and the only major fill stage never
+examined dimensionally).
+
+FINDING 1 (LANDED, a96): the default plug encoded depth as Uint8 for
+bgPullPushFill and read it back as /255. The quantisation step 1/255 =
+0.00392 compared against the entire per-texel depth budget (sCone, the
+largest non-folding step):
+     pw  600  sCone 0.00800   one level = 0.49x the fold limit
+     pw 1200  sCone 0.00400   one level = 0.98x
+     pw 1920  sCone 0.00250   one level = 1.57x  -> terraces fold
+     pw 3000  sCone 0.00160   one level = 2.45x  -> terraces fold
+The plug therefore arrived as a staircase whose terrace edges sit AT or
+BEYOND folding, and the ratio grows with resolution — a resolution-
+dependent artefact generator inside the exact region SD is asked to
+repair, on the two largest shipped assets. The pyramid was Float32
+throughout; only the caller's encoding and the final write quantised.
+Fixed with a float output path (colour callers untouched).
+MEASURED, plate tear as an AREA fraction (its true population):
+     before  4.91% (1200) vs 6.88% (600)  = 28.6% drift  FAIL
+     after   5.13% (1200) vs 5.11% (600)  =  0.4% drift  PASS
+
+FINDING 2 (opt-in path, NOT fixed): the _plugGroundUp branch smooths
+with SPASS = 24 fixed passes of a 3-tap average. Iterations ARE reach:
+sigma = sqrt(2N/3) = 4 texels at any resolution, i.e. 0.33% of frame at
+1200 px but 0.67% at 600 — the same window covering different physical
+spans, the a93 disease in an opt-in branch. The invariant form is
+N = 1.5 * sigma^2 with sigma a fixed fraction of frame; at the 0.33%
+fraction the other windows already use, that reproduces N=24 at 1200
+exactly, giving 6 at 600 and 150 at 3000. Not landed: the branch is
+opt-in and untested here, and landing an unverified change in it would
+repeat the mistake this audit exists to stop.
+
+FINDING 3 (same branch): the ground-recession median gs is taken over
+gradients filtered by `dd < fgTearStep`, a per-texel threshold. At half
+resolution per-texel steps double, so a different population enters the
+median and the ramp rate shifts. Same fix family as a91; same reason not
+landed.
+
+METRIC CORRECTION (third instrument fix this round): plate tear is an
+AREA population, not an edge one — it counts terraces across the whole
+plug region, not cells along a silhouette. Normalising it per unit width
+(Addendum 102's rule for fold and FG tear) was wrong for this metric and
+reported 50% drift where the correct area normalisation shows 0.4%.
+Each metric must be classified by ITS OWN population, not by a blanket
+rule.
+
+WHY fold DID NOT MOVE: the fold metric reads window._qbDbg.plate, which
+is plateQ — the FILL field, before the plug overwrite. It never saw the
+plug, so a96 could not have changed it, and its 24% drift belongs to the
+flood/cone fill, not the plug. The remaining suspect there is a86's
+dequantiser, whose run lengths are inherently resolution-dependent.
+
+STATE: mask 0.6% PASS, FG torn 0.4% PASS, plate tear 0.4% PASS, fold
+24% FAIL (one open metric, cause narrowed to the fill's dequantiser).
