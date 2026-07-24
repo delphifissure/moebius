@@ -5019,3 +5019,99 @@ while changing tens of thousands of triangles. Any future invariance
 run must include a geometry metric (torn fraction, cap-card count) and
 a rendered-output metric, or it will keep reporting "no change" for
 changes that matter.
+
+## Addendum 101 (2026-07-24): CONSTANT RATIONALE — every number I set, derived and cited
+
+The user's rule: every constant must be cited with its rationale. This
+is the complete register for the constants introduced or changed in
+a76-a93, each with UNITS, DERIVATION, and the MEASUREMENT that supports
+it. Anything not derivable is named as such.
+
+--- DERIVED FROM GEOMETRY (no freedom) ---
+
+1. sCone — cone slope. UNITS depth per source pixel.
+   DERIVATION: the fill may not exceed the grazing limit, 1/k, where k
+   is the reprojection scale in px per depth unit at the fade end.
+   k scales with pw (a pixel is not a fixed angle), so
+   sCone = 1/k = 0.0025 * 1920/pw.
+   STATUS: the FORM is derived and verified (sCone*k = 0.99, pw-
+   independent by construction). The MAGNITUDE rests on an empirical
+   anchor (~400 px per depth unit at 1920) that a first-principles
+   derivation contradicts by ~2.5x; k also varies 2x across the depth
+   range (smoothstep) and 2.3x with aspect (layerWidth). NOT SETTLED —
+   Addendum 98. One definition now (a90); the derived form is behind
+   window._coneSlopeDerived awaiting an on-device measurement of k.
+
+2. Per-cell tear threshold = 1.0 * sCone (a91). UNITS depth per texel.
+   DERIVATION: a cell spanning dd displaces its ends k*dd px; at one
+   cell width the cell inverts. The fold limit IS the cone slope, so
+   tear threshold and fill slope are one quantity.
+   MEASUREMENT: the old fixed 0.06 permitted folds of T = 10.5 (troll)
+   / 23.8 (star) / 25.3 (photo) / 37.1 (warrior), varying 3.5x with
+   resolution. Trade curve on the three depth maps, torn% /
+   surviving-folded%: T=1 gives 2.25-3.27% / 0.00%; the old operating
+   point gave 0.10-0.22% / 2.15-3.06%. T=1 is where folded cells reach
+   zero — the physical limit, not a preference.
+   DEVICE: troll 851, threshold 0.00564, 78,916/1,737,400 cells torn,
+   11,163 orphans capped. Invariance: 2.5% drift across 2x resolution.
+
+3. Cone metric = EUCLIDEAN from the anchor (a89). DERIVATION: the
+   prominence bound (dxp^2+dyp^2) and the fold limit are Euclidean;
+   a85 accumulated per hop over a 4-connected flood = Manhattan, which
+   is sqrt(2) too steep on diagonals (diagonal fill folded at ex 0.141
+   even after a88). The file's own budget propagations already use
+   1.41421356 as the diagonal chamfer weight at 14 sites — the
+   precedent was there.
+
+4. QUANT = tearStep/32 (a89). UNITS depth. DERIVATION: a tie-break
+   epsilon must be a fraction of the scale it guards (the tear step),
+   not a fixed 0.002, which was half an 8-bit level and would swallow
+   131 quanta of a 16-bit source.
+
+5. Depth quantum = DETECTED, not assumed (a89). The dequantiser tests
+   the sample grid against 255/4095/65535 and skips when the depth is
+   continuous. Hardcoding 1/255 made it a silent no-op on 16-bit input.
+
+6. Window floors = 1 texel (a93). UNITS texels. DERIVATION: the
+   windows are already fractions of frame width (0.33%); the only
+   floor that is not a resolution-specific choice is the information
+   limit, one texel. MEASUREMENT: the old Math.max(3,...) pinned RWD to
+   3 texels at both 425 and 851 px = 0.71% vs 0.35% of frame.
+   RESULT: mask invariance 19.7% -> 3.7%, mean drift 16.4% -> 8.9%.
+
+7. Seed budget probe = RWD, not a fixed +-3 (a93). Same derivation:
+   it measures the smear scale, so it uses the smear-scale radius.
+
+--- INHERITED, NOT DERIVED (named, with their status) ---
+
+8. fgTearStep = 0.06. UNITS depth, used at CLIFF scale in windowed
+   tests whose windows scale with pw — dimensionally acceptable there.
+   Its value is inherited and not derived; it now governs only the
+   windowed tests, not the per-cell tear (a91 replaced that use).
+
+9. SEED_REVEAL_PX = 24 (a92) — TRIED AND REVERTED. Expressing the lip
+   threshold as a reveal width is unit-correct, but measured: mask
+   drift 19.7% -> 17.0%, fold drift 27.1% -> 30.4%. Premise falsified;
+   reverted rather than carried.
+
+10. u_bandCutUvRate = 1/w — assumes the mesh spans the canvas. Fails
+    under zoom/dolly/letterbox. Named in Addendum 97, not yet fixed.
+
+11. Scan z-tolerance 0.02, 2x2 splat, 8x4 pose grid — never derived.
+    Named in Addendum 97, not yet fixed.
+
+--- WHAT THE TEST NOW SAYS ---
+Troll 851 vs 425 after a93: mask 3.7% PASS, fgTorn 2.5% PASS, orphans
+7.8% PASS, plateTear 9.3% PASS, fold 21.1% FAIL. The fold residual is
+dominated by the TEST INPUT: NEAREST downsampling changes the depth
+map's own fold-eligible population by 24.3%, larger than the 21.1%
+output drift. A synthetic analytic depth map is required to isolate the
+code side; a resampled photograph cannot.
+
+--- THE CORRECTION TO "127" ---
+Addendum 96 reported 127 depth-unit constants. That was a keyword
+bucket, not a defect count. Split by what each is compared against:
+41 are compared to an absolute depth VALUE (safe — depth is normalised
+0-1) and 5 to a per-texel DIFFERENCE (the mixed-unit class). The
+headline number was overstated by ~25x, which is its own failure of
+rigour and is recorded as such.
