@@ -4913,3 +4913,62 @@ derived function; (2) the depth-unit family (Family D, Addendum 96) —
 blocks video; (3) the iterations-as-reach truncation; (4) build the
 Phase 4 invariance test and put it in the suite BEFORE any further
 constant is touched.
+
+## Addendum 99 (2026-07-24): THE INVARIANCE TEST RAN — AND FAILED ON ITS FIRST RUN
+
+harness/invariance.js, troll, same scene at 851px and 425px, scan
+disabled (metrics read the plate field pre-scan), tolerance 15%:
+
+    metric   full 851    half 425    drift    verdict
+    mask%      13.19       16.43     19.7%    FAIL
+    fold%       2.06        2.82     27.1%    FAIL
+
+a88's law predicts a fold ratio of 1.00 — sCone*k = (0.0025*1920/pw) *
+(396*pw/1920) = 0.99 is pw-independent BY CONSTRUCTION. Observed: 1.37.
+So the fill's slope law is now resolution-invariant on paper and the
+BAKE still is not. a88 was necessary and is not sufficient.
+
+ROOT CAUSE OF THE RESIDUAL (measured directly on the two depth maps):
+
+    depth map        cells over tearStep 0.06     mean |per-texel step|
+    full  851              0.337%                      0.00170
+    half  425              0.623%                      0.00338
+    ratio half/full         1.85                        1.99
+
+tearStep is compared against ADJACENT-TEXEL depth differences (the FG
+tear is a 3-vertex span on a vertex-per-texel grid, moebius.js:10603;
+the seed test at :9179-9183 is the same shape). A genuine
+DISCONTINUITY is resolution-invariant — the full cliff height appears
+in one cell at any resolution. A steep but SMOOTH slope is not: its
+per-texel step is slope x texel size, so halving the resolution
+DOUBLES it (measured: mean step 0.00170 -> 0.00338, ratio 1.99). The
+threshold therefore migrates across the slope population as resolution
+changes: 1.85x more of the image becomes tear-eligible at half
+resolution, which reshapes the plate, the claims and the fold count —
+1.85 upstream producing the 1.37 observed downstream.
+
+CLASSIFICATION: tearStep is not a depth constant (Family D) as
+Addendum 96 assumed. It is a MIXED unit — depth per texel — which
+means it belongs to BOTH the resolution family and the depth-
+normalisation family. It fails R and N simultaneously. The same is
+true of every threshold compared against an adjacent-texel difference:
+the despeckle TOL, the smear-snap step gate, the ramp-collapse test,
+the a84 contact-ramp central difference.
+
+WHAT THE CORRECT FORM LOOKS LIKE: the plate code already has it. The
+flood's barrier test (:9032) compares a WINDOWED range (dwMx - dwMn
+over RWD, and RWD scales with pw) against tearStep — a depth step
+across a FIXED FRACTION OF THE FRAME, which is resolution-invariant by
+construction. The FG tear and its siblings compare across ONE TEXEL,
+which is not. Making the tear windowed (or equivalently expressing
+tearStep as depth per unit of frame width and multiplying by the texel
+size at test time) removes the mixed unit.
+
+PROCESS: this is the first mechanised invariance result in the
+project. It found in one run what four constant fixes across a day did
+not, and it contradicts a comfortable assumption (that a88 "fixed
+resolution"). The suite's per-asset pins could never have shown it:
+each asset reproduces its own pinned number while meaning something
+different. Recommendation stands — no further constant work, and no
+merge of a89/a90 to main, until the tear's unit is fixed and this test
+passes on all four assets.
