@@ -4685,3 +4685,90 @@ premise (a rendered surface must not span its own cliffs) is sound and
 its cost is 0.1% coverage; a86 stays because the 8-bit staircase is
 real. But the record should show that a86 and a87 were BANDING fixes
 adopted before the banding was explained, and the explanation is a88.
+
+## Addendum 96 (2026-07-24): CONSTANT PROVENANCE AUDIT — what else is a88 waiting to happen
+
+User request after a88 ("scared we're going to end up going down a
+bunch of other rabbit holes once we stress test with a lot of
+different images — or a video sequence"). Full sweep of the bake,
+plate, tear and cut paths, classified by DIMENSION, because that is
+what a88 turned on: a constant is only safe if its units are
+invariant to the thing you are about to vary.
+
+FAMILY A — RESOLUTION-SCALED (the correct pattern, ~25 constants).
+RWD, BOOT, KWALK, RF, KE, KC, RS, RN, RD, BOUNDR, RBH, passesC,
+scrubReach, fringePasses, u_bandCutUvRate (1/w), and now sCone.
+HAZARD FOUND: TWO calibration bases coexist — 16 uses of "* pw/1200"
+and 3 of "* pw/1920". Constants tuned against different reference
+widths disagree about what "typical" means; any constant whose
+partner was tuned on the other base is off by 1.6x. Not a bug today
+(each is self-consistent) but it is the exact soil a88 grew in.
+Recommend one declared reference width with the base named at each
+site.
+
+FAMILY B — DIMENSIONLESS RATIOS (safe by construction). svRatio
+0.2/0.16 band, seed density 0.25, area caps as a fraction of PNq,
+prominence bound (a ratio of depth to distance*slope). These do not
+care about resolution, depth range, or frame rate.
+
+FAMILY C — PIXEL-DIMENSIONED AND NOT SCALED (the a88 class, LIVE):
+  * bgBandMaxGrowPx = 28 — used as a bgSlide2D window radius on the
+    SOURCE grid, and multiplied further (standCap = x4, RPar = x2,
+    SWEEP7 = x4). Across the current four assets (851..3000 px) the
+    same 28 px is a 3.5x range of physical reach. HIGHEST RISK after
+    sCone: it sets floor fields, protrusion flattening and the stand
+    cap.
+  * FULL_FLOOD_ITERS = 192, FLAG_ITERS = 256, LAKE_ITERS = 128,
+    HARMONIC_ITERS = 96 — GPU ping-pong counts ARE the flood reach in
+    canvas px. The code says it outright: "must exceed the widest FG
+    blob's radius in px". Exceeded => the plate is silently
+    INCOMPLETE (no error, no log). A large canvas or a big central
+    figure crosses this quietly.
+  * bgBandCutDilatePx = 4, bgStreakFadeNearPx = 8, FarPx = 40,
+    edgeDilationRadius = 1.5 — same class, smaller blast radius.
+  Fix pattern: express each as a fraction of the working width, the
+  way RWD/BOOT already are.
+
+FAMILY D — DEPTH-UNIT CONSTANTS (the VIDEO risk). fgTearStep 0.06,
+bandCutMismatch 0.01, bandCutMaxGrad 0.04, QUANT 0.002, despeckle
+0.02, rigidify 0.02, figure/sky 0.2 / 0.05, luma edge 0.10.
+Monocular depth is normalised PER IMAGE, so 0.06 means "6% of this
+image's own range". Measured p95-p5 spread: star 0.87, warrior 0.77,
+troll 0.72, photo 0.61 — a 1.4x variation across four assets that
+happen to be similar (all wide scenes with sky). tearStep is
+0.07-0.10 of typical relief on all four, which is why the constant
+has survived. It will not survive:
+  * a flat subject (portrait, macro, frontal architecture): the
+    spread collapses, 0.06 becomes a large fraction of the range,
+    NOTHING tears — the same sheet symptom as the warrior, different
+    cause;
+  * VIDEO: per-frame normalisation makes the threshold breathe frame
+    to frame, so tear/cut decisions FLICKER on static geometry. This
+    is the single biggest hazard in the file for the video path.
+  Fix direction: make depth thresholds relative to the image's own
+  measured spread (k * (p95-p5)), and normalise depth ONCE PER SHOT
+  rather than per frame.
+
+FAMILY E — GEOMETRY CONSTANTS THAT ARE NOW LOAD-BEARING. The
+reprojection scale k = 396 px per depth unit at the fade-end exists
+only in a COMMENT, and a88's sCone now depends on it. If the fade
+cone (35/45 deg), the portal distance (0.2) or the volume depths
+change, sCone goes silently stale — the a88 failure mode exactly,
+one level up. Recommend computing k from the same constants the
+vertex shader uses instead of restating it.
+
+FAMILY F — STRUCTURAL SCALE ASSUMPTION. MESH_DENSITY_FACTOR = 1.0
+gives one vertex per source texel: the warrior is 9,000,000 vertices
+/ 18,000,000 triangles. Tear granularity, memory and mobile fill
+cost all scale with source resolution, and a 4K source doubles it
+again. The tear's meaning also changes with resolution (a "1 px
+step" is a different physical slope per asset) — the same disease as
+sCone, in the geometry rather than in a constant.
+
+PRIORITY (highest expected pain first):
+  1. Family D depth thresholds — blocks video and any flat subject.
+  2. bgBandMaxGrowPx family — blocks resolution generality today.
+  3. Flood ITERS truncation — silent incompleteness, no diagnostic.
+  4. Derive k from shader constants (kills the a88 class at source).
+  5. Unify the 1200/1920 calibration bases.
+  6. Mesh density policy for >=4K and mobile.
