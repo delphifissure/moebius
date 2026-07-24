@@ -5276,3 +5276,60 @@ SCOREBOARD (analytic scene, 1200 vs 600):
     plate tear (area)  0.2%  PASS
     FG torn (per width) 0.4% PASS
     fold (per width)   16.1% FAIL (was 24.1%)
+
+## Addendum 105 (2026-07-24): fold drift localised — the fill is invariant, the 8-bit INPUT is not
+
+Task was "get fold under tolerance". It is not under tolerance, and the
+reason is now measured rather than suspected, which changes what the
+remedy is.
+
+TWO MORE HYPOTHESES KILLED. (a) The ground barrier's luma test is a
+per-texel colour difference — same mixed unit as the depth tests.
+Normalised by texel scale (a98): fold drift 16.1% -> 16.6%, no better.
+Reverted. (b) The smear snap reshapes source cliffs, so it could be
+reshaping them differently per resolution. Disabled at both: results
+BIT-IDENTICAL — it never fires on analytic depth (no smear to snap).
+
+THE DIAGNOSTIC THAT SETTLED IT (harness/metric8.js). Classify every
+folded plate cell by where it comes from:
+    population              pw1200   pw600   drift
+    fill creases             3.675   3.205   12.8%   <- 90% of all folds
+    inherited from source    0.391   0.205   47.5%
+    fill-vs-surface step     0.000   0.000      -
+    total                    4.066   3.410   16.1%
+The FILL — the thing all this work has been aimed at — is INSIDE
+tolerance. The 16.1% headline is a small, badly-behaved population
+dragging a well-behaved one.
+
+WHAT THAT POPULATION IS. Cells where the cleaned source depth itself
+folds. Measured against the fold limit:
+    one 8-bit depth level = 1/255 = 0.00392
+      pw  600  limit 0.00808   one level = 0.49x
+      pw 1200  limit 0.00404   one level = 0.97x   <- knife edge
+      pw 1250  limit 0.00388   one level = 1.01x
+      pw 1920  limit 0.00253   one level = 1.55x
+      pw 3000  limit 0.00162   one level = 2.43x
+Above ~1250 px a SINGLE 8-bit depth level exceeds what one texel can
+carry without folding. 8-bit depth is therefore intrinsically
+fold-generating at the resolutions this project actually ships. At the
+1200 px test width the terrace step is 0.97x the limit — bistable —
+which is precisely why that population drifts 47.5%.
+
+CONSEQUENCES.
+1. a86 is reframed. Dequantisation is not a banding nicety; it is what
+   makes any source above ~1250 px renderable without folds built into
+   the input. It should be described that way in the code.
+2. The last 1.1 points of fold drift are an INPUT property, not a code
+   defect. Holding the source population fixed puts total drift at
+   11.8-12.1% — inside tolerance — so the fill would pass today with a
+   clean input.
+3. Closing it honestly needs FLOAT DEPTH INGEST. The pipeline reads
+   depth through a canvas getImageData, which is 8-bit by construction,
+   so a89's quantum detection can never see more than 8 bits no matter
+   what the file contains. That is the next real piece of work, and it
+   is an architecture change (read depth via a float texture path),
+   not a constant.
+
+I am not going to force this metric under tolerance by tuning a
+threshold or widening the tolerance. The number is honest where it is,
+and it now points at a specific architectural fix.
