@@ -4522,3 +4522,48 @@ sawtooth class should die with the budgets' frontier role.
 VERIFICATION: [pending — warrior user cams + in-range, star silk/leg
 cams, troll + photo via suite, full suite; results below before
 landing]
+
+## Addendum 93 (2026-07-24 round, cont.): the banding root cause — 8-BIT INPUT DEPTH; a86 staircase dequantization
+
+The elimination ladder that got here (each step measured):
+1. a85 cone fill changed 717k px of plate DEPTH (steps halved
+   3,536 -> 1,839, the A69 sky-pits filled) — but the RENDER changed
+   only 7%: the visible cascade survived. User called it ("before /
+   after look exactly the same").
+2. Plate COLOR: smooth in both laws — not color striping.
+3. Cap cards: probe shows 3,100 verts (~775 px) — three orders of
+   magnitude too small for the cascade. (The a107 zero-diff was a
+   true null, not vacuous.)
+4. Plate mesh: 9,000,000 verts = full 3000x3000 — no decimation
+   terracing.
+5. FG silhouette: razor-sharp, 100% of cells tear — not figure
+   rubber.
+6. Remaining suspect measured and CONVICTED: every depth value in
+   the bake sits EXACTLY on the 8-bit grid (max deviation 0.000000;
+   211 levels on the pile slope). Terrace runs median 3px / p90
+   22px; parallax per level 2.4px at fade-end, 4.4px at the user's
+   0.366 cam. Flat 10-22px terraces jumping 2-4px each = the user's
+   "3d banding with gaps", in BOTH layers, on every smooth slope,
+   upstream of every fill/tear/scan law. Retroactively explains the
+   boot-contact measurements too (0.0039 and 0.0235 = exactly 1 and
+   6 levels).
+
+FIX (a86): DEQUANTIZE AT THE SOURCE. Immediately after the quick
+bake reads the depth PNG into dQ: along each axis, adjacent
+constant-level runs differing by EXACTLY one 8-bit level are one
+sloped surface — linearly interpolate between run centers; runs
+differing by >= 2 levels keep their hard break (real cliffs are >=
+tearStep = 15 levels; thin features are several levels proud). Axis
+passes average. The existing dqDirty ship-back delivers the
+reconstructed field to the FG float texture, the plate fill, tears,
+scan — every consumer at once. Quick path only for now (v1/v2 have
+separate reads). Hatch: window._noDequant.
+
+Relation to a85 (cone fill): kept — it fixed a real, separate defect
+(claim-frontier steps, sky pits) and its "no visible change" is now
+explained: the dominant banding was in the input signal, one level
+upstream.
+
+VERIFICATION: [pending — warrior user cams, star cams, troll comb
+cams (the graded-cut interaction must be re-checked: terraced
+grazing walls were 8-bit staircases too), full suite]
