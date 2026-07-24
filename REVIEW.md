@@ -4468,3 +4468,57 @@ pixel-comparable):
   83.7; photo 28.7 / 64.0; troll 23.5 / 94.7; quick lit 75.6, v1
   83.4, v2 100.0; dolly locks 1.0 / 5.0 px.
 Landed as a84 (stamp v3.13.19-a84).
+
+## Addendum 92 (2026-07-24 round, cont.): the banding/silk/staircase family — claim frontiers, not value competition; cone-envelope fill
+
+User contract (stated this round, adopted as the pre-SD acceptance
+bar): zero tunneling/extrusion, seamless plugs, no spill — the wash
+stays as the honest "SD fills this" placeholder (row-colors and
+pull-push-color demoted: placeholder aesthetics are not the problem).
+
+ATTRIBUTION (measured first):
+1. Warrior staircase REPRODUCED in GL at the user's cam (0.366,
+   0.008): terraced strip cascade in the reveal behind the figure
+   pile (a102).
+2. Star "blue silk" boot ribbons attributed by layer isolation
+   (a103 full / FG-only / plate-only): they survive without the FG
+   and appear in the plate-only render — they are PLATE smear. The
+   a84 contact-rubber cut killed the FG half of the class; the plate
+   half remained.
+3. One family, three costumes: silk, staircase, banding = depth
+   steps INSIDE the plate fill, rendered as stretched walls by the
+   solid plate.
+
+ROOT CAUSE (from re-reading the fill law, not from memory): NOT
+value competition — the lower envelope of competing floored planes
+is continuous. The steps are CLAIM FRONTIERS: where a deep front's
+reach dies (prominence bound d*sCone <= dQ-v2, hop budget), the
+next-shallower holder takes over at a full step. Every frontier is a
+wall.
+
+FIX (a85): CONE-ENVELOPE FILL for object fronts. The prominence
+physics becomes the value law itself: a front's bid rises at the
+cone slope with path distance from its anchor, v = av + sCone*d
+(carry[] accumulates per hop, including passRem traversal). Then:
+- the field is Lipschitz(sCone) by construction — steps impossible;
+- claims expire exactly where the envelope meets the local surface
+  (v2 >= dQ-0.001): flush = invisible = seamless edge, zero spill —
+  the user's contract, by construction;
+- descent below anchor cannot occur (no runaway-to-zero — the
+  disease that motivated three generations of floors);
+- the prominence bound is subsumed (promOK returns true for cone
+  fronts; keeping it would halve reach since prominence shrinks as
+  the bid rises);
+- fold/ground fronts keep the a63b measured-gradient continuation
+  (receding ground legitimately descends; the cone rise is wrong
+  for it) — the working dune/crest bands are untouched.
+Hatch: window._noConeFill restores a84 exactly.
+
+Predicted side effects to verify: SD mask % shifts (suite re-pin
+with evidence if needed); internal figure anchors may win small
+nearby mounds (continuous, slope-capped — not walls); a78's diamond
+sawtooth class should die with the budgets' frontier role.
+
+VERIFICATION: [pending — warrior user cams + in-range, star silk/leg
+cams, troll + photo via suite, full suite; results below before
+landing]
