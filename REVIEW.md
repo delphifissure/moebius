@@ -4972,3 +4972,50 @@ each asset reproduces its own pinned number while meaning something
 different. Recommendation stands — no further constant work, and no
 merge of a89/a90 to main, until the tear's unit is fixed and this test
 passes on all four assets.
+
+## Addendum 100 (2026-07-24): a92 falsified — the resolution drift is SYSTEMIC, not a constant
+
+Continuing the invariance work with the rule the user set: any number
+must be cited and defended, and a change that does not deliver comes
+out.
+
+a91 LANDED (derived, cited). The per-cell tear threshold is the FOLD
+LIMIT: a cell spanning dd displaces its ends k*dd px, and at k*dd = 1
+cell width the cell inverts. With one vertex per texel that is
+dd = 1/k = the cone slope, so the tear threshold and the fill slope are
+the same physical quantity. The old fixed 0.06 permitted folds of
+T = 10.5 (troll) / 23.8 (star) / 25.3 (photo) / 37.1 (warrior) — and
+varied 3.5x with resolution. Trade curve measured on the three depth
+maps (torn% / surviving-folded%): at T=1, 2.25-3.27% / 0.00%; at
+today's T, 0.10-0.22% / 2.15-3.06%. Same cells either way: 2-3% of the
+mesh was rendering as folded rubber and now tears into a53 cap cards.
+On device (troll 851): threshold 0.00564, 78,916 of 1,737,400 cells
+torn, 11,163 orphans capped.
+
+a92 TRIED AND REVERTED. The cliff-SEED threshold has the same mixed
+unit; expressed invariantly it is a REVEAL WIDTH (step*k >= N px).
+Measured on the troll pair (851 vs 425):
+    mask drift 19.7% -> 17.0%   (slightly better)
+    fold drift 27.1% -> 30.4%   (worse)
+Premise falsified: the seed threshold is not where the drift lives.
+Reverted; the unit observation is kept here rather than in the code.
+
+WHAT THIS ESTABLISHES: the resolution drift is SYSTEMIC. constlint
+counts 127 depth-unit constants, and essentially every one of them is
+compared against an adjacent-texel difference somewhere. Fixing them
+one at a time is whack-a-mole with a 2-bake measurement per attempt.
+The honest options are (a) a single normalisation applied ONCE at
+ingest — resample every source to a canonical working width so every
+downstream per-texel constant sees the same texel scale (this makes all
+127 correct simultaneously, at the cost of a resample), or (b) a
+systematic rewrite of every per-texel test into windowed form. (a) is
+one change with one number to defend (the working width) and is the
+recommended path.
+
+ALSO ESTABLISHED: my metric set is too narrow. mask% and fold% are
+computed from the PLATE FIELD, so they are blind to a91 (FG geometry)
+and a87 (plate geometry) — both showed zero movement in these numbers
+while changing tens of thousands of triangles. Any future invariance
+run must include a geometry metric (torn fraction, cap-card count) and
+a rendered-output metric, or it will keep reporting "no change" for
+changes that matter.
