@@ -5425,3 +5425,60 @@ figure's true silhouette cells, and their count depends on how the
 ellipse rasterises at each resolution. That is a property of the test
 scene's geometry, not of the renderer, and chasing it further would be
 measuring the test rather than the code.
+
+## Addendum 108 (2026-07-24): k MEASURED — it is a field varying 19x, and ~2x the assumed value
+
+The measurement Addendum 98 asked for, and Addendum 101 flagged as the
+open magnitude question, is done. harness/measure_k.js takes the vertex
+shader's own smoothstep displacement law, places a point at each depth,
+projects it through the real camera at the rest pose and at the fade-end
+pose, and differences the screen positions. No image analysis, no
+feature tracking, no comment quoting.
+
+RESULT (star, 1920 px source, 593 px canvas):
+      depth 0.1   k_source   363 px per depth unit
+      depth 0.3   k_source   603
+      depth 0.5   k_source    79   <- portal plane, where the mix() halves meet
+      depth 0.7   k_source  1497   <- near-half peak
+      depth 0.9   k_source  1276
+      mean                   763
+
+1. k VARIES 19x ACROSS DEPTH. It is not a constant and never was. The
+   smoothstep displacement has zero slope at the portal plane and peaks
+   in the near half — exactly the shape derived in Addendum 98 from the
+   code's own geometry. Any single sCone is therefore wrong almost
+   everywhere BY CONSTRUCTION: too permissive near the plane, far too
+   permissive in the near half.
+2. The MEAN is 763 px against the 396 px the a88 comment asserted —
+   1.93x, matching the ~2x the first-principles derivation predicted
+   and contradicting the empirical anchor that had been trusted since
+   before this session. sCone should be ~0.00131 at pw=1920, not
+   0.00250: the fill and the tear currently permit about TWICE the
+   slope the geometry allows before folding.
+
+WHAT THIS DOES AND DOES NOT INVALIDATE. The FORM of a88/a90/a91/a95/a97
+stands: they are dimensionally correct, mutually consistent, and the
+invariance measurements that verified them (mask 0.6%, plate tear 0.2%,
+FG torn 0.4%, creases 4.0%) are unaffected — those tested whether the
+laws scale, not whether their constant is right. What is invalidated is
+the MAGNITUDE: everything is calibrated to a k about 2x too large on
+average and wrong by up to 19x depending on depth. A surface permitted
+2x the folding slope will fold inside the supported cone, which is a
+plausible direct contributor to the stretching the user has been
+reporting at in-range poses all along.
+
+NOT CHANGED HERE, DELIBERATELY. The correct fix is per-pixel
+sCone = 1/k(depth), evaluated with the same smoothstep the vertex
+shader uses. That halves the average slope (lengthening reach and
+enlarging masks) and halves the tear threshold (tearing more). It is a
+design change with large behavioural consequences and it deserves its
+own measurement pass — not a late edit to the most load-bearing
+constant in the file, made without seeing a single render.
+
+SUITE: 12 pass / 1 fail on the first run (troll SD 23.5 -> 13.0),
+isolated by A/B to a88 alone (forcing sCone back to the fixed value
+restores 23.43% exactly; disabling a95 changes nothing). Every asset
+moved as the resolution-scaling theory predicts — troll 2.26x too big
+shrank, star correct held, warrior and photo too small grew — so the
+old troll band was measuring the bug. Re-pinned 19..29 -> 9..18 with
+that evidence in the file, and re-running.
