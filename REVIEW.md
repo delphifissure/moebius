@@ -4626,3 +4626,62 @@ confirmation and the suite are blocked by repeated container kills
 (~15 consecutive Chromium runs killed at exit 144). CPU warp is
 measured-blind to fragment-level effects (Addendum 86 rule), so the
 plate tear is NOT verified for the stretch-cut interaction yet.
+
+## Addendum 95 (2026-07-24 round, cont.): the sheet is a FOLDED fill — sCone was never resolution-scaled (a88)
+
+The user's a87 device sheets (cams 0.463 and -0.429) still showed the
+sheet, with the console confirming a87 fired: "plate tear: 15789
+spanning triangles dropped (0.09% of the plate)".
+
+TWO FINDINGS, one of them a correction to a87 itself.
+
+1. a87b (bug in my own fix): the tear tested plateQ — the pre-plug
+   FLOOD field — while the plate renders plateF (plateQ overwritten by
+   the plug depth inside the SD region, row-flipped for upload). The
+   plug's own cliffs were invisible to the test. Now reads plateF with
+   the flip. Predicted effect is still small, because of finding 2.
+
+2. THE SHEET IS NOT A CLIFF. Measured on the exported buffers: only
+   0.114% of plate cells carry a step > tearStep. A tear-based fix
+   cannot remove a smooth ramp. What the ramp does instead:
+
+   Reprojection displaces by k*depth, k = 396*(pw/1920)*(ex/0.2) px per
+   depth unit. A surface whose slope exceeds the grazing limit 1/k does
+   not merely stretch — the mapping REVERSES and the surface FOLDS,
+   rendering as an inverted sheet lying across the reveal.
+
+   sCone (the fill's rise per PIXEL) was a fixed 0.0025, calibrated once
+   against a 1920-px bake (1/0.0025 = 400 ~ the measured 396) and never
+   scaled with source resolution. A pixel is not a fixed angle:
+
+     asset    pw     shipped/correct   fold onset
+     star    1920      1.00x           ex 0.200  (= fade-end, by design)
+     photo   2047      1.07x           ex 0.188
+     warrior 3000      1.56x           ex 0.128  <-- inside the cone
+     troll    851      0.44x           ex 0.451  (safe, under-reaching)
+
+   At the user's warrior cams, 87-92% of the CLAIMED FILL is folded.
+   This is the long-standing asset dependence — "silver warrior is a
+   total mess" while star is acceptable and troll shows a different
+   defect class entirely. It also retro-explains a85's "no visible
+   change": a Lipschitz(sCone) field is exactly a field at 1.56x the
+   fold limit everywhere at 3000px.
+
+FIX (a88, geometric not tuned): the fill may rise at most one grazing
+limit per pixel — sCone = 1/k = 0.0025 * 1920/pw — applied at the
+quick-bake and v1 call sites. Hatch: window._sConeFixed.
+
+CONSEQUENCE for the suite: the corrected slope changes reach (the
+prominence bound d*sCone <= prominence loosens at high resolution) and
+therefore the SD mask percentages. warrior and troll pins are expected
+to move; they must be re-derived from evidence, not widened to fit.
+Suite still not runnable (container kills). Merged to main (fdc1da1)
+at the user's explicit request for device testing.
+
+METHOD NOTE: three mechanisms were implicated in one day for one
+symptom (a86 quantization, a87 plate tear, a88 fold). Only a88 is
+supported by a quantitative model of the symptom. a87 stays because its
+premise (a rendered surface must not span its own cliffs) is sound and
+its cost is 0.1% coverage; a86 stays because the 8-bit staircase is
+real. But the record should show that a86 and a87 were BANDING fixes
+adopted before the banding was explained, and the explanation is a88.
