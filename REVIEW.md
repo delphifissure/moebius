@@ -6403,3 +6403,107 @@ is recorded here and not resolved.
 
 STILL OPEN: the picket-fence comb along the bottom margin is present in BOTH
 arms of the shots and is untouched by this fix.
+
+## Addendum 116 (2026-07-25): the three bake modes, priced — and the tear that was eating the frame
+
+The user's directive: "the default bake should be the quickest and simplest
+that works... the realtime inpainted version *is not that bad*, it just
+flickers... we'd love it if the depth plugs seamlessly worked, and we just had
+average pullpush color mapped over the plugs — I honestly don't know why what
+we have running right now is still so compute heavy, and still so totally
+broken." With three debug grids: v1, quick and v2 on the troll.
+
+### ALL THREE MODES, PRICED AT THE USER'S OWN CAMERA POSITIONS
+
+Poses lifted from the three debug stamps, so this measures what the user was
+looking at, not what was convenient (`harness/modeprofile.js`). black% is over
+the WHOLE canvas, letterbox included.
+
+    mode          bake s    0.52xR   0.80xR   0.85xR   0.85xU
+    quick          10.3      41.74    36.00    35.17    62.84
+    v2             11.7       0.00     0.00     0.00     0.00
+    v1-a113        85.2       0.00     0.00     0.00     0.00
+    v1-legacy      46.9       0.00     0.00     0.00    11.55
+
+Three things fall out, and two of them contradict what this arc has assumed.
+
+**v2 is the cheapest complete mode AND the best-looking.** 11.7s, zero black
+everywhere, and the only render at 0.85x rim that still reads as the painting.
+Its entire cost is `v2-planes 3824ms`. The ghosting the user reports is the 20
+plane meshes — one binning decision, not a pipeline.
+
+**v1 is the most expensive and the worst-looking.** Its stage breakdown says
+why nothing in it is about the plug:
+
+    [PERF] build 92657ms
+      backstop sweep    60440ms   65%
+      scene extension   17585ms   19%
+      everything else  ~14600ms   16%
+      (the plug itself:  4224ms)
+
+84% of the bake is machinery policing the plug. a113 accounts for +38.3s of
+that: the extension goes 4.9s -> 16.2s, and it DOUBLES the backstop sweep
+(26.1s -> 52.3s) because the sweep now walks a 9x larger plate.
+
+**a113 is confirmed at the user's rim fraction, on the axis it was built for.**
+At 0.85x rim vertical: legacy 11.55% black, a113 0.00%. Horizontally both
+0.00%. So the margin law is right and v1's mess is smear, not holes.
+
+### THE FOLD LIMIT WAS DELETING 40% OF THE MESH (a117)
+
+    [QUICK-BAKE] cliff tear: 692469 spanning triangles dropped of 1737400
+                             411529 texels re-shipped as cap cards
+
+Addendum 110 predicted this and I did not connect it: the fold limit at 851px
+is 0.47 of ONE 8-bit level, so the smallest step the source can express
+already folds. Testing every cell against it tears most of the mesh, and the
+cap cards render the debris as a 1px moire comb — the user's "banded to
+oblivion", and the wreck in the quick grid.
+
+**black% is blind to it.** 35.17 (torn) vs 37.45 (untorn) at 0.85x rim; 52.92
+at rest in EVERY arm, because that number is the letterbox, not holes. The
+comb is alternating light/dark, not black. A second-difference comb energy
+over lit pixels sees it immediately.
+
+MEASURED (`harness/teartest.js` + comb metric), troll, user's poses:
+
+    arm      tris dropped   cards    comb 0.52xR/0.85xR   black 0.52xR/0.85xR
+    fold      692469 (40%)  411529      9.19 / 7.91         41.74 / 35.17
+    cliff       8025 (0.5%)   8106      6.70 / 5.61         41.84 / 35.56
+    none           0 (0%)        0      7.04 / 6.22         42.78 / 37.45
+
+Cliff-only wins on every axis simultaneously: 86x fewer dropped triangles,
+51x fewer cap cards, comb energy 27-29% under fold AND under no-tear at every
+off-axis pose, for +0.1 to +0.4 points of black. Tearing genuine
+discontinuities beats tearing nothing; tearing every sub-quantum step is what
+destroyed the frame. Shipped as the default; `_qbTearMode = 'fold'` reverts.
+
+### TWO THINGS THIS COSTS THE ARC, STATED
+
+**a111e was not the win it was recorded as.** Addendum 114 drove rest black
+19.77% -> 0.00% by carding 411k texels, with the caveat "it proves the cards
+now PAINT; it does not prove they paint the right colour. That needs eyes on
+a grid." The user's grid supplied the eyes: they paint a comb.
+
+**a101/a102 are worth nothing AS A TEAR CRITERION.** exact vs slope: 692469 vs
+692246 triangles (0.03%), identical black, identical comb energy to 3 s.f. A
+large slice of this arc changed no rendered pixel. The envelope remains the
+correct law for the extension margin (Addendum 115, measured) and for the SD
+scan (a106, measured) — it was precision applied to the wrong quantity here.
+
+### MEASURED WASTE STILL IN THE DEFAULT PATH
+
+The all-viewpoint scan pruned **0 px** in all six quick bakes run today, at
+~2.75s of a ~10s bake. a106 put its best case at <=0.30 points elsewhere.
+Removing it takes quick to roughly 7s; it needs its own masks re-pin because
+the current bands were set with it on.
+
+### THE STANDING RECOMMENDATION
+
+Stop paying for v1. Build the user's three steps — completed plug depth
+(4.2s), pull-push colour over it, FG torn at genuine cliffs — as ONE plate,
+with no backstop sweep, no viewpoint scan and no MPI binning. That should land
+near 8s, cheaper than both current fast modes. The open architectural question,
+which is the user's to answer: whether that replaces v2 or sits beside it,
+given v2 currently produces the best image in the app and its only real fault
+is the ghosting.
