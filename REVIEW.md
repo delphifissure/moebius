@@ -6084,3 +6084,91 @@ test.
 
 SUITE: masks ALL PASS (8) on the a106 build with warrior re-pinned to
 8.0..14.0.
+
+## Addendum 113 (2026-07-25): the 120-degree cone, and the stale server that faked its first measurement
+
+### THE INSTRUMENT FAILED FIRST, AGAIN
+
+The first masks run at the new cone reported SD 13.0 / ground 94.7 for ALL
+FOUR assets. That is the troll's number, four times.
+
+Cause: port 8099 is not owned by a run. A scratch_server left behind by an
+earlier probe — in a DIFFERENT WORKTREE — still held the port, this tree's
+spawn died of EADDRINUSE, and the whole run was served arc73's assets and
+arc73's moebius.js. Verified directly: with star copied into harness/
+(4,352,553 bytes on disk), the server returned 1,173,305 bytes — arc73's
+troll.
+
+So the run measured the previous build, on the wrong asset, four times, and
+printed a clean-looking table. Nothing in the output said so. This is the
+FOURTH instrument failure this session, after the tear log reporting the
+_noExactCone fallback, the a105 pose line reporting the rim radius in the
+branch that is not on the rim, and the debug grid showing content the DOM
+fade covers — and it is the only one that had no guard at all.
+
+a110: regress.js now fetches /moebius.js, compares its build stamp against
+this tree's own first line, and aborts with instructions when they differ.
+It prints "served build = ... (matches this tree)" when they agree, so the
+check is visible rather than silent.
+
+### AND MY OWN PROBE FAILED TWICE BEFORE THAT
+
+The pose sweep (harness/posesweep.js) reported "no difference at any pose"
+twice, for opposite reasons. render() recomputes camera.position.x/y from
+(faceTrack + gyro + manual) inside `if (!isSweeping)`:
+  * v1 set camera.position without isSweeping -> render overwrote it to centre
+  * v2 set isSweeping and drove manualCamD*   -> that flag ignores them
+Both produce an identical number at every pose, which reads exactly like a
+null result. Both were mine. The working form is BOTH: isSweeping = true and
+camera.position.set().
+
+### POSE SWEEP: THE TEAR'S COST IN BLACK, IN RANGE
+
+Once it worked — troll, extra black vs the rest pose, % of frame, at poses
+strictly INSIDE the cone:
+
+      ring      a102 exact tear    legacy cliff tear
+      15 deg         0.7                 0.5
+      30 deg         1.4                 0.8
+      40 deg         1.7                 0.7
+
+So a102's much heavier tearing costs about one point of frame area in extra
+black at 40 degrees on the shipped default asset. Real, and worth watching,
+but not the "huge sections black" reported from the review grids — and the
+review grids were at 48.5 to 59.5 degrees, outside the cone, where the DOM
+fade is showing the viewer solid black anyway.
+
+### THE 120-DEGREE CONE (a109)
+
+User decision, with the reason: ~120 degrees is becoming the horizontal FOV
+of front-facing cameras, so that is the range over which the head is
+trackable and the portal has to hold up. bgViewFadeStartDeg/EndDeg 35/45 ->
+50/60, keeping the 10-degree fade band.
+
+PREDICTED COST, computed before the change: ex = D*tan(half) goes 1.000*D ->
+1.732*D, so reveal width, mask area and plate reach all scale 1.73x, and the
+fold limit tightens by the same factor — from 0.44 of an 8-bit level at 1920
+to 0.25.
+
+MEASURED, with the identity guard confirming the build:
+
+      asset      90 deg   120 deg
+      star        12.5     13.0
+      warrior     11.7     11.7
+      photo       27.5     29.3
+      troll       13.0     13.0
+      ALL PASS (8), ground unchanged on every asset
+
+The cone doubled in solid angle and the mask moved 0 to 1.8 points. The
+reach scales 1.73x; the MASK does not, because the mask is bounded by the
+claim physics — cone envelope, prominence bound, hop budget — and a106
+already showed the all-viewpoint scan prunes almost nothing on top of those
+bounds. The analytic bound chain sizes the mask, and it absorbs the wider
+cone.
+
+Torn fraction does grow, measured off the depth maps at the new cone:
+      troll  33.63% -> 37.60%
+      star   13.28% -> 14.35%
+which is the 8-bit quantisation floor asserting itself again: at 120 degrees
+one 8-bit level is 3.7-6.1x the fold limit, against 2.2-3.5x at 90. 16-bit
+depth ingest is now load-bearing, not optional.
