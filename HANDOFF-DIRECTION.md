@@ -86,6 +86,19 @@ limit from 2.2–3.5× to 3.7–6.1× of an 8-bit level (`:6173`).
 
 ## 2. The decision that must be made before more work
 
+> **UPDATE — this has now been dug into. See `CONE-DECISION.md` for the full
+> analysis and the recommendation.** Headline: the decision is much smaller than
+> it looks, because `bgViewFadeEndDeg` is a *budget* parameter and does not
+> appear in the per-frame shift — **narrowing the cone changes no pixel at any
+> pose a viewer can reach.** a109's premise (front cameras reaching 120° FOV) is
+> contradicted by the app's own A33 device LUT (mac 54×32, iphone 65×50,
+> ipad 105×80), and the last envelope measured hole-free is 45° (A30/A32).
+> **Immediate zero-risk action: revert `bgViewFadeStartDeg/EndDeg` to 35/45
+> before taking any other baseline measurement.**
+
+The framing below is retained because the product split it describes is still
+the right one.
+
 **This is the user's call, not yours and not mine.** Do not start §4 until it is
 answered, and do not answer it by inference from the code.
 
@@ -286,14 +299,20 @@ open a new arc for the cinematic path if the user wants one.
 
 ## 7. The shortest version
 
-1. Ask the user the §2 question. One sentence back unblocks everything.
+1. Revert the cone to 35/45 (`CONE-DECISION.md` §6). Zero risk, 1.73× off `k`,
+   and it is the last envelope measured hole-free. Do this before taking any
+   baseline.
 2. Print `k`.
-3. Delete v1, the backstop sweep, and the viewpoint scan; measure the delta.
-4. Add the ordering clamp.
-5. Sweep the cone; declare it; fade at it.
-6. Second-order depth fill; ownership before filling.
-7. Then layering and detail.
-8. Gates 1–5, then stop.
+3. Build the simulated-viewer preview mode (`CONE-DECISION.md` §8) and re-triage
+   the open defect list through it — a chunk of the current list is raw
+   pre-distortion being read as breakage.
+4. Delete v1, the backstop sweep, and the viewpoint scan; measure the delta.
+5. Add the ordering clamp.
+6. Log real head poses; set the cone per-device from the FOV LUT, budgeted at
+   fade-start, per axis.
+7. Second-order depth fill; ownership before filling.
+8. Then layering and detail.
+9. Gates 1–5, then stop.
 
 Everything currently open that is not on that list is downstream of `k` and will
 either disappear or become tractable once it is set.
