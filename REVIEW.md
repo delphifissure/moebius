@@ -6047,3 +6047,40 @@ shift span, and the mean-depth equivalent in 8-bit levels. A stale
 instrument is not cosmetic here: a comment-sourced k survived unchallenged
 from before this session and was 1.93x wrong, and a six-day-old suite log
 was read as current earlier in this arc.
+
+## Addendum 112 (2026-07-25): a105 measured — 2.8x more protrusions, at no cost
+
+Addendum 111 recorded a105 as UNVERIFIED and withdrew its artifact
+hypothesis, because the probe had used the quick bake and the sweep it
+fixes is gated on window._bsRefs, which only the FULL bake populates. Run
+on the right path (v1 bake, troll, one page per variant, _scanLegacyPoses
+toggled between them):
+
+      derived 4 on the axes   12605 plate texels flattened   38274 ms
+      legacy 4 diagonals       4500 plate texels flattened   43388 ms
+
+2.8x as many. 8105 additional texels where the backstop pokes through the
+foreground at head poses the user can actually reach — and found for no
+extra cost, in fact slightly less time.
+
+That is exactly the defect the pose analysis predicted before the run: the
+legacy set sampled 67.4% and 85.4% of the rim, left two 135.4-degree blind
+arcs centred on pure-up and pure-down, and reached only 30.0% of the rim
+vertically. Sampling the axes at the rim finds the protrusions those arcs
+were hiding.
+
+SCOPE, STATED PRECISELY. This is the v1/v2 full-bake path only. The quick
+bake never runs this sweep, so the withdrawal in Addendum 111 stands: a105
+does not explain look-up/look-down artifacts reported in the quick path. It
+does mean the full-bake paths were shipping roughly two thirds of their
+backstop protrusions unrepaired.
+
+INSTRUMENT FIX. The [A105] line printed the derived rim radius even in the
+legacy branch — the branch that is not on the rim. It now reports what
+actually ran, including the legacy set's radius as a percentage of the rim.
+Second stale instrument corrected today; the first was the tear threshold
+line, which was reporting the _noExactCone fallback rather than the live
+test.
+
+SUITE: masks ALL PASS (8) on the a106 build with warrior re-pinned to
+8.0..14.0.
