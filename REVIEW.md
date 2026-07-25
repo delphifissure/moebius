@@ -6239,3 +6239,89 @@ and no amount of viewing-range analysis was ever going to explain it.
 
 CAVEAT, STATED: 0.00% is a black-pixel count. It proves the cards now PAINT;
 it does not prove they paint the right colour. That needs eyes on a grid.
+
+## Addendum 115 (2026-07-25): the scene extension is unreachable in the shipped bake mode
+
+### THE MARGIN LAW WAS A UI SLIDER (a113)
+
+The BG layer is grown past the image rectangle so that, as the head sweeps,
+the off-axis frustum finds background out to the terrarium frame instead of
+clear-colour void. The margin was:
+
+    hAngle = autoSweepAngleHorizSlider.value / 400.0
+    vAngle = autoSweepAngleVertSlider.value  / 400.0
+    parX   = sOuter / (Ez + sOuter)
+    mWx    = (terrariumWidth  - origW)/2 + hAngle * parX
+    mWy    = (terrariumHeight - origH)/2 + vAngle * parX
+
+Two defects, both of the kind this arc has been removing:
+
+1. The parallax term is an **autosweep UI slider divided by 400**. That
+   slider is the demo turntable's amplitude. It has nothing to do with the
+   supported viewing cone, it does not move when `bgViewFadeEndDeg` moves,
+   and it silently retunes the geometry if a user touches the sweep control.
+   After a109 widened the cone from 90 to 120 degrees the margin did not
+   change at all.
+2. `parX = sOuter/(Ez+sOuter)` is a private simplification of the parallax
+   law built from `outerVolumeDepth` alone — copy number four, after the
+   three a104 retired. The exact quantity is `|shift(d)|` from the a102
+   envelope, which is what every other consumer now uses.
+
+a113 replaces the parallax term with `max(|m0|, |m1|)` from
+`bgShiftLUTFor(pw, ph)` — the largest displacement either end of the depth
+range takes at the fade rim, in source px. The **near** end is the right
+bound here rather than the far end, because the margin skirt is seeded at
+FRONT-surface depth (a prior fix: seeding it from the plate put the
+occluded-world wash at far depth in the margin, where it stayed put under
+parallax and rendered as the striped band along the frame edge at look-up).
+A skirt at front depth slides by `shift(near)`, so that is its reach.
+
+The pillarbox term stays per-axis. That one genuinely is asymmetric — it is
+the letterbox gap — and it is why this bug hid for so long. A portrait layer
+is fitted to HEIGHT, so `terrariumHeight - origH` is exactly zero and the
+vertical margin was the parallax term ALONE, while the horizontal margin
+collected the whole pillarbox on top of it. The horizontal axis was passing
+on an accident of framing, not on a correct law.
+
+### AND THE WHOLE BLOCK IS DEAD IN THE SHIPPED DEFAULT (a114)
+
+Then the measurement refused to move, and the reason was worse than the bug.
+
+`harness/platecover.js` drove the probe with `bgQuickBake = true`. The
+quick branch **returns at L11719**. The scene-extension block is at L14099.
+So the probe could not have observed a113 under any circumstances, and its
+before/after numbers were identical for a reason that had nothing to do with
+the edit. That is the same class of error as the stale-server run in
+Addendum 113: an instrument that cannot see the thing it is pointed at,
+reporting a confident null.
+
+Checking the other paths made it structural rather than incidental:
+
+      L11719   quick bake              return true;   <- before the extension
+      L12454   v2 / bgMPIFullPlanes    return true;   <- before the extension
+      L14099   scene extension                        <- v1 + directional only
+
+and the shipped defaults are
+
+      let bgMPIMode        = true;
+      let bgMPIFullPlanes  = true;      // -> v2 is the default bake
+      let bgQuickBake      = false;
+      let bgPlugMode       = 'directional';
+
+So **the scene extension only ever runs in v1**, and v1 is not the default.
+Every bake a user performs through the shipped UI produces a plate that stops
+exactly at the image rectangle. Off axis, the frustum reaches past that
+rectangle and finds nothing — which is precisely the "empty spaces where
+there should be disocclusion plugs" reported off-axis, and precisely why the
+defect is worst on the axis with no pillarbox to hide behind.
+
+This also re-frames the quick-path number from Addendum 114's probe. That
+9.56% / 0.41% vertical-vs-horizontal split at 10 degrees was measured with
+NO scene extension present in the scene at all. It is not evidence about the
+margin law; it is evidence about the margin's ABSENCE.
+
+CAVEAT, STATED: a113 corrects the law. It does not by itself put the
+extension into the path the user actually bakes with. Porting it to v2 and
+quick is a separate change with its own cost — the extended plate on the
+troll goes from 0.87 Mtexel to several times that — and it has not been
+measured yet.
