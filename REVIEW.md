@@ -5482,3 +5482,86 @@ moved as the resolution-scaling theory predicts — troll 2.26x too big
 shrank, star correct held, warrior and photo too small grew — so the
 old troll band was measuring the bug. Re-pinned 19..29 -> 9..18 with
 that evidence in the file, and re-running.
+
+## Addendum 109 (2026-07-25): a101 landed — the cone slope now follows the measured k field
+
+Addendum 108 measured k and deliberately stopped short of changing it.
+This is that change, measured. Commit `d83f650` on `arc-fix`, stamped
+v3.13.20-a101. NOT merged.
+
+WHAT LANDED. `bgConeSlopeAtDepth(pw, ph, d, tearStep)` returns 1/k(d),
+with k(d) taken as the exact derivative of the file's own vertex
+displacement law rather than as a fitted or quoted number:
+
+    zOff(d)  = smoothstep halves, -outerVolumeDepth .. 0 .. +innerVolumeDepth
+    shift(z) = -ex*z/(D-z),   ex = D*tan(bgViewFadeEndDeg)
+    k(d)     = [ex*D/(D-z)^2] * g(d) * (pw/layerWidth),  g = dzOff/dd
+
+Both consumers use it, because they are the same physical quantity: the
+cone fill rises at the slope permitted at its anchor's depth, and the
+per-cell tear fires at sqrt(2) x the slope permitted at the cell's mean
+depth. `window._noPerPixelCone` restores the scalar.
+
+CROSS-CHECK AGAINST THE LIVE SCENE. The closed form was checked against
+Addendum 108's measurement, using that measurement's own central-
+difference sampling (source px per unit depth):
+
+      depth     measured    closed form
+      0.1          363          387
+      0.5           79           84      <- portal plane
+      0.7         1497         1597      <- near-half peak
+      mean         763          815
+
+Within 7% at every sample; the residual is the closed form's thin-lens
+shift against the measurement's full projection through the real
+camera. So this is the renderer's own geometry, not a model fitted to
+it.
+
+SLOPE PROFILE (pw = 1920, against the old scalar 0.0025):
+
+      d=0.05   0.00379    1.5x looser
+      d=0.20   0.00134    1.9x tighter
+      d=0.35   0.00141    1.8x tighter
+      d=0.50   clamped    portal plane: no motion, so no fold
+      d=0.65   0.00062    4.0x tighter
+      d=0.80   0.00045    5.6x tighter
+      d=0.95   0.00102    2.4x tighter
+
+SUITE: 12 pass / 1 fail. Masks, against the a88 measurements:
+
+      star     13.6 -> 12.3
+      warrior   9.3 ->  8.6
+      photo    27.5 -> 24.9
+      troll    13.0 -> 13.0
+
+Every asset's mask shrank or held — the expected direction for a
+tighter cone (claims meet the local surface sooner, so less area is
+left for SD). No band was widened to accommodate the change.
+
+THE ONE FAIL: `dolly q!=P lock crest px` = 3.0 against a 0..2 band (the
+a67 subject-lock invariant: the near-dune crest must hold its screen
+position when the dolly is pinned at two different times with lock on).
+The companion free-running number moved too, 3.5 at its original commit
+to 17.0 now. a101 does not touch camera or lock math, so if it is the
+cause it is via the rendered content at the crest — the near dune sits
+at high d, exactly where a101 tightened the permitted slope 4-5.6x, so
+the plate behind the crest now sits farther back and a torn cell can
+expose it. That is a hypothesis, not a finding; harness/a109_dolly.js
+runs the same measurement twice in one page with `_noPerPixelCone`
+toggled between bakes to settle it.
+
+WHAT a101 STILL GETS WRONG, BY CONSTRUCTION. It evaluates a SLOPE at
+one depth and extrapolates it LINEARLY across the fill's whole reach.
+With k varying 19x that extrapolation is badly wrong at the distances
+the fill actually covers. Computed at pw=1920, linearised vs exact
+final depth:
+
+      anchor 0.05, reach 100 px : 0.514 vs 0.253
+      anchor 0.35, reach 400 px : 1.000 vs 0.796
+      anchor 0.50, reach  25 px : 1.000 vs 0.569
+
+The linearised cone drives the fill into the NEAR clamp where the true
+envelope is still mid-depth — a wall of texture where there should be a
+gentle rise, which is the artifact class this arc has been chasing. The
+`tearStep` ceiling a101 needs at the portal plane is the visible edge of
+the same defect.
