@@ -6325,3 +6325,81 @@ extension into the path the user actually bakes with. Porting it to v2 and
 quick is a separate change with its own cost — the extended plate on the
 troll goes from 0.87 Mtexel to several times that — and it has not been
 measured yet.
+
+### AND a112 WAS DESTROYING EVERY BAKE IT DID NOT START ITSELF (a115)
+
+The first two attempts to measure a113 both returned confident nulls, and
+neither was about a113.
+
+a112's watcher tears the baked state down whenever the layer's depth-texture
+uuid differs from `window._bgLastBuiltDepthKey`. That key was claimed ONLY by
+`buildBackgroundLayerWithOverlay` — the UI button's wrapper. Every other entry
+into the bake (a harness probe, the SD-import auto-build, a preset) therefore
+ran to completion, left the key null, and had the entire result destroyed by
+the watcher up to 800ms later: `bgLayerMesh`, `bgCardMesh`, the restored FG
+index, `bgBuildStamp`.
+
+MEASURED: a v1 bake on the troll ran all 92.7s and printed every stage —
+including `scene extension: +851x1023px margin -> 2553x3069 (17585ms)` and its
+final `[PERF]` line — then reported `bgLayerMesh === null` and
+`bgBuildStamp === null` to a probe that looked straight afterwards, with
+`[BG-RESET] baked state cleared (new image loaded)` in the log.
+
+The first fix was also wrong, and measurement caught it: claiming the key at
+bake ENTRY still reset, because the bake REPLACES `L.textures.depth` partway
+through (the live-bake stage and the a99 float ingest both install a new
+texture). A uuid captured on the way in no longer exists on the way out. The
+claim has to happen on COMPLETION. The body is now
+`bgBuildBackgroundLayerCore` and `buildBackgroundLayer` is a `try/finally`
+wrapper, which is the one point covering all three modes' return paths.
+
+TWO EARLIER READINGS ARE VOID because they were taken through the emptied
+scene, and both are retracted here rather than left standing:
+
+  * the first a113 A/B returned arms identical to two decimals. Not because
+    the margin law is inert — because BOTH arms had their plate deleted and
+    were measuring the bare FG mesh.
+  * "the extension is built but never reaches the screen", which I stated
+    from a `plateOnly% = 0` and a 226px footprint. Both were measured after
+    the teardown.
+
+With a115 in place the plate is present, visible, in-scene, 0.2246 x 0.2700
+world against a terrarium of 0.16 x 0.09, textures 2553x3069, and it covers
+the frame on its own.
+
+The quick-path numbers in Addendum 114 survive, and now the reason is known:
+`harness/platecover.js` sets `isSweeping = true` in the same synchronous block
+as the bake, and the watcher returns early while sweeping. That was an
+accident of timing, not a guarantee — which is exactly why the v1 probes,
+which waited for the bake before sweeping, were destroyed.
+
+### THE MARGIN LAW, MEASURED
+
+A/B on a full v1 bake with the plate alive, `window._legacyExtMargin`,
+troll, 120-degree cone, inside the layer footprint
+(`harness/platecover2.js`):
+
+      deg dir   black% a113   black% legacy   plateOnly a113   legacy
+       10  U        0.01            0.52             100      99.55
+       20  U        0.00            1.55             100      98.54
+       30  U        0.01            3.79             100      96.30
+       40  U        0.00            6.54             100      93.56
+       50  U        0.00            9.72             100      90.11
+
+Horizontal and look-down were 0.00-0.01% in BOTH arms at every pose. Only the
+axis with no pillarbox to hide behind was ever exposed, which is the framing
+accident named above, now with numbers on it.
+
+`regress.js masks`: ALL PASS (8), served build `v3.13.25-a115` matching the
+tree under the a110 identity guard.
+
+WHAT THIS COSTS, STATED PLAINLY. The margin goes 691x60 -> 851x1023 px. The
+plate goes 0.87 -> 7.8 Mtexel, a 9x increase, and the extension stage costs
+17.6s of a 92.7s bake. Both axes hit the `Math.min(mx, pw)` clamp, so the
+envelope's actual ask — 984 px per axis — is truncated by SOURCE RESOLUTION
+rather than by reveal geometry, silently. That clamp is a bounded-coverage
+cap with no log line, which is the failure mode this arc keeps removing; it
+is recorded here and not resolved.
+
+STILL OPEN: the picket-fence comb along the bottom margin is present in BOTH
+arms of the shots and is untouched by this fix.
