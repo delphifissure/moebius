@@ -5886,3 +5886,164 @@ standalone probe hung the same way before the full suite did. The probe now
 drives render() directly instead of through rAF (harness/a109_dolly.js), which
 removes the dependency. Under a101 this same check read 3.0 against a 0..2
 band, so it is still an open failure carried forward, not a pass.
+
+## Addendum 111 (2026-07-25): a103b/a104/a105/a106 measured — one parallax law, and the mask it recovers
+
+Commits `46f8eef`, `41c0f63`, `f82028e`, `fd52788` on `arc-fix`, stamped
+v3.13.22-a106. NOT merged.
+
+WHAT LANDED. Four consumers of the displacement law were still carrying
+their own version of it; they now share one.
+
+  a103b  D is the camera-to-PORTAL distance. a103 used camera.position.z
+         alone, which is the distance only while portalPlaneWorldZ is 0 —
+         and that is its own slider.
+  a104   Three private copies retired: bgDirectionalPlug's inlined shift
+         LUT (0.02 / 0.04 / 0.5 / 0.20 / 0.16 hardcoded), the v2 anamorphic
+         budget's sConeV = 0.0015*1920/pw, and the opt-in ink-seat's third
+         slope. Hatches _legacyPlugLUT, _legacyV2Budget.
+  a105   The backstop sweep's poses are derived from the supported disc
+         instead of hardcoded. Hatches _scanPoses, _scanLegacyPoses.
+  a106   The SD scan's warp is the exact envelope, not linear-in-depth.
+         Hatch _legacyScanWarp.
+
+### a105 IS NOW FOUR POSES ON THE AXES, NOT EIGHT ON THE RIM
+
+The first version used eight. That was wrong on cost: this sweep is the
+GPU bottleneck of the bake — two full-resolution renders plus a readback
+of a multi-million-triangle mesh, per pose — so eight doubles the slowest
+stage. Four poses ON THE AXES costs exactly what the four hardcoded
+diagonals cost and covers strictly more:
+
+      angular gaps  44.6/135.4/44.6/135.4 deg  ->  90/90/90/90
+      max |x|       80.0% of the rim           ->  100%
+      max |y|       30.0% of the rim           ->  100%
+
+The diagonals are the cheapest thing to give up: a reveal opens widest
+when the head moves perpendicular to the edge casting it, and image edges
+are dominated by horizontal and vertical. window._scanPoses = 8 restores
+them.
+
+### THE LINTER IS NOW PRECISE
+
+After a104 the law-copy pass still flagged the plug LUT and the pose
+array — both of which are the HATCHED LEGACY BRANCHES kept for A/B, not
+live copies. It now skips lines within three of a legacy marker, which
+leaves exactly one hit on the whole file, and that one is a true false
+positive (a glow threshold that happens to use 0.02 and 45).
+
+### MASKS
+
+Masks-only run on the a106 build (the full suite's render and dolly
+sections are unreliable in this environment — see below):
+
+      asset      a102     a106
+      star       12.6     12.5
+      warrior     9.6     11.7    FAIL, band 6.5..11.5
+      photo      26.9     27.5
+      troll      13.0     13.0
+
+### a106 ISOLATED, AND THE CEILING SETTLES WHAT IT MEANS
+
+The warrior mask moved 9.6 -> 11.7 and out of its band. `_noExactCone`
+cannot attribute that, because it reverts a102's fill and tear as well as
+a106's scan warp, so a106 got its own hatch (`_legacyScanWarp`) and its
+own probe: one page, one asset, three bakes with the hatch toggled
+(harness/a106_ab.js). The third bake turns the scan OFF entirely, which is
+the UN-PRUNED claim mask — the ceiling on what any scan can legitimately
+keep.
+
+      warrior   exact warp          SD 11.67%   ground 83.70%
+                legacy linear warp  SD  9.56%   ground 83.70%
+                scan OFF (ceiling)  SD 11.69%   ground 83.70%
+
+      troll     exact warp          SD 13.04%   ground 94.67%
+                legacy linear warp  SD 13.04%   ground 94.67%
+                scan OFF (ceiling)  SD 13.04%   ground 94.67%
+
+9.56 reproduces the pre-a106 build exactly, ground is identical in all
+three, and the numbers repeated on a second run — so the whole move is the
+warp, and a104/a105 contribute nothing to it.
+
+The ceiling is the interesting number. WITH THE CORRECT WARP THE SCAN
+PRUNES 0.02 POINTS. The 2.13 points the legacy warp removed were reveals
+that genuinely open: texels judged never-exposed by a warp that tested near
+content at under a third of its true displacement, and therefore never
+inpainted.
+
+Warrior's band is re-pinned 6.5..11.5 -> 8.0..14.0 with that evidence in
+regress.js, to the corrected behaviour rather than widened to accommodate
+it — the a88 precedent.
+
+### WHICH FALSIFIES SOMETHING I WROTE IN ADDENDUM 80
+
+a80 introduced the scan as "the SD mask is the union of reveals actually
+visible from the supported head range", and its measured value at the time
+was the claim-mask texels it pruned. Those prunes are now shown to have
+been an artifact of the under-warp. With the warp correct, the analytic
+claim set — cone envelope, prominence bound, hop budget — and the exact
+all-viewpoint visibility set AGREE TO WITHIN 0.02 POINTS on warrior and
+EXACTLY on troll.
+
+Two readings, and they are not in tension:
+  * it validates the analytic bound chain far better than anything else in
+    this arc has. The cheap bound and the expensive ground truth converge.
+  * it means the scan, which costs 32 full-frame warps of the depth field
+    per bake, currently changes almost nothing. Whether it should stay on
+    by default is now an evidence question, not a design one, and it needs
+    photo and star before anyone answers it.
+
+### ALL FOUR ASSETS: THE SCAN NOW PRUNES ESSENTIALLY NOTHING
+
+      asset          exact   legacy   ceiling   exact prunes   legacy prunes
+      warrior 3000   11.67    9.56     11.69       0.02            2.13
+      photo   2047   27.46   26.88     27.76       0.30            0.88
+      star    1920   12.55   12.56     12.56       0.01            0.00
+      troll    851   13.04   13.04     13.04       0.00            0.00
+
+With the exact warp the scan removes at most 0.30 points (photo, ~1.1% of
+that mask) and nothing at all on two of four assets. The legacy warp's
+prunes — 2.13 on warrior, 0.88 on photo — are exactly the reveals the
+corrected warp shows DO open.
+
+COST, measured from the app's own timing line: 4.6-4.7 s on the troll
+(851x1023, 32 poses), which scales with area, so roughly 13 s at star's
+resolution and 47 s at warrior's. So the scan currently costs seconds to
+tens of seconds per bake to change at most a third of a point.
+
+That is a decision for the user, not for me, and it is now an evidence
+question: keep it as a safety net against analytic bounds over-claiming on
+content unlike these four, or default it off and save the time. Whichever
+way it goes, the a80 claim that it materially tightens the mask no longer
+holds.
+
+### CORRECTION: a105 IS UNVERIFIED, AND ITS ARTIFACT HYPOTHESIS IS RETRACTED
+
+I attributed the look-up / look-down artifact family to a105's blind arcs
+as a "standing candidate". Measuring it showed I had not checked where the
+code runs. The RUNG-PLUG backstop sweep is gated on window._bsRefs, which
+only the FULL bake path populates (~L13508); the quick bake never runs it.
+So:
+  * the a105_ab probe measured nothing, because it used bgQuickBake — my
+    error, not the app's;
+  * a105 CANNOT explain look-up/look-down artifacts in the quick path,
+    which is where they were reported. That hypothesis is withdrawn.
+
+What stands is the static analysis, which is correct about the pose set:
+sampled radii 67.4% and 85.4% of the rim, directions 20.6/155.9/200.6/335.9
+degrees, two 135.4-degree blind arcs centred exactly on pure-up and
+pure-down, max |y| 30.0% of the rim, and camera z pinned to 0.2 regardless
+of dolly. The replacement is cost-neutral and covers strictly more, so it
+stays — but it is UNVERIFIED IN EFFECT and measuring it needs a v1 or v2
+bake.
+
+### AND THE TEAR CONSOLE LINE WAS REPORTING THE FALLBACK
+
+The bake logged "a91 per-cell tear threshold = 0.00798 (fold limit)" while
+the live test since a102 is |shift(dmax)-shift(dmin)| > the cell's extent
+in px — a different quantity entirely. The number shown was the scalar that
+only runs under _noExactCone. Fixed to report the live test, its total
+shift span, and the mean-depth equivalent in 8-bit levels. A stale
+instrument is not cosmetic here: a comment-sourced k survived unchallenged
+from before this session and was 1.93x wrong, and a six-day-old suite log
+was read as current earlier in this arc.
