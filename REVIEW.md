@@ -5565,3 +5565,324 @@ envelope is still mid-depth — a wall of texture where there should be a
 gentle rise, which is the artifact class this arc has been chasing. The
 `tearStep` ceiling a101 needs at the portal plane is the visible edge of
 the same defect.
+
+## Addendum 110 (2026-07-25): a102/a103 — the exact fold envelope, and what measuring it exposed
+
+a101 replaced the scalar cone slope with 1/k(d). This replaces the slope
+altogether. Commit `ee93149` on `arc-fix`, stamped v3.13.21-a103. NOT
+merged.
+
+### a102 — THE FOLD LAW NEVER NEEDED A SLOPE
+
+a101 evaluated the fold limit as a slope at one depth and extrapolated it
+LINEARLY over the fill's whole reach. k varies 19x across depth, so that
+extrapolation is wrong by a large margin at the distances the fill covers.
+Computed at pw=1920, linearised vs exact final depth:
+
+      anchor 0.05, reach 100 px : 0.514 vs 0.253
+      anchor 0.35, reach 400 px : 1.000 vs 0.796
+      anchor 0.50, reach  25 px : 1.000 vs 0.569
+
+The linearised cone drives the fill into the NEAR clamp where the true
+envelope is still mid-depth — a wall of texture where there should be a
+gentle rise. Worth noting what that implies: a101 was MANUFACTURING the
+protrusions that the backstop sweep exists to repair.
+
+The fold condition is a statement about the DISPLACEMENT, not its
+derivative. Two texels p apart fold when their screen shifts at the fade
+end differ by more than p. shift(d) is monotone, so it inverts, and both
+uses become exact and slope-free:
+
+      cone fill : v(p) = shiftInv( shift(anchor) + p )
+      cell tear : |shift(dmax) - shift(dmin)| > cell extent in texels
+
+No linearisation, and no ceiling clamp: near the portal plane the shift is
+flat, so shiftInv correctly permits a large depth rise over few px, which
+is right — content that does not move cannot fold.
+
+The tear also stops assuming the mesh runs at source resolution. The old
+threshold was a PER-TEXEL limit compared against a MESH CELL — identical
+only while MESH_DENSITY_FACTOR is 1. The cell's true extent is (sxT, syT)
+texels, so hypot(sxT, syT) is the comparand, and it reduces to a94's
+sqrt(2) when both are 1.
+
+VALIDATION. The closed form reproduces Addendum 108's live-scene
+measurement under that measurement's own sampling: 387 vs 363 at d=0.1,
+84 vs 79 at the portal plane, 1597 vs 1497 at the near peak, 815 vs 763
+mean — within 7% everywhere, the residual being thin-lens shift against
+full projection. LUT accuracy: 8192 samples each way, worst-case
+round-trip over 100k depths is 1.6e-3 in depth but 2.5e-2 SCREEN PX, 40x
+below one pixel, and concentrated exactly where the shift is flattest,
+i.e. where a depth error has least screen effect.
+
+### a103 — LIVE PORTAL GEOMETRY
+
+a90 and a101 hardcoded pn = 0.5 (u_portalPlaneDepthNorm) and D = 0.2
+(camera-to-portal distance). Both are live: pn is currentNormPortalPlane,
+moved by the depth-midpoint slider AND set automatically by depth peek,
+which makes it CONTENT-DEPENDENT; D is camera.position.z, moved by every
+dolly. Measured:
+
+      pn 0.50 -> 0.30 : shift at d=0.4 goes -24.7 px -> +26.9 px
+      dolly D 0.2 -> 0.4 : total span 818 px -> 762 px
+
+The pn error is a SIGN FLIP: the law put content on the wrong side of the
+portal plane. Both read live now.
+
+### THREE MORE PRIVATE COPIES OF THE PARALLAX LAW (a104)
+
+a90's commit message claimed "one cone-slope definition". That was wrong,
+and I did not check it — I asserted unification and moved on. Extending
+harness/constlint.py with a LAW-COPY detector (a line that spells out two
+or more physical globals as literals, without naming any of them, is
+re-deriving a law that already exists) found them mechanically:
+
+  L7400  bgDirectionalPlug's own inlined shift LUT:
+             lut[i] = DELTA*s/(0.20+s)*(W/0.16)
+         with 0.02 / 0.04 / 0.5 / 0.20 / 0.16 hardcoded. It therefore
+         ignores the inner/outer volume-depth sliders (this same file has
+         a preset that sets outerVolumeDepth = 0.01), the depth-midpoint
+         control, the fade angle, and the layer's own aspect fit — while
+         continuing to produce plausible numbers and pass every test.
+  L8639  sConeV = 0.0015 * 1920 / pw — a SECOND cone slope, 1.67x the one
+         a88/a90/a101 corrected, used as reach = depthStep / sConeV, i.e.
+         as 1/k, in the v2 anamorphic backdrop budget.
+  L8311  sCone = 0.0015 * 1920 / w — a third, in the opt-in ink-seat.
+
+The first two are exactly |shift(a) - shift(b)| in px, which a102's
+envelope computes exactly, so neither needs a slope at all. The third
+genuinely wants a slope and takes bgConeSlopePerPx.
+
+This is the same failure mode as the "127 depth-unit constants" error:
+a claim about the code made from memory instead of from a search. The
+detector now runs in the linter so the claim is checkable.
+
+### THE BACKSTOP SWEEP'S FOUR HARDCODED POSES (a105)
+
+Separate from the a80 SD scan: the RUNG-PLUG sweep renders the FG and the
+backstop from a few head poses and repairs every texel where the backstop
+pokes through. Its poses were
+
+    [[0.123,-0.055], [-0.123,0.055], [0.16,0.06], [-0.16,-0.06]]
+    camera.position.set(PX, PY, 0.2)
+
+The supported viewing region is the disc |(x,y)| <= dist*tan(fadeEnd) —
+viewFade uses off = hypot(x,y), ang = atan2(off,dist), so it is
+isotropic. Measured coverage of that disc at shipped settings:
+
+      rim radius             0.200  (45 deg at dist 0.2)
+      sampled radii          0.135 (34.0 deg) = 67.4% of the rim
+                             0.171 (40.5 deg) = 85.4%
+      sampled directions     20.6, 155.9, 200.6, 335.9 deg
+      angular gaps           44.6, 135.4, 44.6, 135.4 deg
+      max blind arc          135.4 deg
+      pure up / pure down    65.9 deg from the nearest sampled direction
+      max |x| sampled        80.0% of the rim
+      max |y| sampled        30.0% of the rim
+
+So a vertical head move is inspected at under a third of its true reach,
+and the two widest blind arcs are centred exactly on pure-up and
+pure-down. A reveal opens widest when the head moves PERPENDICULAR to the
+silhouette edge casting it, and image edges are dominated by horizontal
+and vertical, so the two head moves that matter most are the two the
+sweep never took. That is a standing candidate explanation for the
+look-up / look-down artifact class reported repeatedly through this arc —
+a candidate, not a finding, until it is measured.
+
+Also: z is pinned to 0.2, so the sweep's angular reach drifts with every
+dolly, and it stops tracking the fade angle the moment the per-device FOV
+LUT moves it — which is a shipped feature of this file.
+
+### THE SD SCAN STILL WARPS LINEARLY IN DEPTH (a106)
+
+The a80 all-viewpoint scan is the last consumer of the linear-k
+assumption:
+
+    invS = 1 / sCone
+    xx = x + ux * t * invS * (dQ[i] - dRef)
+
+k varies 19x across depth, so this warp is wrong in exactly the way the
+fill and the tear were — and here being wrong is SILENT: an over-short
+warp drops reveals that do open, and those texels are then never
+inpainted at all. The fix is the same envelope: displacement is
+shift(d) - shift(dRef), exactly.
+
+MEASURED ERROR (pw=1920, dRef at the median depth, t=1, i.e. the full sweep):
+
+      d       scan px     exact px    scan/exact
+      0.05     -180.0      -212.6       0.85x
+      0.20     -120.0      -146.1       0.82x
+      0.40      -40.0       -24.7       1.62x
+      0.70       80.0       181.8       0.44x
+      0.80      120.0       357.4       0.34x
+      0.95      180.0       579.1       0.31x
+
+Near content is warped as if it moved A THIRD as far as it really does. The
+reveals opened by NEAR occluders are the biggest reveals in any scene, and
+those are exactly the ones the scan under-warps and therefore prunes out of
+the SD mask. That is a direct, quantified mechanism for inpaint coverage
+going missing behind near figures — the artifact family reported repeatedly
+through this arc.
+
+Its range constant goes with it. The comment justifies t = 1 as "~2x the
+fade cone's supported offset — measured against the device sheets", a
+calibration made against the pre-a88 k. With shift() evaluated AT the
+fade end, t = 1 IS the fade-end offset by construction, and
+window._scanRange stops being a tuned number.
+
+### 8-BIT DEPTH IS BELOW THE FOLD LIMIT AT EVERY SHIPPING RESOLUTION
+
+Addendum 105 said a single 8-bit level exceeds the fold limit "above ~1250
+px". With k corrected (Addendum 108, a101, a102) that was optimistic: it is
+true everywhere this project ships. Computed from the exact envelope, the
+largest depth change one texel can carry without folding:
+
+      source     k (mean)   fold limit sqrt(2)/k   in 8-bit levels   in 16-bit
+      851 x1023     775          0.00182               0.47             120
+     1920 x1080     818          0.00173               0.44             113
+     2047 x1200     909          0.00156               0.40             102
+     3000 x1688    1279          0.00111               0.28              72
+
+One 8-bit level is 1/255 = 0.00392, i.e. 2.2x to 3.5x the fold limit. So an
+8-bit depth map cannot represent a fold-safe surface at these resolutions:
+the smallest change it can express already folds. 16-bit has 72-120 levels of
+headroom, which is why a99's float ingest stops being a nicety.
+
+MEASURED CONSEQUENCE (harness/tearcount.py, harness/tearcount2.py -- pure
+functions of the depth map and the displacement law, no GL, no bake). Fraction
+of mesh triangles whose screen-shift span exceeds sqrt(2) px:
+
+                       a88 scalar   a101 slope   a102 exact
+      troll    851        1.67%        33.87%       33.63%
+      star    1920       15.48%        13.09%       13.28%
+      photo   2047         --            --         18.61%
+      warrior 3000         --            --          3.90%
+
+a88's threshold was a fixed number of DEPTH units scaled by 1/pw, so the
+smallest asset got the loosest threshold -- the troll was being tested at
+2.0 levels while the star was tested at 0.9. a102 makes the test identical
+in physical terms (0.47 and 0.44 levels), which is why the troll jumps 20x
+and the star barely moves. The suite passes on all four assets either way,
+so the plate is absorbing it; but a third of the shipped default asset's
+mesh now tears, and that is plate exposure, not free.
+
+AND THE DEQUANTISER CAN MAKE IT WORSE. a86 reconstructs the ramp the
+quantiser destroyed. Measured effect on tearing:
+
+      troll    33.63%  ->  23.67%    better
+      photo    18.61%  ->  17.16%    slightly better
+      star     13.28%  ->  16.96%    WORSE
+      warrior   3.90%  ->   7.48%    WORSE, nearly doubled
+
+The mechanism is not subtle once measured: a flat terrace has zero shift
+difference and cannot fold; the reconstructed ramp has a real slope, and if
+the run is short that slope exceeds the fold limit. a86 trades banding for
+folding, and which one you get depends on the run-length distribution:
+
+      troll    75.6% flat, 22.1% exactly 1 level, 2.3% >= 2 levels
+      photo    86.2% flat,  8.8%                  5.0%
+      star     91.5% flat,  7.3%                  1.3%
+      warrior  96.9% flat,  1.9%                  1.2%
+
+Where 1-level steps dominate (troll, 22.1%) reconstruction wins; where the
+field is already mostly flat (warrior, 1.9%) the ramps it invents are the
+only thing folding, and tearing doubles. a86 ships ON by default and was
+landed when the fold limit was about 2x looser than it is now, so that
+default is no longer supported by evidence and needs its own A/B.
+
+So the dequantiser is not a cure for the quantum being above the fold limit,
+and it was never going to be -- only more bits, a lower source resolution, or
+a narrower cone changes that arithmetic.
+
+### AND BAND-LIMITING THE DEPTH DOES NOT RESCUE IT (negative result)
+
+The obvious response to "the input folds" is: tear only at genuine cliffs,
+then project the depth inside each piece onto the nearest field that cannot
+fold. Prototyped in harness/slopelimit.py (Lipschitz projection of the SHIFT
+field, damped, never crossing a cliff). It fails, and it fails for an
+arithmetic reason rather than an implementation one:
+
+      troll  33.6% torn -> 24.6%, and NOT CONVERGED: after 3000 damped
+      iterations the residual is 15.5 px against a 0.71 px bound, with the
+      depth already moved by rms 9.4 / max 63 8-bit levels.
+
+fgTearStep, the cliff scale, is 0.06 = 15 8-bit levels. The fold limit is
+0.0017 = 0.44 levels. They differ by 34x, so there is a wide band of steps —
+1 to 15 levels — too steep to display without folding and not steep enough to
+call a cliff. Flattening a 14-level step to the fold limit means spreading it
+over ~64 texels: that is not a filter, it is a redesign of the scene. Those
+steps are near-discontinuities, tearing them is correct, and the plate behind
+them is what has to be good. The prototype stays in the tree as the record of
+a plausible idea that measurement killed.
+
+### WHAT ACTUALLY TRADES AGAINST THE CONE
+
+The fold limit is proportional to 1/tan(halfAngle), so the only knobs are the
+cone width and the depth bit depth. Fold limit expressed in 8-bit levels
+(>= 1.00 means one level fits inside the limit, i.e. 8-bit depth is safe):
+
+      half-angle   total cone     851    1920    3000
+         10 deg       20 deg     2.64    2.50    1.60
+         15 deg       30 deg     1.74    1.64    1.05
+         20 deg       40 deg     1.28    1.21    0.77
+         25 deg       50 deg     1.00    0.95    0.60
+         30 deg       60 deg     0.81    0.76    0.49
+         35 deg       70 deg     0.66    0.63    0.40
+         45 deg       90 deg     0.47    0.44    0.28   <- shipped
+
+To make 8-bit depth fold-safe you have to come down to about a 50-degree
+total cone at 1920, and a 30-degree cone at 3000. That is not a tuning
+choice, it is a different product. The conclusion is forced: 8-BIT DEPTH AND
+A WIDE CONE ARE INCOMPATIBLE, and 16-bit ingest (a99) is the only route that
+keeps the 90-degree cone — let alone the 120 degrees the user asked about,
+which needs a further 1.73x.
+
+### AND THE CLIFF CRITERION HAS THE SAME DISEASE (a107, found, not yet fixed)
+
+fgTearStep = 0.06 DEPTH units is the "is this a cliff?" test. It gates ground
+classification, the SD scan, seed thresholds, the descent floor, ink adoption
+and ramp collapse — a large share of the bake's semantics. Measured as the
+reveal it actually opens, in source px:
+
+      res      d=0.20->0.26   d=0.47->0.53   d=0.70->0.76
+      851         36.3 px         7.1 px        97.4 px
+      1920        38.3            7.5          102.8
+      2047        48.3            9.4          129.6
+      3000       106.4           20.8          285.6
+
+So the same nominal "cliff" is a 7-px reveal near the portal plane and a 97-px
+reveal in the near half — a 14x swing WITHIN one image — and 2.9x across
+assets. It is exactly the disease a88 found in sCone, sitting in the constant
+that decides what the whole bake treats as an occlusion boundary.
+
+The fix is the same shape: test |shift(a) - shift(b)| > CLIFF_PX with the a102
+envelope. The value of CLIFF_PX must be PINNED BY MEASUREMENT against current
+behaviour, not asserted — the mid-size assets sit near 40 px at source scale
+today, which is the anchor, exactly as a88 re-pinned the troll with evidence
+rather than widening a band. It touches ~40 call sites, so it goes behind a
+hatch and gets its own suite re-pin. Not done here.
+
+### SUITE
+
+12 of 13 checks pass on a102/a103. Masks against a88 and a101:
+
+      asset      a88     a101    a102
+      star      13.6     12.3    12.6
+      warrior    9.3      8.6     9.6
+      photo     27.5     24.9    26.9
+      troll     13.0     13.0    13.0
+
+a102 sits between the two, which is where it belongs: the exact envelope
+reaches further than a101's over-tight linearisation and not as far as a88's
+over-loose scalar. Quick, v1 and v2 renders all pass.
+
+The 13th check, the a67 dolly subject-lock invariant, did not produce a number
+on this run. It HUNG, and the hang is environmental, not a result: the
+swiftshader GPU process pegged at 265% while the page's JS thread sat frozen at
+66 seconds of CPU for 15 minutes. The mechanism is requestAnimationFrame — the
+compositor stops producing frames after a long GL session, rAF never fires
+again, and the measurement's settle loop waits forever. Two runs of the
+standalone probe hung the same way before the full suite did. The probe now
+drives render() directly instead of through rAF (harness/a109_dolly.js), which
+removes the dependency. Under a101 this same check read 3.0 against a 0..2
+band, so it is still an open failure carried forward, not a pass.
