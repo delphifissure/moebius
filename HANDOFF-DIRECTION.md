@@ -86,15 +86,27 @@ limit from 2.2–3.5× to 3.7–6.1× of an 8-bit level (`:6173`).
 
 ## 2. The decision that must be made before more work
 
-> **UPDATE — this has now been dug into. See `CONE-DECISION.md` for the full
-> analysis and the recommendation.** Headline: the decision is much smaller than
-> it looks, because `bgViewFadeEndDeg` is a *budget* parameter and does not
-> appear in the per-frame shift — **narrowing the cone changes no pixel at any
-> pose a viewer can reach.** a109's premise (front cameras reaching 120° FOV) is
-> contradicted by the app's own A33 device LUT (mac 54×32, iphone 65×50,
-> ipad 105×80), and the last envelope measured hole-free is 45° (A30/A32).
+> **UPDATE — this has now been dug into. See `CONE-DECISION.md`, and read its
+> §9 first.** Headline: `bgViewFadeEndDeg` is a *budget* parameter and does not
+> appear in the per-frame shift, so narrowing it changes no pixel at any pose
+> **inside** the new cone. There is no depth-impression trade — that knob is
+> relief, not cone.
+>
+> **But the cone is not one number.** The webcam bounds the head at ±27° on a
+> Mac (A33's own LUT: mac 54×32, iphone 65×50, ipad 105×80 — none reach the
+> 120° a109 assumed), while **the gyro on phone/tablet reaches 45–60°+** and is
+> a legitimate reason to want more envelope. The resolution is to **split the
+> budget from the fade** and define a graceful-degradation band between them:
+> desktop budgets 17–27°, mobile budgets 35–45°, and past the budget the
+> uncovered fraction crossfades toward the backdrop instead of opening black
+> holes and combs. You do not need geometry exact at 60°; you need it to fail
+> gracefully at 60°. A32 already named the "gyro past face-cam FOV" regime and
+> asked for a revisit that a109 did not do.
+>
 > **Immediate zero-risk action: revert `bgViewFadeStartDeg/EndDeg` to 35/45
-> before taking any other baseline measurement.**
+> before taking any other baseline measurement** — last envelope measured
+> hole-free (A30/A32), and inside the mobile budget range, so it is not a
+> regression for the gyro gesture either.
 
 The framing below is retained because the product split it describes is still
 the right one.
@@ -308,8 +320,9 @@ open a new arc for the cinematic path if the user wants one.
    pre-distortion being read as breakage.
 4. Delete v1, the backstop sweep, and the viewpoint scan; measure the delta.
 5. Add the ordering clamp.
-6. Log real head poses; set the cone per-device from the FOV LUT, budgeted at
-   fade-start, per axis.
+6. Split `bgViewBudgetDeg` from the fade angles; add the degradation band. Log
+   real head poses **and gyro angles**; set desktop and mobile budgets from the
+   data, budgeted at fade-start, per axis on the webcam path.
 7. Second-order depth fill; ownership before filling.
 8. Then layering and detail.
 9. Gates 1–5, then stop.

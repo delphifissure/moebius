@@ -8,14 +8,26 @@ Everything below comes from `REVIEW.md` itself unless marked otherwise.
 
 ---
 
+> **CORRECTION, added after review — read §9 before acting on §6.** The first
+> draft of this document under-weighted the **gyro** pose source. On a phone or
+> tablet the gyro takes over where the front camera loses the face, and device
+> tilt genuinely reaches 45–60°+. a109's intent was therefore not baseless, and
+> the claim in item 1 below that narrowing is "free at any pose a viewer can
+> reach" is **only true up to the reachable limit of the pose source** — which is
+> ~27° on a Mac webcam but much larger on a handheld gyro. §9 restates the
+> analysis with the gyro path included and revises §6's recommendation. The
+> other four items below are unaffected.
+
 ## 0. Short answer
 
-1. **Narrowing the cone does not reduce the sense of depth, at all, at any pose
-   a viewer can actually reach.** `bgViewFadeEndDeg` is a *budget* parameter —
-   it sizes how much geometry and completion get built. It does not appear in
-   the per-frame shift. At any given head angle θ the rendered image is
-   byte-identical whether the cone is 45° or 60°. Narrowing changes only where
-   the fade fires and how much you pay. **There is no courage required here.**
+1. **Narrowing the cone does not reduce the sense of depth at any pose inside
+   the new cone.** `bgViewFadeEndDeg` is a *budget* parameter — it sizes how
+   much geometry and completion get built. It does not appear in the per-frame
+   shift. At any head angle θ the rendered image is byte-identical whether the
+   cone is 45° or 60°. Narrowing changes only where the fade fires and how much
+   you pay. *(Caveat per §9: on a device whose pose source can reach past the
+   new cone — i.e. gyro on mobile — narrowing IS visible, as an earlier fade.
+   It is free on desktop, not free on mobile.)*
 2. **a109's premise does not survive contact with a109's own sibling addendum.**
    The 120° cone was adopted because "~120 degrees is becoming the horizontal
    FOV of front-facing cameras." But A33's own per-device FOV table says
@@ -369,3 +381,167 @@ scrub**, because the physical keystone puts the stretched geometry back where it
 belongs. Some will get worse. Both outcomes are information, and re-triaging the
 open defect list through this mode before doing any more fixing is probably the
 single cheapest thing available right now.
+
+---
+
+## 9. Correction: the gyro path, and what it actually changes
+
+### 9.1 What the first draft got wrong
+
+§1–§6 sized the cone from the **front-camera FOV** and concluded the 60° budget
+covers poses that cannot occur. That is true for the *webcam* pose source. It is
+not the whole picture, because on phone and tablet the **gyro** takes over
+exactly where the camera loses the face, and device tilt reaches well past any
+camera FOV.
+
+So a109's intent was not baseless, and this claim from §0 was overreaching:
+
+> *"Narrowing the cone does not reduce the sense of depth, at all, at any pose a
+> viewer can actually reach."*
+
+Correct statement: **narrowing is free up to the reachable limit of the pose
+source.** On a Mac webcam that limit is ±27°, so a 45° budget is already
+generous and 60° is pure waste — the original conclusion holds there unchanged.
+On a handheld gyro the limit is much larger, and narrowing the budget below it
+**is** visible: the effect fades out at angles the user can still reach, which
+is a real regression.
+
+### 9.2 The gyro geometry, and why it is a softer contract
+
+Hold a device at distance `D` and rotate it about its own centre by φ. The eye
+stays put in world space, the panel normal rotates by φ, so the eye is now at
+φ off-axis. **Device rotation maps roughly 1:1 to viewing angle**, and ±45–60°
+is comfortable; people learned this gesture from AR and parallax apps.
+
+But four things make the gyro contract weaker than the webcam one, and they
+matter for how much geometric exactness is worth buying:
+
+1. **Gyro measures orientation, not position.** The eye's location is *assumed*
+   (some nominal `D`, head stationary). The webcam *measures* the head.
+2. **Real tilts translate as well as rotate.** A wrist or elbow tilt swings the
+   device through an arc, so the true eye→panel vector differs from the pure
+   rotation the gyro reports. The error grows with φ.
+3. **The head moves too.** People counter-rotate slightly when tilting a device.
+4. **Drift and re-zeroing.** Gyro integration drifts and needs a decay toward a
+   nominal rest pose, so "head-on" itself wanders.
+
+Consequence: at large gyro angles you are producing **a plausible parallax
+effect, not a reconstruction of a specific eye's view**. That is fine — it is
+what makes the gesture feel good — but it means paying for pixel-exact geometry
+at 60° buys precision the pose estimate cannot use.
+
+This is also why the simulated-viewer acceptance test (§8) is a **webcam-path
+test**. Its premise is that physical foreshortening exactly cancels the baked
+pre-distortion, which requires the assumed eye to be the real eye. On the gyro
+path there is no ground-truth eye to be stationary against, so the pixel-
+stationary anchor criterion applies to the webcam path and to the harness, not
+to gyro playback.
+
+### 9.3 A32 named this exact regime, and asked for a different representation
+
+The important consequence is not "so keep the wide flat-plane budget." It is
+that Addendum 32 already anticipated this and asked for something a109 did not
+deliver:
+
+> *"The declared envelope (A29) is a 45-degree cone with fade from 35; within
+> it, flat planes with world-sized skirts are measurably hole-free. An
+> equirect/dome projection buys curvature only useful past ~60 degrees… **If the
+> envelope ever widens toward the 'gyro past face-cam FOV' regime, revisit.**"*
+
+The gyro path **is** the "gyro past face-cam FOV" regime, by name. a109 entered
+it and kept flat planes. So the correct reading of "the gyro extends the range"
+is:
+
+> The gyro justifies a wider **envelope**. It does not justify serving that
+> envelope with the **current representation**. Past ~60° A32 says flat planes
+> need curvature, and the plane-count arithmetic (§3) says 20 flat bins were
+> never enough at any usable cone regardless. The wide path is the one that
+> needs depth-displaced layers, not the narrow one.
+
+### 9.4 The move that actually resolves this: separate the budget from the fade, and degrade instead of cliff
+
+Right now **one parameter does two jobs**: `bgViewFadeEndDeg` sets both where the
+canvas dims and how much geometry gets built. That forces a false choice —
+either build for 60° (and pay the a117 bill everywhere) or fade at 27° (and kill
+the gesture on mobile).
+
+Split them:
+
+```
+bgViewBudgetDeg      // sizes ex, completion extent, plate margin, layer count
+bgViewFadeStartDeg   // where the overlay begins to dim
+bgViewFadeEndDeg     // black
+   with   budget ≤ fadeStart ≤ fadeEnd
+```
+
+Then define what happens in the band **between the budget and the fade**, which
+today is undefined and is why leaving the budget produces black holes and combs
+rather than a soft landing:
+
+| zone | contract |
+|---|---|
+| θ ≤ budget | full completion, pixel-honest, all gates apply |
+| budget < θ ≤ fadeStart | **graceful degradation**: as completion runs out, crossfade the uncovered fraction toward the layer's backdrop plane and let the wash widen. Never black, never comb |
+| fadeStart < θ ≤ fadeEnd | brightness fade, as today |
+| θ > fadeEnd | black |
+
+**You do not need the geometry to be exact at 60°. You need it to fail
+gracefully at 60°.** Today it fails by tearing 40% of the mesh and showing the
+debris; that is what "banded to oblivion" is. A degradation ladder gives the
+gyro its full reach at a fraction of the geometric cost, and it is a much
+cheaper thing to build than a 60°-exact plate.
+
+### 9.5 Per-device budgeting is free here
+
+The bake runs **in the browser, per session** (v2 at 11.7 s, quick at 10.3 s —
+A116). So the budget does not have to be a single global constant baked into a
+shipped asset: a desktop session can bake to the desktop budget and a phone
+session to the mobile one. Desktop never pays mobile's bill.
+
+If a server-side or cached bake is ever introduced, that changes — and at that
+point the max-budget bake becomes a real cost that should be measured
+separately, not absorbed silently.
+
+### 9.6 Revised recommendation
+
+Replaces §6. `k` figures are for a 1920-wide landscape asset, from
+A110's `k(45°) = 818`.
+
+| profile | pose sources | budget (fade-start) | fade | k @ 1920 | vs today |
+|---|---|---|---|---|---|
+| **desktop** | webcam only | **17–27°**, per axis | 27–35° | 250–417 | **3.4–5.7× cheaper** |
+| **mobile** | webcam + **gyro** | **35–45°**, symmetric | 50–65° | 573–818 | **1.7–2.5× cheaper** |
+| inspection (drag) | — | *not a budget source* | none — show the fade | — | — |
+| turntable demo | — | *not a budget source* — **clamp the slider to the budget** | — | — | — |
+| export / cinematic | — | any — generative path, own thresholds | — | — | — |
+
+Notes:
+
+- **Per axis on webcam, symmetric on gyro.** The webcam's vertical range is far
+  smaller than its horizontal (mac 32° vs 54°); tilt is roughly symmetric. So
+  axis asymmetry is a property of the *pose source*, not of the device.
+- **Budget at fade-start, not fade-end**, on both profiles. Unaffected by the
+  gyro correction and still the single largest free win — the fade band exists
+  so the rim does not have to be right.
+- **The turntable slider must not set the budget.** A115 found the margin being
+  sized from the demo sweep sliders; the dependency runs the wrong way. Clamp
+  the slider to the budget instead.
+- **Still revert to 35/45 first.** It remains the last envelope measured
+  hole-free on all assets (A30, A32), it is a strictly better baseline than 50/60
+  for every later measurement, and 45° sits inside the mobile budget range
+  above — so it is not a regression for the gyro gesture either. Do it before
+  taking any baseline, then split budget-from-fade and set the two profiles.
+
+### 9.7 What is now the open question
+
+Not "how wide should the cone be" — that is answered per profile above. The
+open question is narrower and more useful:
+
+> **What is the gyro path's actual reachable distribution, and what does the
+> degradation band need to look like for the gesture to still feel good at
+> 45–60°?**
+
+Both are measurable with instruments already proposed: extend §7's pose recorder
+to log gyro angles as well as webcam angles, and use the simulated-viewer mode
+(§8) — with the §9.2 caveat that on the gyro path it shows a plausible viewer,
+not a ground-truth one — to judge the degradation band by eye at 45°, 55°, 65°.
