@@ -6172,3 +6172,70 @@ Torn fraction does grow, measured off the depth maps at the new cone:
 which is the 8-bit quantisation floor asserting itself again: at 120 degrees
 one 8-bit level is 3.7-6.1x the fold limit, against 2.2-3.5x at 90. 16-bit
 depth ingest is now load-bearing, not optional.
+
+## Addendum 114 (2026-07-25): the cap cards never painted a pixel — rest-pose black 19.77% -> 0.00%
+
+The user reported the render looking broken "from almost any angle". Four of
+the five review grids were outside the supported cone, which I said, and
+which was true and beside the point: the next set were at ang = 3.0, 0.6 and
+1.5 degrees — at rest — and still wrong. At rest the reprojection is
+identity and the frame should be pixel-faithful to the source, so this was
+never about viewing range.
+
+MY METRIC HAD HIDDEN IT. The pose sweep measured black RELATIVE TO REST to
+cancel the letterbox, and so cancelled exactly the defect, reporting "~1%
+extra black". harness/restblack.js measures black at rest inside the layer's
+own footprint, which is the right question.
+
+      troll   a102 exact tear      19.77% of the frame BLACK
+              legacy cliff tear    19.23%
+              pre-tear disabled     0.00%
+
+A fifth of the image missing at every pose, and it is the FG pre-tear. Not
+this session's change: a102 accounts for half a point of it.
+
+THE CHAIN, each step measured (harness/cardprobe.js):
+
+  1. 692469 of 1737400 triangles dropped (39.9%).
+  2. a111: the cap-card PREDICATE was wrong. A card was issued only where a
+     texel had NO surviving incident triangle, but a texel is a vertex of up
+     to six: keep one and lose five and it counts as covered while five holes
+     remain. Coverage per VERTEX, hole per TRIANGLE. Fixed to "incident to
+     ANY dropped triangle": cards 279438 -> 411529.
+  3. AND THAT CHANGED NOTHING. Still 19.77%. The cards were in the scene,
+     visible, correctly transformed, 823058 triangles — and hiding them moved
+     the lit fraction by 0.0000%.
+  4. a111b: the card geometry lacked `normal` (the FG has position/normal/uv)
+     and its bounding sphere was null. Both genuinely wrong, both fixed,
+     neither changed the black. FALSIFIED.
+  5. a111c: the FG fragment ends `if (isGap && !u_isBackgroundLayer) discard;`
+     and the card material is a clone that never sets that uniform. Both
+     halves confirmed — and flipping it at runtime changed nothing to nine
+     significant figures. FALSIFIED.
+  6. THE BISECT settled it:
+         flat MeshBasicMaterial              27.33% of frame painted
+         FG VERTEX shader + trivial fragment 27.32%   (9 px apart in 81000)
+     so the vertex stage, reprojection included, places the cards perfectly.
+     The FG FRAGMENT stage was killing them.
+  7. Painting the alpha the FG fragment tests, over the card area: mean
+     71.5/255, and 70.4% of fragments below the 0.01 discard threshold. That
+     texture's alpha IS the FG mask, and a card exists only where a triangle
+     was dropped — at a cliff — which is exactly where the mask is zero. The
+     cards discarded themselves, by construction.
+  8. a111d: THE ONE-LINE FIX IS WRONG, and measuring it said so. Bypassing
+     the alpha discard took rest black 19.77% -> 28.81%, WORSE, because the
+     composited texture has its RGB zeroed too — the cards then paint BLACK
+     over plate that was visible. Left off behind a flag.
+  9. a111e: the cards sample layer.textures.color, the original never-masked
+     image, at the same texel-centre UVs.
+
+         troll  REST black  19.77% -> 0.00%   (also 0.00% with the legacy tear)
+         star   REST black            0.00%
+         masks  ALL PASS (8), unchanged
+
+This has been true since a53 shipped the cap cards. "No pixel lost" has
+never held. It is why the frame looked broken at every pose including rest,
+and no amount of viewing-range analysis was ever going to explain it.
+
+CAVEAT, STATED: 0.00% is a black-pixel count. It proves the cards now PAINT;
+it does not prove they paint the right colour. That needs eyes on a grid.
