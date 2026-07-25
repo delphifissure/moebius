@@ -6507,3 +6507,109 @@ near 8s, cheaper than both current fast modes. The open architectural question,
 which is the user's to answer: whether that replaces v2 or sits beside it,
 given v2 currently produces the best image in the app and its only real fault
 is the ghosting.
+
+## Addendum 117 (2026-07-25): building the preview — five fixes, and six instruments that lied
+
+The user's scope, verbatim: "the goal right now is to build a working, cheap
+quick bake (like near instant) so people can see a preview with correct depth
+inpainting before handing it to SD with all the bells and whistles... for color
+it's really not that bad aside from the shimmering to go away, and the
+disocclusion gaps to be highlightable for visualization, with the correct
+depth, not spilling over into a bunch of places where there are no
+disocclusions, and exportable for SD."
+
+### WHAT LANDED
+
+    a117  cliff-only FG tear      comb energy 7.91 -> 5.61 at 0.85x rim;
+                                  692469 -> 8025 dropped triangles
+    a120  gap mask from coverage  rest-pose claim 14.36% -> 0.57%,
+                                  and now grows 10.5x across the cone
+    a121  viewpoint scan off      pruned 0px on ALL FOUR suite assets;
+                                  quick bake 10.1s -> 6.2s
+    a122  SD preview views live   they rendered nothing at all before
+    a123  SD bundle exports cold  no longer demands a Debug Sheet visit
+    a124  shimmer measured        baking is 2.2-2.4x more stable off-axis
+
+Quick bake: 10.3s -> 6.2s, comb gone, mask honest. masks ALL PASS throughout.
+
+### THE ONE STRUCTURAL FACT THAT REORGANISED EVERYTHING
+
+**Holes are made by the cut, not by moving the camera.** Measured: with no
+bake, a pure coverage pass returns 0.00% gap at EVERY pose including the rim,
+because an intact connected mesh does not tear open under reprojection — it
+STRETCHES across the reveal.
+
+That single fact explains a large amount of accumulated machinery. In an
+untorn path there is no geometric disocclusion to find, so the pipeline had to
+GUESS one, and it guessed with an edge detector: render() writes the gap buffer
+under a pass labelled "Generate Gaps/Edges" with eight detector uniforms driven
+by UI checkboxes, `3x3 Sobel Depth` checked by default. Dumped as an image, the
+rest-pose "gaps" are concentric ripple ARCS across the whole frame — an edge
+response to smooth depth gradients, nothing silhouette-shaped. The reach
+dilation and the band cut are the same species of stand-in.
+
+So the preview cannot be "realtime with the shimmer frozen": without a tear
+there is nothing to mask, highlight, or export — only rubber. It has to be
+realtime PLUS a cliff tear, which is what the quick bake now is.
+
+### AND THE SHIMMER FIX IS THE BAKE, NOT A NEW MECHANISM
+
+The realtime fill rebuilds a full pull-push pyramid EVERY FRAME from the
+current warped frame. That cannot be frozen in screen space — the gaps move
+with the camera. The view-independent fill is what the bake computes once.
+
+    rim frac   realtime   quick-baked   ratio
+    0              1.36         1.099    1.24
+    0.30          2.169         0.931    2.33
+    0.52          1.873         0.852    2.20
+    0.85          1.803         0.752    2.40
+
+Baking removes ~57% of frame change off-axis. The SHAPES are the tell: realtime
+RISES from 1.36 at rest to 2.17 once reveals open; baked FALLS monotonically as
+more of the frame becomes stable plate.
+
+NOT CLAIMED: that shimmer is gone. Residual 0.75-0.93 mean luma levels,
+unseparated from honest sub-pixel parallax.
+
+### SIX INSTRUMENTS GAVE PLAUSIBLE, WRONG ANSWERS
+
+Recorded because each cost a measurement cycle and every one produced a
+believable number from a buffer that was not what it was assumed to be:
+
+  1. hide-the-FG-mesh gap classification — realtime has NO plate mesh, so
+     nothing ever classified as gap: 0.00% everywhere, structurally.
+  2. luma>128 on the 'gaps' view — catches bright CONTENT too; flattered by
+     the troll being dark. Produced the "4.11% at rest" figure, withdrawn.
+  3. diff('final','gaps') — 'gaps' renders a DIFFERENT PASS with its own tone
+     and letterbox, not the frame minus the fill. Scored 63.73% at rest.
+  4. band-cut A/B — identical on/off, because that uniform is bake-time and was
+     already off in the realtime path. Hypothesis falsified, cleanly.
+  5. untorn coverage pass — correct and useless: 0.00% at every pose (see
+     above). It falsified my own fix before it shipped.
+  6. the "geometry-only floor" arm — came out HIGHER than the baked arm
+     (1.268 vs 0.931) because hiding the plate renders gaps BLACK, and
+     black<->content swings exceed a filled gap. It measured its own artifact.
+
+The instrument that held: read the mask BUFFER, where the populations are
+encoded (A<0.5 valid; A>0.5 & B<0.5/64 interior gap; B>0.995 border void; else
+marked occluder) rather than inferred from pixels.
+
+TWO CLAIMS OF MINE RETRACTED IN THE SAME PASS: that the SD export ships
+gaps UNION occluders (it does not — mode 9 already filters to interior gaps,
+with modes 10 and 11 emitting the void and occluder bands as separate files),
+and that the extension never reaches the screen (Addendum 115).
+
+### STILL OPEN
+
+  * The plate + wash stage is now the dominant bake cost (7.7s of the old
+    10.3s). That is what stands between 6.2s and "near instant".
+  * The bright near-white blobs filling the reveals at 0.52x rim. Baking makes
+    them stationary, not correct — this is a fill-colour defect, distinct from
+    shimmer, and it is what the user will still see.
+  * fgReachPx (default 60) is px of reach per unit depth step — k, measured at
+    763-1279 elsewhere. Sweeping it 0 -> 240 moves the exported mask from
+    2.53% to 0.18% at rest, so mask size is still partly a slider.
+  * The occluder band is 17.8% at rest and 46-48% mid-cone. It ships as its own
+    file so it does not corrupt the inpaint mask, but it is not understood.
+  * A cold export logs "no BG layer built yet — screen-space files only", so
+    "export for SD" still means "bake first". Correct, but not obvious.
