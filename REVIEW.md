@@ -7265,3 +7265,124 @@ would still buy, none of which this test touched:
 
 What it would *not* buy is a reversal of a128. That question is now closed at
 both bit depths.
+
+---
+
+## ADDENDUM 122 — the skirt, where the black actually is, and a fade that blacks out at 26.6 degrees
+
+### THE SKIRT IS CONE-BLIND — AND NOT SHORT
+
+REPLY03 §4 predicted a fifth cone-blind quantity. Confirmed: A32's `0.10` /
+`0.05` world constants do not contain `bgViewFadeEndDeg`, and the shipped skirt
+is identical at 45 and 60 degrees in every bin.
+
+But the inference that followed does not survive contact. Per bin on the troll —
+the asset in the user's screenshots, and the one A32's zero-hole scan never
+covered — against what a113's law asks for that bin's own mean depth:
+
+    bin  meanD   role       shipped     law@45   law@60
+      1  0.064   BACKDROP   1137 px      198      343
+      2  0.161   near/mid    568 px      160      276
+      3  0.208   near/mid    568 px      133      231
+      ...
+      9  0.677   near/mid    568 px      139      241
+     10  0.864   near/mid    568 px      445      771
+
+**1.3x to 190x larger than required** at the shipped cone. Only bin 10 goes
+short, and only at 60 degrees — outside the cone. So the skirt being cone-blind
+is real but harmless at 45, and beyond-frame black on v2 cannot be a shortfall
+in it. The constant substitution is still correct hygiene (§4.6) but it is not
+a fix for anything visible, and the afternoon is saved.
+
+### SO WHERE IS THE BLACK? MEASURED, NOT INFERRED FROM A THUMBNAIL
+
+Black% inside the content polygon, split into the outer 8% edge band and the
+interior. The edge band is 29.7% of the measured area, so an edge share above
+that is a genuine concentration.
+
+    v2 (shipped default):  0.00% everywhere, edge and interior, every pose to 45.
+
+    quick:  deg   edge%   interior%   total   edge share of all black
+             15    1.78        0.00    0.53      100%
+             25    3.13        0.00    0.93     99.8%
+             32    4.22        0.01    1.26     99.3%
+             38    5.30        0.04    1.61     98.1%
+             45    6.80        0.09    2.08       97%
+
+**97-100% of quick's black is in the edge band. Interior black is essentially
+zero.** REPLY03's first link is right, and more strongly than claimed.
+
+The mechanism is not a short skirt. **Quick has no skirt at all.** The skirt is
+built in `bgBuildFullPlanesCore`, which is v2-only; a114 established quick never
+reaches v1's scene extension either. Quick has *no beyond-frame coverage
+mechanism of any kind*, and v2 — which has one — measures zero black.
+
+That reframes the work: porting the skirt to quick is now a targeted fix with a
+measured target, and problem (a), completion behind occluders, accounts for
+under 0.1% of quick's black at every pose measured. **(b) before (a) was the
+right call, for a reason neither of us had.**
+
+### THE ANGLE FADE BLACKS OUT AT 26.6 DEGREES, NOT 45
+
+User: *"even 10 degrees off and it's darkening."* Measured with the shipped
+constants:
+
+    darkening BEGINS at virtual theta  18.0 deg   (documented 35)
+    FULLY BLACK at   virtual theta     26.6 deg   (documented 45)
+
+Two causes.
+
+**(i) The face-frame band was a third of the trackable range.** `updateViewFade`
+takes the max of a virtual-angle term and a face-in-camera-frame term, and the
+latter faded over a hardcoded last-10-degrees of a 30-degree half-FOV. It is
+now **3 sigma of a running estimate of the tracker's own jitter**, floored at 2
+and capped at the old 10 so it can only ever be *less* conservative than what
+shipped. Self-calibrating: a steady tracker gets a narrow band, a noisy one
+widens it on its own evidence. Onset moves 18.0 -> 24.2 degrees for a steady
+tracker.
+
+**(ii) The documented cone is unreachable, and this is the larger finding.**
+`camOff = 0.2` at tracking scalar 1 and lens 90 maps the *entire camera
+half-frame* onto 26.6 degrees of virtual angle. The head cannot produce 35
+degrees, so **the virtual fade term never fires at all** and the face-frame
+term is the only fade a head-tracked user ever sees. Every cone measurement in
+this arc — the 45-vs-60 sweep, k, the fold limit, the margin law — has been
+sizing a budget for angles the interaction cannot reach. The drag path and the
+tracking-scalar slider can exceed it; the head alone cannot. Recorded, not yet
+acted on, because the fix is a product decision: raise the gain, lower the
+cone, or state that the cone describes the drag/gyro path rather than the
+webcam path.
+
+### SIMULATED VIEWER, ON THE USER'S NOTES
+
+  * Plain click-drag on the canvas scrubs the eye — no modifier, since SV is a
+    mode you deliberately enter in order to look around. A full canvas width
+    sweeps the whole range so the endpoints are reachable in one gesture.
+    Double-click resets to head-on. The modifier-drag still owns head-offset.
+  * Both axes clamp at +/-90 rather than 85. At the limit the eye lies in the
+    panel plane and the panel is edge-on — a legitimate pose to be able to
+    reach — and the derived up-vector falls back rather than producing NaN.
+  * The HUD collapses to one line (theta, k here/budgeted, Omega, and DRIFT if
+    the anchor swims); click the header to expand. It was a 13-line block plus
+    a 108px plot sitting over the image, in a mode whose entire purpose is
+    looking at the image.
+
+Acceptance re-run after all three: A1 agree, drift 0.0000 px over 34 poses, A2
+ratio 1.0000.
+
+### PROVENANCE SIDECARS ARE IN PLACE
+
+`depth_provenance/*.json`, one per asset: estimator, version, commit, settings,
+generated-UTC and float-original, honestly null with status *"UNKNOWN —
+predates this record"* for the existing four. In place before any
+re-estimation, so whatever is generated next is recorded from its first commit.
+
+### STILL OPEN
+
+  * Port the skirt to quick — now with a measured target (97-100% of quick's
+    black, 1.78-6.80% of the edge band).
+  * The cone/gain mismatch: 35/45 documented, 26.6 reachable by head.
+  * Completion extent (a), which the measurement puts at under 0.1% of quick's
+    black — smaller than assumed, but it is what unblocks `fgTearStep`.
+  * The cross-texel ordering invariant, which is what would retire the sweep.
+  * Repointing the 57 v1-pinned harness drivers at v2.
