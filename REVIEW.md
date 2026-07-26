@@ -7575,6 +7575,16 @@ position and therefore the parallax untouched. **It moved the number from 0.575%
 to 0.512%, so that was not the cause.** Kept, because ties are real and the bias
 is free; reported as ineffective rather than as the explanation.
 
+### WHAT DID NOT GET MEASURED
+
+**silverwarrior did not complete, in either arm.** The headless browser is
+killed part-way through warrior's quick bake — `Target page, context or browser
+has been closed`, three attempts, a149 and a150 alike, with 27 GB of disk and
+14 GB of RAM free at rest. It is an environment limit on that asset's bake, not
+a property of this change, and it means the a150 evidence is troll and
+starwatcher rather than the full suite. `regress.js masks` does cover warrior
+and passes, but it measures SD% and ground%, not edge black.
+
 ### COST AND SAFETY
 
 948 triangles, 956 vertices — unchanged from a149, because the inset moves the
