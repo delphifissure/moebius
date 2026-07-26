@@ -6613,3 +6613,277 @@ and that the extension never reaches the screen (Addendum 115).
     file so it does not corrupt the inpaint mask, but it is not understood.
   * A cold export logs "no BG layer built yet — screen-space files only", so
     "export for SD" still means "bake first". Correct, but not obvious.
+
+---
+
+## ADDENDUM 118 — the simulated viewer (a130), and three answers to REPLY01
+
+### THE INSTRUMENT THE ARC WAS MISSING
+
+`frameCorners()` builds an off-axis frustum from the eye to the fixed portal
+rect. That render is a **pre-distortion**: it is the intended image only when
+it is viewed *from that eye*. Every review shot in this arc — mine and the
+user's — was taken by scrubbing a virtual eye while sitting head-on to a
+monitor. That shows raw pre-distortion, which looks catastrophically wrong
+while being entirely correct. Addendum 114 records the user reporting the
+render "looking broken from almost any angle" and my reply that four of five
+grids were outside the cone, "which I said, and which was true and beside the
+point." This mode is why it was beside the point.
+
+a130 renders the second half of the optical chain:
+
+  * **pass 1** the normal frame from the simulated eye, into a 1.75x
+    supersampled buffer. It is `renderPortalFrame()` unchanged — SV never
+    forks the renderer it is measuring. `setRenderTarget(null)` is redirected
+    and any viewport/scissor set while that redirect is live is scaled by the
+    same factor, so the letterbox rect the app computes in CANVAS pixels lands
+    correctly in BUFFER pixels; offscreen pipeline passes bind their own
+    targets with explicit sizes and are untouched.
+  * **pass 2** that buffer on a REAL 3D quad at the panel rect, photographed
+    from the same eye through a lens LOCKED at activation.
+
+The lens is derived once — the vertical FOV that makes the panel exactly fill
+the viewport head-on at the reference distance — then never autoscaled. At
+yaw=pitch=0 the simulated view is therefore framed identically to the raw
+view (verified: the 0-degree shots are the same image), and every departure
+off-axis is physical foreshortening rather than a lens choice.
+
+Falloff is `a = E.z/r^3 * D_REF^2`, applied in LINEAR light through the exact
+sRGB transfer functions (the pipeline is a pass-through of sRGB code values:
+`outputEncoding` is r128's default and no texture carries an encoding). It is
+labelled **geometric**, not display: Lambertian `cos(theta)/r^2` is a BOUND,
+and real LCDs fall off faster off-axis, so the mode UNDERSTATES how dark a
+wide pose looks.
+
+Not gated on the fade cone. The fade is a product decision; an instrument that
+inherits it cannot see past it, and past it is where the review shots were.
+The fade opacity the shipping viewer *would* apply is reported on the HUD
+instead of applied.
+
+### A1 CAUGHT A FAULT ON ITS FIRST RUN — MINE
+
+Amendment A1 says the acceptance test must not run until pass 1 and pass 2 are
+shown to share `E` and the panel rect. It fired immediately:
+`|E_pass1 - E_pass2| = 1.402e-1 world units`, and it refused to continue.
+
+The panel rect agreed to 2.2e-16. The eye did not, because I was restoring
+`camera.position` to the app's head-tracked eye at the end of the SV frame.
+Every downstream reader — the anchor drift, `bgShiftLUTFor`'s D, and the A1
+assert itself — was therefore reporting on a pose the frame was not rendered
+from. Nothing needed the restore; `updateCameraAndProjection()` rewrites the
+position from head tracking on the first frame after SV is off. Instrument
+failure number nine, caught by the amendment written to catch it, before it
+produced a single number about the render.
+
+After the fix, on troll, quick bake:
+
+    A1   |E_pass1 - E_pass2| = 0 exactly; panel rect -> NDC corner error 2.2e-16
+    ..   anchor drift 0.0000 px over 34 poses, +/-40 deg of yaw AND of pitch
+    A2   pass-1 eye displaced 0.008 world units laterally
+         predicted swim 4.93 px  (closed form, derived independently)
+         measured  swim 4.93 px  (matrix path)
+         ratio 1.0000
+
+A2 is the part that matters: an instrument that has never detected a fault has
+not been shown to work. This one detects the fault it is given, at the
+magnitude predicted by a formula that shares no code with the measurement.
+
+### THE HUD IS THE CONE DECISION IN ONE SCREENSHOT
+
+    yaw  theta  k here  k budget  compl%  Omega%   subtense       fade
+      0      0       0       568       0     100   43.6 x 25.4      0
+     20     20     210       568     334    97.5   41.8 x 25.4      0
+     32     32     372       568     590      93   38.9 x 25.4      0
+     45     45     634       568    1006    84.1   34.0 x 25.4      1
+     60     60    1313       568    2083    66.2   25.5 x 25.4      1
+
+`k budgeted` is what the plate ACTUALLY PAID FOR — the cone rim at the BAKE
+pose. `k needed here` is the a102 envelope at this pose's own lateral offset.
+`compl%` is that demand against the 63-texel ceiling the mark-dilation shader
+clamps to (`clamp(u_fgReachPx * step, 1.0, 63.0)`). At the 45-degree rim the
+reveal wants 634 source px of completion and the machinery can carry 63. That
+is 16x, not 1.1x, and it is on screen now instead of in an argument.
+
+Omega is exact (Van Oosterom & Strackee 1983, spherical excess of the two
+triangles) rather than `area*cos/r^2`, because the panel subtends 44 degrees
+at the reference distance where the small-angle form is already several
+percent wrong.
+
+### WHAT THE MODE ACTUALLY SHOWS, AND WHAT IT MUST NOT
+
+At 20 degrees — well inside the 35/45 cone — the raw view shows the troll
+sheared, the whole scene leaning, the frame edges curved. The simulated view
+shows the figure upright and centred on a keystoned panel. The black speckle
+trail down the figure's left side and along the staff is in BOTH.
+
+So: **the gross shear/lean reads as pre-distortion; the speckle holes are
+real.** Which is exactly what brief 5 said to expect.
+
+But I measured rather than eyeballed it, and the measurement caught the mode
+flattering itself. Black% inside the projected content polygon, PiP off in
+both arms:
+
+    yaw    raw    sim
+     20   1.13   0.76
+     32   1.87   1.02
+     45   3.16   1.68
+     60   5.09   3.66
+
+The simulated view is a geometric remapping of the SAME pixels. It cannot
+remove a hole. `harness/svdilute.js` isolated the mechanism: reallocating the
+pass-1 buffer with NEAREST filtering recovers most of the gap (45 deg: 1.68 ->
+2.25 against raw 3.16), and the falloff moves the number the OTHER way, as its
+sign predicts. It is the pass-2 resample — the panel occupies fewer screen
+pixels off-axis, and bilinear averaging blends a thin black gap with its lit
+neighbours until it clears the black threshold.
+
+**Recorded, not tuned.** The consequence is a rule: the simulated viewer is
+for SHAPE triage; hole accounting stays on pass 1, where `holes.js` already
+measures it. Two more measurement bugs were caught the same way and are in the
+scripts: the PiP inset sitting inside the measured polygon (worth 3.4 points at
+0 degrees), and a first attempt at the NEAREST arm that marked a render-target
+texture `needsUpdate` — three.js re-uploads from its null image and blanks the
+buffer, which read as 100% black everywhere.
+
+### REPLY01 §2 — a128 REOPENED, AND THE REOPENING FAILS
+
+The challenge was correct in form: black% is the one metric a117 proved blind
+to comb, and a looser-than-fold-limit slope is by definition steep enough to
+fold. Re-run with a second-difference comb energy over lit pixels
+(`comb = mean |L(x-1) - 2L(x) + L(x+1)|`, zero on any ramp, maximal on a 1px
+alternation), troll, same absolute angles:
+
+    arm                          0deg    15deg    25deg    32deg    38deg
+    shipped (bgConeSlopePerPx)
+      black%                        0     0.55     0.98     1.30     1.63
+      comb X                    3.494    3.313    3.113    3.007    2.888
+      comb Y                    2.642    2.848    2.988    3.125    3.293
+    fold-correct (step = 1/k)
+      black%                        0     0.48     0.97     1.44     1.98
+      comb X                    3.487    3.291    3.131    3.066    2.969
+      comb Y                    2.634    2.850    3.010    3.181    3.385
+
+    fold-correct MINUS stale (negative = fold-correct wins)
+      deg      d black    d combX    d combY   d comb x visibility
+        0         0.00     -0.007     -0.008              -0.008
+       15        -0.07     -0.022      0.002              -0.010
+       25        -0.01      0.018      0.022               0.020
+       32         0.14      0.059      0.056               0.057
+       38         0.35      0.081      0.092               0.061
+
+**The comb metric agrees with black%.** The fold-correct step is marginally
+ahead at 0-15 degrees and behind on BOTH axes from 25 degrees out. The
+hypothesis that the stale constant was winning by permitting an invisible
+artifact is falsified on the metric chosen to see that artifact.
+
+The mechanism is in the bake log, and it is the "below one quantum" fact
+a127b already prints, arriving as a consequence:
+
+    shipped        133348 texels lowered of 870573 (15.32%), max 0.2581 depth, step 0.00564
+    fold-correct   620442 texels lowered of 870573 (71.27%), max 0.5198 depth, step 0.00176
+
+At k=568 the fold-safe step is 0.00176 depth per texel. One 8-bit quantum is
+0.00392. **The fold-correct step is less than half the smallest step the
+source can express**, so enforcing it cannot preserve any real depth
+structure — it flattens. 71% of the plate lowered, by up to half the entire
+depth range. The fold-correct constant is not "tighter and therefore safer"
+here; at this k it degenerates into "flatten the plate", and a flattened plate
+parallaxes less and lags the reveal. That is the coupling REPLY01 quoted back
+at me, confirmed with a number.
+
+**What is still untested is the third arm** — fold-correct step + extent
+compensated by `lag(x) = |shift(z_original(x)) - shift(z_lowered(x))|`. With a
+max lower of 0.5198 depth the lag is large, so the compensation is not a
+detail. I have not built it: it needs the plate's lateral extent to become a
+computed quantity rather than the silhouette footprint it is now, which is a
+real change to the bake and not a flag. It stays open, and the amendment
+stands as written only for the two arms actually measured.
+
+Two disclosures on this re-run. The first execution was a null, and the null
+was mine: I armed `_legacyPlateStep`, which does not exist, so both arms ran
+the shipped path and came out identical to 3 d.p. with the same logged step. A
+table of identical numbers is what a dead flag looks like and it would have
+read as "no difference". The real flag is `_envelopePlateStep`, and a128 had
+already inverted the polarity — the SHIPPED default is the stale constant.
+Second: the absolute comb values here are not comparable to a117's 7.91/5.61,
+which came from a different script; only the within-run arms are.
+
+### REPLY01 §5 — THE CHEAP SWEEP, AND IT FOUND MORE
+
+"For every constant supposed to be cone-derived, print it at 45 and at 60 and
+assert it moved." `harness/conesweep.js`:
+
+    quantity                                        45deg      60deg   ratio  verdict
+    k = max|shift| at the rim (px)                  568.3      984.4   1.732  MOVES
+    fold limit sqrt(2)/k                          0.00249    0.00144   0.577  MOVES
+    hidden-depth precision 1/k                    0.00176    0.00102   0.577  MOVES
+    a113 extension margin (source px)               569.0      851.0   1.496  MOVES
+    a80/a121 scan radius D*tan(cone)              0.20000    0.34641   1.732  MOVES
+    bgConeSlopeAtDepth d=0.20                     0.00173    0.00100   0.577  MOVES
+    bgConeSlopeAtDepth d=0.50                     0.06000    0.06000   1.000  CONE-BLIND
+    bgConeSlopeAtDepth d=0.80                     0.00058    0.00033   0.577  MOVES
+    bgConeSlopePerPx derived branch (opt-in)      0.00056    0.00033   0.577  MOVES
+    bgConeSlopePerPx SHIPPED (a128 plate step)    0.00564    0.00564   1.000  CONE-BLIND
+    fgTearStep (the cliff criterion)              0.06000    0.06000   1.000  CONE-BLIND
+    device camera hfov                              60.0       60.0    1.000  BY DESIGN
+    FG mark-reach ceiling (texels)                    63         63    1.000  BY DESIGN
+
+Three findings beyond the known one:
+
+  1. **`fgTearStep = 0.06` is a hardcoded module constant.** It is the cliff
+     criterion — what counts as a discontinuity — and it does not move with the
+     cone, the resolution, or the depth. A107 already had it varying 14x with
+     depth and 2.9x with resolution; add "and 0x with the cone".
+  2. **`bgConeSlopeAtDepth` degenerates to that same 0.06 near the portal
+     plane.** At d = pn the smoothstep gradient is zero, so the fold limit is
+     infinite and the function returns its ceiling — and the ceiling IS
+     `fgTearStep`. The per-depth cone law hands off to an undecided constant in
+     a band around the portal, which is where most content sits.
+  3. **The a113 margin clamp bites at 60 degrees, silently.** k moves 1.732x
+     (568 -> 984) but the margin moves only 1.496x (569 -> 851), because 851 is
+     `pw` and `Math.min(mx, pw)` caps it. A116 flagged this clamp as a silent
+     cap; this is the measurement showing it engaged. At 60 degrees the
+     extension is 133 px short of what the envelope asks for and says nothing.
+
+### REPLY01 §1 — THE SD PATH DOES HAVE A v1-ONLY ENTRY POINT
+
+The check REPLY01 asked for, answered. Two parts:
+
+**The skirt is v2-only, as REPLY01 said.** It is built in
+`bgBuildFullPlanesCore` (8px-step ring, uv past [0,1] under clamp-to-edge,
+sharing the bin's material). Quick returns long before it. So "port the skirt,
+not the extension" is the right instruction, and a113's margin law belongs
+sizing that skirt.
+
+**But the SD bundle is not clean.** The per-layer completion set already
+prefers `bgMPIV2Export` and falls back to the v1 strip set, so that half is
+fine. The **outpaint trio is v1-only**: `out_mask_outpaint.png`,
+`out_color_coarse.png`, `out_depth_completed.png` are emitted only when
+`bgExtendExport` is set, and `bgExtendExport` is assigned in exactly one place
+— inside the `[RUNG-PLUG]` scene-extension block, which a114 established is
+v1-only. Turning v1 off therefore silently removes beyond-frame outpainting
+from the SD bundle. That is a real dependency and it moves before v1 does.
+
+### ACCEPTED WITHOUT ARGUMENT
+
+  * §3, with REPLY01's modification, as a standing rule: *unify the law, A/B
+    each consumer separately, and choose the metric from the artifact the law
+    governs — not from the metric already on the harness.* The a128 re-run
+    above is that rule applied to itself, and it still cleared the stale
+    constant.
+  * §4 both corrections. "The central prediction does not hold" is withdrawn;
+    the brief predicted the null and the accurate framing is "correct in
+    principle, blocked by a stale constant". The k discrepancy changes no
+    conclusion — 568 and 775 are the same answer to "hundreds of pixels, not
+    tens" — and the live number is used everywhere from here.
+
+### STILL OPEN AFTER THIS ADDENDUM
+
+  * The lag-compensated plate arm (above). Needs the plate extent to become
+    computed, not inherited from the silhouette.
+  * `fgTearStep` and the 0.06 ceiling inside `bgConeSlopeAtDepth`. Two
+    consumers of one undecided constant.
+  * The a113 clamp at wide cones — 133 px short at 60 degrees, and silent.
+  * Repointing the 57 v1-pinned harness drivers at v2 (REPLY01's real work
+    item). Not started.
+  * The outpaint trio's dependency on the v1 extension.
