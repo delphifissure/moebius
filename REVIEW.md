@@ -7468,3 +7468,129 @@ measurement, not as a conclusion. `window._noQuickSkirt` reverts.
   * The cone/gain mismatch: 35/45 documented, 26.6 reachable by head tracking.
   * Populating the camera FOV LUT (blocked on network egress).
   * Repointing the 57 v1-pinned harness drivers at v2.
+
+---
+
+## Addendum 124 — a150: the skirt continues at the plate's far envelope, and two instruments were wrong
+
+The a149 residual was named, not fixed: *"the skirt continues the depth at the
+edge texel… the fix would be to continue at the plate's far envelope."* Built
+it. It works — **quick edge black is 0.00% at every pose from 0 to 45 degrees,
+on troll and on starwatcher** — but almost nothing about the route there went
+the way the hypothesis said, and two measuring instruments had to be corrected
+before any of the numbers meant anything.
+
+### THE CORRECTION TO ADDENDUM 123 — a149's real number is 0.13%, not 1.91%
+
+`harness/edgeblack.js` derives its measurement polygon from the rest frame with
+everything visible. **The skirt is part of "everything".** A skirt that paints
+further out enlarges the very bbox its black% is divided by, so the a149 arm
+and the a150 arm were being scored over different areas, and the "interior"
+band silently acquired territory that had never been covered by anything.
+
+The polygon is now derived with the **skirt hidden**, so it is a property of
+the plate and the foreground alone and is identical in every arm. Under the
+fixed polygon, on troll, quick:
+
+    deg    no skirt    a149 edge depth    a150 far envelope
+     15       1.78           0.00               0.00
+     25       3.13           0.01               0.00
+     32       4.22           0.04               0.00
+     38       5.30           0.08               0.00
+     45       6.80           0.13               0.00
+
+**a149 was better than I reported, not worse.** The moving polygon had been
+penalising it. Addendum 123's table stands as what the old instrument said; the
+row that matters — 45 degrees, edge ON — is 0.13%, and the 1.91% figure in the
+a149 commit message and in the build banner is wrong. Recorded here rather than
+quietly restated.
+
+The a149 hypothesis is still sound and still measurable: the far-envelope skirt
+takes 0.13 to 0.00, and on starwatcher 2.52 to 0.00.
+
+### THE OTHER INSTRUMENT: A CLONED MATERIAL PAINTED NOTHING AT ALL
+
+The skirt needs its own depth texture, so it needs its own material, so
+`matQ.clone()`. The first version of it **painted 0 pixels at every pose** —
+and the first version of the skirt-only instrument said 1.95% instead of 0,
+because it hid the plate and the foreground and left the cap cards standing, so
+an occluded skirt read as a faint one. Hiding every mesh in the scene except
+the skirt gave the honest 0.
+
+Cause: `THREE.UniformsUtils.cloneUniforms` **clones textures**. A cloned texture
+has `needsUpdate` false with no GPU upload behind it, so every sample comes back
+`(0,0,0,0)`, `map.a` is 0, and the alpha discard throws the entire skirt away.
+Every texture uniform is now re-pointed at the plate's live object and the dead
+copies disposed; only `displacementMap` is genuinely the skirt's own.
+
+Worth stating plainly: **a silent 0 is the failure mode a "skirt on/off" A/B
+cannot see.** Both arms would have shown a skirt in the scene graph, correct
+triangle counts, and a clean bake log.
+
+### GLOBAL FAR ENVELOPE, NOT PER EDGE — FALSIFIED IN MEASUREMENT
+
+I built it per-edge first, on the argument that a backdrop far on one side need
+not be far on the other, and that a per-edge minimum invents no depth the plate
+does not already contain. **It regressed the rest frame: 9.27% of the pixels
+inside the source footprint changed at 0 degrees, by up to 94 levels.** An edge
+minimum is only the farthest thing on that *edge*, and the skirt spans the whole
+frame, so wherever the interior held something farther still — sky, in the troll
+— the skirt stood in front of it and painted over it.
+
+The global minimum of `plateF` cannot do that: by construction nothing in the
+plate is behind it. On troll it is −0.0039 against a plate spanning
+−0.0039..0.9937.
+
+### THE SEAM THIS OPENS, AND THE GATE THAT HID THE FIX
+
+a149 was seamless for exactly the reason it failed: sharing the edge depth made
+the plate's edge and the skirt's inner ring one continuous surface. Push the
+skirt back and they separate — the near plate edge shifts by `shift(d_edge)`,
+the far skirt by `shift(d_far)`, and the difference is a gap up to *k* px wide
+(568 px at 45 degrees). So the skirt's inner ring is inset **inward** by the
+same *k*, overlapping the plate.
+
+That overlap could not paint. Inside `[0,1]` the plate material is **hole-only**
+(`u_useBgIslands`): it renders only inside the disocclusion band, because a
+full-clone backstop is unwanted where the foreground is intact. A skirt is not
+the plate — **it is the backstop** — so it opts out of the island gate. That one
+line is the difference between 6.74% edge black and 0.00%.
+
+Measured as its own arm rather than assumed: far envelope with the gate left on
+= 6.74% at 45 degrees, i.e. no better than no skirt at all.
+
+### WHAT THE REST FRAME ACTUALLY DOES NOW
+
+Not bit-identical, and I am not going to claim it is. Against the a149 arm,
+inside the skirt-free footprint at 0 degrees: **195 pixels (0.51%) differ by
+more than 2 levels, mean 0.047, max 33**, scattered along interior silhouette
+cracks. Neither arm has any absence or any black among them — mean luma 107.3
+against 109.1. It is the skirt painting a few crack pixels the hole-only plate
+discards, which is a fill rather than a loss.
+
+I first assumed coplanar z-fighting at the texels that attain the global
+minimum, and added polygon offset for it — the standard remedy, and the right
+one on its own terms because it biases the depth test alone and leaves the world
+position and therefore the parallax untouched. **It moved the number from 0.575%
+to 0.512%, so that was not the cause.** Kept, because ties are real and the bias
+is free; reported as ineffective rather than as the explanation.
+
+### COST AND SAFETY
+
+948 triangles, 956 vertices — unchanged from a149, because the inset moves the
+inner ring rather than adding rings. One extra `pw x ph` float texture (a
+constant field). No measurable bake cost. `regress.js masks`: **ALL PASS (8)**.
+v2 and v1 are untouched — this is inside the quick path only.
+
+Flags: `window._skirtEdgeDepth` restores a149's continuation,
+`window._skirtIslandGate` restores the gate, `window._skirtNoInset` removes the
+overlap, `window._noQuickSkirt` removes the skirt.
+
+### STILL OPEN
+
+  * Completion extent (a) — under 0.1% of quick's black by measurement, but it
+    is what unblocks lowering `fgTearStep`.
+  * The cross-texel ordering invariant, which is what would retire the sweep.
+  * The cone/gain mismatch: 35/45 documented, 26.6 reachable by head tracking.
+  * Populating the camera FOV LUT (blocked on network egress).
+  * Repointing the 57 v1-pinned harness drivers at v2.
