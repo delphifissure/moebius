@@ -7604,3 +7604,123 @@ overlap, `window._noQuickSkirt` removes the skirt.
   * The cone/gain mismatch: 35/45 documented, 26.6 reachable by head tracking.
   * Populating the camera FOV LUT (blocked on network egress).
   * Repointing the 57 v1-pinned harness drivers at v2.
+
+---
+
+## Addendum 125 — taking stock: the user was right, and my instruments could not see it
+
+Reported as "visually we've degraded a lot" against **v3.13.19-a81**. That is
+correct, and everything I had been measuring said the opposite.
+
+### WHAT BROKE, AND WHEN
+
+Rendered a81 and every major build after it from its own checked-out tree,
+same asset, same poses, and scored the crystal mountain on starwatcher by the
+luma standard deviation inside its box — high when the mountain is textured,
+low when it has collapsed to a flat silhouette:
+
+    build                              mean luma    std
+    a81                                    106.4   60.3   textured
+    a106, a111, a126, a137, a149           106.4   60.3   textured (identical)
+    a150 from a COLD page                  106.4   60.3   textured (identical)
+    a150 AFTER a quick bake                 69.1   11.6   FLAT
+
+**The arc did not degrade v2.** Every build from a81 to a150 renders it to the
+digit from a cold load. The **mode switch** degraded it, and only once a149 put
+a skirt in the scene: `bgResetBakedState` is called only when a new image is
+loaded, so nothing removed the skirt on a rebuild. a150 had just made that
+skirt a full-frame opaque backdrop that opts out of the hole-only island gate,
+so the leftover painted the quick plate's sky — with the mountain inpainted
+*out* of it — straight over v2's layers.
+
+Fixed in a151: `buildBackgroundLayer` drops and disposes any existing skirt
+before it builds anything, in every mode. Quick-then-v2 in one session now
+measures 106.4 / 60.3 at rest and 105.9 / 58.7 at 25 degrees — back to a81.
+
+### THE PART THAT MATTERS MORE THAN THE BUG
+
+**black% and ABSENT% were 0.00 in every one of those rows, including the broken
+ones.** A flat dark-blue blob is *painted*, and nowhere near the black
+threshold, so a hole-counting metric cannot see a large object losing its
+texture. `regress.js masks` passed throughout as well — SD% and ground% are
+mask areas, not picture content.
+
+So: an entire arc of coverage numbers, all of them true, none of them able to
+notice that the picture had stopped being the picture. The a150 headline —
+"edge black 0.00% at every pose" — was measured correctly and is worth exactly
+as much as its metric.
+
+a152 adds the missing instrument. Over a grid of tiles it compares the render's
+**local luma standard deviation** against the same tile of the realtime
+reference; a tile that has lost its detail collapses toward zero while the
+reference does not. Scale-free, no per-asset tuning, and it runs the mode switch
+because that is what broke.
+
+### WHAT IT FOUND ON ITS FIRST RUN, BEYOND a151
+
+    arm              0 deg lost%   worst drop     25 deg lost%   worst drop
+    quick cold           31.00        85.7%           38.67         100%
+    v2 cold               2.67        92.7%           18.00         100%
+    quick then v2         2.67        92.3%           17.67         100%
+    v2 then quick        31.33        85.8%           37.33         100%
+
+quick-then-v2 now equals v2-cold, which is a151 stated as a measurement. But
+**quick cold loses 31% of its tiles at rest** against realtime. That is not from
+this session and it is not new — it is the first time the property has had an
+instrument at all. Reported rather than fixed; fixing it is separate work, and
+it is a candidate explanation for the wider "degraded" impression if quick is
+the mode in use.
+
+### a153 — the letterbox is a box
+
+User specification: *"a black, opaque double sided 3d rectangle that matches the
+x/y dimensions of the content. the extent closest to the user should be locked
+to the viewport surface, like a fishtank perfectly embedded in the screen."*
+
+Two parts. The **glass**: an opaque black surface lying in the viewport surface
+with the content rect cut out. It occludes in 3D, so the beyond-frame skirt, the
+extension margin and off-axis smear stop leaking outside the frame. The
+**tank**: four walls running back from that aperture to the volume's far extent.
+
+The walls **flare along the reference rays**, and that had to be measured. A
+prism — front and back rects the same size — was built first and is wrong: from
+an eye at finite distance the back rect projects *smaller*, so the walls covered
+a border strip of the content at rest and black% over the canvas went 0.0 to
+9.7. The correct back rect is the front rect carried along the reference eye
+rays — the same a104 law the vertex shader displaces with — so no new constant
+enters, and at rest the walls are exactly edge-on and invisible.
+
+**One gap, stated rather than hidden.** `innerVolumeDepth` (0.04, against outer
+0.02) pushes near content *toward* the viewer, so the nearest part of the volume
+sits in front of the glass and is not occluded by it — visible as spill from 25
+degrees on. a154 tried sliding the whole volume back by `innerVolumeDepth` to
+put it behind the glass; it distorts the scene badly, so it was removed rather
+than shipped behind a flag. Making the tank *perfectly* embedded needs a
+decision about whether content may protrude through the screen at all.
+
+### a155 — the completion extent is the occluder's own footprint
+
+Behind an occluder the reachable region is exactly that occluder's footprint, so
+there is no extent to choose: the flood has to run until the footprint is full,
+and how long that takes is a property of the image. The bound was a hardcoded
+`192` whose own comment admitted the guess — *"must exceed the widest FG blob's
+radius in px"* — with nothing checking that it did, and it is resolution-blind:
+the same 192 at twice the source resolution covers half the picture. Now
+`min(w, h) / 2`, the largest inradius a connected region in the frame can have,
+so it is a provable bound that needs no mask and tracks resolution.
+
+### WHAT I WOULD CHANGE ABOUT HOW THIS ARC WAS RUN
+
+The measurements were sound and the reporting was honest, and neither helped,
+because every metric in the arc answered "is anything missing" and none answered
+"is it still the picture". A whole-frame perceptual check against the source
+belonged in the suite from a81, not at a125. It is there now.
+
+### STILL OPEN
+
+  * quick cold loses 31% of tiles at rest — newly instrumented, unfixed.
+  * Whether content may protrude through the glass (a154's question).
+  * The cross-texel ordering invariant, which is what would retire the sweep.
+  * The cone/gain mismatch: 35/45 documented, 26.6 reachable by head tracking.
+  * Populating the camera FOV LUT (blocked on network egress).
+  * Repointing the 57 v1-pinned harness drivers at v2.
