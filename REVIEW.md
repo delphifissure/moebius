@@ -6887,3 +6887,156 @@ from the SD bundle. That is a real dependency and it moves before v1 does.
   * Repointing the 57 v1-pinned harness drivers at v2 (REPLY01's real work
     item). Not started.
   * The outpaint trio's dependency on the v1 extension.
+
+---
+
+## ADDENDUM 119 — the depth source is 8-bit, and the ordering clamp lands
+
+### THE FOLLOW-UP THAT COULD HAVE REVERSED a128, RESOLVED
+
+REPLY02 §4: *"is a99's float depth ingest actually live on the plate path? If
+the plate is still built from an 8-bit source, the fold-correct step will
+over-flatten by construction and can never win."*
+
+Two questions the arc had been running together, now separated and both
+answered.
+
+**Container.** Read straight out of the PNG IHDR, no renderer involved:
+
+    defaultImgDepth.png       851x1023   bitDepth=8
+    starwatcher_depth.png     1920x1323  bitDepth=8
+    silverwarrior_depth.png   3000x3000  bitDepth=8
+    roomDepth1.png            2047x1362  bitDepth=8
+
+Every asset in the suite is an 8-bit greyscale PNG.
+
+**Decoder.** Live and correct. `harness/quantum.js` hands it a synthesised
+16-bit PNG — the same troll depth re-encoded by exact x257 scaling, so it adds
+no information at all — and three predictions, stated before the run, all held:
+
+  * it logs `a99: depth read at 16-bit precision (quantum 1/65535)`, so the
+    container is decoded;
+  * a89 **still** reports a 1/255 quantum, with 256 distinct 16-bit levels
+    sampled and **0 samples off the 8-bit grid** — a89 measures the
+    information, not the format. Had it reported 1/65535 there, every "source
+    quanta" figure in this arc would have been wrong;
+  * the a133 precision line is identical in both arms.
+
+So the answer is REPLY02's larger finding: **the source is 8-bit upstream of
+the ingest.** The a128 result stands, and it is now explained rather than
+observed — and explicitly contingent. A genuinely ≥16-bit depth source would
+move it, and modern estimators emit float natively; the 8-bit PNG is a step
+this pipeline imposes, not one the data requires.
+
+Printed at every quick bake so nobody re-derives it from a log:
+
+    a133 precision budget: geometry needs 0.00176 depth (= 0.45 source quanta,
+    ~569 levels); source has 1/255.  <-- THE SOURCE CANNOT EXPRESS IT: a
+    fold-correct plate step is 2.23x finer than one quantum, so enforcing it
+    FLATTENS. A 569-level depth source (>= 16-bit) is what would change this.
+
+The general rule REPLY02 drew from it, recorded: **a constraint finer than the
+data quantum is not correctness, it is noise amplification.** You cannot
+enforce a limit your input cannot represent, and trying flattens everything
+that merely *looks* steep because of quantisation.
+
+### fgTearStep IN THE UNITS THAT MATTER (log only)
+
+    a133b fgTearStep = 0.0600 depth = 34 px of reveal at the rim; the
+    reveal-benefit gate (1px) would be 0.00176 depth, 34x lower.
+
+That reproduces REPLY02 §3's 34 px independently, from the shipped constant and
+the live k. A cliff must open 34 source pixels of reveal before it is allowed
+to tear. Below that the FG stays a connected rubber sheet — the bright smeared
+bands. Above it, the tear opens onto a plate that reaches 63 texels — the
+speckle and the black. One cone-blind constant failing in both directions in
+the same frame.
+
+**Not changed.** a117 measured what aggressive tearing does with nothing behind
+it: 40% of the mesh dropped and a comb. The ordering is forced — complete the
+plate, then lower the threshold. Logged now so the number is on the record.
+
+### a134 — AN A/B MUST PROVE ITS ARMS DIFFER BEFORE ITS NUMBERS ARE READ
+
+Two dead flags in two sessions: `_coneWide` read into a module-load `const`, so
+the wide-cone arm compared 45 degrees to itself; then `_legacyPlateStep`, which
+does not exist at all, so both plate-step arms ran the shipped path. Both
+printed full tables of identical numbers. Both were caught by reading a log
+line rather than by the numbers looking wrong — because **a dead flag and a null
+result are indistinguishable in the output**. "No difference" is exactly what a
+correctly-run A/B of two equivalent arms looks like.
+
+`harness/abguard.js` makes it a precondition. The witness is not the flag's
+value — that only proves the assignment happened, not that anything read it —
+but a value captured from **inside the code path under test**. If two arms'
+witnesses match, the run is void and no table is printed. Wired into
+`combstep.js` and `orderclamp.js`.
+
+### a135 — THE ORDERING CLAMP
+
+    d_hidden(x) >= d_occluder_silhouette(x) + eps
+
+One unconditional O(N) pass over the final plate depth, before the slope limit.
+The plate is the backstop: it is only ever seen through a disocclusion, so a
+plate texel nearer than the surface it backs is a protrusion by definition.
+
+**eps is derived, not chosen.** One source quantum — the smallest depth step
+the data can express, which a89 already measures. Below it the source cannot
+distinguish; above it is arbitrary. On 8-bit that is 0.00392, which lands
+essentially on the **0.004** a43 arrived at empirically and that has sat
+hardcoded in three places since. The magic number was measuring this quantity
+all along; it now has a citation and a unit.
+
+Two populations, counted separately, because lumping them reports 88% and means
+nothing — most of the plate is a flood of the source depth itself, so plateF ==
+dQ over large areas and the eps alone trips the test:
+
+    7401 texels (0.85%) were STRICTLY IN FRONT of the surface they back,
+    worst by 0.1511 depth = 38.5 quanta = 86 px of misplacement at the rim.
+    A further 761836 sat flush with the source and took the eps setback only.
+
+Small in count, large in magnitude. That is the population A21, A41, A43, A112,
+the backstop protrusion sweep, the cap cards and the -0.004 push-back all exist
+to hunt or paper over. It now cannot exist.
+
+Pass criteria from brief §4.4, all met:
+
+    deg     d black    d combX    d combY
+      0       0.00     -0.007     -0.009
+     15      -0.01     -0.016     -0.010
+     25      -0.04     -0.008     -0.007
+     32      -0.02     -0.004     -0.002
+     38      -0.02     -0.010     -0.004
+
+black% unchanged to slightly better, comb better on both axes at every pose.
+This was a correctness pass and it did not buy coverage, which is what it
+should look like. `window._noOrderClamp` reverts. regress.js masks ALL PASS (8).
+
+### REPLY02 §5 — "hoist it, don't keep v1" — WITH A CORRECTION
+
+The flag assignment is one line. The data behind it is not: `bgExtendExport`
+carries `extDepth`, `extFill` and `extMask`, built by ~60 lines of margin
+construction over v1's plate arrays (`plugDepth`, `fillRGB`, `depth`) into a
+buffer of `(pw + 2mx) x (ph + 2my)` — at the a113 margin that is 1989x2161 for
+troll, 5.4x the source texels. Hoisting the assignment alone would export three
+empty buffers.
+
+But the right decomposition is better than either option, and it follows
+REPLY01's own instruction. **The outpaint trio is export data, not geometry.**
+It needs no extended mesh at all — only the plate, the colour, and the a113
+margin, all of which quick already has. So it belongs computed in
+`exportSDBundle` at export time, independent of bake mode, and the extension's
+7 Mtexel geometry stays deleted. Scoped, not started.
+
+### STILL OPEN
+
+  * Completion extent — REPLY02 promotes this to next, and 634-vs-63 is the
+    argument. The plate reaches 63 source texels; the reveal at the rim is 634.
+    A dilation band cannot close that at any radius, because its source is the
+    silhouette rather than the background. This is REVIEW.md §4's "world
+    without the foreground", still unbuilt, and it is what unblocks lowering
+    fgTearStep.
+  * The outpaint trio, moved into the export path as above.
+  * Repointing the 57 v1-pinned harness drivers at v2.
+  * The lag-compensated plate arm.
+  * The a113 clamp at wide cones — 133 px short at 60 degrees, silent.
