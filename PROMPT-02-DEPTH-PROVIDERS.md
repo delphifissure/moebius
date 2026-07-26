@@ -217,10 +217,6 @@ Report the 5a table and the contact sheet, and state a recommendation with the
 reasoning — but **do not switch the default**. The pick is the user's; they are
 the one who can look at the troll's arm and say whether it is right.
 
----
-
-# Addendum — transport tiers, and video
-
 ## 9. Transport: three tiers, and one of them is quarantined
 
 "Demo page" and "API" are not opposites — a HuggingFace Space *is* an API, via
@@ -284,8 +280,7 @@ Raw float32 in the body, not base64 JSON, not a PNG. Configurable URL, disabled
 by default, `localhost` only unless explicitly overridden. The `weightsSha256`
 from `/providers` goes straight into the provenance record.
 
-## 10. Video depth — the answer is "not yet, and here is the one line that keeps
-the door open"
+## 10. Video depth — not yet, and the one line that keeps the door open
 
 ### It is a different product, not a feature increment
 
