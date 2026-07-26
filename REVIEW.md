@@ -7165,3 +7165,103 @@ Move to 16-bit and eps follows to 1.5e-5 with no edit. The three hardcoded
   * The depth re-export, blocked on knowledge outside the repository.
   * The outpaint trio, moved into `exportSDBundle`.
   * Repointing the 57 v1-pinned harness drivers at v2.
+
+---
+
+## ADDENDUM 121 — the synthetic float-depth test: 16-bit does not save the fold-correct step
+
+### WHY A SYNTHETIC ASSET
+
+a133 explained a128's result — the fold-correct plate step is 0.45 of an 8-bit
+quantum, so enforcing it flattens rather than protects — but could not test the
+interesting half: what happens once the constraint is expressible. The
+repository cannot answer it. All four depth maps carry no `tEXt`/`iTXt`/`eXIf`
+chunk, no estimator is named in README, HANDOFF, assets.json or the spec, there
+is no `.exr`/`.npy`/`.pfm`/`.tif` anywhere in the workspace, and the assets
+arrive in bulk commits. **The asset pipeline has no provenance record at all.**
+
+So `harness/mksynth.py` builds ground truth: an analytically-defined float
+depth field, with the 8-bit version derived *from* it by quantisation. That is
+synthesis, not reconstruction — a86 tried reconstructing the ramp the quantiser
+destroyed and measured it making folding worse on 2 of 4 assets. 851x1023, so
+k is the same 568 px and the numbers sit beside the a131 table.
+
+The field is designed to separate the hypotheses. Measured by the generator:
+
+    ground ramp slope 0.000702 depth/texel
+      = 0.18 of an 8-bit quantum -> 8-bit terraces it into risers of 0.00392,
+        which is 2.23x the fold limit, so a fold-correct limiter MUST lower them
+      = 0.40 of the fold limit   -> genuinely fold-safe when expressible
+
+Same geometry, same colour, same k. Only expressibility changes.
+
+### THREE PREDICTIONS, WRITTEN INTO THE DRIVER BEFORE THE RUN
+
+**P1 held** — the synthetic really does carry sub-8-bit information:
+
+    8-bit  arm   a89: source depth quantum = 1/255 (8-bit)
+    16-bit arm   a99: depth read at 16-bit precision
+                 a89: depth is continuous (no quantisation grid found)
+
+**P2 held** — 8-bit reproduces a131 on synthetic content:
+
+    fold-correct lowers 23.07% of the plate, max 0.4793 depth
+    d black  +0.60 .. +0.62      d comb  +0.009 .. +0.015
+
+**P3 FAILED.** At 16-bit the fold-correct step still loses:
+
+    fold-correct lowers 16.63% of the plate, max 0.4437 depth
+    d black  +0.44 .. +0.45      d comb  +0.008 .. +0.016
+
+Full table, fold-correct minus stale, negative = fold-correct wins:
+
+    deg        8-bit                     16-bit
+         d black  d combX  d combY   d black  d combX  d combY
+      0     0.00    0.000    0.000      0.00    0.000   -0.001
+     15     0.00    0.009    0.008      0.01    0.004    0.002
+     25     0.60    0.009    0.012      0.44    0.009    0.014
+     32     0.60    0.009    0.014      0.44    0.008    0.013
+     38     0.62    0.015    0.010      0.45    0.016    0.010
+
+### WHAT THIS SETTLES
+
+**The quantum was a contributor, not the cause.** Going to 16 bits cuts the
+lowering from 23.07% to 16.63% and shrinks the penalty by about 27% — so a133's
+mechanism is real and measurable — but it does not flip the sign. The expected
+reversal did not happen, and that expectation was mine as much as the reply's:
+P3 was stated before the run and it failed.
+
+**Why it does not flip.** 1/k = 0.00176 per texel permits only 0.176 of depth
+change over 100 texels. That is a very tight slope in absolute terms whatever
+the container, so it flattens genuine plate structure regardless of
+quantisation — and a plate pushed back parallaxes less, lags the widening
+reveal and under-covers. Among the three arms whose lowering figure was
+captured the relation is monotone: **7.34% / 16.63% / 23.07% of the plate
+lowered against 5.33 / 5.78 / 5.93 black at 38 degrees.** More setback, more
+black.
+
+**So a128's stale step is right on its own merits, at both bit depths**, and
+REPLY01's lag-compensated arm is now the *only* untested route by which the
+fold-correct step could win — no longer on a hypothesis, but on a mechanism
+this run confirms.
+
+### A CAVEAT ON a135's HEADLINE NUMBER
+
+The ordering clamp finds **0** violations on the synthetic at either bit depth.
+Troll's 7401 (0.85%) came from the plug/flood acting on real art. The clamp's
+yield is asset-dependent, and 0.85% should not be read as a universal figure.
+
+### WHAT THE 16-BIT RE-EXPORT IS STILL WORTH
+
+This result narrows the case but does not remove it. What a 16-bit depth source
+would still buy, none of which this test touched:
+
+  * a86's dequantiser becomes unnecessary — on the 16-bit arm a89 already
+    reports "continuous, dequantise skipped", so the stage simply drops out.
+  * the fold/tear population counts (a117's 33.6%) were all measured against an
+    8-bit field and would need re-measuring.
+  * the A92/A93 banding family, already root-caused to 8-bit input depth.
+  * the hidden-depth precision budget: 1/k needs ~569 levels and 8-bit has 255.
+
+What it would *not* buy is a reversal of a128. That question is now closed at
+both bit depths.
