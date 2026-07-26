@@ -7040,3 +7040,128 @@ margin, all of which quick already has. So it belongs computed in
   * Repointing the 57 v1-pinned harness drivers at v2.
   * The lag-compensated plate arm.
   * The a113 clamp at wide cones — 133 px short at 60 degrees, silent.
+
+---
+
+## ADDENDUM 120 — the clamp does NOT replace the sweep, and the depth-source question
+
+### RETRACTION, FIRST
+
+Addendum 119 said of the ordering clamp: *"That is the population A21, A41,
+A43, A112, the backstop protrusion sweep, the cap cards and the -0.004
+push-back all exist to hunt or paper over. It now cannot exist."*
+
+**Wrong.** Measured in v1 — the only path that runs both the clamp and the
+sweep, and the sweep shares no code with it:
+
+    clamp OFF + sweep:  sweep flattened 12627 plate texels   (66.8 s)
+    clamp ON  + sweep:  clamp found 0 same-texel violations
+                        sweep still flattened 12604          (67.3 s)
+
+A 0.2% difference. Acting on the Addendum 119 claim — deleting the sweep to
+bank the 60 seconds — would have removed a working guard.
+
+**Why.** The clamp is a **same-texel** invariant: `plateF[i] <= dQ[i] - eps`.
+The sweep searches **reprojected** poses, where the plate texel and the
+foreground that occludes it have parallaxed to *different screen positions*, so
+"the surface it backs" at a rendered pose is not `dQ` at the same index. brief
+§4.4's `d_hidden(x) >= d_occluder_silhouette(x) + eps`, read literally, is a
+same-texel statement, and it does not retire the search. The two guard
+different populations and both are needed.
+
+The harness comment in `sweepvsclamp.js` states this prediction before the run —
+*"A residue would mean the clamp's formulation is incomplete — most likely that
+'the surface it backs' is not the same thing at a rendered pose as it is at the
+authoring texel"* — and that is what happened. The cross-texel invariant is
+unbuilt, and it is the one that would actually retire the sweep.
+
+**What a135 still earns, unchanged:** in the quick path it removed 7401 texels
+(0.85%) strictly in front of the surface at their own index, worst 86 px of
+misplacement at the rim, with black% and comb both slightly better.
+
+### THE MODE PROBE THAT SHOULD HAVE COME FIRST
+
+Before deleting anything, which mode pays the 60 seconds? Measured (troll):
+
+    quick   clamp fires (7401 texels);  backstop sweep NEVER REACHED
+    v2      neither clamp nor sweep — the SHIPPED DEFAULT had no ordering
+            protection of any kind
+    v1      sweep runs: 63.5 s, 12627 plate texels; no clamp
+
+So the invariant and the expensive search for its violations lived in
+*different modes*, and the default had neither. The 60 seconds is v1-only, and
+v1 has been UI-disabled since a129 — banking it is bookkeeping on a disabled
+path, not a shipped win. That is the second thing Addendum 119 got wrong by
+assuming rather than measuring.
+
+### a136 — v2 SATISFIES THE INVARIANT BY CONSTRUCTION
+
+The clamp is now in `bgBuildFullPlanesCore`, applied to claimed texels
+(`reg && !isV`) against the layer's own visible depth. Result:
+
+    a136 ordering clamp L0/bin1..10: 0 of 2,536,839 claimed texels were
+    strictly in front of the surface they back.
+
+Zero, across ten bins and 2.5 million claimed texels. v2's per-bin depth is the
+source field restricted to that bin, so a claimed texel *cannot* be nearer than
+what is visible there. This is why v2 needs no protrusion apparatus and why
+A116 measured it at 0.00% black at all four user poses. The clamp stays as a
+cheap standing assertion against regression.
+
+**The v2 log is unconditional, and the first version was not.** It printed only
+on a violation, so a clean v2 bake printed nothing — indistinguishable from the
+clamp never being reached. That is a134's ambiguity one level down: **an absent
+line is not evidence of a clean pass.** Fixed before the result was believed.
+
+### THE DEPTH SOURCE — WHAT THE REPOSITORY CAN AND CANNOT ANSWER
+
+Two questions were asked. What is answerable from here:
+
+  * **PNG metadata: none.** All four depth maps carry no `tEXt`, `iTXt`,
+    `zTXt`, `eXIf` or `tIME` chunk. Bare pixel data.
+  * **Repository notes: none.** No estimator named in README, HANDOFF,
+    assets.json or the spec.
+  * **Float artefacts: none.** No `.exr`, `.npy`, `.pfm`, `.tif` anywhere in
+    the workspace.
+  * **Git history: uninformative.** All four arrive in bulk commits ("images",
+    "init") with no provenance.
+
+So **the asset pipeline has no provenance record at all** — which is itself a
+finding, and a cheap one to fix going forward. Which estimator produced these,
+and whether float originals survive, is knowledge that exists only outside the
+repository.
+
+**A way to settle a128 without waiting for a re-export:** build a synthetic
+asset with analytically-known float depth (a smooth ramp plus a hard occluder),
+quantise a copy to 8 bits, and run the a128 arms on both. That tests the
+prediction — *the fold-correct step should win once the constraint is
+expressible* — on data this workspace can legitimately create, and it is
+synthesis of ground truth rather than reconstruction of destroyed slope, so it
+does not repeat a86's mistake. Not started.
+
+### THE UNIFICATION WORTH RECORDING
+
+`1 / 0.00176 = 568 = k`. The number of depth levels the geometry requires is
+the same number as the MPI plane count it requires, for the same reason: **one
+quantum per pixel of parallax**. k now wears four hats — fold limit, tear
+criterion, plane count, depth bit budget — and 8-bit gives 255 against a
+requirement of 568, short by the same factor and for the same reason that 20
+planes are short.
+
+And the property that makes deriving constants pay twice: because eps is now
+*one source quantum* rather than a hardcoded 0.004, **it tracks automatically**.
+Move to 16-bit and eps follows to 1.5e-5 with no edit. The three hardcoded
+0.004s would not have.
+
+### STILL OPEN
+
+  * **The cross-texel ordering invariant** — the one that would actually retire
+    the sweep. Unbuilt, and now known to be a different problem from a135.
+  * Completion extent, reframed as two problems with two different bounds:
+    (a) behind occluders, where the reachable region is exactly the occluder's
+    own footprint and the extent parameter therefore ceases to exist;
+    (b) beyond the frame, bounded by the a113 margin law, which is the v2 skirt
+    and already correct. Conflating them is why one width served neither.
+  * The depth re-export, blocked on knowledge outside the repository.
+  * The outpaint trio, moved into `exportSDBundle`.
+  * Repointing the 57 v1-pinned harness drivers at v2.
