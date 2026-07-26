@@ -216,3 +216,128 @@ and valuable thing to discover, and it is a legitimate outcome of phase 1.
 Report the 5a table and the contact sheet, and state a recommendation with the
 reasoning — but **do not switch the default**. The pick is the user's; they are
 the one who can look at the troll's arm and say whether it is right.
+
+---
+
+# Addendum — transport tiers, and video
+
+## 9. Transport: three tiers, and one of them is quarantined
+
+"Demo page" and "API" are not opposites — a HuggingFace Space *is* an API, via
+`@gradio/client`. The real question is transport, and the answer is not one
+uniform choice.
+
+### The disqualifier for hosted demos, specific to this project
+
+**Gradio depth demos almost always hand back an 8-bit PNG preview.** Wiring one
+as a production path silently reintroduces the exact defect the last three
+rounds were spent proving is the binding constraint — and it would look like
+progress while doing it. That alone rules Spaces out as a bake input.
+
+The second disqualifier is provenance. A hosted endpoint can update the model
+underneath you without notice, at which point your provenance record is a lie
+that asserts precision. **A local sidecar is the only transport where you can
+hash the weights file**, which is exactly the gap that started this work.
+
+### The tiers
+
+| tier | transport | float? | may feed a bake? | in the 5a metric table? |
+|---|---|---|---|---|
+| **A** | in-browser ONNX / WebGPU | yes | **yes — default** | yes |
+| **B** | local sidecar (HTTP, opt-in) | yes | **yes** | yes |
+| **C** | hosted demo (Gradio Space / hosted inference) | usually **no** | **never** | **no** |
+
+**Tier C is not banned, it is quarantined.** It is genuinely useful for "let me
+see what Marigold does before I install Python", so allow it — but the provider
+declares `previewOnly: true`, and that flag has teeth:
+
+- its output can be displayed on the contact sheet, watermarked as preview
+- it is **excluded from the 5a boundary-agreement table**, because computing a
+  metric on 8-bit input for some rows and float for others makes the table
+  incomparable, which is worse than not having those rows
+- it can **never** be selected as a bake input
+
+**a89 is the gate, and it should be mechanical, not a convention.** Any provider
+whose output measures an 8-bit quantum is auto-marked `previewOnly` regardless
+of what it declared. That way a tier-A or tier-B provider that has a
+canvas-readback bug gets caught by the same rule, not just tier C.
+
+### Should everything just go through an API?
+
+No. Uniformity is worth something, but in-browser wins on every axis that
+matters here — free, private (the user's art never leaves the machine), offline,
+no rate limit, no third-party uptime, and no ToS question about production
+traffic on someone else's free Space. Keep it as the default and make the
+sidecar contract *identical in shape* so it is one interface with two transports
+rather than two code paths.
+
+### Sidecar contract, kept deliberately dumb
+
+```
+POST /estimate    multipart: image, providerId, settings
+  -> 200 { depth: <float32 binary>, width, height, convention, provenance }
+GET  /providers   -> [{ id, displayName, licence, weightsSha256, revision }]
+GET  /health      -> { ok, version }
+```
+
+Raw float32 in the body, not base64 JSON, not a PNG. Configurable URL, disabled
+by default, `localhost` only unless explicitly overridden. The `weightsSha256`
+from `/providers` goes straight into the provenance record.
+
+## 10. Video depth — the answer is "not yet, and here is the one line that keeps
+the door open"
+
+### It is a different product, not a feature increment
+
+The still case is not solved. Every cost in this pipeline multiplies by frame
+count: a 12 s bake at 24 fps is **five minutes of bake per second of footage**,
+before any of the per-frame plate and layer storage. And the assets this project
+is built around are paintings, which do not move — so video means a different
+asset class, not a wider one.
+
+**Do not build it now.**
+
+### But it inverts the hardest problem, and that is worth knowing
+
+Everything above is the case against. Here is the case for, and it is not small:
+
+> **The single hardest thing in the still pipeline — what is behind the occluder
+> — is directly observable in video.**
+
+Content hidden in frame *N* is very often visible in frame *N±k*. The 2005–2016
+DIBR literature exploited this heavily ("disocclusion filling with adaptive
+utilisation of temporal correlations"), and it means the completion problem
+stops being invention and becomes retrieval. So video is harder in every
+dimension **except the one that is currently blocking**.
+
+That is a genuine product argument and it belongs to the user, not to us. Flag
+it and move on.
+
+### The one line that costs nothing today
+
+Make the provider signature frame-shaped from the start:
+
+```
+estimate(frames: ImageBitmap[], opts) -> { depths: Float32Array[], ... }
+supportsTemporal: boolean
+```
+
+A still is `frames.length === 1`. This costs nothing now and avoids an interface
+rewrite later. Do that, and nothing else video-related.
+
+### Licence landscape, for when it is asked again
+
+Same split pattern as the still models — the famous checkpoints are the
+non-commercial ones.
+
+| model | licence | note |
+|---|---|---|
+| **Video Depth Anything — Small** | **Apache-2.0** | CVPR 2025 highlight; built on DAv2; arbitrarily long video; faster than the diffusion methods |
+| Video Depth Anything — Base / Large | **CC-BY-NC-4.0** | same split as DAv2 and DA3 |
+| **RollingDepth** | **Apache-2.0** | CVPR 2025, prs-eth — **the same lab as Marigold**, "video depth without video models". Reported to preserve fine detail where DepthCrafter and ChronoDepth distort scene layout |
+| DepthCrafter (Tencent) | commercial use requires a business licence | CVPR 2025 highlight, but not permissive |
+| ChronoDepth | verify | reported to deliver "billboard-like, layered depth maps" — worth a look purely because that failure mode is close to what this renderer wants anyway |
+
+Note the convenient symmetry: **if Marigold wins the still comparison,
+RollingDepth is its video sibling** — same lab, same licence, same diffusion
+prior. The still decision would carry forward for free.
