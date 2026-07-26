@@ -7386,3 +7386,85 @@ re-estimation, so whatever is generated next is recorded from its first commit.
     black — smaller than assumed, but it is what unblocks `fgTearStep`.
   * The cross-texel ordering invariant, which is what would retire the sweep.
   * Repointing the 57 v1-pinned harness drivers at v2.
+
+---
+
+## ADDENDUM 123 — the skirt, ported to quick
+
+### THE TARGET WAS MEASURED FIRST
+
+a140: 97-100% of quick's black sits in the outer 8% of the content; interior is
+0.00-0.09%. It is beyond-frame, and quick had **no beyond-frame coverage of any
+kind** — the skirt lives in `bgBuildFullPlanesCore` (v2 only) and a114
+established quick never reaches v1's scene extension. v2, which has one,
+measures 0.00% black at every pose.
+
+### SIZED BY THE LAW, NOT COPIED FROM A CONSTANT
+
+a139 found v2's skirt cone-blind: `0.10` / `0.05` world, hardcoded. Harmless
+there because it is 1.3x-190x oversized at 45 degrees, but there was no reason
+to copy the mistake into a second path. The quick skirt's margin is **a113's
+shift envelope** — `max|shift|` over the depth range at the cone rim — which is
+569 px at cone 45 (k = 568) and moves with the cone, as a132 requires of
+anything claiming to be cone-derived.
+
+### THE GEOMETRY, AND WHY IT IS EXACT RATHER THAN APPROXIMATE
+
+Fine **along** the edge, two rings **outward**. Outside `[0,1]` the depth
+texture clamps to its edge texel, so the displacement is constant along an
+outward ray; and with constant depth the reprojection
+`Sw = refEye + (Pw - refEye)*s` is affine in `Pw`, so a two-ring strip
+interpolates exactly. That is the whole reason this is cheap: no subdivision is
+needed in the direction where nothing varies.
+
+Top and bottom strips run the full extended width, so the corner wedges are
+covered by the same strips — no separate corner quads and no seam where they
+would have met.
+
+**948 triangles, 956 vertices. Quick bake 10064 ms against ~10425 ms before —
+no measurable cost.** REPLY01's "a few hundred triangles instead of millions",
+against v1's extension which took the plate from 0.87 to 7.8 Mtexel and added
+17.6 s for the same job.
+
+### MEASURED
+
+troll, quick, black% inside the projected content polygon:
+
+    deg   edge OFF   edge ON     interior OFF   interior ON   total OFF   total ON
+     15      1.78      0.04           0.00          0.00         0.53       0.01
+     25      3.13      0.44           0.00          0.00         0.93       0.13
+     32      4.22      0.84           0.01          0.02         1.26       0.26
+     38      5.30      1.27           0.04          0.04         1.61       0.40
+     45      6.80      1.91           0.09          0.11         2.08       0.62
+
+**70-98% of the edge black is gone.** Interior is unchanged, which is exactly
+what a beyond-frame fix should look like — if the interior had moved, the skirt
+would have been covering something it has no business covering, and that would
+be a finding rather than a win.
+
+### THE RESIDUAL IS REAL ABSENCE — CHECKED, NOT ASSUMED
+
+1.91% at 45 degrees is not nothing, and the obvious flattering explanation is
+that the troll's border is dark paint rather than a hole. It is not. The clear
+is alpha 0, so a texel the geometry never covered has alpha 0 while painted
+content has alpha 255 however dark it is. Counted separately, **ABSENT% equals
+black% exactly at every pose** (1.93 vs 1.93 at 45). No over-claim available.
+
+**Named hypothesis, not yet tested.** The skirt continues the depth at the
+*edge texel*. Where that texel carries near content, the skirt sits near and
+parallaxes with the foreground instead of staying as a backdrop, leaving the
+far region uncovered. A32 avoids this in v2 by giving the wide margin to the
+*backdrop bin specifically*; quick has a single plate, so its continuation is
+whatever depth the edge happens to have. The fix would be to continue at the
+plate's far envelope rather than the edge value — stated as the next
+measurement, not as a conclusion. `window._noQuickSkirt` reverts.
+
+### STILL OPEN
+
+  * The skirt residual above (far-envelope continuation).
+  * Completion extent (a) — under 0.1% of quick's black by measurement, but it
+    is what unblocks lowering `fgTearStep`.
+  * The cross-texel ordering invariant, which is what would retire the sweep.
+  * The cone/gain mismatch: 35/45 documented, 26.6 reachable by head tracking.
+  * Populating the camera FOV LUT (blocked on network egress).
+  * Repointing the 57 v1-pinned harness drivers at v2.
