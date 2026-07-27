@@ -7724,3 +7724,133 @@ belonged in the suite from a81, not at a125. It is there now.
   * The cone/gain mismatch: 35/45 documented, 26.6 reachable by head tracking.
   * Populating the camera FOV LUT (blocked on network egress).
   * Repointing the 57 v1-pinned harness drivers at v2.
+
+---
+
+## Addendum 126 — the smear was mine, and so was the metric that hid it
+
+The user reported that a week of work had made the render visibly worse and
+that a77–a80 was the last good state. Both halves are correct, and the second
+half is the more important one.
+
+### THE BISECT
+
+Rendered a76 through a158 from their own checked-out trees at the user's actual
+controls (`fgReach 60`, `fgThresh 0.03`, `seed 2`, `harmonic`) and their actual
+pose. a99 is clean — crisp content, honest holes. **a117 is where the light
+column and the figure start being dragged into vertical streaks**, and every
+build after it inherits that.
+
+### WHAT a117 DID, AND WHY THE REASONING WAS ROTTEN
+
+It replaced the **fold limit** — a per-cell, per-depth geometric test, "does
+this triangle fold when reprojected" — with a **cliff test**. Dropped triangles
+went from **692,469 (39.9%) to 8,025 (0.5%)**. Every one of those 684,000 cells
+is one that *cannot be drawn without folding*, and a117 left them in the mesh,
+stretched across the reveals.
+
+Its own justification, from the commit: *"comb energy 27–29% below fold AND
+below no-tear"*, and black 41.74 → 41.84.
+
+**Both of those metrics reward the artifact.** A triangle stretched across a
+reveal is *smooth*, so it lowers comb. It *covers*, so it lowers black. The arm
+that produced the taffy scored best on both, and I wrote the numbers up as
+evidence.
+
+That is the systematic error behind the whole arc, not one bad commit. Every
+constant "derived" in the invariance campaign was selected against a coverage or
+smoothness metric, so the optimisation pressure pointed **toward smearing and
+away from the architecture** — tear at the fold, hand the hole to one plug.
+
+In this session alone the same error fired four times: `black%` read 0.00 while
+the crystal mountain went flat; `edgeblack` sized its polygon from a frame
+containing the skirt; the a153 tank turned every remaining hole into black paint
+so `uncovered%` collapsed to 0.01%; and a76–a81 measured 43.75% "uncovered"
+against a158's 0.33%, which is the letterbox area, not coverage.
+
+### WHAT REPLACED IT
+
+**a160 — the fold limit is the criterion again, with the floor a117 was
+missing.** a117's *observation* was right: the fold limit at 851 px is 0.47 of
+one 8-bit level, so on an 8-bit source the smallest expressible step already
+folds and the geometric test alone fires on quantisation noise. It abandoned the
+geometry instead of adding the floor. A cell is now torn when it **folds** (the
+a102 exact envelope, in texels, at its own depth) **and** its depth span exceeds
+**one source quantum** (the grid a89 measures off the data). Both terms derived,
+both tracking their inputs; 16-bit relaxes the floor to 1/65535 automatically.
+Torn footprint 39.9% → ~3%, smear gone, content crisp on all three assets.
+
+**a160b/c — one plug, and nothing else.** The island mask was built from the
+occluder's depth footprint hundreds of lines before the tear, so the plug's
+region and the mesh's holes were different sets. Cap cards — 411,529 one-texel
+splats — were the third mechanism papering over the gap, and they are the moiré
+comb a117 measured and misattributed to the tear. Both retired.
+
+**a161 — the depth test is the gate; the mask never could be.** Of the pixels
+still uncovered, the fraction with plate geometry behind them being *discarded*
+was 89.3% at 35° and 99.8% at 52°. The mask is computed in source space, and the
+plate texel visible through a hole is not the texel the hole was torn from — the
+two surfaces are at different depths and reproject differently. The plate is a
+backstop lying behind the foreground, so the depth test already discards it
+wherever the foreground survives; it can only reach the screen where the
+foreground is gone, which is the definition of a disocclusion.
+
+**a162 — the cross-texel ordering invariant, in closed form.** Open since a137.
+Under the a104 law the screen position is `f·(x/D − ex·g(d))`, linear in the eye
+offset, so plate texel A and source texel B collide for some eye in the cone iff
+`|x_B − x_A| ≤ |shift(d_A) − shift(d_B)|`, and the plate occludes when
+`shift(d_A) > shift(d_B)`. The invariant is therefore
+
+    shift(plate at A)  ≤  min over B [ shift(src at B) + dist(A,B) ]
+
+a **min-plus chamfer** over the source's own shift field: one O(N) sweep,
+covering the cone *continuously* instead of at four sampled poses, replacing
+63.5 s of GPU render-and-readback. **a135 is its zero-distance case** — the two
+were never separate laws. Chamfer weights divided by 1.0396 so the (1, √2)
+distance is a strict lower bound on Euclidean (Borgefors 1986, max error 3.96%),
+because overestimating distance loosens the bound and would miss violations.
+
+### AND THE ACCEPTANCE TEST THAT NEVER EXISTED
+
+Every "rest frame unchanged" claim compares one build against another build.
+None compared against the picture. At rest the eye *is* the reference eye, so
+the reprojection is the identity and the rest frame **must** be the source. That
+is geometry, not a tuning target.
+
+Measured over smooth source regions only (local 3×3 range ≤ 8 levels, 31.5% of
+pixels), where a canvas resample and a GPU bilinear fetch cannot disagree:
+
+    build   smooth mean |d|   smooth px off by >8
+    a80             1.63              0.14%
+    a158            1.59              0.07%
+    a161            1.88              0.56%
+    a162            1.88              0.56%
+
+The rest frame **is** the source — 1.6–1.9 levels of 255. The arc never drifted
+the rest pose. a161's gate change costs 0.07% → 0.56%, which is the honest price
+of filling the 1.6% that was holes. a162 is free at rest, exactly as derived.
+
+It also explains the confounded test recorded in a162: the foreground is
+alpha-blended at its silhouette edges, so the backstop composites through a
+partially transparent edge pixel. That is antialiasing behaving like a portal
+should, not an ordering violation, and it is the same population as the 0.56%.
+
+### THE RULE I AM TAKING FROM THIS
+
+A metric that answers "is this pixel painted" or "is this neighbourhood smooth"
+will always prefer the smear. Neither may gate a change again. The acceptance
+test is the picture: a side-by-side at the user's controls, plus rest fidelity
+against the source.
+
+### STILL OPEN
+
+  * The a162 invariant is proven on paper and in bake statistics but not yet in
+    a rendered depth buffer. The instrument is `renderNormalizedDepthPass`.
+  * A smear-sensitive gate in `regress.js` — `texint.js` exists but is not wired
+    in, so the guard is still only my own discipline.
+  * Quick loses 31% of tile detail at rest against realtime; every handle I can
+    toggle is eliminated, and the ghost mesh is the one thing never ablated.
+  * The frame work: content inside the box by default, inner vs outer frame,
+    outer frame taking the browser background, fullscreen spill.
+  * Eight `window._` flags added this week, and the cap-card block still in the
+    file behind `_capCards`.
