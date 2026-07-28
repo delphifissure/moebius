@@ -7854,3 +7854,92 @@ against the source.
     outer frame taking the browser background, fullscreen spill.
   * Eight `window._` flags added this week, and the cap-card block still in the
     file behind `_capCards`.
+
+---
+
+## Addendum 127 — a169: the falsified work leaves the file
+
+Rule 7 of this review says a falsified premise gets removed from the code and
+recorded here, not left behind a flag. Three mechanisms from this week had been
+disproved and then merely switched off. This addendum records their removal and,
+more importantly, records how a deletion that is *supposed* to change nothing
+was verified — because "nothing moved" and "the instrument was blind" produce
+identical output.
+
+### What was deleted, and what falsified it
+
+**1. The a150 skirt far envelope.** The skirt beyond the frame carried a
+constant depth equal to `min(plateF)`. Measured against the a158 edge-depth
+continuation it produced **6.87% edge black at 45°** versus **0.13%**. That
+0.13% is itself a correction: the a149 figure was originally reported as 1.91%
+because `edgeblack.js` derived its measurement polygon from a rest frame *with
+the skirt visible*, so the two arms were scored over different areas (Addendum
+124). Beyond the metric, it was background cloning by another name — it painted
+a full-frame backdrop, and the user's rule is a single plug that fills
+disocclusions **and only disocclusions**. Deleted with it: the cloned skirt
+material and the inward inset that existed only to serve it.
+
+The cloned material carries its own lesson, already recorded in 124 and worth
+repeating because it nearly went unnoticed: `THREE.UniformsUtils.cloneUniforms`
+**clones textures**, and a cloned texture has `needsUpdate` false and no GPU
+upload, so every sample returns `(0,0,0,0)`. The arm painted zero pixels at
+every pose and reported plausible-looking numbers.
+
+**2. The a111 cap cards, in full.** a160b handed the torn footprint to the plug,
+which leaves no orphaned texels to splat. a160c had already retired them, after
+411,529 one-texel splats turned out to be the moiré comb that a117 measured and
+misattributed to the tear criterion — the single most expensive misattribution
+of the arc, since it is what motivated replacing the fold limit with the cliff
+test and gave us the week of taffy. The a160c comment promised the block would
+be deleted once the comparison run was shot. It was shot.
+
+**3. The a58 island gate on the render.** a161 falsified it and the reasoning is
+worth keeping: the mask is computed in **source space**, and the plate texel
+visible through a hole is *not* the texel the hole was torn from, because the
+two surfaces sit at different depths and reproject differently. So there was
+nothing to switch back to. The mask is still uploaded — the SD export reads it
+as the inpaint region — it simply no longer gates anything.
+
+Eight `window._` flags went with them. Four harness drivers named a deleted flag
+and were updated in the same commit, because an arm that can no longer diverge
+does not fail loudly; it silently reports agreement. That is the a134 lesson and
+it is the reason the cleanup touched the harnesses at all.
+
+**Deliberately kept**, because they switch shipped behaviour rather than hide a
+disproved premise: `_noQuickSkirt`, `_noFishtank`, `bgEmbedVolume`, and
+`_noCrossTexelOrder` (the A/B `harness/depthorder.js` runs against a162).
+
+### Verifying a change that should change nothing
+
+All three mechanisms were already off by default (a158, a160c, a161), so the
+**correct** outcome is that no measurement moves. A null result is only evidence
+if the instrument could have shown a change, so three independent checks:
+
+| check | result |
+|---|---|
+| `regress.js masks` | **ALL PASS (20)**, served build confirmed `a169` |
+| `edgeblack.js troll quick`, a168 vs a169 | **byte-identical in all 36 cells** |
+| `a169shots.js` — frames, not statistics | troll + star, v2 + quick, rest/25°/45°: crisp, no taffy, no holes |
+
+The byte-identical A/B is exactly what a **stale served copy** looks like. Only
+`regress.js` had the a110 served-identity guard; it is now in `edgeblack.js` and
+in the new `a169shots.js`, both of which print the served `MOEBIUS_BUILD` and
+compare it against the tree before reporting a single number.
+
+### One instrument gap closed on the way
+
+`edgeblack.js` tracked `ABSENT` (alpha 0 — geometry never covered the pixel)
+only inside the edge band. Interior black was therefore unreadable: a hole and a
+dark painted region counted the same. Troll on quick at 45° reads **15.99%
+interior black and 0.00% interior ABSENT** — every one of those pixels is
+painted plate, and the figure grows with angle because the revealed cave
+background is genuinely dark. Without the ABSENT column that row looks like a
+16% hole rate. This is the same class of error as a152: *covered is not correct*,
+and its mirror, *dark is not uncovered*.
+
+### What this does not do
+
+It does not advance the *window within a window*. a168 made the inner and outer
+frames separate objects, which was the prerequisite, but nothing is yet allowed
+to break the outer frame, and `bgEmbedVolume = false` only restores the old
+undifferentiated protrusion rather than a deliberate spill. That remains open.
