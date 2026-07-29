@@ -8036,3 +8036,29 @@ threshold, colour-blind.
 click, so `document.fullscreenElement` is actually set and `bgIsFullscreen()` is
 exercised rather than stubbed. If the headless shell refuses, the harness says so
 and reports no fullscreen numbers — a stubbed predicate would be testing the stub.
+
+### Regression, and the strongest form of "nothing moved"
+
+`regress.js masks`: **ALL PASS (20)**, served build confirmed `v3.13.26-a170`.
+
+The shot sheets are stronger than the suite here. Every a170 frame is
+**byte-identical** to its a169 counterpart — 18 of 18: troll, starwatcher and
+silver warrior, v2 and quick, at rest / 25° / 45°. Not "within tolerance",
+identical PNGs. The windowed path did not move at all, which is what a change
+confined to the fullscreen rule and the portal-plane recess should produce. The
+bake numbers agree too (warrior `keep` 17,738,692, `foldPct` 6.063, `maxRatio`
+14.077 in both builds), confirming the frame work never reaches the geometry.
+
+One stale comment fell out of this pass and was corrected (a170b): the uniform
+sync still claimed the quick skirt carried its own cloned material, which a169
+had deleted along with the far envelope it existed to hold. The `_syncBG` call
+is kept — it is free, and it is the line that must exist the moment the skirt
+gets its own material again — but not with a false reason attached to it.
+
+### Still open
+
+The outer matte is no longer *removed* in fullscreen; it goes black. That
+satisfies the spec's spill clause through depth rather than through absence, and
+it is the right trade while the apron is what removal would expose. If the frame
+should genuinely disappear in fullscreen, the apron has to be cropped some other
+way first — that is a separate piece of work and is not done.
