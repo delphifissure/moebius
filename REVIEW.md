@@ -8171,3 +8171,14 @@ uniform since — a dead branch carrying a live explanation.
 | outer frame vanishes in fullscreen | **done** (a171), apron bounded by the crop |
 | window within a window | **partly** — the portal plane is recessed `innerVolumeDepth` behind the outer aperture, which is the recess; but nothing breaks out of it |
 | the inner volume breaks the frame and spills | **not shipped** — needs a derivable pop-out depth (see above) |
+
+### Regression
+
+`regress.js masks`: **ALL PASS (20)**, served build confirmed `v3.13.28-a172`.
+
+All **18** windowed frames — troll, starwatcher and silver warrior, v2 and quick,
+rest / 25° / 45° — are **byte-identical to a170**. So a171's crop and a172's
+embed change moved nothing in the windowed default, across a shader that gained
+a varying, five uniforms and a discard branch, and across a rewritten embed rule.
+The bake numbers are unchanged too (warrior `keep` 17,738,692, `foldPct` 6.063,
+`maxRatio` 14.077 in a169, a170 and a172 alike).
