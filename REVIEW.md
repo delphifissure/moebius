@@ -8062,3 +8062,112 @@ satisfies the spec's spill clause through depth rather than through absence, and
 it is the right trade while the apron is what removal would expose. If the frame
 should genuinely disappear in fullscreen, the apron has to be cropped some other
 way first — that is a separate piece of work and is not done.
+
+---
+
+## Addendum 129 — a171/a172: the crop that let the frame go, and the pop-out that had to be given up
+
+Addendum 128 left one clause of the frame spec unserved: the outer frame was
+supposed to vanish in fullscreen, and it could not, because removing it exposed
+the scene-extension apron across 100% of the letterbox *at rest*. This addendum
+records closing that, and — separately — the user's decision to drop the
+fullscreen pop-out once it was shot rather than described.
+
+### a171: a window hides by geometry, not by paint
+
+The blocker was the **mechanism**, not the rule. An opaque matte hides by
+painting over, so it can never be taken away. A real window hides by geometry: a
+point behind the window plane is visible only if the ray from the eye to it
+passes through the aperture. That is the whole rule, it is exact, and it needs no
+constant:
+
+```glsl
+if (u_apertureCrop > 0.5 && vWorldPos.z <= u_apertureZ) {
+    float t = (u_apertureZ - u_eyeWorld.z) / (vWorldPos.z - u_eyeWorld.z);
+    vec2 X = u_eyeWorld.xy + (vWorldPos.xy - u_eyeWorld.xy) * t;
+    if (max2(abs(X - u_apertureCenter) - u_apertureHalf) > 0.0) discard;
+}
+```
+
+**The apron is bounded by this for free**, and the argument is worth keeping:
+the apron exists to fill beyond-frame reveals, and a beyond-frame reveal is *by
+definition* source that has slid **into** the aperture. A correctly-working apron
+therefore never needs to be outside it, so anything of it that is outside is
+padding on display. No apron-specific logic, no mask, nothing per-image.
+
+The crop runs exactly when the matte is absent. Windowed keeps the opaque matte
+because there it must also supply the **page colour**, which a discard cannot.
+Windowed frames came back **byte-identical** to a170 across both modes and all
+three poses, despite the shader gaining a varying, five uniforms and a discard
+branch — `crop = 0` is a real no-op.
+
+### a172: the pop-out, shot rather than described, and dropped
+
+a170 made fullscreen stop embedding so the inner volume came in front of the
+glass and broke out. The numbers looked right — 73,780 px outside the aperture,
+control-verified as the inner volume. **The frames did not.**
+
+For any content to be in front of the glass, the portal plane must move forward
+of `zN − innerVolumeDepth`, and moving it forward **translates the whole volume,
+background included**. On the troll at `H = 0.20` the volume spans 0.20–0.26 from
+the reference eye when embedded and 0.16–0.22 when not: everything 0.04 closer,
+so the near extent magnifies **1.25×** and the *far* extent **1.18×**. At rest
+this is invisible — the camera and the reference eye coincide and the ray law
+makes the scale factor cancel — but off axis the background visibly grows and
+gains parallax the moment you enter fullscreen. That is not "only the immersive
+content spills"; it is the whole scene stepping toward the viewer.
+
+This is *inherent*, not a bug: there is no translation that pops the near content
+and leaves the background alone. The construction that would — **grow**
+`innerVolumeDepth` in fullscreen rather than translate, leaving the far extent
+and the portal plane fixed — is recorded in `bgEmbedOffsetNow` as the open route
+and is **not shipped**, because the amount to grow by has no derivation and an
+underivable constant is exactly what constraint 1 forbids.
+
+Presented as three options, the user chose: **embed unconditionally**. Fullscreen
+now differs from windowed in exactly one way — the matte is removed and the crop
+bounds the apron in its place.
+
+### Measured
+
+`harness/spill.js`, troll v2, real `requestFullscreen()` from a Playwright click:
+
+| arm | embed | nearest zOff | matte | crop | content outside aperture (0°/25°/45°) |
+|---|---|---|---|---|---|
+| windowed | −0.0400 | 0.0000 | on | 0 | **0 / 0 / 0** |
+| FULLSCREEN | −0.0400 | 0.0000 | **GONE** | 1 | **0 / 0 / 0** |
+| FS crop OFF | −0.0400 | 0.0000 | GONE | 0 | **136000 / 103831 / 55738** |
+
+**The control had to change with the design, and noticing that mattered.** Under
+a170 the test was "does anything spill". With nothing protruding, zero-outside is
+*also* what you would measure if the apron simply were not there — so zero on its
+own proves nothing. The control is now the **crop forced off with the matte still
+gone**, and the apron floods straight back to 100% of the bar area at rest. That
+is what makes the zero above evidence.
+
+Two reporting flaws were caught and fixed on the way:
+
+* The `crop` column originally read `bgAperture.crop` — the build's *intent* —
+  so the override arm reported `crop 1` while running with the uniform forced to
+  0. It now reads the **effective uniform** off a live material.
+* `harness/fsdiff.js` (new) compares windowed against fullscreen pixel for pixel:
+  53.33% of the frame differs at every pose and **every differing pixel sits on
+  the matte** — 0 elsewhere, max delta 0. Fullscreen content is exactly windowed
+  content.
+
+### Also removed under rule 7
+
+`u_ignoreSrcAlpha`. It existed only for the a111 cap cards, whose alpha was zero
+exactly where they were needed; a169 deleted the cards and nothing has set the
+uniform since — a dead branch carrying a live explanation.
+
+### Where the spec now stands
+
+| clause | state |
+|---|---|
+| everything inside the box by default | **done**, 0 px outside the aperture, measured |
+| inner frame and outer frame as separate objects | **done** (a168) |
+| outer frame takes the browser background | **done** (a168), read from the live computed style |
+| outer frame vanishes in fullscreen | **done** (a171), apron bounded by the crop |
+| window within a window | **partly** — the portal plane is recessed `innerVolumeDepth` behind the outer aperture, which is the recess; but nothing breaks out of it |
+| the inner volume breaks the frame and spills | **not shipped** — needs a derivable pop-out depth (see above) |
