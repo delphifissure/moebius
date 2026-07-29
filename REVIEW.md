@@ -7943,3 +7943,96 @@ It does not advance the *window within a window*. a168 made the inner and outer
 frames separate objects, which was the prerequisite, but nothing is yet allowed
 to break the outer frame, and `bgEmbedVolume = false` only restores the old
 undifferentiated protrusion rather than a deliberate spill. That remains open.
+
+---
+
+## Addendum 128 — a170: the window within the window, and the two things a168 asserted that were not true
+
+The user's frame spec has four clauses. a167/a168 delivered two of them and
+*asserted* the other two. This addendum records what happened when the
+assertions were measured.
+
+### The two failures
+
+**1. "In fullscreen the outer frame is removed, so content may spill past the
+letterbox."** Measured with `harness/spill.js`: removing the matte does not
+reveal content spilling. It reveals the **scene extension apron** — **100% of
+the bar area, on both v2 and quick, AT REST**, where by definition nothing should
+be revealed. The apron is beyond-frame padding whose entire purpose is to fill
+disocclusions; putting it on screen unprompted is the background cloning the user
+ruled out, arriving through the frame instead of through the plug.
+
+**2. Nothing could have spilled anyway.** Under a167 the nearest content sits at
+`zOff = 0.0000` — exactly *on* the glass. And the content mesh rect and the outer
+aperture are **the same rect at the same plane**, so an edge vertex at
+`(±hw, y, zN + zOff)` with `zOff ≤ 0` is farther from the eye than the aperture
+corner at `(±hw, y, zN)` and projects strictly *inside* it at every eye position.
+A frame coincident with the mesh cannot be crossed. "Spill" was not merely
+disabled; it was geometrically impossible.
+
+### The fix, and why it needs no new constant
+
+The inner window belongs at the **portal plane**, and that is a definition rather
+than a choice. In stereoscopic composition the *stereo window* **is** the plane of
+zero parallax, and an object in front of it that gets cut by the frame edge is a
+*window violation* (Lipton, **Foundations of the Stereoscopic Cinema**, Van
+Nostrand Reinhold, 1982, ch. 6). Here the portal plane *is* the zero-parallax
+plane: displacement is 0 there, and the a104 law's first term is depth-free, so
+every depth coincides at rest.
+
+The user's two rules are then the two halves of the window-violation rule:
+
+| | embed offset | portal plane | inner volume |
+|---|---|---|---|
+| **windowed** | `−innerVolumeDepth` | recessed `innerVolumeDepth` behind the outer aperture — *this recess is the window within the window* | flush with the glass, contained |
+| **fullscreen** | `0` | coincident with the outer aperture | in front of the glass, free |
+
+And the outer matte **stays** in fullscreen, taking black (what the browser puts
+around fullscreen content) rather than being removed. The spill comes from the
+other side instead: the inner volume moves in front of the glass and the **depth
+test alone** lets exactly that content paint over the matte, while everything
+behind the screen plane is still cut. *"Only the immersive content"* is delivered
+by the depth buffer — no mask, no special case, nothing to tune.
+
+### Measured
+
+`harness/spill.js`, troll v2, content identified **differentially** (see below):
+
+| arm | embed | nearest zOff | content outside aperture | aperture fill |
+|---|---|---|---|---|
+| windowed 0° / 25° / 45° | −0.0400 | 0.0000 | **0 / 0 / 0** | 100 / 85.56 / 68.77 |
+| FULLSCREEN 0° / 25° / 45° | 0.0000 | +0.0400 | **73780 / 73780 / 73738** (54.2% of the bar area) | 100 / 100 / 99.86 |
+| FS, `innerVolumeDepth = 0` | 0.0000 | 0.0000 | **0 / 0 / 0** | 100 / 98.67 / 96.67 |
+
+The third row is the control and it is the load-bearing one: with no inner volume
+the spill returns to exactly zero, which is what proves the 73,780 px is the inner
+volume and not the apron wearing its name.
+
+### One thing tried and reverted
+
+Starting the tank walls at the portal plane instead of the viewport surface — so
+the inner volume would stand proud of a *drawn* rim — opens an
+`innerVolumeDepth` slab with no wall in it, and at 45° the apron shows through
+that slab where the wall used to be: troll v2 aperture fill went **68.8% → 100%**,
+the black wall replaced by extension. That is the same apron exposure this build
+removes from the fullscreen path, and it contradicts the a153 spec that the
+extent closest to the user is locked to the viewport surface. Reverted; the
+windowed numbers above are identical to a169's. The inner window does not need
+to be drawn geometry — it is the zero-parallax plane, and what makes it legible
+is the volume standing proud of it in fullscreen.
+
+### Two instrument corrections
+
+**"Painted" cannot be a brightness test.** The first version of `spill.js` called
+any bright pixel content. The outer matte is the *page colour* — white here — and
+the renderer's clear is opaque, so it scored the frame itself as content and
+reported **100% spill at rest with the matte on**, a number that would have looked
+like a catastrophic containment failure. Content is now identified
+**differentially**: render the scene, render it again with everything hidden
+except the two frames, call a pixel content wherever they differ. Exact, no
+threshold, colour-blind.
+
+**Fullscreen is driven for real.** `requestFullscreen()` from a genuine Playwright
+click, so `document.fullscreenElement` is actually set and `bgIsFullscreen()` is
+exercised rather than stubbed. If the headless shell refuses, the harness says so
+and reports no fullscreen numbers — a stubbed predicate would be testing the stub.
