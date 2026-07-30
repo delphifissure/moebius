@@ -8182,3 +8182,113 @@ embed change moved nothing in the windowed default, across a shader that gained
 a varying, five uniforms and a discard branch, and across a rewritten embed rule.
 The bake numbers are unchanged too (warrior `keep` 17,738,692, `foldPct` 6.063,
 `maxRatio` 14.077 in a169, a170 and a172 alike).
+
+---
+
+## Addendum 130 — a173: the pop-out depth has a derivation, and it is zero
+
+Addendum 129 left the pop-out unshipped because the amount to grow
+`innerVolumeDepth` by "has no derivation". That was wrong: it has one, it is
+exact, it needs no constant, and on all three suite assets it evaluates to
+**essentially zero**. That is a finding, not a failure to find one.
+
+### The source that does not apply
+
+The obvious place to look is stereoscopic comfort — Shibata, Kim, Hoffman and
+Banks, *The zone of comfort: predicting visual discomfort with stereo displays*,
+Journal of Vision 11(8):11, 2011 — which bounds negative parallax through the
+vergence–accommodation conflict. **It does not apply here.** This is a
+*monocular* head-tracked portal: one eye position is rendered, there is no
+binocular disparity at all, and every photon leaves the screen plane so
+accommodation never moves. Borrowing those numbers would be importing a constant
+from a different display, which is precisely the failure mode this project keeps
+catching.
+
+### The source that does
+
+`frameCorners()` is **Kooima's generalized perspective projection** (Robert
+Kooima, *Generalized Perspective Projection*, 2008) — an off-axis asymmetric
+frustum pinned to the portal rect at `portalPlaneWorldZ`. So the **frustum side
+planes are the window edges**. Content in front of the screen plane that reaches
+them is cut *by* them, and a near object cut by the frame is Lipton's window
+violation (*Foundations of the Stereoscopic Cinema*, 1982, ch. 6): the cut reads
+as occlusion and contradicts the parallax placing the object in front.
+
+That is not a perceptual threshold to be sourced. It is a geometric fact to be
+solved.
+
+### The solve
+
+Under the a104 law, a texel at portal-plane coordinate `P` with offset `zOff`,
+seen from an eye at lateral offset `ex` and distance `H`, meets the portal plane
+at
+
+```
+X_screen = P.x − ex · zOff / (H − zOff)
+```
+
+Behind the glass (`zOff < 0`) this tracks the eye by *less* than `|ex|` and stays
+bounded; in front (`zOff > 0`) it runs the other way and grows without bound. It
+is cut when `|X_screen| > hw`.
+
+Growing `innerVolumeDepth` from `I` to `I+p` while holding the embed at `−I`
+keeps the portal plane **and** the far extent fixed and makes the near extent
+exactly `+p`. With `u = smoothstep(portalNorm, 1, d)`:
+
+```
+M   = hw − |P.x|                  margin to the window edge
+z*  = H·M / (H·tan θ + M)         largest offset that texel may carry
+p_i = (z* + I)/u − I              and p_max = min over texels
+```
+
+Every term is already in the system: `hw`/`hh` are the portal rect, `θ` is
+`bgViewFadeEndDeg`, `H` is live, `I` is `innerVolumeDepth`, `u` comes from the
+depth map. Nothing is chosen.
+
+### Validated against brute force
+
+A closed form that agrees with itself is not evidence, so `harness/popdepth.js`
+also sweeps the same texels directly:
+
+| asset | p_max closed form | p_max brute force | agreement | cut texels at 1.5·p_max |
+|---|---|---|---|---|
+| troll | 0.000044 | 0.000044 | **0.0e+00** | 83 |
+| starwatcher | 0.000034 | 0.000034 | **0.0e+00** | 300 |
+| silver warrior | 0.000196 | 0.000196 | **0.0e+00** | 228 |
+
+### The result
+
+`p_max` is **0.1–0.5% of `innerVolumeDepth`** on every asset. On all three the
+binding texel sits on the **bottom row** at `u ≈ 1.0` — near ground running off
+the bottom of the frame, resting on the window edge, where `M = 0` and no
+protrusion is possible at all. For those texels `p_i = 0` identically *whatever
+θ is*, so the result is not even sensitive to the cone choice.
+
+It is not one stray texel. The sorted per-texel budget on the troll:
+
+| percentile of inner-volume texels allowed to be cut | p bought |
+|---|---|
+| 0 (none) | 0.00004 |
+| 0.1% | 0.00016 |
+| 1% | 0.00112 |
+| 5% | 0.00562 |
+| 50% | 0.20107 |
+
+Five orders of magnitude between the border band and the interior. Surrendering
+5% of the inner volume to being cut buys only 14% of `innerVolumeDepth`.
+
+**So a uniform pop-out is zero for any image whose near content touches the
+frame** — which is all three suite assets, and is a compositional norm rather
+than an accident. Shipping a uniform pop-out means shipping window violations.
+a172's decision was right for a reason better than the one given at the time.
+
+### The route that remains
+
+The per-texel column `p_i` *is* the derivation for a **tapered** pop-out: each
+texel protrudes as far as it can without being cut — zero at the border, large
+in the interior. That is the geometry arriving unaided at what stereographers do
+by hand (the depth taper near frame edges, the sibling of the floating window).
+
+Not implemented. It is a non-uniform depth remap that shears the volume near the
+frame — a visible change to every scene, which needs its own measurement and its
+own decision rather than being slipped in behind a derivation.
