@@ -8292,3 +8292,99 @@ by hand (the depth taper near frame edges, the sibling of the floating window).
 Not implemented. It is a non-uniform depth remap that shears the volume near the
 frame — a visible change to every scene, which needs its own measurement and its
 own decision rather than being slipped in behind a derivation.
+
+---
+
+## Addendum 131 — a174: the tapered pop-out is real, and it has a hard edge
+
+Addendum 130 pointed at the per-texel bound as the derivation for a **tapered**
+pop-out. Built it. It works, it is derived end to end, and it has an envelope
+that cannot be argued away.
+
+### The construction — nothing chosen
+
+Grow the inner half by `u_popExtra`, which leaves the portal plane and the far
+extent where they are (so no background rescale — the a172 objection), then clamp
+every texel to its own a173 bound:
+
+```
+M     = min(hw−|P.x|, hh−|P.y|) − one rendered pixel
+zStar = H·M / (H·tan θ + M)
+zOff  = min(zOff, zStar)
+```
+
+The **request** is derived too: ask for `z*` at the frame *centre* — the most the
+window can ever grant — and let the taper take it back everywhere else.
+
+The **margin** is derived: a violation smaller than one rendered pixel cannot be
+seen, so the display's own pixel is the quantum here, exactly as one source
+quantum is the quantum in a160. It is read from the live drawing buffer rather
+than assumed. Without it the leak was **104 px**, because the bound is *tight* —
+substituting `z*` back gives `Emax·z/(H−z) = M` exactly, so protruding content
+lands precisely **on** the edge and rasterisation splits it. With it, zero. Cost:
+1.2% of the protrusion.
+
+### Measured
+
+| arm | embed | popExtra | near zOff | matte | crop | content outside |
+|---|---|---|---|---|---|---|
+| windowed | −0.0400 | 0.00000 | 0.0000 | on | 0 | 0 / 0 / 0 |
+| FULLSCREEN | −0.0400 | **0.03115** | **0.0312** | GONE | 1 | **0 / 0 / 0** |
+| FS crop OFF | −0.0400 | 0.03115 | 0.0312 | GONE | 0 | 136000 / 107669 / 67841 |
+| FS pop=0 | −0.0400 | 0.00000 | 0.0000 | GONE | 1 | 0 / 0 / 0 |
+
+**0.03115 is 78% of `innerVolumeDepth` of genuine protrusion with zero window
+violations at any pose**, and the rest frame is untouched — 15 px differ, max
+delta 18, float noise — exactly as the ray law predicts, since screen position is
+independent of `zOff` at the reference eye.
+
+### The envelope, and why it is structural
+
+Clean to ~35°. From ~40° to the 45° rim the figure grows a hole and the leading
+edge smears.
+
+That is not a bug to chase. At the border `dz*/dM = 1/tan θ`, so the screen
+derivative is
+
+```
+dX/dP.x = 1 − tan φ / tan θ
+```
+
+| eye angle φ | dX/dP.x | border compression |
+|---|---|---|
+| 0° | 1.00 | 1× |
+| 35° | 0.30 | 3.3× |
+| 40° | 0.16 | 6.3× |
+| 45° | **0.00** | **singular** |
+
+**The no-violation bound and the no-fold bound are tangent at θ.** The maximal
+taper — every texel protruding as far as it may — is critical at the rim *by
+construction*. There is no version of it that is also fold-free across the whole
+cone. Backing the taper off fixes it, and the amount to back off by is a chosen
+constant — which is the objection that stopped a172 — so it is not invented here.
+
+### The fade does not rescue it, and the arm that said otherwise was dead
+
+The hopeful reading was that the degeneracy lives inside the 35→45° fade band,
+where content is being blacked out anyway. Measured with the a143 fade
+**engaged**: the hole is still plainly visible at 40° and 45°.
+
+The first version of that arm was **dead**, and its own check caught it. With
+`isSweeping` false the render loop rewrites `camera.position.x` from the tracker
+inputs every frame, so the harness's camera moves were silently discarded and all
+three poses shot the rest frame — 40° and 45° came back byte-identical. Re-driven
+through `manualCamDX` / `setViewOffset`, the supported input. This is the a134
+lesson for the third time in this arc: *an arm must be shown to have diverged
+before its numbers are read.*
+
+### Landed off
+
+`bgPopOut` defaults **false**. Verified inert: troll windowed *and* fullscreen
+byte-identical to a172 in both modes at all three poses, and `spill.js` reads
+`popExtra 0` with 0 outside everywhere. `bgPopOut = true` enables it for anyone
+who wants the pop inside 35°.
+
+This is not rule 7 hiding a falsified premise behind a flag. The premise is not
+falsified — the taper does what the derivation says. What is off is a *feature
+with a measured envelope narrower than the committed cone*, and the envelope is
+written down beside the switch.
