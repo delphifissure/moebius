@@ -8555,3 +8555,71 @@ for one path was never applied to the shipped one; applying it found the shipped
 path an order of magnitude worse; fixing that exposed a further defect underneath.
 The suite is now the thing that would have caught each of them, which it was not
 before.
+
+---
+
+## Addendum 134 — a180: the bake is idempotent again, and the guard was already there
+
+a179's two defects — the quick bake changing the v2 bake, and v2 not being
+repeatable against itself — are **one bug**.
+
+### The cause
+
+The despeckle / shallow-closing pass **replaces the layer's depth texture**
+(`L.textures.depth = hTex2`) so the display shows the cleaned depth. The next
+build reads that texture back as its input, so closing and despeckle ran over
+already-closed, already-despeckled data. Each build derived from the previous
+build's *output* rather than from the source.
+
+### The part worth recording
+
+**A guard for exactly this already existed, and its comment already stated the
+right contract:**
+
+> REBUILD IDEMPOTENCE: after a build with thin features the layer's depth texture
+> is the HALOED one; reading it back would bake the halo into the next build's
+> input … Keep the pristine plug-input depth from the first build and restore it
+> here — a rebuild then runs on byte-identical input.
+
+That is precisely correct, and it fired only when the depth texture was the
+thin-feature halo one (`dSrc._isPlugHalo`). `hTex2` carried no tag. The contract
+was written down and then not enforced on the path that needed it most — which is
+a different failure from not knowing the rule, and a more insidious one: the
+comment reads as if the problem is solved.
+
+### The fix
+
+Tag **every** depth texture the pipeline installs (`_isBakeDerived`) and restore
+the pristine base whenever the current one carries it. The halo keeps
+`_isPlugHalo` too, because that flag also means "this is the haloed one"
+elsewhere. A newly loaded image installs an untagged texture, so the base still
+refreshes naturally — the original design, now applied to all of its cases.
+
+### Verified
+
+`harness/v2order.js`, one page, v2 → quick → v2 → v2:
+
+| asset | before (a177) | after (a180) |
+|---|---|---|
+| star | 256165 / 251042 / 250197 quads, worst 5.240 / 7.564 / 7.564 | **256165 ×3, worst 5.240 ×3** |
+| troll | not measured | **276753 ×3, worst 6.789 ×3** |
+| warrior | not measured | **532538 ×3, worst 19.908 ×3** |
+
+"order does not matter" and "repeatable against itself" now both hold on all
+three assets.
+
+**And nothing else moved, which is the point.** `regress.js masks` ALL PASS (28)
+with every v2 cold reading identical to a179 and every quick reading identical to
+a177 — the fix *restores* the cold path rather than shifting it. All six troll
+frames are byte-identical to a177 across both modes and three poses, because a
+cold build has no prior derived texture and so the guard cannot fire there.
+
+### Where the a173–a180 arc ends up
+
+The pop-out question that started this produced no pop-out, and along the way it
+produced: a closed-form window-violation bound validated against brute force; the
+proof that a fold-free taper needs slack and that the slack has a derivable source;
+the a165 gate on the shipped default for the first time; a 8.3× reduction in v2's
+worst surviving stretch; eight new suite checks; and an idempotence bug in the
+default bake path. The feature is still off. The path it was asked to travel was
+worth more than the feature.
