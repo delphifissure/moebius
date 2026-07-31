@@ -8388,3 +8388,96 @@ This is not rule 7 hiding a falsified premise behind a flag. The premise is not
 falsified — the taper does what the derivation says. What is off is a *feature
 with a measured envelope narrower than the committed cone*, and the envelope is
 written down beside the switch.
+
+---
+
+## Addendum 132 — a176/a177: the gate reached the shipped default, and found it 12× worse
+
+Two things landed here, and the second only exists because the first was measured
+rather than assumed.
+
+### a176 — the a165 smear gate, ported to v2
+
+The gate lived only in the quick bake. v2 — **the shipped default** — reported
+`stretch: null` and had **no measured worst surviving fold ratio at all**. That
+was a blind spot in the suite, and it was why a175's λ had no source on the path
+that matters.
+
+v2 emits triangles in two places (merged quadtree blocks and a per-cell
+fallback), and its grid is one vertex per source texel, so a B×B block has cell
+extent exactly B texels — the same denominator the quick gate divides by. Both
+sites now feed the same measurement.
+
+**Backdrop quads are counted separately.** The backdrop is the back-stop and
+keeps its cliff cells deliberately ("a hidden rubber wall beats a hole"), so
+folding it into one maximum would let the most-hidden geometry in the scene set
+the tolerance for the most-visible.
+
+What it found on the troll:
+
+| | quads | folding | worst | mean(>1) |
+|---|---|---|---|---|
+| quick (a165) | 1,557,496 | 14.3% | **4.8×** | 1.85× |
+| v2 **front** | 113,881 | 31.7% | **56.1×** | 6.14× |
+
+**I guessed the cause wrong and the split disproved it.** I expected the
+backdrop's intentional rubber wall to be responsible; separating it did not move
+the number — 56.085 either way. This was the front planes, the ones you see.
+
+### a177 — a160's tear criterion, ported to v2
+
+v2's cell test was still `if (!wantFar && mx - mn > fgTearStep) continue;` — a
+**fixed depth step**, the a117 criterion that a160 falsified. Shift is nonlinear
+in depth, so a sub-`fgTearStep` step at *near* depth still folds hard. a160 was
+never carried across.
+
+Two things v2 did not have and now does:
+
+* **Its own noise floor.** `window._qbSrcQuantum` is measured inside the quick
+  bake, which v2 never runs — so v2 had none. A fold test without a floor fires
+  on quantisation noise, which is exactly the 39.9%-of-the-mesh failure a160
+  documents. The a89 detection now runs per layer on that layer's depth.
+* **A per-layer shift LUT.** `bgShiftLUTFor` maps depth to shift in *pixels* at a
+  given resolution; composited layers have their own dimensions, so one LUT per
+  bake would tear an added layer against the wrong pixel scale.
+
+Merged blocks are tested too — a folding block stops merging and falls through to
+the per-cell pass, where each of its cells is judged individually.
+
+| asset (v2 front) | a176 worst | a177 worst |
+|---|---|---|
+| troll | 56.085× | **6.789×** (mean 6.137 → 2.138) |
+| starwatcher | *not measured* | 5.240× |
+| silver warrior | *not measured* | 19.908× |
+
+**Only the troll has a before/after pair.** star and warrior were never measured
+under a176 — the gate landed and was immediately superseded — so those are a177
+readings, not improvements. Said plainly rather than implied by a table.
+
+**`foldPct` rises (31.7% → 69.5%) and that is expected.** The survivors are now
+the cells the *quantum floor* keeps, and on an 8-bit source the smallest
+expressible step already exceeds the fold limit (a160: 0.63 quanta at this k), so
+almost any cell with depth change registers above 1. The number that carries the
+signal is the worst ratio, and it fell 8.3×. Quad count roughly doubles because
+folding blocks stop merging.
+
+### Verified, and the limit of that verification
+
+`regress.js masks` **ALL PASS (20)** on served build a177, and exactly the three
+v2 troll frames changed while all three quick frames are byte-identical —
+correct scoping for a change that touches v2 only. The 25° and 45° v2 frames are
+clean by eye, no new holes.
+
+**But regress's stretch columns come from the QUICK bake.** ALL PASS means a177
+broke neither the quick path nor the masks; it does **not** lock in the 6.8×.
+Adding v2 gate bounds to the suite is the next step and is not done — until then
+this improvement is unguarded and can regress silently, which is the condition
+a165 was created to end for the quick path.
+
+### What it means for the pop-out
+
+λ = 1 − 1/R now reads 0.853 (troll), 0.809 (star), 0.950 (warrior) instead of
+0.982 — real slack at last on troll and star. The taper is therefore no longer
+blocked by a missing tolerance. It remains off (`bgPopOut = false`) because it
+has not been re-measured against the new geometry, and warrior's 19.9× still
+leaves almost none.
