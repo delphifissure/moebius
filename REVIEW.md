@@ -8481,3 +8481,77 @@ a165 was created to end for the quick path.
 blocked by a missing tolerance. It remains off (`bgPopOut = false`) because it
 has not been re-measured against the new geometry, and warrior's 19.9× still
 leaves almost none.
+
+---
+
+## Addendum 133 — a178/a179: guarding the v2 gain, and the non-idempotent bake it uncovered
+
+a177 took v2's worst front-plane stretch from 56.1× to 6.8×, but nothing guarded
+it — regress's stretch columns come from the *quick* bake, so the gain could
+regress silently. That is the exact condition a165 exists to end, and it was
+still true one path over.
+
+### a178 — the gate is in the suite
+
+Eight new checks, 28 total: worst and mean fold ratio per asset, **front planes
+only** (the backdrop keeps its cliff cells deliberately, so binding the visible
+geometry to the most-hidden geometry's stretch would be meaningless). Ceilings
+are ~1.5× the measurement, the same headroom the quick columns carry.
+
+| asset | v2 worst (cold) | ceiling | v2 mean | ceiling |
+|---|---|---|---|---|
+| star | 5.240 | 8.0 | 2.802 | 4.0 |
+| warrior | 19.908 | 30.0 | 4.143 | 6.0 |
+| photo | 9.000 | 14.0 | 2.200 | 3.4 |
+| troll | 6.789 | 10.0 | 2.138 | 3.2 |
+
+**`foldPct` is deliberately not bounded.** With the a160 criterion a survivor is
+a cell within one source quantum, and on an 8-bit source one quantum already
+exceeds the fold limit — so a band on `foldPct` would encode the file's bit depth
+rather than the geometry. The ratios carry the signal; that is the a165 lesson
+unchanged.
+
+### a179 — the first version of that guard was pinned to a contaminated state
+
+It baked v2 in the same page straight after quick. star came back **7.6** where a
+standalone v2-only bake read **5.240**; troll and warrior agreed, so it looked
+like noise on one asset.
+
+It is not noise. `harness/v2order.js` settles it in **one page** — v2 → quick →
+v2 → v2, nothing differing but the order:
+
+| bake | quads | foldPct | worst |
+|---|---|---|---|
+| v2 #1 (cold) | 256,165 | 70.677 | **5.240** |
+| quick (between) | — | — | 6.186 |
+| v2 #2 (after quick) | 251,042 | 74.504 | **7.564** |
+| v2 #3 (after v2) | 250,197 | 73.444 | 7.564 |
+
+**Two defects, both open.**
+
+1. **The quick bake changes the v2 bake** — 5.240 → 7.564 worst, 5,123 fewer
+   quads. This is the a151 failure class (bake state surviving a mode switch),
+   and it means the shipped default's geometry depends on whether the user
+   pressed quick first.
+2. **v2 is not idempotent against itself** — baking v2 twice gives 251,042 then
+   250,197 quads. Rebuilding the same mode on the same image should be a no-op.
+   The likely shape is in-place mutation of the depth array being re-applied to
+   already-mutated data.
+
+Neither is fixed here. This is a bake-lifecycle bug, not a frame or gate bug, and
+it deserves its own arc rather than a drive-by at the end of one.
+
+**What is fixed is the measurement.** regress now reloads the page before the v2
+bake, so the guard is pinned to the **cold** path. Cold readings reproduce
+exactly against the standalone harness (star 5.2, troll 6.8, warrior 19.9) — cold
+is repeatable even though rebuilds are not.
+
+`regress.js masks`: **ALL PASS (28)**.
+
+### Why this matters beyond the numbers
+
+The a176→a179 sequence is the same shape three times over: a metric that existed
+for one path was never applied to the shipped one; applying it found the shipped
+path an order of magnitude worse; fixing that exposed a further defect underneath.
+The suite is now the thing that would have caught each of them, which it was not
+before.
