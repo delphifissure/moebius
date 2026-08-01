@@ -8948,3 +8948,102 @@ where they were looking, which is why what they saw was the a189 defect.
   tank was never hidden and that column still includes it. The a134 rule again.
   It does not touch the foreground-alone columns, which hide everything except
   the layer mesh, so the findings above stand.
+
+## Addendum 139 — a190/a191: one non-defect, and a periodicity that was never there
+
+Two items were opened together: the vertical tearing a188 found, and the
+warrior's banding left unexplained since a181.
+
+### a190 — the look-up tearing is not a defect, and I should not have called it one
+
+a188 found that with the eye **below** centre the foreground mesh alone loses
+42% of its coverage by 40°. I described that as "the one real plain-path defect
+left". It is not a defect: tearing is what a160's criterion is *for*. The
+question is whether anything is lost behind it.
+
+| deg | eye | FG cover% | **unfilled % of the torn area** | absent% | dark% |
+|---|---|---|---|---|---|
+| 27 | below | 74.2 | **0.000** | 0 | 0 |
+| 35 | below | 65.0 | **0.000** | 0 | 0 |
+| 40 | below | 58.2 | **0.000** | 0 | 0 |
+| 45 | below | 50.3 | **0.000** | 0 | 0 |
+
+The plug fills **every** vacated pixel at every pose. The standing requirement —
+"a single perfect plug that seamlessly slots in to fill all disocclusions" — is
+met on this axis.
+
+**The arm diverged this time, and here is why it did not before.**
+`bgFishtankMesh` is REBUILT whenever `_bgFishtankKey` changes, which happens on
+every pose, so a188's `mesh.visible = false` was discarded on the next render —
+that is the mechanism behind the failed arm recorded in Addendum 138. The source
+documents `window._noFishtank`, which drops it and keeps it dropped. With that,
+dropping the tank moves dark% **28.21 → 0** at −35°, which also confirms a185's
+substance: the entire look-up dark band is the tank ceiling and nothing else.
+
+Two limits, both stated rather than discovered later:
+
+- **Completeness is not correctness.** A plug that smeared background across the
+  hole would also score 0.000. The correctness claim rests on the a165/a177
+  stretch gates, which are a different measurement.
+- `_noFishtank` also nulls `bgAperture`, so the a171 crop is off in those frames
+  and the apron is exposed — there is visible horizontal streaking in them.
+  **Shot again in shipped configuration: the streaking is gone.** It was apron,
+  and the frame occludes it.
+
+### a191 — the warrior's "period 4" is a search-floor artifact, in three instruments
+
+| run | search floor | reported "period" | the ACF it came from |
+|---|---|---|---|
+| a182 | lag 4 | 4 | `[[4,0.712],[19,0.582],[21,0.574],[6,0.541]]` |
+| a183 | lag 4 | 4 | same shape |
+| a191b | lag 3 | 3 | `[[3,0.752],[4,0.688],[5,0.654],[6,0.636]]` |
+| a191c | DFT bin 1 | = whole region height | bin k=1, the residual trend |
+
+Every one of those is the edge of its own search space. A monotonically decaying
+autocorrelation has no periodic component, and the global maximum of a truncated
+one is always its first lag; a182's own note worried about this and moved the
+floor from 2 to 4, which relocated the artifact instead of removing it. Swapping
+in a DFT reproduced the failure at the other end of the spectrum.
+
+**And the picture says there is no period.** The analysed crop is ragged
+horizontal smear filling the trailing disocclusion right of the figure —
+irregular filaments, not a repeating band. "Combed / venetian-blind" was my
+description at a181, and the comb metric it inspired (a vertical second
+difference) fires on horizontal streaks whether or not they repeat.
+
+**Consequence for a182 and a183.** Both stand as measurements — doubling the
+depth bins moved nothing, and disabling quadtree merging at 10.7× the quads
+moved nothing. What does not stand is what they were framed as refuting. They
+were hunting causes of a periodicity the artifact does not have.
+
+### What has now been eliminated, and what is left
+
+| candidate | status | how |
+|---|---|---|
+| depth bins | eliminated | a182, prediction failed |
+| quadtree decimation | eliminated | a183, prediction failed |
+| the a83 dithered cut | eliminated **by mechanism** | `u_bandCutUvRate` is **0 in v2** — the cut is armed by the quick bake's `armNet()` and v2 never arms it. The a191 "cut off" arm was therefore a no-op and is not evidence. |
+| surviving folded quads | eliminated | a191d below |
+
+a191d wrapped `_v2Tears` so the fold it tolerates shrinks by 1/2/4/8×:
+
+| tear × | surviving quads | torn | comb energy | black% |
+|---|---|---|---|---|
+| 1 | 532538 | 504683 | 14.214 | 0.041 |
+| 8 | 722079 | 519148 | 14.241 | 0.042 |
+
+The mesh really changed — 36% more quads, because rejecting a 16×16 merge
+subdivides it — and the comb energy moved by **+0.2%**. Tearing harder does not
+touch the band, so it is not made of surviving folds.
+
+*Instrument note:* that run's "worst fold ratio" column read `?`/NaN —
+`_v2Stretch.max` was not populated when read — so that column is void. The
+divergence is established by the quad and torn counts, which did move.
+
+**What remains** is the fill itself. The band sits in the trailing disocclusion,
+which v2 fills from its backdrop/claim flood rather than from front-plane quads,
+and that flood carries along rows — which is what horizontal filaments look
+like. That is the same object as the long-open A85 item, "nested-lip banding on
+the warrior — per-strip gradient carry in the plate fill". The next test is a
+backdrop-solo render at this pose: if the streaks are in the backdrop alone, the
+fill is located and A85 is the work.
