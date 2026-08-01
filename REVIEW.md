@@ -9098,3 +9098,86 @@ search space, in three different instruments. The rule that would have caught it
 earlier: a number that sits exactly on a search boundary is a property of the
 search, and must be treated as absent evidence until the boundary is moved and
 the number does not follow.
+
+## Addendum 141 — a192: the a189 error on the shipped path, triggered by dragging a window
+
+a189 fixed one instance of a shape, and the shape is more general than the
+instance. `u_bandCutUvRate` is `bgBandCutStretchFrac / rendererWidth`, computed
+while **arming the bake**. `onWindowResize` updates `u_resolution` and every
+render target and does **not** re-arm the cut. So every window resize after a
+bake leaves the a72/a83 stretch cut calibrated for the old canvas — no
+simulated viewer required.
+
+### Measured
+
+`harness/resize.js`, star, quick, look-up 27°:
+
+| arm | backing | 1/thr | dark% | edge |
+|---|---|---|---|---|
+| baked small, rendered small | 380×214 | 380 | 0.000 | 9.217 |
+| **A — resized, not re-baked** | 740×416 | **380** | **2.988** | 7.206 |
+| REF — baked fresh at that size | 740×416 | 740 | **0.002** | 8.754 |
+
+The threshold did not move while the frame nearly doubled, so it is 1.95× too
+large and the **undithered** `uvRate < u_bandCutUvRate` branch deletes content.
+A correctly-armed canvas of the same size deletes essentially nothing, so it is
+the staleness and not the resolution.
+
+### The fix generalises a189 instead of sitting beside it
+
+Record the width the cut was armed against, and define
+
+```
+u_pxScale = (width actually being rasterised into) / (width armed against)
+```
+
+= **1** immediately after a bake, the **supersample factor** inside SV pass 1,
+the **resize ratio** after a window drag, and the **product** when both apply —
+which is a case neither patch would have handled alone. Refreshed per frame in
+`renderPortalFrame`, because a resize emits no bake and there is nowhere else
+the change would be noticed.
+
+### Verified, and how the verification had to change
+
+`regress.js masks` **ALL PASS (28)**, every value identical to a180/a189 — the
+shipped path is unchanged.
+
+The end-to-end re-test was **not usable**: its post-resize probe crashes
+swiftshader. Rather than assume that was flakiness, the **pre-a192 build was run
+through the identical harness as a control** and crashed in exactly the same
+place, which exonerates the change — the earlier run that survived was luck.
+
+So the correction was verified directly instead. From the shader's point of
+view, resizing to R× the width is **indistinguishable** from having armed at
+1/R of the current width: both are the same ratio between two numbers, and both
+numbers are reachable. `harness/pxscale.js` drives that ratio at a fixed canvas,
+with no resize and nothing to crash:
+
+| arm | u_bandCutUvRate | u_pxScale | dark% | edge |
+|---|---|---|---|---|
+| BASELINE (shipped) | 2.6316e-3 | 1.000 | 0 | 9.217 |
+| STALE (correction off) | 5.1237e-3 | 1.000 | **2.97** | 8.866 |
+| CORRECTED (a192) | 5.1237e-3 | 1.947 | **0** | 9.223 |
+
+**2.97% against the 2.988% measured through the resize route** — two independent
+routes to the same ratio, the same damage to two decimal places — and the
+correction returns the frame to baseline exactly. It is also the better test:
+it changes only the two numbers in question, so nothing else a resize does
+(targets rebuilt, letterbox recomputed, textures reallocated) can carry the
+result.
+
+### Three guards fired correctly today and each was wired so it could be ignored
+
+1. **`node --check` caught a syntax error** I introduced in the line-1 banner (an
+   apostrophe in `a189's` closed the string). I had chained it with `&&` ahead of
+   a separate statement, so the failure suppressed an echo without stopping the
+   run — and both tools then reported on a build that would not parse. Parse
+   checks are now a `set -e` gate with a browser-equivalent parse beside them.
+2. **The served-identity stamp printed `served build = null`** on that run and I
+   nearly read past it.
+3. **The `on floor` flag printed YES** in a191b while the verdict line ignored it
+   and reported the search floor as a period.
+
+The guards are working. The wiring around them kept letting the result through,
+which is the failure mode worth naming: *a check whose failure does not stop the
+thing it is checking is not a check.*
