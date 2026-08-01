@@ -8769,3 +8769,182 @@ flagged: the 0° row already reads 28.1% at a pose that is 7.7° **horizontal**,
 the metric moves substantially for motion of any kind. Until the same angles are
 run on both axes with a motion-invariant metric, "vertical is special" is not
 established.
+
+## Addendum 137 — a187–a189: the simulated viewer was deleting the foreground, and the numbers could not see it
+
+User report, refined over three messages: content disappearing around the
+astronaut and the dune party, worse with vertical offset, and then —
+decisively — *"I'm only seeing it in simulated mode."* Plus their own
+correction to my framing: *"I'm not sure it's 'in front', it could be that the
+foreground is disappearing."* Both were right, and the second one was the key.
+
+### a187 — split the mode in two, and read the picture
+
+The a130 simulated viewer is two passes: pass 1 renders the portal from
+`svEye()` into an offscreen buffer, pass 2 draws that buffer on a quad seen from
+a pass-2 camera. `svState.pipShowsRaw = false` already exposes pass 1 alone
+through an orthographic camera, so the mode splits into RAW (pass 1) and SIM
+(pass 1 + 2), comparable against PLAIN **at the same eye**.
+
+| pitch | RAW lost% | SIM lost% | PLAIN lost% |
+|---|---|---|---|
+| 0° | 0 | 0 | 0 |
+| 27° | 48.89 | 55.75 | 51.03 |
+| −35° | 60.72 | 63.81 | 63.37 |
+
+**That table says nothing is wrong at rest, and the contact sheet from the same
+run shows the astronaut rendered see-through and horizontally striped with the
+ice mountain visible through his body — at pitch 0, eye at the origin.**
+
+The reason is worth keeping: every arm was scored against **its own** rest
+frame. RAW's rest frame is already ghosted, so a defect present at *every* pose
+registers as no change at *any* pose. A self-referential metric is structurally
+blind to a constant defect. This is the a152 failure mode in a new costume, and
+the instrument that caught it was an image.
+
+Two instrument-hygiene rules went into the harness before its numbers were read,
+both of which would otherwise have faked the finding: `svState.pip = false` (the
+28%-wide inset puts the other arm's pixels inside the measured frame) and
+`svState.falloff = false` (the Lambertian dim darkens uniformly and reads as
+detail loss).
+
+### a188 — the supersample, and a188b — which half of it
+
+Pass 1 builds its buffer at `SV_SUPERSAMPLE = 1.75` linear: 665×375 from a
+380×214 canvas. Rebuilding it at canvas size, changing nothing else, removed the
+ghost, the stripes and a black wedge entirely. Mean gradient: 6.36 at 1.75×,
+5.38 at 1×, **5.08 for the plain path** — the supersampled arm was *adding*
+spurious edge energy, which is what aliasing does.
+
+That named the cause but not the route, and the two routes need different fixes:
+the **downsample** (1.75× minification through one bilinear tap with no mip
+chain) or the **render** (the portal's own buffers are canvas-sized). Reading
+the pass-1 buffer back at its own native 665×375, before pass 2 touches it,
+separates them without ambiguity — and **the ghost is already in those pixels**.
+Pass 2 and the missing mip chain are both exonerated. Predicted in advance in
+the harness header, on the grounds that bilinear minification scrambles detail
+but does not delete geometry, and a black wedge is deleted geometry.
+
+### a188c — the mechanism
+
+One thing on that path is sensitive to how many pixels the frame is rasterised
+into, and it discards fragments — the a72/a81/a83 directional stretch cut:
+
+```glsl
+vec2 jxS = dFdx(vUv), jyS = dFdy(vUv);      // UV per RENDERED pixel
+float uvRate = max(length(jxS), length(jyS));
+float svMinS = |det| / uvRate;
+float svRatio = svMinS / u_bandCutUvRate;   // = bgBandCutStretchFrac / renderer WIDTH
+stretched = svBacked && (uvRate < u_bandCutUvRate
+                         || (svCutProb > 0.0 && svDith < svCutProb));
+```
+
+**A correction to my own first reading**, which claimed the threshold was
+denominated in source texels and therefore mis-dimensioned outright. It is not:
+the measured shipped value is `2.6316e-3 = 1/380` against a 380 px canvas and a
+1920 px source. The quantity is correctly denominated in rendered pixels and it
+*does* follow a window resize. My inference that the cut gets more aggressive as
+the window grows is **withdrawn**.
+
+The bug is narrower and belongs entirely to the simulated viewer: pass 1 binds a
+target 1.75× wider and never updates the uniform. Both symptoms fall out of the
+two branches of one test — `uvRate < u_bandCutUvRate` is an **undithered**
+discard and produces the solid black wedge; the a83 **dithered** band produces
+the striped see-through figure.
+
+| | A shipped | B cut OFF | C thr/1.75 | D thr×1.75 | PLAIN |
+|---|---|---|---|---|---|
+| pitch 0 | 6.36 | 6.00 | **6.00** | 5.11 | 5.08 |
+| pitch 27 | 5.62 | 5.89 | **5.84** | 5.09 | 4.91 |
+
+C differs from B by **0.00 mean luma at rest and 0.08 at pitch 27**.
+
+**The second self-inflicted lesson of this arc.** Arm D is the same correction
+with the sign reversed. It scored the closest mean-gradient of any arm — 5.11
+against PLAIN's 5.08 — and the image shows it wiping the astronaut to a flat
+silhouette. A scalar agreeing with the reference is not an image agreeing with
+the reference, and the *sign of a correction cannot be read off a summary
+statistic*. D is kept permanently in `harness/svcut.js` as a control rather than
+deleted.
+
+### a189 — the fix
+
+A new uniform `u_pxScale` converts a measurement back to canvas pixels. It is
+**1.0 on every normal frame, so the shipped path is unchanged by construction
+rather than by testing**; `svRenderFrame` sets it to the supersample factor for
+pass 1 and restores it in the `finally`, so an exception mid-pass cannot leave
+the shipped path scaled.
+
+Two deliberate choices in it:
+
+- The shader reads `pxS = (u_pxScale > 0.0) ? u_pxScale : 1.0`. An absent float
+  uniform reads 0 in GLSL, and 0 would make every rate zero and
+  `uvRate < threshold` unconditionally true — the whole layer would vanish. A
+  material that does not carry the uniform must degrade to shipped behaviour,
+  not to the worst possible one.
+- The `fwidth(vNormalizedDepth) < u_bandCutMaxGrad` term is corrected too, even
+  though a188c convicted only the two rate branches. It is the identical unit
+  error in the identical block, and fixing one branch would make the result
+  depend on which happened to fire. Flagged in the code as reasoned, not
+  measured.
+
+**Verified.** Shipped uniforms, no harness overrides: solid figure at every
+pitch, party restored, wedge gone. RAW `dark%` at pitch 10/20/27 went
+0.69/1.84/2.79 → **0.00/0.00/0.00**, and at negative pitches it now sits exactly
+on the plain path (14.65/20.44/27.67), which is the a153 tank ceiling and
+correct. `regress.js masks` **ALL PASS (28)**, every value identical to a180.
+
+### The version stamp is three strings and the guard checks the wrong one
+
+The suite printed `served build = v3.13.35-a183` while testing a189.
+`regress.js` reads its identity from **line 1** of `moebius.js` and compares it
+against the same line fetched over HTTP; `MOEBIUS_BUILD` at line 7081 is a
+*different* string, and `MOEBIUS_FEATURES` is a third that still says
+`v3.13.25-a128`. Both sides of the guard read the stale banner, matched, and
+passed. `harness/moebius.js` is a symlink to the live tree so the suite did test
+a189 — the label was wrong, not the test — but different harnesses check
+different stamps, which is precisely how a180 and a183 nearly shipped fiction.
+Banner bumped and the suite re-run so the green is correctly labelled.
+
+## Addendum 138 — a184's vertical finding does not survive its own control
+
+a184 reported detail loss rising monotonically with vertical angle and stated,
+correctly, that its metric could not separate destruction from displacement. It
+then read the trend anyway. Two things were missing: a **horizontal control at
+matched angles**, and a **motion-invariant metric**. `harness/flatten.js` adds
+both — mean Sobel gradient over content pixels, which translation does not move
+and washing out does.
+
+| deg | axis | a184 lost% | edge% | FG edge% | FG area% |
+|---|---|---|---|---|---|
+| 27 | H | 50.8 | 104.7 | 99.5 | 92.9 |
+| 27 | V+ (eye up) | **51.4** | 96.7 | 95.9 | 95.4 |
+| 27 | V− (eye down) | 55.4 | 97.6 | 114.4 | **74.4** |
+| 40 | H | 57.6 | 89.9 | 103.8 | 82.8 |
+| 40 | V+ | 59.1 | 91.1 | 88.2 | 92.4 |
+| 40 | V− | 68.4 | 79.6 | 105.4 | **58.4** |
+
+**"The vertical axis is special" is refuted for the look-up direction**: 50.8%
+horizontal against 51.4% vertical at the same angle is no difference at all, and
+the motion-invariant column says the composited frame still holds 96.7% of its
+gradient there. a184 measured displacement.
+
+**There is a real defect, in the opposite direction to the user's report.** With
+the eye *below* centre the foreground alone loses 42% of its coverage by 40°
+(100 → 74.4 → 66.3 → 58.4) while the gradient of what survives *rises* to
+105–114%. By the criterion stated in the harness before the run, that is the
+mesh **tearing** — honest holes — not smearing. With the eye *above* centre, the
+user's own pose, the foreground holds 92–95% of both. The plain path is clean
+where they were looking, which is why what they saw was the a189 defect.
+
+### Two corrections to the earlier record
+
+- **a185's title is backwards.** The black band appears when the eye is *below*
+  the panel centre, looking up into the box, which is where a box shows its
+  ceiling. The geometry argument in a185 was right; the label was not, and the
+  user's reported pose (`y = +0.090`) is the other direction entirely.
+- **`flatten.js`'s tank-hiding arm did not diverge.** Its `dark%` at −27° reads
+  20.44 against a184's 22.96 at the same pose *with the tank visible*, so the
+  tank was never hidden and that column still includes it. The a134 rule again.
+  It does not touch the foreground-alone columns, which hide everything except
+  the layer mesh, so the findings above stand.
