@@ -9047,3 +9047,54 @@ like. That is the same object as the long-open A85 item, "nested-lip banding on
 the warrior — per-strip gradient carry in the plate fill". The next test is a
 backdrop-solo render at this pose: if the streaks are in the backdrop alone, the
 fill is located and A85 is the work.
+
+## Addendum 140 — a191e: the warrior's band is the backdrop's fill, and it is the A85 carry
+
+The last step of the a191 chain. v2 draws the trailing region from one of two
+owners, and `mpiFullMeshes` carry `userData.v2rank` (assigned far → near, with
+rank 0 documented as the backdrop by the shipped `bgSoloToggle`), so they
+separate exactly with no new machinery.
+
+warrior, 35°, region 404..749, 20..538 of 960×540. Ten plane meshes, present at
+ranks {0:2, 6:2, 7:2, 8:2, 9:2}:
+
+| arm | region coverage | comb energy |
+|---|---|---|
+| FULL (shipped) | 99.96% | 14.196 |
+| BACKDROP ONLY (rank 0) | 97.99% | 8.353 |
+| NO BACKDROP | 44.19% | 26.867 |
+
+**The picture is the finding.** Backdrop-only *is* the smear: ragged horizontal
+filaments in a figure-shaped column, occupying exactly the warrior's own
+occlusion footprint. Remove the backdrop and the figure renders clean with black
+behind it. The front planes contribute a little streaking at the figure's right
+edge, but the body of the artifact is the backdrop's fill.
+
+The comb-energy column behaves exactly as the harness header warned it would and
+is not the evidence: NO BACKDROP scores the *highest* comb energy of the three
+while containing least of the artifact, because it covers 44% of the region and
+its coverage boundary is a hard silhouette edge against black.
+
+**So the band is the claim flood filling the occluder's footprint, and that
+flood propagates by row — which is what horizontal filaments are.** That is the
+same object as the long-open A85 item, "nested-lip banding on the warrior —
+per-strip gradient carry in the plate fill". The a191 chain therefore ends by
+handing the artifact to an item that already existed, with four causes
+eliminated and the periodicity premise withdrawn on the way.
+
+### The a191 chain, as a ledger
+
+| step | claim | outcome |
+|---|---|---|
+| a181 | "combed / venetian-blind band" | **my description, not a measurement** — the artifact is not periodic |
+| a182 | depth bins cause it | eliminated by prediction |
+| a183 | quadtree decimation causes it | eliminated by prediction |
+| a191 | the a83 dithered cut causes it | eliminated **by mechanism** — `u_bandCutUvRate` is 0 in v2; the arm was a no-op |
+| a191d | surviving folded quads | eliminated — 8× harder tearing, +36% quads, comb +0.2% |
+| a191e | the backdrop's row-wise fill | **located** — it is A85 |
+
+Three of those steps also reported a "period" that was the edge of their own
+search space, in three different instruments. The rule that would have caught it
+earlier: a number that sits exactly on a search boundary is a property of the
+search, and must be treated as absent evidence until the boundary is moved and
+the number does not follow.
