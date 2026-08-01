@@ -8623,3 +8623,149 @@ the a165 gate on the shipped default for the first time; a 8.3× reduction in v2
 worst surviving stretch; eight new suite checks; and an idempotence bug in the
 default bake path. The feature is still off. The path it was asked to travel was
 worth more than the feature.
+
+## Addendum 135 — a181–a183: the warrior's stripes, and two hypotheses killed by their own predictions
+
+a178 left a number without a picture: v2's worst surviving fold ratio is 19.9×
+on the warrior against 6.8 on the troll and 5.2 on the star. a181 built one
+labelled contact sheet per asset — rest / 15° / 25° / 35°, with the pose, the
+mode and the **served** build burned into the image, so a sheet cannot later be
+read as the wrong build or the wrong arm.
+
+**The ranking of the metric matched the ranking of the artifact.** The warrior
+sheet shows a combed, venetian-blind band immediately right of the figure, faint
+at 15° and unmistakable at 35°. The star has a milder version in the analogous
+place — the trailing edge of its nearest large occluder. The troll, lowest of
+the three, shows nothing. That is the first time the v2 gate has been checked
+against a *look* rather than against another number.
+
+### Two candidates, two refutations
+
+Both were tested the same way: make the hypothesis **predict** something, then
+measure the prediction. Confirming either by eye would have "worked".
+
+**a182 — the depth bins.** v2 slices depth into `bgMPIV2Bins` quantile planes.
+Stripes are periodic; bins are periodic. Prediction: doubling the bin count must
+roughly halve the stripe period.
+
+| bins | planes | region | period | corr | v2 worst |
+|---|---|---|---|---|---|
+| 10 | 10 | 304..559, 68..448 | 4 | 0.712 | 19.908 |
+| 20 | 18 | 304..559, 68..448 | 4 | 0.722 | 19.905 |
+
+Same region to the pixel, same primary period, same secondary structure at
+19–21 px, and the worst stretch moves by 0.003 on a 1.8× change in plane count.
+
+**a183 — the quadtree decimation.** v2 merges cells in blocks of B = 16, 8, 4, 2.
+Prediction: turning merging off must largely remove the periodic structure.
+
+| maxBlock | quads | period | corr | v2 worst |
+|---|---|---|---|---|
+| 16 | 532538 | 4 | 0.712 | 19.908 |
+| 1 | 5691353 | 4 | 0.784 | 19.908 |
+
+The arm diverged hard — 10.7× the quads, every cell emitted alone — and the
+banding **survived**, with the correlation slightly *up*. Period 4 with secondary
+structure at 19–21 px is present at full per-texel resolution. It is neither the
+depth bins nor the mesh topology, which leaves the depth data or the shader.
+Still open.
+
+### Three instrument corrections, all found before the numbers were read
+
+1. **"comb px 3240" was a tautology.** 3240 is exactly 1% of 720×450 — the
+   top-1% threshold's own definition, printed back as a measurement. Replaced
+   with the threshold value, which carries information.
+2. **"period 2" was the search floor.** Raw comb energy is dominated by
+   single-pixel alternation, so the autocorrelation always peaked at the smallest
+   lag offered. The profile is now smoothed and the search starts at lag 4: a
+   claim about structure has to be about something wider than the sampling grid.
+3. **a183's first run was DEAD.** The patch meant to introduce
+   `bgMPIV2MaxBlock` asserted on a substring occurring **twice** in the file, so
+   it threw before writing and `moebius.js` was never modified. The harness then
+   set a variable that did not exist and printed a confident REFUTED off two
+   identical arms. Two existing guards caught it: the served-build stamp read
+   a180 rather than a183 (the a110 guard), and the quad count was identical in
+   both arms (the a134 rule — an arm must be shown to have diverged before its
+   numbers are read).
+
+## Addendum 136 — a184–a186: the vertical axis had never been tested
+
+The user, at `cam(0.024, 0.090, 0.177)` on the starwatcher — a dominantly
+**vertical** pose: *"both the astronaut and the people walking up the dune are
+disappearing"*.
+
+**The coverage gap comes first, because it is the larger finding.** Every
+harness written in this arc — `edgeblack`, `spill`, `fsshots`, `sheet`,
+`stripes`, `v2order`, `popdepth` — sweeps `camera.position.x` **only**. The
+vertical axis was never exercised by any of them. An artifact appearing only when
+looking up or down could not have been caught by anything I built, and was not.
+Every number this arc produced describes horizontal motion.
+
+### a184 — measured
+
+`harness/vertical.js`, at the user's own x and eye distance:
+
+| y | angY | tiles losing >50% detail | mean drop | ABSENT% | dark% |
+|---|---|---|---|---|---|
+| 0.000 | 0° | 136/484 (28.1%) | 28.9% | 0 | 2.99 |
+| 0.030 | 9.6° | 191/484 (39.5%) | 36.4% | 0 | 2.84 |
+| 0.060 | 18.7° | 226/484 (46.7%) | 42.8% | 0 | 2.69 |
+| 0.090 | 27° | 247/484 (51.0%) | 46.8% | 0 | 2.54 |
+| 0.120 | 34.1° | 266/484 (55.0%) | 52.0% | 0 | 2.39 |
+| −0.090 | −27° | 256/484 (52.9%) | 48.2% | 0 | **22.96** |
+
+`ABSENT` is 0.000 at every pose. Hole counting is completely blind to this — the
+content is not missing, it is flattened, which is the a152 failure mode and the
+reason every metric in `regress` reads clean here.
+
+### a185 — the look-down black band is the fishtank ceiling
+
+One arm, hiding only `bgFishtankMesh`: the `dark w/o tank` column reads **0 at
+every pose**, including the 22.96% at −27°. The tank accounts for every dark
+pixel in the frame, and the sky behind it is bright, not clear.
+
+It is asymmetric because a wall is only visible where content does not cover it.
+This scene's near content is its ground, so looking up the dune hides the floor
+wall; the top of the scene is distant sky, which sits at the back of the tank and
+cannot hide the ceiling. So the band is the a153 spec working as specified — *"a
+black, opaque double sided 3d rectangle … like a fishtank perfectly embedded in
+the screen"*. **Whether a window should have a ceiling at all is a design
+question for the user, not a defect to fix quietly**: a fishtank occludes the sky
+from below, a window does not.
+
+### a186 — nothing draws in front of the foreground on the vertical axis
+
+a164 declared "zero violations at every pose inside the cone" on the strength of
+six **horizontal** poses. The user's report — the background wash appearing in
+front of the astronaut — is precisely an ordering violation, on the axis that
+proof never visited. `harness/depthorder.js` extended, troll, quick:
+
+| pose | fg px | a162 ON viol% | a162 OFF viol% | control |
+|---|---|---|---|---|
+| V +20° | 29516 | 0 | 0 | 3.48% |
+| V +27° | 28264 | 0 | 0 | 3.42% |
+| V +35° | 26833 | 0 | 0.004 | 3.89% |
+| V +45° | 24195 | 0 | 0 | 2.44% |
+| V −27° | 28030 | 0 | 0.011 | 16.68% |
+| V −45° | 20402 | 0 | 0.607 | 20.98% |
+
+Zero at every vertical pose while the known-positive control (the plate shoved
+0.05 toward the viewer) registers 2.4–21%. The instrument works on this axis and
+finds nothing. **The user's own correction was right**: *"I'm not sure it's 'in
+front' — it could be that the foreground is disappearing."* It is not an ordering
+violation.
+
+**The horizontal rows of that same table are NOT usable and are recorded as such**
+— 32.6% measured against a 36.5% control at H 35°. A test whose control matches
+its subject is measuring nothing, even after the frames were excluded from both
+passes. What saturates it horizontally is not yet identified.
+
+### What is still open
+
+The look-up flattening. 51% of detail-carrying tiles ruined at +27° with ABSENT
+at 0.000, and the tank explains none of it (dark% looking up is 2.54 **and
+falling**). The a184 table also carries an unexamined confound its own note
+flagged: the 0° row already reads 28.1% at a pose that is 7.7° **horizontal**, so
+the metric moves substantially for motion of any kind. Until the same angles are
+run on both axes with a motion-invariant metric, "vertical is special" is not
+established.
