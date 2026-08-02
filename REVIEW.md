@@ -9596,3 +9596,113 @@ one of those, and it needs its own measured pass, not a drive-by.
 `regress.js` after a201: 3 FAIL / 30 pass, `dolly q!=P lock crest px` 1.0 —
 unchanged, and correctly so: that check runs with reprojection ON, where neither
 D1 nor D2 is live.
+
+## Addendum 145 — the dolly zoom in the old code, and an a202 attempt refuted by its own test
+
+The user: *"why not look at the old code? it literally used to work."* They were
+right to push, and the old code answers it.
+
+### What the original build actually did
+
+`48e265d` (init), `updateCameraAndProjection`:
+
+```js
+camera.position.z = subjectFocalPlaneWorldZ + distFromSubject;
+if (subjectLockActive) {
+    const actualDistToSubj = Math.abs(camera.position.z - subjectFocalPlaneWorldZ);
+    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(actualDistToSubj / subjectLockConstantK));
+}
+```
+
+A textbook Vertigo shot: move the eye, change the FOV so the subject's angular
+size is held. **And `subjectLockConstantK` is the write-only variable Addendum
+143 flagged as dead** — its *reader* was deleted and the write orphaned. That is
+the fossil of the original mechanism.
+
+But `frameCorners` was already present at init and builds the projection from the
+eye and the fixed portal rect, ignoring `camera.fov` entirely. **So the FOV dolly
+zoom was inert even at init.** The a67 author's read of it as dead code was
+correct.
+
+The effect still worked, for a different reason. Under the legacy view-z push the
+screen position of a texel is
+
+```
+legacy:               X = px · h/(h − zOff)                  h = e − P
+```
+
+which varies with `h`: the portal plane (`zOff = 0`) is held by the frustum and
+everything else stretches around it. That is the dolly zoom, produced by the
+geometry rather than by the FOV line. a59f replaced it with ray reprojection and
+anchored the world frame to the live eye, giving
+
+```
+reproj, live refEye:  X = px − ex·zOff/(H − zOff)            coefficient on px is 1
+```
+
+— no scale term at all, so on axis the image is *identical* at every dolly
+distance. a60 made that the default. **The effect was not broken; it was switched
+off by a default flip**, which is exactly the user's "it used to work perfectly".
+
+### a202: right diagnosis, wrong pin, not shipped
+
+Freezing `u_refEye` at the resting eye for the duration of the dolly gives
+
+```
+reproj, frozen refEye:  X = px · (h0−zOff)/h0 · h/(h−zOff)
+```
+
+`= px` exactly at `h = h0` (so the source-faithful rest framing a59f/a61 bought is
+kept) and `h`-dependent away from it (so the zoom returns). The subject then needs
+a *scale*, not a lateral gain — no lateral offset can cancel a scale — and scaling
+the reprojected point about the eye axis by
+
+```
+m = (h − zq)·h0 / ((h0 − zq)·h)      gives      X = px − ex·zq/(h0 − zq)
+```
+
+which is free of `h`, equal to its rest value, head parallax intact, `m = 1` at
+`h = h0`. The algebra checks out. The measurement does not.
+
+`harness/dollyverify.js`, same patch, same subject (source depth 0.529, chosen and
+mapped exactly as the UI does), a201 vs a202:
+
+| | a201 | a202 |
+|---|---|---|
+| rest frame hash | `692324a8` | `692324a8` |
+| subject, pin ON | **3px** | **11px** |
+| subject, pin OFF | 36px | 40px |
+| witness at depth 0.012, pin ON | 3px | 12px |
+
+Two things follow, and they point opposite ways:
+
+- **The freeze is sound and free.** The rest hash is unchanged, so nothing outside
+  the dolly moved, and differential motion between depths went 3px → 12px — the
+  zoom is genuinely returning.
+- **The scale pin is wrong.** It moves the subject (11px) and the far witness
+  (12px) by nearly the same amount, i.e. it added an almost uniform motion rather
+  than holding one plane. Whatever `m` is doing, it is not what the derivation
+  says. **a202 is reverted; the tree stays at a201.**
+
+### The other thing this control established
+
+Under a201, a subject selected the way the UI selects it measures **3px** of
+travel against a 36px un-pinned floor. So a196 + a200 did fix the *pin* on the
+reprojection path. What remains under reprojection is the missing *zoom* — which
+matches the user's own split: *"with reprojection on the dolly zoom effect is so
+minor"*, rather than the subject wandering.
+
+### The instrument, and two more of its failures
+
+`dollyverify.js` tests three claims at once so a change cannot pass by trading one
+against another: rest frame unchanged, subject pinned, other depths moving. Both
+failures it went through are the same class as every earlier one:
+
+1. **Contrast was scored in the wrong frame.** Variance was measured on the REST
+   frame while every template is cut from the ENGAGE frame. It picked a patch that
+   is textured at rest and flat sky at engage; the template had no variance and
+   the NCC search returned the corner of its own window at every phase
+   (`-46,-46`, minCorr 0). Judge a patch by the frame that will be searched.
+2. **The control could not run.** Reading an undeclared name throws, so the first
+   attempt to measure a201 with a harness that references the a202 globals died
+   instead of producing the comparison — the one number that decided the outcome.
