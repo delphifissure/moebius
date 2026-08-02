@@ -9481,3 +9481,118 @@ DOM overlay, not anything in the WebGL canvas, so it cannot black out a
 `drawImage(renderer.domElement)` capture. The `worst 46 / corr 0` rows are a
 flat template — the NCC search never improves on its first candidate and returns
 the corner of its own search window.
+
+## Addendum 144 — a201: three separate defects, and why the effect is "so minor" with reprojection on
+
+The user split the symptom for me, and the split is the diagnosis:
+
+> *"the off axis dolly zoom only appears to work with reprojection on, and breaks
+> when reprojection is off, or when simulated mode is on with either repro on /
+> off"* … *"when reprojection is on the dolly zoom effect is so minor"*
+
+Three different things, three different causes. Two are fixed here; the third is
+the actual regression and is reported rather than changed, because it is a core
+geometry decision.
+
+### D1 — in simulated mode the pin is computed every frame and thrown away
+
+`dollyLatGain` *is* the a67 pin, and the only place it ever reaches
+`camera.position` is:
+
+```js
+if (!isSweeping && !window._svEyeLock) {
+    ...
+    camera.position.x = (faceTrackCamX + gyroCamX + manualCamDX) * dollyLatGain;
+```
+
+The simulated viewer sets `_svEyeLock` because it owns the eye. So in SV the gain
+was recalculated on every frame and discarded, and the subject drifted by the
+full un-pinned amount. **That line is outside the reprojection branch**, which is
+precisely why the user saw simulated mode fail with reprojection ON and OFF
+alike — the one detail that made this findable.
+
+It also means the instrument was unfaithful to the path it exists to measure. SV
+now records the lateral eye it asked for (`_svEyeBase`) and the gain is applied
+to that base. Scaling the *base* rather than `camera.position` is what keeps it
+idempotent: the base is re-stamped every SV frame, so the gain can never compound
+on an already-scaled value.
+
+### D2 — with reprojection off, the legacy scale solves for a point the texel never occupies
+
+The old derivation: *"a point on plane z=q projects through the portal with
+factor t = (e−P)/(e−q), so the pin requires s = t0/t"*. That treats the subject
+as a fixed world point at `z=q` whose x merely scales. It is not. The mesh sits
+at `z=P`; a scale about `(ex,ey,q)` moves it to `z = q − a·s` (`a = q−P`); the
+legacy shader then adds a **constant** view-z push, so the texel lands at
+
+```
+worldZ = q + a·(1−s) + emb
+```
+
+which equals `q` only at `s=1`. **The subject plane slides in depth as you scale
+it**, so the projection factor the derivation was cancelling is not the one that
+applies. This error predates the a167 embed — the embed only adds to it.
+
+Redone, with `h = e−P`:
+
+```
+X = ex + (px−ex) · s·h / (h − 2a + a·s − emb)
+K = h0 / (h0 − a − emb)
+s = K·(h − 2a − emb) / (h − K·a)          s = 1 at h = h0 by construction
+```
+
+Checked numerically across the sweep:
+
+| e | s (old) | s (new) | coefficient (old) | coefficient (new) |
+|---|---|---|---|---|
+| 0.210 | 1.00000 | 1.00000 | 0.873544 | 0.873544 |
+| 0.250 | 1.00766 | 0.97906 | 0.898181 | 0.873544 |
+| 0.290 | 1.01321 | 0.96408 | 0.916717 | 0.873544 |
+| 0.330 | 1.01742 | 0.95282 | 0.931168 | 0.873544 |
+| 0.370 | 1.02072 | 0.94405 | 0.942750 | 0.873544 |
+
+Constant to six decimals under the new scale; a **7.9% drift** under the old one.
+That is a **scale** error about the eye axis, so two points at the *same* depth
+move by different amounts according to where they sit in frame — which is what
+"moving all over the place" looks like, as distinct from a uniform slide.
+
+### D3 — under reprojection there is structurally no dolly zoom at all
+
+This is the regression, and it is not a tuning problem.
+
+`u_refEye` is declared **"fixed reference (authoring) eye, world space"** and the
+a59f shader comment promises to place each texel *"in an **EYE-INDEPENDENT**
+world frame"* so that *"the live camera then reprojects this genuine 3D point
+with correct parallax from any position"*. But the uniform is assigned
+`camera.position.z` **every frame** (two sites). The world frame is therefore
+rebuilt each frame anchored to the current eye, and the algebra collapses:
+
+```
+Sw.x = Pw.x·(H − zOff)/H              with H = e − P and refEye.z = e
+X    = ex + (Sw.x − ex)·H/(H − zOff)
+     = Pw.x − ex·zOff/(H − zOff)
+```
+
+With `ex = 0` that is `X = Pw.x` — **exactly, at every depth, at every dolly
+distance**. The on-axis image is invariant to eye z. There is no dolly zoom to
+see; the only thing an off-axis dolly can change is the `ex·zOff/(H−zOff)` shear,
+and for the star that term moves by about 0.011 world across the whole sweep.
+That is the user's *"the effect is so minor"*, measured.
+
+Pinning `u_refEye.z` to a fixed authoring distance instead would restore it:
+`Sw` becomes a genuine eye-independent world point, the rest framing is unchanged
+(at `e = R0` the expression reduces to `X = Pw.x`), head parallax is unchanged,
+and moving the eye in z produces a real perspective change — the world stretching
+around a pinned subject. Under a fixed `refEye` the subject pin must be a *scale*
+(as in D2), not a lateral gain, because the content genuinely zooms.
+
+**Not changed here.** `git log -S` puts the eye-tracking assignment in **a59f
+itself**, and **a60** made reprojection the default for v1/v2/quick-bake — so the
+whole disocclusion arc from a60 onward (the cone/k field, the a102 shift
+envelope, the a113 extension margin, the tear criterion) was measured against
+this geometry. Flipping it is a one-line change with a blast radius across every
+one of those, and it needs its own measured pass, not a drive-by.
+
+`regress.js` after a201: 3 FAIL / 30 pass, `dolly q!=P lock crest px` 1.0 —
+unchanged, and correctly so: that check runs with reprojection ON, where neither
+D1 nor D2 is live.
