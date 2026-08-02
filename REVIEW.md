@@ -9706,3 +9706,104 @@ failures it went through are the same class as every earlier one:
 2. **The control could not run.** Reading an undeclared name throws, so the first
    attempt to measure a201 with a harness that references the a202 globals died
    instead of producing the comparison — the one number that decided the outcome.
+
+## Addendum 146 — a208: the regression was a167, the click was dying on a 1px wiggle, and the spec's second leg had never been built
+
+The user escalated ("wild goose chase", correctly) and supplied three things that
+ended it: the original design spec in full, a bisect datapoint (the arc-fix
+branch at a106 still works), and a model review (Fable) of the whole thread with
+instructions to read the code instead of my summaries. The review's verdict
+survived every check and the fix built from it measures exact on both render
+paths.
+
+### The design spec (user, verbatim, now the reference)
+
+> "you start with a regular dolly zoom animation (focal length increases as
+> distance increases) ... with dolly zoom off, you'd look at your subject and
+> move your head and they'd translate / offset... that translation is the
+> expected offset, and you'd expect it to be maintained across any focal length
+> / distance ... when the focal length doubles, the user camera movement should
+> also double, but in doing so, the offset of the subject will be too great, so
+> you need to fix the corners / adjust the asymmetric frustum so the object
+> appears at the expected UV on the viewport." And: "this should work across
+> ANY fov / distance."
+
+### Root cause (review verdict, verified against the code)
+
+**a167, the embed. Nothing else.** The dolly block is byte-identical from the
+a106 build through a166, and no revision in the repository's history ever fed
+`frameCorners` anything but the fixed portal rect. Before a167, the click
+gesture (`handleCanvasClick`: portal := clicked depth, subject := portal plane)
+put the subject at `zOff = 0` — ON the frustum-pinned plane, where it is held
+exactly for any eye, any FOV, any distance, on both render paths, with no pin
+code running. That structural pin is what "worked perfectly across ANY
+fov/distance". a167's `+ u_embedOffset` moved every texel −0.04 off that plane.
+Every pin since — a67's gain, a196, my a201/a202/a207 — was compensation.
+
+The user's live-session stamps decompose the same way: `gain=1.000` at two
+dolly distances is only producible by the legacy (reprojection-off) branch, and
+`pn=0.500` means the click never fired — `handleCanvasMouseMove` set `didDrag`
+on ANY movement between press and release, no threshold, so the app's primary
+gesture died on a one-pixel wiggle.
+
+### Corrections to my own record (the review was blunt; it goes in the log)
+
+1. **Addendum 144/145's a59f story was wrong as the regression.** a106 postdates
+   reprojection-by-default and works. What live-refEye reprojection removes is
+   the on-axis world zoom; the off-axis subject pin at a106 was carried entirely
+   by `zOff = 0`.
+2. **The Q-rect-frozen-at-engage synthesis was wrong**: pinning the frustum to
+   the subject plane kills the subject's head parallax during the dolly,
+   violating "that translation is the expected offset".
+3. **797e858's mesh-scale lock was never exact** — the scale moves the plane it
+   scales, and it is identically inert at the click path's q = P. The thing that
+   worked was always the frustum with the subject on the glass.
+4. **The a196 gain is EXACT on the reprojection path** — not approximate. With
+   exA = head·g, g = (h−ζ)/(h0−ζ), the subject's screen position is
+   `px − head·ζ/(h0−ζ)`: the rest law with the live head, at every distance,
+   all orders. The 2px measurement was the law, not luck.
+
+### a208, the fix — three changes
+
+1. **Click threshold** (`handleCanvasMouseDown/Move`): `didDrag` only beyond
+   4px — the OS click-vs-drag slop (Windows `SM_CXDRAG`/`SM_CYDRAG` default),
+   a cited convention for exactly this discrimination, not a tuned constant.
+2. **One pin, both paths; mesh-scale retired (rule 7).** The
+   reprojection/legacy split in the pin block is gone; the exact a196 gain runs
+   on both paths. The mesh-scale machinery is deleted: scaling about the eye
+   axis cannot hold a subject for an off-axis eye without dragging the frame
+   (a201/a203, measured), and it was inert at q = P in every era.
+3. **The corner adjustment — the spec's second leg, built for the first time**,
+   plus the refEye freeze that makes it valid. During a dolly the reference eye
+   is frozen at the engage pose (texels become fixed world points → the world
+   stretch returns, both axes) and `frameCorners` gets a rect scaled by
+   `k = h(h0−ζ)/(h0(h−ζ))` and re-centred by `exA·(1−a)(1−k)`, ζ = rendered
+   subject offset. Then the subject's NDC reduces algebraically to
+   `[px·a0 + head·(1−a0)]/R0` — the rest law with the live head, exact at any
+   distance and head position. Identity at ζ=0 and h=h0; gated to
+   dolly+lock frames only, so rest, head-tracking, and every bake calibration
+   (a102/a113) are untouched. Freeze and corners ship together or not at all:
+   freeze-only measured 28px (a207), corners cancel the subject magnification.
+
+### Measured (clickpin: the real gesture, full sweep including the near extreme)
+
+| path | subject (lock ON) | witness at another depth | before a208 |
+|---|---|---|---|
+| reprojection | **2px** (minCorr 0.92) | **36px** — the stretch is back | 5px / 5px (no effect) |
+| legacy | **2px** (minCorr 0.91) | **41px** | 25–43px drift, whole frame shrinking |
+
+Controls: lock OFF drifts 34–39px on both paths (the pin is doing it); repro-ON
+subject was 2px before and after the corner gate extension at the pre-freeze
+stage (no double-correction).
+
+Instrument notes, same honesty as always: the troll rows in the first a208 run
+were void — the click picker chose the SKY (source depth 0.012, no
+uniform-depth window on the figure), a degenerate pn the UI never produces; the
+a166/a167 worktree bisect runs also voided on tracker loss in that era's
+artifacts. The conviction of a167 rests on the review's shader-level diff and
+the user's arc-fix experience, not on those rows.
+
+Known, stated cost: in the dolly-OUT half (h > h0) the rect scale k rises above
+1 (~1.08 at defaults), so a sliver of matte/tank wall enters the border —
+geometrically necessary to hold a behind-glass subject while receding. At a106
+ζ was 0 and this never happened; it is the price of the embed.
