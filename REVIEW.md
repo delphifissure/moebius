@@ -9181,3 +9181,204 @@ result.
 The guards are working. The wiring around them kept letting the result through,
 which is the failure mode worth naming: *a check whose failure does not stop the
 thing it is checking is not a check.*
+
+## Addendum 142 — a196: the off-axis dolly zoom was pinned about the plane you clicked, not the plane it draws on
+
+**User report:** *"the off-axis dolly zoom doesn't appear to be keeping the
+selected focal plane in place spatially... an object at a selected focal plane
+should stay at the same x/y on the screen as the world stretches around them
+when we dolly zoom and view off axis. this used to work perfectly."*
+
+They were right, it is a real regression, and it is now measured, explained in
+closed form, and fixed.
+
+### What the effect is supposed to be
+
+Under the a104 ray law a texel lands on the portal plane at
+
+```
+X_screen = px − ex · zOff / (H − zOff),      H = e − P
+```
+
+The coefficient on `px` is exactly **1**. Pushing the eye in or out (changing
+`e`) cannot scale the picture — the Kooima off-axis frustum is pinned to the
+fixed portal rect, so the portal plane is pinned for free and an *on-axis* dolly
+is a structural no-op. **All** dolly motion lives in the `ex` term. Content at
+`zOff` swings sideways as `1/(e − q_render)` changes, which is the "world
+stretching around the subject" the user is describing. Pinning a chosen plane
+therefore means one thing only: scale the applied lateral eye offset so that
+`ex/(e − q_render)` stays constant. That is exactly what a67's
+`dollyLatGain = (e − q)/(e0 − q)` does.
+
+### The defect
+
+`q` there is `subjectFocalPlaneWorldZ` — the plane the **user picked**, mapped
+from Depth Peek by the volume mapping alone. But since a167 the shader draws
+every texel at
+
+```
+zOff = displacement + displacementBias + u_embedOffset
+```
+
+so the subject picked at `q` is **rendered at `q + emb`**, `emb =
+−innerVolumeDepth = −0.04`. The pin was cancelling a term the content does not
+have. It over-corrects, and the residual has a closed form. With the true gain
+`g' = (e − qr)/(e0 − qr)` against the shipped `g = (e − q)/(e0 − q)`, writing
+`A = e0 − q`, `B = e0 − qr`, `u = e − e0`:
+
+```
+g − g' = u(B − A)/(AB) = −u·emb/(AB)      1 − g' = −u/B
+residual / unpinned  =  (g − g')/(1 − g')  =  emb / (e0 − q)
+```
+
+Both `u` and the tracked feature's own depth **cancel**. The residual is a
+constant fraction of the un-pinned drift, with the sign flipped — the pin
+overshoots past zero and drags the subject the *other* way.
+
+For the star at the measured engage pose that is `−0.04/0.200 = −0.200`:
+
+| phase | unpinned x | predicted | measured | unpinned y | predicted | measured |
+|---|---|---|---|---|---|---|
+| 0.4 | 20 | −4.0 | **−4** | −14 | 2.8 | **3** |
+| 0.8 | 32 | −6.4 | **−7** | −23 | 4.6 | **5** |
+| 1.2 | 36 | −7.2 | **−8** | −27 | 5.4 | **6** |
+| 1.6 | 36 | −7.2 | **−8** | −28 | 5.6 | **6** |
+| 2.0 | 36 | −7.2 | **−8** | −26 | 5.2 | **6** |
+| 2.4 | 31 | −6.2 | **−6** | −22 | 4.4 | **4** |
+
+Every row within 1px at integer tracker resolution, both axes, correct sign, no
+fitted parameter. Mean measured ratio −0.213 against −0.200 predicted.
+
+### The second half: "a subject at the portal is pinned for free" is dead
+
+That premise was true before a167 — the portal term has `zOff = 0`, nothing to
+cancel — and both the engage gate and the disengage reset tested
+`|q − P| > 1e-6` on the **picked** plane. With the embed, a subject picked at
+the portal is drawn at `P + emb`, its `zOff` is not zero, and it drifts like
+anything else. This is the **shipped default**: `subjectFocalPlaneWorldZ =
+portalPlaneWorldZ` on load and `subjectLockActive = true`, so the default dolly
+had *no pin at all*. In the a192 run the "pin on" and "pin off" arms come back
+**bit-identical, row for row** — the clearest possible statement that no pin
+existed there.
+
+### The fix
+
+Two sites, both now computing about `subjectRenderZ = subjectFocalPlaneWorldZ +
+bgEmbedOffsetNow()`: the a67 gain itself, and the engage/disengage gate.
+
+### Verified — same instrument, same patch, same floor
+
+Star, UI dolly zoom, off-axis (`latestDetectedFaceX = 1.0`), quick bake, real
+content tracked by NCC:
+
+| subject | arm | a192 | a196 |
+|---|---|---|---|
+| picked off the portal (dNorm 0.051) | pin on | **8px x, 6px y** | **0px, 0px** |
+| | pin off (floor) | 36, 28 | 36, 28 |
+| left at the portal (shipped default) | pin on | **27, 19** *(= pin off)* | **0px, 0px** |
+| | pin off (floor) | 27, 19 | 27, 19 |
+
+Correlation 0.97–1.00 on every surviving row; the floor is unchanged by the fix,
+which is the control that says the change acts on the pin and nothing else.
+
+### The suite already had a check for this, and it was already failing
+
+Running the **full** `regress.js` (not the `masks` subset) against both builds:
+
+| check | a192 | a196 |
+|---|---|---|
+| `dolly q!=P lock crest px` (expect 0..2) | **FAIL 3.0** | **PASS 1.0** |
+| `dolly q!=P free crest px` (expect 2..60) | PASS 25.0 | PASS 25.0 |
+| 25 bake/mask checks | all PASS, identical | all PASS, identical |
+| `quick / v1 / v2 render lit%` (expect 55..100) | FAIL 49.6 / 49.8 / 48.6 | FAIL 49.6 / 49.8 / 48.6 |
+| **total** | **4 FAIL, 29 pass** | **3 FAIL, 30 pass** |
+
+The a64 subject-lock invariant — written months ago, by a completely different
+method (crest pixels, not correlation tracking), and not touched by this change
+— **was failing on a192 and passes on a196**. It is the only check whose verdict
+moves. That is independent corroboration of both the defect and the fix.
+
+It is also an indictment of how I have been running the suite. For a189 and
+a192 I ran `regress.js masks` and reported "ALL PASS (28)". The subset is 28
+checks; the suite is 33. **The check that would have caught the user's
+regression existed the whole time and I was not running it.** Same failure mode
+as the three guards in Addendum 141: the check was fine, the wiring around it
+let the result through.
+
+The three `render lit%` failures are **identical in both builds to one decimal**
+(49.6 / 49.8 / 48.6) and are not caused by this change. They are whole-canvas
+non-black coverage against a floor of 55% that was written before the a153/a168
+letterbox existed — the letterbox is opaque black by design and legitimately
+occupies about half the canvas. The check is measuring the frame, not the
+picture. **Left failing rather than re-baselined:** widening a range to make a
+red check green is how a real defect gets hidden. The correct repair is to
+measure coverage inside the content rect, and that is an open item, not a
+number to edit.
+
+### Scope, stated
+
+Not changed, and not measured: the **legacy mesh-scaling pin** at the same site
+(only reachable with ray reprojection off, which is not the shipped default) and
+the cyan subject-plane debug guide, which still draws the picked plane. Both
+still use `q`.
+
+### Why this took six instruments, and what each one got wrong
+
+The fix is two expressions. Finding it was hard because five instruments in a
+row produced confident, wrong answers — and the honest summary is that the
+model was never the problem, the *observable* was:
+
+1. **The synthetic probe was blind both ways.** A world point I place myself is
+   not a mesh, so the 797e858 mesh-scaling pin cannot move it (I read 18.21px
+   and concluded the old builds did not pin — they did). And at HEAD it reads
+   0.00px because the probe sits on `q` while the shader puts content on
+   `q + emb`. On that evidence I told the user the embed was the cause, then
+   that it was not. Neither claim was entitled.
+2. **A stale `matrixWorldInverse`** froze the view matrix while the projection
+   tracked the eye, and portal drift came back exactly equal to subject drift
+   (318.614 vs 318.61).
+3. **Dead arms** — `dollyZoomActive = false` set one line before the two
+   comparison measurements, so both read 0.0000 while the live dump showed 305px.
+4. **Different patches per arm** — three features at three depths, reported as
+   one comparison.
+5. **One shared template across configurations** — the embed-OFF arm had to
+   match a picture taken under a different volume placement, lost the patch
+   (corr 0.22, `dx` flipping between −13 and +36) and reported 49px of pure
+   tracker failure.
+
+What finally worked was refusing to model anything: take a template from the
+rendered frame and find it again by normalised cross-correlation, so the
+measured quantity is *where the pixels went*, which is the quantity the user is
+reporting. Even then it needed four more corrections, and the two that matter
+are not about geometry at all:
+
+- **The depth pass has a bright ring at ~246 — the a168 outer matte**, which
+  sits in the viewport surface and is therefore the nearest thing in the scene.
+  At 15750px it is the single most populated value in the frame, so "most
+  populated depth off the portal plane" selected **the letterbox**. Interior
+  stride-4 sampling then hit none of it, producing a report that was internally
+  contradictory — *15750 wanted pixels, 0 windows passed* — and both halves were
+  true, because the ring is a border and the samples were interior.
+- **The volume wireframes were being drawn over the picture.** They are static
+  in screen space under a dolly, so a patch containing one is anchored by it and
+  the tracker would have certified a flawless pin for an arm with **no pin at
+  all**. Nothing in the numbers would have shown it.
+
+Both were found in one look by dumping the two buffers to PNG after three rounds
+of increasingly elaborate inference. **The lesson is the cheap one: when two
+statistics from the same buffer contradict each other, stop computing a third
+and look at the buffer.**
+
+Two smaller instrument corrections, recorded because they change how the numbers
+read: the NCC normaliser summed `pss` over the full template while `den` used
+the stride-2 subset, scaling every correlation by 0.52 — which is why a phase-0
+self-match, necessarily perfect, was reading 0.515; and `grab()` rendered twice
+while `render()` advances `dollyZoomTime` on every call, so the arms started
+from different eye positions and tracked different content at the same
+coordinates (patch depth 114 in one arm, 0 in another).
+
+### Also found: `subjectLockConstantK` is write-only
+
+Set in `initializeSubjectLockConstant()` and **read nowhere** — dead since the
+FOV-compensation pin was retired. Left in place it is actively misleading, since
+it reads as *the* subject-lock constant.
