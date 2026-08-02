@@ -9382,3 +9382,102 @@ coordinates (patch depth 114 in one arm, 0 in another).
 Set in `initializeSubjectLockConstant()` and **read nowhere** — dead since the
 FOV-compensation pin was retired. Left in place it is actively misleading, since
 it reads as *the* subject-lock constant.
+
+## Addendum 143 — a196 was verified against the sky, and a200: three copies of one mapping
+
+The user came back: *"the off axis dolly zoom is still broken... the focal plane
+is still not staying put in the x/y. the depth of the scene is supposed to
+stretch around them, but the focal plane is moving all over the place."*
+
+### First: Addendum 142's verification does not stand
+
+The a196 harness chose its "subject" as **the highest-contrast content farthest
+from the portal plane**. On the starwatcher that is **the sky** (rendered depth
+byte 1). Every 0px figure in Addendum 142's far-subject rows is the statement
+*the sky is pinned*, which is nearly worthless — no one selects the sky as a
+subject. The contact sheet (`harness/dollysheet.js`) showed it in one look: the
+tracking box sitting in empty sky while the difference frames blazed white over
+the mountains and the figure.
+
+The portal-subject rows in that addendum are not affected by this — the subject
+there was pinned to the portal plane by construction — and the closed-form
+residual `emb/(e0−q)` and its match to measurement are also unaffected, since
+both were computed for whatever plane was pinned. **What is withdrawn is the
+claim that a196 fixes the dolly for a subject a user would actually pick.**
+
+Aiming patches at the near-half subject instead (`harness/dollygrid.js`, v2,
+subject = depth byte 158): valid patches ON that plane travel **37px** and
+**5px**, while patches at byte 15 barely move. Different points at the same
+depth moving by different amounts is the user's report, and a single-patch
+tracker cannot see it — it reports the reassuring one.
+
+### Two hypotheses killed cheaply
+
+The **content rect is constant** across the sweep (245×116 → 243×115 in the
+depth pass), so the aperture is not breathing. And `frameCorners` is fed
+`terrariumWidth/terrariumHeight` at a fixed z, so the portal→screen mapping
+cannot be scaling underneath. Neither is the cause.
+
+### A200: the UI names a plane the shader is not drawing on
+
+Reading the code rather than measuring it, there are **three CPU-side copies**
+of "where does normalised depth `d` sit in world z":
+
+| site | mapping |
+|---|---|
+| `viewSpaceDisplacementLogic` (GLSL) | **smoothstep** — this is what renders |
+| the a101/a102 fold envelope (line 234) | smoothstep — agreed |
+| `setSubjectFocusZFromPeek` | **LINEAR** — and this one feeds the subject pin |
+| `get3DPointFromUV` | **LINEAR** |
+
+`smoothstep(0,pn,d)` and `d/pn` agree at exactly three points — `d=0`, the
+portal plane, and `d=1` — and differ by up to **9.6% of the half-volume**
+between them: 0.0019 world in the far half, 0.0038 in the near half. So Set
+Subject Focus named one plane, the shader drew the content on another, and the
+a67 pin faithfully held the plane it was handed.
+
+That also explains the *shape* of the failure. A subject at the portal always
+looked pinned — the portal plane is one of the three crossings — and every other
+selection drifted. Scale: the q sweep measured that a **0.0075** error in `q`
+produces ~29px of subject travel, so 0.0038 is worth roughly **15px**.
+
+Both linear copies now call `volumeZOffForNormDepth`, which mirrors the GLSL
+line for line including the a174 `u_popExtra` growth of the inner half. This is
+the a104 lesson a second time: **a law with private copies is a law that will
+disagree with itself.**
+
+### What a200 is NOT
+
+It is justified by reading the code, **not** by a measurement of the reported
+symptom. `regress.js` is unchanged at 3 FAIL / 30 pass and the a64 invariant
+`dolly q!=P lock crest px` stays at **1.0** — that check is coarse (range 0..2)
+and its subject sits where the two mappings agree, so it is structurally unable
+to see this defect. **I have not reproduced the user's visual complaint in an
+instrument I trust, and a200 is not claimed to be the fix.**
+
+### Four instrument failures this round, all recorded
+
+1. **The subject picker chose the sky.** "Farthest trackable content from the
+   portal" is a definition that walks straight into the backdrop.
+2. **Depth labels read from the wrong frame.** The harnesses sampled the
+   RENDERED (post-embed) depth pass and converted it with the PRE-embed Depth
+   Peek formula, so the plane they pinned was not the plane they tracked. Depth
+   Peek itself reads `layer.elements.depth`, the source image — verified.
+3. **Patches with a twin inside the search radius** reported offset −38 at
+   correlation 1.000, and those rows are what made the subject plane look like
+   it was coming apart. Now voided by a validity test that costs nothing: the
+   phase-0 template is cut from the phase-0 frame at that location, so the true
+   match is (0,0) at correlation 1; if the search prefers anywhere else, the
+   patch is ambiguous and every later row for it is a coin toss.
+4. **A selection loop that could never finish** — 17000 Three.js raycasts
+   against a million-triangle mesh with no BVH. Removed by noticing that at rest
+   with the eye on axis the a104 parallax term vanishes for every depth, so
+   screen position *is* portal-plane position and screen→uv is an exact linear
+   map off the content rect. (`isSweeping = true` is required to stop face
+   tracking overwriting `camera.position`.)
+
+A fifth was suspected and cleared: `updateViewFade` only sets the opacity of a
+DOM overlay, not anything in the WebGL canvas, so it cannot black out a
+`drawImage(renderer.domElement)` capture. The `worst 46 / corr 0` rows are a
+flat template — the NCC search never improves on its first candidate and returns
+the corner of its own search window.
