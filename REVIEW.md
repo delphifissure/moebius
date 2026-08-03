@@ -10101,3 +10101,30 @@ learned loss edge, whichever is smaller), which on a Mac-class camera makes
 the VERTICAL fade run ~9.6..16deg — the tightness the user reports. Live
 inspection: window._faceBand; calibration levers documented in chat;
 defaults await the user's _faceBand readings.
+
+## Addendum 152 — a213b: the fade learner ratcheted on occlusions, and the Mac FOV was a guess
+
+**Landed:** `fa242ca` on moebiusv2/main.
+
+The user asked what the fade ranges were ("way too tight, especially
+vertically") and then did the calibration themselves with the facemesh
+view: ~±40° horizontal, ±30° vertical of trackable head angle on a
+FaceTime HD MacBook — against the LUT's guessed 54×32. Two defects:
+
+1. **The prior was wrong.** 54×32 put the vertical fade band at
+   9.6°..16° of head angle. With the user's measured 80×60 the bands
+   become horizontal 30°..40°, vertical 20°..30° (the 10° ramp riding
+   inside the measured edge). The LUT entry now carries the measured
+   values with their provenance; overrides still win.
+
+2. **The a144/a145 loss learner was tighten-only** — a running MIN over
+   loss positions, guarded only by "the loss happened >0.15 off-centre".
+   The logic error, stated plainly: a loss at offset X proves the tracker
+   CAN die there, not that X is the frame edge. An occlusion loss (the
+   user's own setup video shows a held card crossing the face) reads as a
+   frame exit and permanently tightens the fade for the session — and a
+   healthy detection BEYOND the learned edge, which is direct proof the
+   edge is wrong, was ignored. Fix, no constants: a healthy detection at
+   offset o pushes the learned edge back out to at least o. Sightings and
+   losses now equilibrate at the true boundary instead of ratcheting to
+   the worst occlusion ever seen.
