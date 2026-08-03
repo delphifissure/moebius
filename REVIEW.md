@@ -10164,3 +10164,35 @@ Two records worth keeping:
 
 The user is pulling to test the a213b fade ranges; a213c rides the same
 branch. Verdict on both awaits their eyes.
+
+## Addendum 154 — a213d: the user's screen overrules the frames; and a210 had silently killed the sheet
+
+**Landed:** `a00981f` on moebiusv2/main.
+
+1. **The band fill reverts to opt-in.** The depth-gated fill killed the
+   figure ghost — that stands — but on the user's screen the verdict was
+   "the smear looked better honestly... the striping artifacts are pretty
+   ugly," and the live canvas backs them: at 57° the striped band reads
+   blockier than the smooth phantom ever did. The default is the wash
+   again; the fill survives as window._bandFillDirectional, the base for a
+   two-sided inverse-distance blend refinement that must earn the default
+   on the user's screen. Lesson recorded: a fix that trades a semantic
+   artifact (phantom figure) for a texture artifact (striping) is a
+   TRADE, and only the person watching the parallax live can price it.
+
+2. **The debug sheet went black because of a210, and the failure was
+   silent.** The export-mask change added u_frameNdcC/H to the panel
+   material's JS uniforms and used them in the mode-9/10 GLSL — but never
+   declared them in the fragment shader. GLSL compile error, dead
+   material, every panel black. Declarations added (a213d). This is the
+   a189 uniform-hygiene lesson in a new coat, plus a gap worth naming: no
+   instrument watches shader compile status, so a dead debug material
+   reports as "everything is black" — indistinguishable from ten other
+   failures until a human looks.
+
+Also standing from the user's sheet: taffy remains visible at 57° — the
+FG rubber walls the scan-gated a212 tear does not reach (the band content
+behind them is now, per this addendum, the wash again). The taffy arc
+continues: the two-sided blend for the band, and the tear's scan gate
+audit (does the a80 scan cover the mid-dune ridge reveals at these poses?)
+are the two open threads.
