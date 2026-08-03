@@ -10128,3 +10128,39 @@ FaceTime HD MacBook — against the LUT's guessed 54×32. Two defects:
    offset o pushes the learned edge back out to at least o. Sightings and
    losses now equilibrate at the true boundary instead of ratcheting to
    the worst occlusion ever seen.
+
+## Addendum 153 — a213c: the ghost is dead; the metrics said otherwise and the metrics were wrong
+
+**Landed:** `cda6955` on moebiusv2/main. Task #100 closed.
+
+The fix the a212 conviction demanded: inside the disocclusion band the
+plate colour now comes from a DEPTH-GATED RIM FLOOD instead of the
+isotropic wash — a step propagates only between texels whose continuation
+depths (plateQ, the a62 dir-plate surface) agree within fgTearStep. Ground
+continues ground and sky continues sky by construction; the figure-side rim
+is excluded by the same gate for free; cliff-enclosed pockets fill from
+already-resolved colours; the a193 relax smooths with the same gated
+weights. Zero new constants. The wash keeps everything outside the band.
+
+Two records worth keeping:
+
+1. **The instrument tried to refuse the fix.** Ghost-box laplacian +154%,
+   ground +141%, rest delta 8.1% — every number "worse". The frames show
+   the figure-shaped ghost GONE, replaced by real dune/sky continuation.
+   Smoothness metrics cannot arbitrate correct-texture against
+   smooth-wrong-content: the wash's phantom was the lowest-energy signal
+   possible, so any honest fill scores higher. This is the same class of
+   metric failure as a160's comb/black% rewarding the artifact, from the
+   other side. The frames are the evidence; the numbers are recorded as
+   the instrument's limitation, not the fix's failure.
+
+2. **New artifact class, stated:** horizontal striping from
+   nearest-source flood texture inside the band, and a dark speckle strip
+   in the bottom edge band. Both live inside the SD-inpaint placeholder
+   region; both are strictly less wrong than a phantom figure. If they
+   read as objectionable in live use, the refinement is a two-sided
+   inverse-distance blend of rim sources (the row pass's blend idea inside
+   the gated domain) — scoped, not built.
+
+The user is pulling to test the a213b fade ranges; a213c rides the same
+branch. Verdict on both awaits their eyes.
