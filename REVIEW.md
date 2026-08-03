@@ -9887,3 +9887,78 @@ Instrument note, recorded per rule 6: the a208_dolly3/4 "162/169px FAIL"
 rows and the old "world stretch 128–137 PASS" rows are all void as
 measurements of the renderer — they measured the check's own feature
 switches. The valid numbers are the template-matched ones above.
+
+## Addendum 148 — a209: the reference was older than the bisect; the defaults go back to it
+
+**Landed:** `aa0ee51` (a209) on moebiusv2/main, after `c2cac36`/`35f538d` (a208).
+
+The user pressed on a208's "restored": *"is this the EXACT same as before? did
+you read the old code line for line?"* — and then supplied the decisive
+artifact: `goodgapsUXrefactor.js`, a pre-review build (~6.6k lines) from
+before ray-reprojection existed. Read line for line, it settles what "the
+effect" actually was:
+
+- **Static world + the fixed-rect asymmetric frustum. Nothing else.** The
+  `camera.fov` compensation in its dolly block was already dead code there —
+  `frameCorners` overwrites the projection matrix on the next line — and
+  `subjectLockActive` (default ON) drove only that dead write. The pin was
+  the frustum; the zoom was real, on-axis and off; face tracking mapped
+  straight to the eye with no gain.
+- So there were TWO degradations, not one: **a60** made reprojection the
+  default, and live-refEye reprojection structurally cancels the on-axis
+  dolly (coefficient 1 on px — the user's "so minor with reprojection on",
+  present in a106 too); then **a167**'s embed broke the off-axis pin as well
+  (the a208 arc's conviction, unchanged).
+
+### The full view-pipeline audit (user: "read basically everything")
+
+Function-level diff of a106 → tree, every hunk in movement / face tracking /
+frustum / framing / camera settings read: the face→eye mapping, click
+handler, shader displacement law (smoothstep both ends), and the camera
+settings section are byte-identical across a106 and the tree.
+`setLetterboxedViewport` is debug-views-only. The real deltas were the embed
+default, a208's unconditional freeze, the a143/a144 fade-band anchor (a
+separate user-requested arc), sim-viewer machinery, and diagnostics.
+
+### a209, the changes
+
+1. **Immersive off by default** (user decision): `bgEmbedVolume = false`
+   gates the embed, the tank walls, the page-coloured matte (the "white
+   pillarboxes") and the aperture crop. Simulated viewer stays. With the
+   embed off a clicked subject sits at zOff = 0 and the a196/a208
+   pin/gain/corner machinery gates itself out — it remains, exact, for the
+   immersive opt-in.
+2. **refEye freezes on EVERY dolly.** Frozen refEye makes reprojected texels
+   fixed world points for the dolly's duration — the goodgaps law on the
+   reprojection path — while the on-glass subject keeps its exact pin (its
+   reprojection term is identically zero for any reference eye). An
+   intermediate a209 draft gated the freeze off at ζ=0 to be "bit-identical
+   to a106"; the goodgaps build refuted that within the hour — a106's repro
+   dolly was the "so minor" regime, not the reference. Recorded as the
+   arc's lesson: the bisect found where it BROKE, not what it WAS.
+3. **18–144mm sweep** (user spec), derived not tuned: 18mm = 90° horizontal
+   = eye at half the rect width (tan 45 = 1, 36mm full frame), focal length
+   linear in distance-from-subject, max = 8×min. The old 0.05..0.35 was
+   11..79mm in this mapping. Rest untouched: 0.20 IS the 45mm normal-lens
+   pose, so load framing is bit-identical. Engage phase-syncs to the current
+   distance — no jump for any rest pose (a106 avoided it by the coincidence
+   rest = schedule midpoint).
+
+### Measured (harness/ab106.js: five arms, same emulated click gesture, eye
+### driven through the face-tracking pathway, matched physical distances)
+
+- Subject (clicked, on-glass, off-axis ex=0.12, dolly 0.20→0.12→0.30):
+  **0,0 px at every pose** on a106-legacy, a106-repro, a209-legacy
+  (corr 0.91–0.95; engage self-checks (0,0)@1.0).
+- a209-legacy witness trails match a106-legacy within **1px** — the
+  static-world law is preserved through the whole arc.
+- Instrument notes: the REAL handleCanvasClick aborts in headless (depth
+  read 0) — clickpin's old lesson relearned, sweet-spot emulated; goodgaps
+  loads era-named assets (roomImg/roomDepth); its arm and the a209-repro arm
+  (browser crash) were re-run — results recorded in the harness log
+  (ab106d).
+
+User confirmation after pushing a209: "I think 209 is already working
+correctly." Suite dolly re-run under the new defaults pending as of this
+addendum; its bounds were calibrated under embed-on and will be re-pinned
+honestly if they moved.
