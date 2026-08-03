@@ -10013,3 +10013,52 @@ goodgaps arm itself voids on load (its era's loader never initialises
 headless); the law equality is established through a106-legacy, which is
 static-world identical. Suite dolly run under a209 defaults still in flight
 at this addendum (starved by three concurrent SwiftShader instances).
+
+## Addendum 150 — a212: the taffy was convicted in three rounds, and it is baked into the plate
+
+**Landed:** `6c27f47` (quick FG pre-tear + the attribution chain) on moebiusv2/main.
+
+The user's directive: use the gap mask to kill the taffy — and the
+clarification that it is not just thin objects: the glider and the figure's
+own body streak too. Three suspects were tried and measured in one session.
+
+### Round 1 — the quick FG was never torn (real defect, fixed, not the smear)
+
+The v1 FG pre-tear lives BELOW quick's early return in
+bgBuildBackgroundLayerCore, so the shipped default has rendered the UNTORN
+foreground its whole life — the elaborate tear machinery (cliff cores,
+ribbon rules, bgTearAllRubber) only ever ran in the mode the UI greys out.
+a212 adds the tear at the quick return with the a160 exact criterion (fold
+under the a102 envelope at own texel extent + a89 quantum floor — not the
+fixed fgTearStep that is A107's open defect), gated to the bake's
+all-viewpoint disocclusion scan so grazing ground stays whole (cutting
+unbacked ground was a211's +30.7% speckle). Cost measured: ground +0.4%,
+rest delta 0.29% >8 luma. Benefit at the user's pose: staff −1.5%, ship
+−0.1% — nil, gated AND ungated, because:
+
+### Round 2 — hide the FG: the ghost stays. It is not FG rubber.
+
+### Round 3 — toggle the live fill off: the frame is byte-unchanged.
+
+(The first attribution run compared arms that had not diverged — the probe
+looked for a checkbox id that does not exist, the a134 lesson relearned;
+rerun with useInpaintingCheckbox actually toggled.) With both exonerated,
+the pure-plate frame says it directly: inside the band, SKY BLUE EXTENDS
+BELOW THE HORIZON. The figure-shaped pale smear is BAKED INTO THE PLATE by
+the colour wash: one-sided in DEPTH (the v3.9.1 4px guard against near
+content) but ISOTROPIC in DIRECTION — the pull-push pyramid mixes sky into
+the ground half of the figure-shaped disocclusion band and vice versa. My
+earlier claim that the user's "BG COLOR baked" panel was clean was wrong at
+panel scale, and is corrected here.
+
+### The real fix is A213 (task #100): direction-aware band fill
+
+Ground continues ground, sky continues sky. The DEPTH side already has
+exactly this (the a62 directional far-continuation dir-plate); the colour
+side even has a row-colour pass (moebius.js:12798, "plate row-colour pass
+failed, wash kept") whose run/failure status on this asset is the first
+thing to establish. Two context notes recorded: the user's poses are at
+67°, 2.4x outside the engineered 45° cone, which widens the exposed band —
+verify fixes in-cone too; and the wash band is the SD inpaint placeholder —
+a directional placeholder is the taffy fix, SD replaces it as the final
+texture stage.
