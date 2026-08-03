@@ -10062,3 +10062,42 @@ thing to establish. Two context notes recorded: the user's poses are at
 verify fixes in-cone too; and the wash band is the SD inpaint placeholder —
 a directional placeholder is the taffy fix, SD replaces it as the final
 texture stage.
+
+## Addendum 151 — a213a: the ready-made fix refuted itself; the real fix is a depth-weighted wash
+
+**Landed:** `212152e` on moebiusv2/main.
+
+Two findings from the first A213 step:
+
+1. **The quick skirt has been reporting a false failure on every bake.** The
+   a150 continuation-depth log line references `_farLog`/`skirtDT` — deleted
+   by a169 — so it throws after the skirt is already in the scene and the
+   catch prints "a149 skirt failed". The skirt was fine; the instrument
+   lied. Dead log removed (a213a).
+
+2. **Enabling the opt-in row-colour pass is refuted, measured.** The
+   depth-consistent per-row fill (window._plateRowColor, opt-in since a128)
+   looked like the ready-made A213: directional by construction. The A/B
+   says otherwise: ghost streak **+92.7%**, ground lap **+73.6%**, rest
+   frame changed on **7.48%** of sampled pixels. Its own log names the
+   cause: 113116 of 320984 band texels MISS (no depth-consistent
+   neighbour within its reach) — and a missed texel keeps the drawn SOURCE
+   pixel, wallpapering the figure into the plate as a hard clone, the exact
+   artifact this project's first rule forbids — plus scanline streaks from
+   the row structure. It stays opt-in; the shipped default is unchanged.
+
+The a212 conviction stands: the taffy at the user's poses is the wash
+mixing sky into the ground half of the figure-shaped band. The synthesis
+for the next arc: a DEPTH-WEIGHTED WASH — seed the one-shot pull-push
+pyramid with plate depth alongside colour and weight diffusion by depth
+similarity to the target, so the fill stays smooth (no misses, no clones,
+no scanlines) but sky cannot bleed into ground. The realtime inpainting's
+currentLinearDepthTolerance / currentDepthWeightPower machinery is the
+in-codebase precedent for exactly this weighting.
+
+Also this session: the fade calibration question — current ranges are the
+35/45deg radial cone plus the per-axis face-frame band (10deg or 40% of the
+learned loss edge, whichever is smaller), which on a Mac-class camera makes
+the VERTICAL fade run ~9.6..16deg — the tightness the user reports. Live
+inspection: window._faceBand; calibration levers documented in chat;
+defaults await the user's _faceBand readings.
