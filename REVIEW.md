@@ -9807,3 +9807,83 @@ Known, stated cost: in the dolly-OUT half (h > h0) the rect scale k rises above
 1 (~1.08 at defaults), so a sliver of matte/tank wall enters the border —
 geometrically necessary to hold a behind-glass subject while receding. At a106
 ζ was 0 and this never happened; it is the price of the embed.
+
+## Addendum 147 — the suite check pinned one surface and measured another, three times
+
+**Landed:** `c2cac36` (a208, moebius.js) and `35f538d` (a208d/e, regress.js +
+harnesses) on moebiusv2/main. `node regress.js dolly`: **ALL PASS** — subject
+2px (0..3), world stretch 11px (4..200), free teeth 15px (2..60).
+
+After a208 landed and clickpin measured 2px on both paths, the suite's dolly
+check still read 162–169px. The temptation was to suspect the fix; the a196f
+rule (when two statistics contradict, look at the buffer) said instrument the
+check. Three separate identity errors fell out, one per instrumented run —
+every one of them a case of the check pinning one surface and measuring a
+different one.
+
+### 1. The q-sampler read the far side of its own edge (162px)
+
+The A208c sampler found the strongest DEPTH edge in source column 0.30w and
+sampled `bey+0.02h` — "just below the crest". Decoding the depth PNG directly:
+the edge at y=941 has its NEAR side **above** (the ridge shelf, 0.529) and the
+far valley **below** (0.157). The sample landed in the valley. The check set
+q from background depth, then measured the subject's silhouette — content
+that is *supposed* to stretch — and reported the dolly zoom working as pin
+failure. The `[dolly dbg]` line that convicted it: `v=0.1569, vBody=0.7451`,
+with the gain algebra verifying exactly (`(e−Q)/(e0−Q)` to 4 decimals at both
+phases, refEye frozen at 0.2) — the implementation was never the problem.
+
+### 2. The body sample was a third surface (the 4px run)
+
+The earlier 0.90h body sample (0.741) is the near dune at frame bottom — not
+the ridge silhouette the luma tracker follows. Probing the color image with
+the tracker's own law: the strongest luma edges in the subject columns sit at
+depth **0.502–0.529**. Pinning 0.741 while tracking 0.52-content left the 4px
+residual. Per the standing commitment, the bound was not widened to 4; the
+sampler was fixed: find the strongest LUMA edge in the sampled column (same
+law as the tracker), then take the **nearer side** of the depth map across it
+(A208d, v=0.5255 — inside the tracked band).
+
+### 3. The crest tracker switched to the letterbox border (168px)
+
+A208d still read 168px — now UNIFORM across every column, a new signature.
+The a208e probe (`harness/dollysuite.js`: absolute top-3 edge tables per
+column, NCC templates, saved frames) settled it with feature identity:
+
+- The template cut ON the mid-phase ridge crest holds at **dy=2px, corr
+  0.95** — the pin is real, in the suite's own drive.
+- At the far phase the corner scale (k≈1.09, zoom-out) pulls the content-rect
+  bottom border to y≈435 — a strength-120 horizontal edge spanning EVERY
+  column that out-gradients every scene edge. The strongest-edge tracker
+  diffs ridge-at-mid against border-at-far: 155–168px of feature switch.
+- The old far-cols stretch PASS (128–137px) was the **same border artifact**:
+  the far columns' scene edges sit at 270→270, 281→281 between phases. The
+  check's one passing number was as fictional as its failing one.
+- Real off-plane motion, with identity: the near-dune template moves
+  **dy=−11px, corr 0.91**. The saved frames show the figure and ridge
+  visibly stationary while the frame shrinks — the window, holding.
+
+### The rebuilt check (a208e)
+
+Both lock-arm measurements are NCC template matches with a 0.6 correlation
+floor — identity by appearance, and a blind match FAILS instead of passing
+silently. Subject: patch on the mid-phase crest at the sampled column, |dy|
+0..3 (clickpin's 2px + one pixel of quantization). Stretch: patch on the
+near-dune body (0.93h — inside content at both phases), |dy| 4..200; under
+the a104 frozen-image disease this reads ~0, which is the regression the
+lower bound defends against. Only |dy| is asserted: the tracked features are
+near-horizontal edges, so dx is aperture-unconstrained (the probe's dx=12 at
+corr 0.95 is the template sliding along its own edge); the x-pin is defended
+at 2px, both paths, full sweep, real click gesture, by clickpin. The free arm
+keeps its crest-median teeth (15px in 2..60).
+
+One more thing the suite run established: with no click at all (pn=0.5,
+q≈P), ζ = embed = −0.04 and the unified pin engages on the embed offset
+alone — the no-click dolly now pins the portal-plane content by default,
+measured at the same 2px. The embed that caused the a167 regression is now
+just another value of ζ the law handles.
+
+Instrument note, recorded per rule 6: the a208_dolly3/4 "162/169px FAIL"
+rows and the old "world stretch 128–137 PASS" rows are all void as
+measurements of the renderer — they measured the check's own feature
+switches. The valid numbers are the template-matched ones above.
