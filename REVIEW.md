@@ -9962,3 +9962,54 @@ User confirmation after pushing a209: "I think 209 is already working
 correctly." Suite dolly re-run under the new defaults pending as of this
 addendum; its bounds were calibrated under embed-on and will be re-pinned
 honestly if they moved.
+
+## Addendum 149 — a210: the colour says inpaint or outpaint; a211 refuted the same afternoon
+
+**Landed:** `af8a1f7` (a210 + the a211 refutation record) on moebiusv2/main.
+
+### a210 — SD regions, the user's rule made geometric
+
+*"outpainting is simply anything outside the frame, and inpainting is
+anything inside the frame (which are all disocclusions)"* — and the reason
+some outpaint regions were never captured is structural: the SD mask lives in
+SOURCE UV on the plate, a space that cannot address anything beyond the
+frame, and the export's outpaint rule (border void) silently unmarked every
+beyond-frame pixel that padding covered. Now: ORANGE = outpaint, CYAN =
+inpaint, in the live view and in the export masks, in all four modes.
+Content-bearing fragments classify by their own world x/y against the source
+frame rect; a demand backdrop at the far volume extent catches pixels
+nothing covers (quick has no scene extension — a114 — so those reveals had
+no fragment to carry a tint at all).
+
+The classification plane took three measured iterations, recorded per rule 6:
+own-x/y with the backdrop 0.25 behind the volume (parallax painted interior
+holes orange — 11.3% orange / 0 cyan in realtime); ray-at-the-frame-plane
+everywhere (a Kooima pixel ray almost always crosses inside the aperture, so
+the far side-bands under-classified — 1.3% orange); and the final split —
+content by its own position, uncovered demand at the far extent. Smoke
+frames confirm interiors cyan and the side-bands orange in both realtime
+(22.4%/5.5%) and quick (20.4%/6.5%).
+
+### a211 — refuted by its own A/B, removed the same hour (rule 7)
+
+The staff/spaceship taffy hypothesis: the live stretch cut is gated on the
+bake's SD mask, thin-feature reveals miss that mask, so drop the gate when a
+plate backs the FG (a161's "the depth order is the gate"). Measured at the
+user's exact pose (harness/a211_cut.js): staff streak **-0.1%**, ship
+**-0.4%**, ground speckle **+30.7%** — no benefit, and the a83/a84 failure
+mode back in full. The change is deleted, the refutation is recorded at the
+gate line in the shader, and the finding that matters survives: the taffy
+blocker is the CLASSIFIER — uvRate takes the max Jacobian axis, so a 1–2px
+filament stretched along one axis keeps a healthy cross-axis and never
+registers as stretched, for any gate. The user's own suggestion is the next
+arc (A212): the screen-space gap pass — which the contract panel proves DOES
+see these pixels — as the discard authority in the composite.
+
+Also recorded: the a209-arc A/B (harness/ab106.js, emulated click after the
+real handler aborted headless — clickpin's lesson relearned): subject drift
+0,0px at every off-axis dolly pose on a106-legacy, a106-repro and
+a209-legacy, a209-legacy witness trails within 1px of a106-legacy. The
+goodgaps arm itself voids on load (its era's loader never initialises
+headless); the law equality is established through a106-legacy, which is
+static-world identical. Suite dolly run under a209 defaults still in flight
+at this addendum (starved by three concurrent SwiftShader instances).
