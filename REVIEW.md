@@ -10196,3 +10196,48 @@ behind them is now, per this addendum, the wash again). The taffy arc
 continues: the two-sided blend for the band, and the tear's scan gate
 audit (does the a80 scan cover the mid-dune ridge reveals at these poses?)
 are the two open threads.
+
+## Addendum 155 — a213e: the tear was shredding figure interiors; the v1 far-side gate restores the distinction
+
+**Landed:** `de0b303` on moebiusv2/main (v3.13.44-a213e).
+
+1. **The user's troll sheets convicted the a212 quick tear of cloning.**
+   "Looks like there's some cloning happening... remember, the 'bg' is
+   supposed to be a plug, only filling in the disocclusions." The sheets
+   showed mesh-footprint holes inside the troll's figure with plate
+   texture showing through — visible even at 4.3°, i.e. at rest, where
+   the tear should change nothing a viewer can see.
+
+2. **Root cause: a212 ported the v1 tear's fold criterion but not its
+   far-side test.** The v1 pre-tear (the one quick bake always skipped)
+   only tears a triangle when its far vertex lands on the plate's own
+   background — |plateQ[mnTi] − mnD| ≤ fgTearStep. That is the
+   interior-protection gate: a silhouette wall falls onto background
+   (tear it, the plate is the correct content behind it), while an
+   interior figure step falls onto more figure (keep it — tearing opens
+   a hole onto content that is NOT behind the figure, which is exactly
+   the cloning the user saw). a212 had only fold + scan-touch, and at
+   near depth the a133 fold limit is below one source quantum, so
+   ordinary 1-quantum steps inside the figure "folded" and got torn
+   wherever the scan footprint overlapped figure texels.
+
+3. **The fix is the gate, restored verbatim in the quick path:** track
+   the far vertex's texel (mnTi) per triangle and require
+   |plateQ[mnTi] − mnD| ≤ fgTearStep alongside fold + scan-touch.
+   No new constants: fgTearStep is the same a133b step the v1 gate and
+   the plate tear already use, and its unit (depth) is invariant to
+   pose, image, and resolution.
+
+4. **Verification on the convicting asset (troll), harness
+   a213e_troll.js:** rest-frame delta with tear ON vs OFF is 0.26% of
+   pixels above 8 luma and 0.02% above 32 — versus the a213d shredding,
+   which read as a large rest-visible blob. Tear volume: 53,797 of
+   1,737,400 triangles (~3.1%), silhouette scale, consistent with the
+   plate's own a160 tear rate. The torn-arm rest frame is visually
+   intact: no pale blob, no interior holes, figure fully covered.
+
+5. **What stands after this arc:** the quick tear now removes only
+   silhouette walls that the plate genuinely backs — the "single perfect
+   plug" contract. Open threads unchanged: the two-sided band-fill blend
+   (to earn the default over the wash on the user's screen) and the a80
+   scan-coverage audit at user poses.
