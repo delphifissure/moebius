@@ -10241,3 +10241,94 @@ are the two open threads.
    plug" contract. Open threads unchanged: the two-sided band-fill blend
    (to earn the default over the wash on the user's screen) and the a80
    scan-coverage audit at user poses.
+
+## Addendum 156 — a214: the plug-visibility contract — the gate returns with the demand mask, the skirt is deleted
+
+**Landed:** on moebiusv2/main (v3.13.45-a214, folded into the a215 push).
+
+1. **The user restated the contract with sheets in hand:** "the background
+   plug should ONLY be visible in the disocclusion holes, nowhere else.
+   it should be transparent in any places where disocclusions won't
+   happen." Their FG-hidden troll sheet showed the truth: the plate was a
+   full-frame background copy that merely relied on the depth test to stay
+   hidden, and the a149 skirt filled everything beyond the source frame —
+   over half the canvas even at rest — with clamp-to-edge smear.
+
+2. **Measurement before belief (a196 rule).** plugreach.js on the current
+   build: with the old gate ON, 100% of uncovered pixels at 35/52° had
+   plate geometry present — pure gate discards, i.e. the mask was STALE,
+   not wrong in kind. The mask was built ~1000 lines before the
+   a135/a162/a126 ordering clamps, which move up to 42% of plate texels.
+   And with the gate OFF (the shipped state), the plate's presence changed
+   5.7–10.6% of foreground-painted pixels — part of what read as cloning.
+
+3. **Two candidate masks built and rejected the same day, measured:**
+   (a) "≥1 source quantum of FG/plate separation, post-clamp" collapsed to
+   all-pass — a135 guarantees a quantum of setback everywhere, and one
+   quantum is ~4px of shift at the rim; the gate became a no-op.
+   (b) The EXACT all-texel visibility scan (the a80 z-buffer warp against
+   the FINAL clamped plate, 32 poses, exact a102/a106 shift law) answered
+   truthfully: 97.1% of the plate is exposable from some pose at a ±45°
+   cone with k = 67% of image width. "Revealable ever" IS a full copy at
+   this cone width — the exposure envelope is not the contract set.
+
+4. **The shipped design: the plug's region is the demand set** — the
+   all-viewpoint disocclusion region (SD demand) ∪ the torn footprint
+   (a160b), ~25% of the troll plate, figure-shaped. u_useBgIslands is ON;
+   the a149 skirt is REMOVED (rule 7), so beyond-frame renders nothing:
+   outside the source frame there is no disocclusion, only outpaint
+   demand, still marked orange for the SD stage. With the FG hidden the
+   plug is now hole-fills floating in transparency — the exact shape the
+   user's sheet demanded.
+
+5. **Honest cost, stated:** 0% extra uncovered at rest; 1.15% / 2.19% of
+   the frame at 35/52° shows transparent holes instead of stale plate —
+   reveals the demand mask does not own (the clamps push out-of-mask
+   texels into them). The user's stated preference is transparency over
+   clones. Closing them belongs to the a80 scan-coverage audit, which is
+   now LOAD-BEARING: the scan aims the tear AND the plug's visibility.
+
+6. **This does not reopen a161.** a161 falsified the gate against the mask
+   it had then, and the mechanism it named (visible texel ≠ torn texel)
+   stands. What a214 changes is the question: not "does the gate starve
+   the backstop" but "is the backstop allowed to exist outside the demand
+   set at all" — and the user's answer, three times now, is no.
+
+## Addendum 157 — a215: the two-sided inverse-distance blend fill takes the band
+
+**Landed:** on moebiusv2/main (v3.13.46-a215).
+
+1. **The design, from the a213 arc's wreckage:** keep the a213c depth-gated
+   BFS domain (ghost-free by construction, no clone fallback), replace its
+   nearest-source flood TEXTURE (the Voronoi striping the user rejected)
+   with an inverse-distance blend of rim sources along 8 directions.
+   Shepard (1968) weighting with p = 1: for two opposing sources the blend
+   (c_L·d_R + c_R·d_L)/(d_L+d_R) is exactly linear interpolation across
+   the band — the same rule bilinear texture filtering uses. Weights are
+   ratios of distances: dimensionless, resolution-invariant. Every ray
+   step is depth-gated by the same TOLB (fgTearStep) tests as the BFS, so
+   colour cannot be fetched through a cliff; a texel with no compatible
+   source keeps its BFS colour.
+
+2. **The first implementation was falsified by its own cost:** per-texel
+   ray walks are O(N × ray length), and a band ray can legally traverse
+   the whole image — minutes on the starwatcher sky, harness killed by
+   timeout. Rewritten as 8 O(N) scanline propagation passes (identical
+   result: each pass carries the nearest depth-compatible source along one
+   direction). Measured: 4.0s for 318,394 of 319,018 band texels blended,
+   only 40 pocket-filled — the domain reaches essentially everything.
+
+3. **Default ON as the band content; window._bandFillLegacyWash restores
+   the plain wash instantly.** The a213d lesson is not forgotten: the
+   user's screen prices this trade, and the wash remains one flag away.
+   The striping MECHANISM is gone by construction (the blend is continuous
+   in position where the flood was piecewise-constant); the ghost stays
+   dead (the near rim dominates by weight). Verification frames ride with
+   this push; the live verdict is the user's.
+
+4. **Harness discipline note (self-inflicted, recorded):** two verification
+   runs died not from code but from port 8099 collisions — concurrent
+   harnesses share one scratch server and whichever run finishes first
+   kills it under the others. The A110 served-identity guard warns about
+   exactly this. Rule reaffirmed: harness runs against the shared server
+   are SERIAL.
