@@ -10370,3 +10370,11 @@ are the two open threads.
    still discernible in the sky band. Whether this beats the wash is the
    user's screen's call; window._bandFillLegacyWash restores the wash
    instantly.
+
+5. **The long-budget dolly run came back: ALL PASS under v3.13.46-a215.**
+   Subject-plane pin |dy| = 0.0px at the far phase (gain 3.2), world
+   stretch 5px, free-crest teeth 4px, refEye frozen at 0.2 through both
+   phases. ~50 minutes of wall clock on SwiftShader for three checks —
+   the timeout was always the environment paying for off-axis frames,
+   never the law. a214/a215 leave the goodgaps projection law exactly
+   where a209 restored it.
