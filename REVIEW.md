@@ -10332,3 +10332,41 @@ are the two open threads.
    kills it under the others. The A110 served-identity guard warns about
    exactly this. Rule reaffirmed: harness runs against the shared server
    are SERIAL.
+
+## Addendum 158 — the instrument, not the code: SwiftShader's deferred bill, measured to the pre-a214 control
+
+1. **Symptom:** after the a214/a215 push, the dolly regression and the
+   wash-vs-blend A/B both "hung" past their timeouts. Localised with
+   timestamped bake logs: a rebake issued AFTER off-axis renders stalls
+   ~200s inside its first canvas getImageData, before the first bake log.
+   Renderer wrappers showed 22 renders totalling 14ms and zero readbacks —
+   the renders are 14ms of SUBMISSION; SwiftShader rasterises them
+   asynchronously in the GPU process, and the next synchronous readback
+   pays the whole deferred bill. Off-axis frames of this scene cost tens
+   of seconds each; the 67° report pose costs minutes at 912×513.
+
+2. **The control that matters:** the identical probe against pre-a214
+   (`de0b303`, worktree) shows the SAME ~194s stall and ~217s rebake.
+   **Not a regression from a214/a215** — the projection/dolly code paths
+   have zero changes in the diff (mask, skirt, band colour only), and the
+   render cost is byte-for-byte the same story on both builds. The dolly
+   suite's timeout is wall-clock economics on this environment, not a
+   failed invariant; a long-budget confirmation run rides in the
+   background.
+
+3. **Harness idioms recorded:** (a) never bake after unsynced off-axis
+   renders — sync first or use a fresh page; a215_ab_fresh.js replaces the
+   same-page a213_ab.js pattern (fresh page per arm: load at rest → bake →
+   grab poses, paying render cost incrementally). (b) Harness runs against
+   the shared scratch server are SERIAL — two concurrent runs killed each
+   other twice via port 8099 before this was re-learned.
+
+4. **A215 verification, frames delivered:** starwatcher wash vs blend at
+   the 67° report pose and the 41° in-cone pose. The striping mechanism is
+   gone by construction and by eye — the band renders smooth gradients;
+   sky-half continues sky, ground-half continues dune tones. Residuals,
+   stated honestly: at the extreme pose the ground band reads as a flat
+   mauve fill, and at the cone pose a faint figure-silhouette boundary is
+   still discernible in the sky band. Whether this beats the wash is the
+   user's screen's call; window._bandFillLegacyWash restores the wash
+   instantly.
