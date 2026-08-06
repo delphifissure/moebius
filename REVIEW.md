@@ -10419,3 +10419,45 @@ are the two open threads.
    seamlessness, and the demand mask (SD region) remains the honest
    answer to "where will diffusion paint." Beyond-frame stays empty (the
    skirt stays deleted) pending the SD outpaint stage.
+
+## Addendum 160 — a217: the plug carved to its job in geometry — a plug, not an intersecting sheet
+
+**Landed:** `5491204` on moebiusv2/main (v3.13.48-a217).
+
+1. **The user rejected a216's completeness within the hour:** "the plug
+   layer should only be where there are actual disocclusions. a full
+   second layer that contains more content than needed is not a plug,
+   it's an intersecting sheet." So the constraint is now geometric, not
+   visual: the MESH itself must be only the disocclusion region.
+
+2. **The mathematics that makes both demands compatible:** under the
+   static-world law an UNDISTORTED plate puts exactly the demand-region
+   texels on every reveal ray — out-of-demand texels appear in holes
+   only because the ordering clamps (a135/a162/a126) displace them. So
+   the plug = demand region (SD demand ∪ torn footprint) + a collar of
+   texels whose own clamp-induced displacement can carry them into a
+   hole: chamferDist(x, demand) ≤ |shiftPx(plateFinal) −
+   shiftPx(platePreclamp)| at the cone rim. Chamfer(5,7)/5 (Borgefors
+   1986, the a162 citation), the a62 pad, computed AFTER the clamps so
+   it cannot go stale. Two iterations, both measured: the reveal-width
+   budget |shift(occluder)−shift(plate)| kept 86% of the plate
+   (the reveal CAN be that wide — but those texels are already the
+   demand's own); the displacement bound keeps 61.3% on the troll
+   (wall-to-wall cliffs; sparser scenes will carve far smaller).
+
+3. **Verified at the user's 33.7° mess pose:** plug-only is now
+   demand-shaped fills + collar floating in black — visibly a plug —
+   and the FULL frame is as seamless as a216's (no black holes, every
+   reveal filled). Rest is the source image. At 52° — past the fade
+   rim, where the collar promises nothing — small honest patches
+   appear at the troll's head where reveals outrun it; the fade cone
+   blacks that pose in normal use.
+
+4. **The three-way tension, resolved by naming which mechanism owns
+   which promise:** the DEMAND REGION owns "where disocclusions are";
+   the COLLAR owns "what the clamps' distortion can slide into them"
+   (the bound is the distortion itself, not the exposure envelope); the
+   DEPTH TEST owns per-pose visibility. a214 failed because a fragment
+   mask predating the clamps tried to own all three; a216 failed the
+   user's definition because completeness owns none of them.
+   window._noPlugCarve restores the full backstop for A/B.
