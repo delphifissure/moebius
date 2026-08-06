@@ -10461,3 +10461,36 @@ are the two open threads.
    mask predating the clamps tried to own all three; a216 failed the
    user's definition because completeness owns none of them.
    window._noPlugCarve restores the full backstop for A/B.
+
+## Addendum 161 — a218: the demand is tight; the "mess" sheets were the superseded build; the sheet gains the three panels that prove it
+
+**Landed:** `241f48b` on moebiusv2/main (v3.13.49-a218).
+
+1. **The user's "extra mess" sheets are stamped v3.13.46-a215 — the
+   a214 masked-gate build.** Both artifact classes they show (empty
+   spaces, black false-positive holes) are the gate's, and a216/a217
+   had already removed them; the a217 verification frames at the same
+   33.7° pose are seamless.
+
+2. **"It's easy to see where the holes will be" — measured, and the
+   user is right:** cliff seeds (fgTearStep steps) grown by their own
+   rim parallax budget predict the demand almost exactly. Troll: SD
+   demand 13.0% of the plate; 95.4% of it lies INSIDE the cliff-band
+   prediction; the unexplained residue is 0.6% of the frame (mostly
+   thin mid-separation slivers). The demand region is not inflated.
+
+3. **The cliff bands themselves cover 56.9% at rim budgets — which is
+   why the a217 carve keeps 60.5%.** The collar is the same physics
+   the user's intuition names, priced at the cone rim: wide because
+   k = 67% of image width, not because anything over-claims. The
+   blocky rectangles on the sheet's mask.R/mask.G panels are
+   rim-depth PLATEAU visualisations (intermediate fields), not the
+   demand — a long-standing readability trap now bypassed by the new
+   panels.
+
+4. **Three new sheet panels (user request):** INPAINT ONLY (demand-
+   region colour), INPAINT ONLY DEPTH (plug depth in the demand), and
+   SOURCE DEPTH (the cliffs). Demand-vs-cliffs is now readable
+   straight off every sheet; harness/a218_mess.js is the quantitative
+   form (red = demand the cliffs cannot explain, green = agreement,
+   blue = cliff-band not in demand).
