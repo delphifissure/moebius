@@ -10378,3 +10378,44 @@ are the two open threads.
    the timeout was always the environment paying for off-axis frames,
    never the law. a214/a215 leave the goodgaps projection law exactly
    where a209 restored it.
+
+## Addendum 159 — a216: the seamless plug — the gate is off for good, and the sheet grows demand/supply panels
+
+**Landed:** `0523734` on moebiusv2/main (v3.13.47-a216).
+
+1. **The a214 demand-mask gate lasted one day, falsified by the user's own
+   33.7° sheets:** "still plenty of both empty spaces and false positive
+   holes, this is a mess... we need a seamless plug layer." Both artifact
+   classes are what a static mask MUST produce: empty spaces where the
+   ordering clamps move revealed texels outside any mask drawn before
+   them, and black holes where the FG tear's footprint lands outside the
+   mask. A mask in plate-texel space cannot gate a reprojecting render —
+   a161 proved the mechanism, a214 re-tested it with the best mask the
+   project can draw, and the user's screen delivered the verdict.
+
+2. **Seamlessness has exactly one mathematical form here, and it was in
+   the file all along:** a plug that is COMPLETE (no gate, no holes of its
+   own) and STRICTLY BEHIND the foreground (the a135 same-texel and a162
+   min-plus-chamfer clamps guarantee it continuously over the cone)
+   appears, via the depth test, precisely where the foreground is absent —
+   per pose, exact, no guessing. The gate is off; the mask still uploads
+   as the SD demand region, which is its real job.
+
+3. **Verified at the user's exact pose** (cam 0.133, 0.006, 0.200 —
+   33.7°, the "mess" sheet): FG-only shows the black demand holes around
+   the troll's arms, torso and flank; plug-only shows the complete
+   background continuation; the FULL frame shows every hole filled with
+   blend content and no black anywhere. Triptych delivered.
+
+4. **The debug sheet now carries the diagnosis** (user request): two new
+   panels, "FG only (holes = plug demand)" and "BG plug only (coverage =
+   supply)", rendered at the current pose — so "does every hole have plug
+   behind it?" is answered by direct comparison on every future sheet.
+
+5. **What "transparent where disocclusions won't happen" means now:** it
+   is delivered PER POSE by the depth test — at any given eye, the plug
+   reaches the screen only through actual holes. The plug LAYER, seen
+   alone, is a complete surface; that completeness is the price of
+   seamlessness, and the demand mask (SD region) remains the honest
+   answer to "where will diffusion paint." Beyond-frame stays empty (the
+   skirt stays deleted) pending the SD outpaint stage.
