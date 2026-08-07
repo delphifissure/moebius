@@ -10612,3 +10612,39 @@ are the two open threads.
    dequantize, despeckle, a212 tear) while realtime reads the
    unmutated field — two authorities for one set. Open arc, unchanged:
    one gap authority, the realtime contract.
+
+## Addendum 165 — a220c: the instrument was the saboteur — every sheet export hid one more layer
+
+**Landed:** `b7b454f` on moebiusv2/main (v3.13.53-a220c).
+
+1. **The user's five v3.13.52 sheets, with the new stamp fields, form a
+   state machine that solves the arc:** 13:02:11 realtime+inpaint=on,
+   path=PIPELINE — clean. 13:02:30 realtime+inpaint=OFF — raw holes by
+   request. 13:02:51 baked, plug=VISIBLE, path=BAKED-DIRECT — **the
+   baked composite WORKS: holes filled by the plate.** 13:02:59 baked,
+   plug=HIDDEN — the black-holes complaint state. 13:03:10 baked, FG
+   itself flagged [LAYER IS HIDDEN IN COMPOSITE] — the plate-alone
+   state first seen sessions ago.
+
+2. **One layer lost per sheet export.** The a216 _solo helper had no
+   try/finally and rendered through render() — the full
+   renderPortalFrame. Any throw mid-solo skipped the visibility
+   restore, and the block's catch swallowed the evidence: the FG-only
+   solo left the PLUG hidden, the plug-only solo left the FG hidden,
+   permanently. Every sheet the user exported to demonstrate the holes
+   MANUFACTURED the next holes. This closes the whole recurring
+   "ton of holes after pulling" mystery, including the original
+   no-foreground sheet, as instrument-inflicted state damage.
+
+3. **Fix:** _solo restores visibility in a finally and renders via
+   renderer.render(scene, camera) directly — it can no longer touch
+   renderPortalFrame's suppress machinery or die on pipeline state.
+
+4. **What the working sheet (13:02:51) establishes:** with layers
+   intact, the shipped a219 defaults (wash + full backstop +
+   BAKED-DIRECT) fill every hole at the user's pose on the user's own
+   machine. The remaining agreed arc is quality, not coverage: ONE GAP
+   AUTHORITY — the realtime contract's clean gap set (raw depth, mode2
+   detector, legacy cut) as the single source of truth that the bake
+   consumes instead of recomputing from mutated inputs (srcPath=sharp,
+   det=slope, cut=0.008, torn mesh) with ragged results.
