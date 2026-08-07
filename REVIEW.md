@@ -10566,3 +10566,49 @@ are the two open threads.
    claim 3's diagnosis is wrong and the divergence is in their live
    environment vs the harness — that sheet becomes the bisection
    instrument either way.
+
+## Addendum 164 — a220b: the user's filenames force the full diff, and it finds TWO composite paths where the harness only ever tested one
+
+1. **The five sheets, by the user's names:** moebius_debug_realtime_gaps
+   (11:14:14) and moebius_debug_realtime_inpaint (11:14:28) are the clean
+   references; moebius_debug_quickbake_inpaint (11:14:56) is the
+   conviction sheet; moebius_debug_quickbake_backgroundplugonly
+   (11:15:04) shows the plug's fills EXISTING in the gaps;
+   moebius_debug_quickbake_gaps never arrived (4 of 5 images received).
+
+2. **The full panel diff of moebius_debug_quickbake_inpaint falsified
+   the a220 toggle theory:** the deform-grid pass filters on
+   `!o.visible` (it HONORS visibility) and shows green plug inside the
+   very holes — so bgLayerMesh.visible was TRUE. Combined with the
+   backgroundplugonly sheet (fills present) the triangulation is: plug
+   visible, positioned, textured — and the composite still black at the
+   gap set. The failure is in which COMPOSITE PATH drew the frame.
+
+3. **renderPortalFrame has two final-view paths** (moebius.js:21065):
+   CASE 1 "baked-direct" — one renderer.render(scene, camera) with all
+   per-fragment gap generators forced off (the a52 rule); gap pixels
+   show the plate. CASE 2 "pipeline" — the realtime ping-pong path,
+   taken when `isAccumulatingGaps && !isSweeping` (or inpainting/debug
+   states); it arms the gap generators FROM THE UI CHECKBOXES and
+   renders the scene into pingPongRenderTargetB, where discarded gap
+   fragments composite against the target's BLACK clear. Every harness
+   probe sets `isSweeping = true` — so the harness has only ever tested
+   CASE 1, while the user's live session (isSweeping false, accumulator
+   state unknown) can sit in CASE 2. That is the reproducibility gap
+   between "my frame is clean" and "their screen has holes".
+
+4. **Shipped (v3.13.52-a220b):** the stamp now prints
+   `path=BAKED-DIRECT|PIPELINE`, `accum=ON|off`, `inpaint=on|OFF` — the
+   frame itself declares which compositor drew it. One sheet from the
+   user closes the case: path=PIPELINE confirms the mechanism (then the
+   fix is to make CASE 2 composite baked scenes against the plate, or
+   exit to CASE 1 whenever a bake exists); path=BAKED-DIRECT means the
+   hunt continues with the a218 panels.
+
+5. **The realtime-vs-baked gap border comparison the user demanded**
+   (moebius_debug_realtime_gaps vs the baked sheet's gap mask): same
+   hole locations, but the baked mask's borders are eroded and fringed.
+   The bake mutates the depth the FG-sub contract reads (a86
+   dequantize, despeckle, a212 tear) while realtime reads the
+   unmutated field — two authorities for one set. Open arc, unchanged:
+   one gap authority, the realtime contract.
