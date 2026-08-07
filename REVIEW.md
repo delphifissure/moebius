@@ -10524,3 +10524,45 @@ are the two open threads.
    Harness frames at three poses are necessary but not sufficient; a
    default that changes geometry or band texture needs the user's
    live pass before it ships as default, not after.
+
+## Addendum 163 — a220: the labeled sheets diffed — one sheet bug (mine), one exonerated suspect, one state variable the stamp never recorded
+
+**Landed:** `89ce9f5` on moebiusv2/main (v3.13.51-a220).
+
+1. **The corrupted sheet (all-white gap mask, all-red depth, all-blue
+   contract) was MY bug, introduced with the a216 solo panels.** The
+   solo views drive the full frame pipeline with meshes hidden, which
+   overwrites the ping-pong/depth targets every classic panel reads —
+   so a SECOND sheet export read poisoned buffers and reported
+   all-hole/all-invalid. Fixed: the solo block now runs LAST, after
+   every target-reading panel.
+
+2. **The plate's texture alpha was a suspect for the live-canvas holes
+   (wash rejects ink → transparent texels → black through reveals) and
+   it is EXONERATED by A/B:** at the user's exact labeled pose
+   (0.100, −0.023, 27.2°), shipped map vs fully-opaque source map are
+   pixel-identical (22.58% dark both — the painting's own darkness).
+
+3. **At the same pose, same version, my render has NO holes** —
+   harness/a220_holes.js frame is clean, reveals filled with wash. The
+   user's sheet at that pose shows the plug ALIVE as a layer (the
+   solo panel renders it) yet writing NOTHING into the composite
+   (plug-in-place depth invalid at every hole). The one state with
+   exactly that signature is the plug hidden in the composite (Enable
+   Inpainting / BG layer toggle off) — which the old solo panel
+   MASKED, because it force-shows the mesh it isolates. Two fixes:
+   the stamp now prints plug=VISIBLE/HIDDEN, and a solo panel of a
+   composite-hidden layer says [LAYER IS HIDDEN IN COMPOSITE].
+
+4. **Standing observation from the user's clean v2/realtime sheets,
+   named as the next arc:** the realtime gap set (FG-sub contract,
+   screen space, per pose) has crisp borders; the baked demand's
+   borders are ragged by comparison ("they should be the same"). The
+   goal statement stands: a 3D plug that SLOTS into exactly the
+   realtime contract's gaps. That arc starts from the fixed sheet's
+   evidence, not before.
+
+5. If the user's next sheet on v3.13.51 shows plug=VISIBLE and holes,
+   claim 3's diagnosis is wrong and the divergence is in their live
+   environment vs the harness — that sheet becomes the bisection
+   instrument either way.
