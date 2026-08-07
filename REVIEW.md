@@ -10648,3 +10648,91 @@ are the two open threads.
    detector, legacy cut) as the single source of truth that the bake
    consumes instead of recomputing from mutated inputs (srcPath=sharp,
    det=slope, cut=0.008, torn mesh) with ragged results.
+
+## Addendum 166 — a221: one gap authority — the divergence is convicted, and it is the tear's BORDERS, not the bake's inputs
+
+**User directive:** "notice how much cleaner the realtime gaps are vs.
+the baked ones, which have very unclear borders. they should be the
+same" → "yes, we need a single source of truth for gaps" → "go ahead
+with gaps."
+
+**Instrument:** harness/a221_gaps.js — the debug sheet's own gap
+recipe (fresh renderNormalizedDepthPass + runFGSubtraction at the
+capture pose, BG hidden, dets off, scene alpha < thr = gap), one fresh
+page per arm, pose (0.100, −0.023, 0.200), troll. New metrics: border
+spurs (gap px with ≤1 gap neighbour) and pinholes (opaque px with all
+4 neighbours gap) — the fragmentation signature.
+
+1. **The measured divergence.** Realtime gap set A: 90,328 px,
+   boundary/area 0.013, **0 spurs, 0 pinholes**. Baked default C:
+   99,907 px, boundary/area 0.038, **421 spurs, 77 pinholes**. XOR
+   A vs C = 9.5% of union.
+
+2. **The XOR map convicts the geometry, and exonerates everything
+   Addendum 165 suspected.** The baked-only pixels are coherent
+   figure-hugging bands at the troll's silhouettes — the a212 torn
+   walls, i.e. the de-taffy'd reveals, which are EXTRA GAPS BY
+   DESIGN. There are essentially zero realtime-only pixels: the baked
+   set is a superset. The exoneration chain, one suspect per arm, all
+   at the same pose:
+   - sharpened-depth swap (srcPath=sharp): B arm with _oneGapAuthority
+     (raw everywhere) ≈ C exactly — NOT the cause.
+   - the tear itself: removing it (D) is WORSE — 13.0% XOR, b/a 0.054.
+     The tear is load-bearing against taffy; rule 7 does NOT fire on
+     a212.
+   - a86 dequantize (E): 8.8% — marginal, not the cause.
+   - stretch net in capture (G): 9.3% — not the cause.
+   - contract staleness: fresh-contract capture reproduces every
+     number exactly — not the cause.
+   - the a212 fragment classifier (H, both branches disabled): C vs H
+     XOR = **0.2%** — the per-pixel cut contributes nothing to the
+     baked gap set. NOT the cause.
+   **Addendum 165's closing hypothesis — that the bake's mutated
+   inputs (sharp depth, slope det, 0.008 cut) explain the divergence —
+   is falsified and withdrawn (rule 7).**
+
+3. **The tear DECISION is innocent too.** harness/a221_tearmap.js
+   dumps the dropped-triangle set in source space: 54,522 triangles,
+   33,810 cells, only **0.06% isolated** — clean silhouette-following
+   lines. The raggedness is not decided at bake; it is BORN WHEN
+   PARALLAX OPENS THE TORN LINE.
+
+4. **Why realtime borders are clean and baked borders are not — the
+   actual mechanism.** Realtime holes are cut PER-PIXEL by threshold
+   tests on smooth interpolated depth fields (the classifiers); baked
+   holes are cut PER-TRIANGLE by threshold tests on raw per-texel
+   depth spans. A per-cell decision noise of ±1 cell is invisible in
+   source space (item 3) but renders as 1px spurs and pinholes on
+   every opened border at texel-scale mesh resolution (850x1022).
+   Also measured and rejected as remedies: cell-coherent tearing
+   (Q: 386 spurs) and a one-cell tear dilation (R: 260 spurs but
+   +2.5k px of gap and XOR 11.7%) — partial at best, both left OFF.
+
+5. **The circularity discovery that redirects the fix.** The
+   contract's own seed pass (fgSeedMaterialV2) defines gap as
+   RENDERED ALPHA < 0.5 — the contract is DOWNSTREAM of rendering,
+   not an independent authority. "Make the bake match the contract"
+   is circular. The single source of truth must therefore be the law
+   both paths already share: per-pixel depth consistency,
+   |sampled − interpolated| > u_bandCutMismatch — the 'torn' branch's
+   own test.
+
+6. **The fix (a221, opt-in `_tearBorderCut`, NOT default — Addendum
+   162 rule: no geometry default without the user's live pass).** The
+   bake records the one-cell band of kept texels around dropped tear
+   cells (u_tearBorder texture; one cell because a kept triangle
+   further than one cell shares no vertex with a dropped one and
+   cannot be a remnant of the torn wall). Inside that band the
+   fragment shader owns the border: a fragment whose sampled depth
+   disagrees with its vertex-interpolated depth beyond
+   u_bandCutMismatch is a stretched remnant of the torn wall and
+   discards per-pixel. The boundary this draws follows the depth
+   texture's own cliff line — the same smooth field the realtime
+   classifiers threshold — instead of the triangle grid. No fwidth
+   rest-gate needed: the band itself is the rest-state protection,
+   and every discard is plug-backed by construction (a161). No new
+   constants: the threshold is the existing u_bandCutMismatch (0.01),
+   the band is one cell of sampling error.
+
+7. **Border-authority measurement (S arm):** PENDING-S
+
