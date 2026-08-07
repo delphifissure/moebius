@@ -10734,5 +10734,51 @@ spurs (gap px with ≤1 gap neighbour) and pinholes (opaque px with all
    constants: the threshold is the existing u_bandCutMismatch (0.01),
    the band is one cell of sampling error.
 
-7. **Border-authority measurement (S arm):** PENDING-S
+7. **Border-authority measurement (S arm) — three iterations, each
+   convicted by its own numbers:**
+   - v1 (mismatch discard in a one-cell band): C vs S XOR **0.2%** —
+     inert. Verdict: freed-edge fragments are depth-CONSISTENT; there
+     is nothing for a consistency law to discard. The fringe is the
+     SHAPE of the freed edge, not bad fragments.
+   - The mechanism, finally: the source mesh renders MINIFIED (troll:
+     851x1023 fit to ~427px wide — TWO cells per screen pixel), so any
+     free mesh edge is sub-pixel jagged and point-sampled
+     rasterisation fringes it. Realtime silhouettes never fringe
+     because they are TEXTURE edges resolved by (mipmapped) bilinear
+     filtering. Supporting: 78% of freed-edge cells sit on plateaus
+     (span <= quantum; the mid-ramp-cut theory is also dead), and every
+     decision-side remedy (coherence, dilation) moved partial numbers
+     at best.
+   - v2 (texture-space border: tear only the INTERIOR of the drop
+     region, upload the drop field as a bilinear alpha texture, border
+     = its 0.5 iso-contour + mismatch cut in the 0.5..1 feather):
+     float/no-mip 333 spurs (bilinear MINIFICATION of a 0/1 field
+     undersamples — the very aliasing being fixed), byte+mipmaps 193,
+     + full-footprint painting 204 spurs / 14 pinholes / b/a 0.033
+     (area +1.5%, XOR 10.8%).
+   - Final S state vs shipped C: spurs 421 -> 204, pinholes 77 -> 14,
+     boundary 3769 -> 3334. A halving, not parity. The residual is
+     structural: the alpha contour is smooth in TEXTURE space but
+     renders through each ring triangle's own affine mapping, and
+     adjacent ring triangles carry different stretches, so the drawn
+     line re-breaks at triangle boundaries. **No bake-time construct
+     can be pixel-clean under arbitrary pose; realtime borders are
+     clean because they are decided in SCREEN space per frame.**
+
+8. **Stamp defect promised in this arc, fixed:** view= now appends
+   (rendered:X) whenever the export reads the dropdown between a
+   selection change and the next rendered frame, from
+   window._activeDebugView recorded in renderPortalFrame.
+
+9. **Where this leaves the arc — decision point for the user.**
+   (a) The opt-in `_tearBorderCut` (texture-space border) halves the
+   fringe at ~zero cost and is ready for a live pass. (b) True parity
+   ("they should be the same") requires the baked path to draw hole
+   borders in screen space per frame — either a per-frame border
+   cleanup pass on the composite or per-frame gap classification like
+   the realtime path — which touches the BAKED-DIRECT single-render
+   architecture stabilised in a220b/a220c, so it is a user call, not
+   an autonomous default (Addendum 162 rule). The by-design ~10% extra
+   gap area (torn-wall reveals) is NOT a defect and stays under any
+   option; only the border texture is at issue.
 
