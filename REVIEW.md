@@ -10494,3 +10494,33 @@ are the two open threads.
    straight off every sheet; harness/a218_mess.js is the quantitative
    form (red = demand the cliffs cannot explain, green = agreement,
    blue = cliff-band not in demand).
+
+## Addendum 162 — a219: both defaults rolled back on the user's live verdict
+
+**Landed:** on moebiusv2/main (v3.13.50-a219).
+
+1. **The blend fill is out of the default** — "the fill is this weird
+   streaky thing now, it looks terrible, go back to the wash." Same
+   protocol as a213d: the screen prices the trade, the blend did not
+   earn the default, the wash is back. window._bandFillBlend re-enables
+   it for A/B only.
+
+2. **The a217 carve is off by default** — the user's live screen shows
+   "a ton of holes" on the carved build. My harness verification
+   (912×513, three poses) did not reproduce their result, which means
+   the displacement-collar bound is not yet proven against their real
+   canvas, poses and controls — and an unproven geometry cut that can
+   open holes must not be the default. The seamless full backstop
+   (a216) ships; window._plugCarve re-enables the carve for the
+   verification it still needs.
+
+3. **Priority order, fixed from the user's own words:** no holes first,
+   plug-shaped layer second, band texture third. The carve's promise
+   (geometry only where disocclusions are) remains the goal — it
+   returns when it demonstrably opens zero holes at the user's poses.
+
+4. **Lesson recorded:** two consecutive defaults (blend, carve) shipped
+   on harness evidence and failed on the user's screen within a day.
+   Harness frames at three poses are necessary but not sufficient; a
+   default that changes geometry or band texture needs the user's
+   live pass before it ships as default, not after.
