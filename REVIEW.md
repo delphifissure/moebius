@@ -10782,3 +10782,40 @@ spurs (gap px with ≤1 gap neighbour) and pinholes (opaque px with all
    gap area (torn-wall reveals) is NOT a defect and stays under any
    option; only the border texture is at issue.
 
+
+## Addendum 167 — a222: the a221 experiment failed the live pass and is ROLLED BACK
+
+**User:** "god what are you doing, it looks terrible and you regressed
+the sd masks."
+
+1. **Action taken first: full rollback, pushed as v3.13.57-a222.**
+   moebius.js restored to the a220c state plus only the stamp
+   truthfulness fix. Removed entirely: _oneGapAuthority,
+   _tearDilate, _tearBorderCut (alpha field, shader block, uniforms,
+   tear restructure). Smoke-verified: the baked gap set reproduces the
+   shipped reference exactly (99907 px / 3769 boundary, tear 54522
+   triangles) and the SD mask equals the scan's own count (113523
+   texels).
+
+2. **The defect the experiment carried (found in the post-rage audit,
+   my fault):** one bake with _tearBorderCut armed u_useTearBorder and
+   NEVER DISARMED it — every later bake in the session kept
+   discarding along the stale alpha field. Worse, the discard was
+   live in the depth pass that renderNormalizedDepthPass feeds to
+   runFGSubtraction, so the contract's own gap views were
+   contaminated by the experiment. One flagged bake poisoned the
+   session — the same instrument-state-leak class as a220c, which I
+   had just finished writing up. Recorded as a standing lesson:
+   **every experiment flag that arms a uniform at bake time must
+   disarm it on every unflagged bake.**
+
+3. **Verdict per Addendum 162's rule:** harness numbers (spurs halved)
+   meant nothing against the screen. The texture-space border is dead
+   as shipped code; the MEASUREMENTS of a221 (Addendum 166: superset
+   gap set, minification aliasing mechanism, screen-space parity
+   requirement) remain valid and are the arc's surviving output.
+
+4. **State after a222:** defaults identical to a219/a220c everywhere.
+   The gaps arc's next step, if the user still wants border parity, is
+   the screen-space option from Addendum 166 item 9 — proposed only,
+   nothing implemented.
