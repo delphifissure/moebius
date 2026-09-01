@@ -10819,3 +10819,109 @@ the sd masks."
    The gaps arc's next step, if the user still wants border parity, is
    the screen-space option from Addendum 166 item 9 — proposed only,
    nothing implemented.
+
+## Addendum 168 — a228: the instrument lied under SD-regions, and the carve re-test on a fixed instrument
+
+**User (with three v3.13.62 sheets):** "lots incorrect gaps, improperly
+filled gaps, sd gaps well beyond where the plugs should be. Think hard
+about what your goals are and re-evaluate." Then: "go ahead with the
+instrument fixes and re-test the carve."
+
+1. **Sheet triage, verified in code, not guessed.** (a) The 22:10:49
+   sheet had the FG layer HIDDEN (every analysis panel degenerate, the
+   FG-only panel tagged) and the stamp could not say so: no fg= field.
+   (b) The 42deg sheet was exported with SD-regions ON, and the A210
+   demand backdrop — a plain mesh with no background flag — was drawn
+   into the normalized-depth pass, the footprint pass, both gap captures
+   and the accumulation render, filling every hole it exists to mark:
+   empty gap mask, zero invalid depth, the composite where the contract
+   should be. (c) The 35.7deg sheet is the honest one and shows the real
+   product state: a FULL backstop as the plug (a219), ragged baked hole
+   borders (a221, unresolved), and the contract's rim depth tiled in
+   axis-aligned rectangles — the a58-era Chebyshev note says chamfer
+   costs replaced the BUDGET metric, but the min-VALUE propagation on an
+   8-neighbourhood still spreads in square fronts.
+
+2. **Instrument fixes (v3.13.63-a228, pushed):** userData.analysisHidden
+   on the backdrop, excluded by the same predicate as splat layers in all
+   five passes; stamp gains fg=VISIBLE/HIDDEN and sdHl=ON/off; the
+   'COMPLETED DEPTH (plug)' panel renamed to say it is the realtime
+   contract's completion, not the bake plate ('live depth incl. BG'
+   checked and found honest — it re-runs the depth pass with the plate).
+   Asserted: gap capture with SD-regions off = on = 94,911 px at the
+   sheet-2 pose with the backdrop present (harness/a228_carve.js, H).
+
+3. **The carve, re-tested (harness/a228_carve.js, two fresh pages, the
+   user's five stamped poses at z 0.199):**
+
+   | pose | holes default | holes carve | extra | plug-only default | plug-only carve |
+   |---|---|---|---|---|---|
+   | rest | 97,888 | 97,888 | +0 | 46.9% | 28.7% |
+   | (0.100,−0.023) | 87,160 | 87,304 | +144 | 50.5% | 33.4% |
+   | (0.141,0.023) sheet 2 | 80,795 | 80,967 | +172 | 53.2% | 35.9% |
+   | (0.180,0.008) sheet 1 | 75,283 | 75,493 | +210 | 55.1% | 38.2% |
+   | (−0.141,0.023) | 109,261 | 109,632 | +371 | 40.3% | 21.0% |
+
+   (holes = pixels nothing covers, all layers visible; the two arms
+   share the FG so the delta is exactly what the carve leaves open;
+   plug-only = plate footprint with the FG hidden, % of frame.)
+   Two findings, both against the a217 record: **the carve is not
+   hole-free inside the cone** (+144..+371 px off-axis — 0.03..0.08% of
+   the frame, invisible at sheet scale, but the "by construction" claim
+   is false), and **the carve is not a plug** — it keeps 61.3% of the
+   plate (demand + parallax collar = 60.5% of plate texels). The user's
+   "ton of holes" was therefore MOSTLY the a220c export leak, but not
+   entirely; and even hole-free, this carve would still be most of a
+   sheet, because the a80 demand union over the 45deg cone plus the
+   collar is that large on the troll.
+
+4. **Where the extra holes are (harness/a228_holediff.js, XOR of the two
+   arms' hole masks at the mirror and sheet-1 poses; crops in
+   harness/shots/a228/crop_*.png):** every carve-only hole sits ON THE
+   PLATE'S OUTER SILHOUETTE, where the plate meets the pillarbox. Mirror
+   pose: 371 px in 30 components, the two largest 177 px at x 171–177
+   (a 1–2 px sliver, 45 rows tall, on the left rim) and 134 px at
+   x 186–196 lower on the same rim. Sheet-1 pose: 210 px in 37
+   components, largest a 40 px triangular notch bitten out of the
+   bottom-right corner of the plate at (402–414, 293–301), the rest
+   1-px-wide columns along the right rim at x 439–442. NOT ONE carve-only
+   hole is interior to the plate. Mechanism, read from the code: the
+   carve seeds its chamfer distance from islandF, and islandF is the
+   disocc set — cone-envelope departure from the source depth, cliff-
+   gated, viewpoint-scanned (moebius.js 12241–12454). The image border is
+   not a cliff in that map, so the plate's outer rim, which sits at
+   non-portal depth and therefore parallaxes inward off-axis, generates
+   no demand; the carve drops the rim margin the full backstop was
+   silently supplying. The a217 "hole-free inside the cone by
+   construction" claim was true of interior disocclusions and false at
+   the frame edge, and no instrument before this one separated the two.
+
+5. **The 'holes' metric itself was misleading (harness/a228_interior.js,
+   hole components split into frame-edge-connected vs interior):** the
+   default arm's 75,283–109,261 "holes" are 100% edge-connected at four
+   of five poses — the pillarbox: the troll plate is narrower than the
+   16:9 target and 53% of the target is uncovered AT REST. Interior holes
+   in the default composite: 0, 0, 0, 0 and 6 px (five 1–2 px specks on
+   the bottom edge at the mirror pose). So the shipped full-backstop
+   composite is interior-hole-free at every stamped pose on this
+   instrument. The carve arm, same split: interior 0, 0, 0, 0 and 26 px
+   (the 20 extra are 1-px-wide columns at x 193–199, 1–7 px tall, just
+   inside the left rim at the mirror pose); edge-connected delta +0,
+   +144, +172, +210, +351. The entire hole story of the a228 table is a
+   rim story. Addendum-166's "ragged baked hole borders" is a different
+   defect (border quality where holes are correctly cut), not missing
+   coverage.
+
+6. **Verdict on the carve, as designed:** it removes 39% of the plate's
+   triangles and 47% of the plug-only footprint, at the cost of 144–371
+   rim-edge pixels per pose that the backstop used to cover, and it is
+   still 61% of a sheet, because the a80 demand union over the 45deg cone
+   plus the parallax collar IS that large on the troll. Not shipped as
+   default (Addendum 162 rule: the user's live pass first). The rim
+   defect has an exact fix with no new constant: treat the plate border
+   as a demand source with a band equal to the rim's own disparity (the
+   same bgShiftPxAt law the collar already uses, in texels of shift,
+   invariant to image size). Whether the carve is worth it at all is the
+   user's call and depends on whether "plug, not sheet" means the demand
+   union (which this is) or something tighter than the a80 scan, which
+   would be a physics change, not a carve change.
