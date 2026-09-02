@@ -11410,3 +11410,25 @@ stamped + three off-grid), D arm = the flush-exempt full backstop.
    that shift_rim(near)·2/(NX−1) ≤ minif + a62 pad, which for the troll
    is ≈80 poses per axis — seconds on a GPU, hours here. The sweep is the
    right instrument; this box is the wrong place to run it densely.
+
+5. **Generality pass, stopped at two of six.** Octopus, room, star
+   watcher and silver warrior were launched three times; the session's
+   container restarted every 40–60 minutes and each scene needs 60–90
+   minutes of software rendering, so none completed (octopus was cut
+   twice, at 21:31 and 21:34, before its first sweep ended). Measured:
+   troll (works: fewer uncovered pixels than the sheet at all eight
+   poses, 24% footprint) and bristlecone (region 93%, holes mixed
+   +376/−899 — reveals everywhere, see item 3). The remaining four are a
+   one-line run each on a GPU box, and that is where they should be run:
+
+       SWEEP=1 FLUSH=1 HOLE=1 NX=17 IMG=<color.png>,<depth.png> TAG=<name> \
+           node harness/a228_carve.js
+       SWEEP=1 FLUSH=1 HOLE=1 NX=17 node harness/a229_plugshot.js   (troll)
+
+   (NX is the poses across the cone; 17 here where the pad law wants
+   ≈80 — raise it on hardware that can. The D arm is the flush-exempt
+   sheet; holes are reported against it and the shipped sheet's numbers
+   for the troll are in Addendum 174.) State of the flags: nothing is
+   default. window._plateFlushExempt, window._plugSweepBake({flush,
+   holeDemand, nx}) and the region carve are opt-in and measured; the
+   default bake is unchanged since a229 at the gap-mask level.
