@@ -10925,3 +10925,74 @@ instrument fixes and re-test the carve."
    user's call and depends on whether "plug, not sheet" means the demand
    union (which this is) or something tighter than the a80 scan, which
    would be a physics change, not a carve change.
+
+## Addendum 169 — A229: rim demand for the carve, three cuts, the third exact
+
+**User:** "fix the rim demand and re-run the carve." Build
+v3.13.64-a229, commits 7ac5470 (first cut) and a94186e (the span law). Carve still off by default (`window._plugCarve`, Addendum 162
+rule). Instrument: the a228 harnesses unchanged (a228_carve, a228_interior,
+a228_holediff), default arm bit-identical in every run (the change is
+inside the flag). All numbers at the five stamped poses, z 0.199.
+
+1. **Cut 1 — per-texel band:** keep border texel k if its distance to
+   the nearest frame edge is within |s(plateF[k]) − s(dQ[k])| (+ a62
+   pad), s = the a102/a104 shift LUT in texels. Result: extra holes vs
+   the backstop +0/+0/+0/+0/**+46** (was +0/+144/+172/+210/+371), plate
+   kept 63.3% (was 61.3%). The 46 px: 1–2 px columns just inside the
+   left rim at the mirror pose (21 px at 176–177 × 45–57), where the
+   FG silhouette steps. Wrong quantity: the plug texel k separates from
+   the FG's SILHOUETTE, not from FG texel k.
+
+2. **Cut 2 — border-texel law:** keep k if k < |s(dQ[border of row]) −
+   s(plateF[k])| (+ pad), rows and columns. Result: extra holes **0 at
+   every pose**, XOR empty — but plate kept **90.7%**. Wrong in the
+   other direction: it ignores that FG texel k lands where plug texel k
+   lands, so it demands the plug wherever the interior depth differs
+   from the border depth, i.e. almost everywhere. Hole-free and not a
+   plug; not acceptable.
+
+3. **Cut 3 — coverage-span law (shipped behind the flag):** the untorn
+   FG row y is a continuous sheet, so at the cone rim it covers the
+   screen span [min_j, max_j] of j ± s(dQ[j,y]) (both head directions;
+   columns likewise for vertical head motion). Plug texel k lands at
+   k ± s(plateF[k,y]) and is uncovered iff it lands outside that span.
+   A texel whose plateF equals dQ is one of the span's own terms and can
+   never be outside it, so only texels the flood or the clamps moved
+   can qualify, and they qualify by exactly their own displacement. a62
+   pad on the comparison, as on the collar. Same LUT, same pad, texel
+   units; no new constant.
+
+   | pose | extra holes | interior D / C | plug-only, % of frame (sheet → carve) | carve as % of sheet |
+   |---|---|---|---|---|
+   | rest | +0 | 0 / 0 | 46.9 → 32.3 | 68.9 |
+   | (0.100,−0.023) | +0 | 0 / 0 | 50.5 → 37.3 | 74.0 |
+   | (0.141,0.023) sheet 2 | +0 | 0 / 0 | 53.2 → 40.4 | 75.9 |
+   | (0.180,0.008) sheet 1 | +0 | 0 / 0 | 55.1 → 42.9 | 77.8 |
+   | (−0.141,0.023) mirror | +0 | 6 / 6 | 40.3 → 23.7 | 58.9 |
+
+   Hole masks XOR (a228_holediff) at mirror and sheet 1: 0 px in 0
+   components. plugSeen identical to the backstop at every pose (the
+   plug reaches the screen in exactly the same pixels). Plate kept:
+   1,195,925 of 1,737,400 triangles (68.8%), 593,228 texels (68.1%),
+   970 ms in the bake. Backdrop exclusion check H: off = on = 94,911.
+
+4. **What the numbers say, plainly.** The carve is now hole-free against
+   the full backstop at every pose the user stamped, on the fixed
+   instrument, with the rim handled by a law rather than a margin. It
+   removes 31% of the plate's triangles and 22–41% of the plug's screen
+   footprint. It is still two-thirds of a sheet: the a80 all-viewpoint
+   demand union over the 45deg cone is 60% of the troll plate by itself
+   (Addendum 168 item 6), and the carve cannot be smaller than the
+   demand it serves. Making the plug smaller than this means narrowing
+   the demand (cone angle, a127) — a physics/product decision, not a
+   carve defect. The user's live pass decides whether the carve becomes
+   default (Addendum 162 rule); the composites are pixel-identical to
+   the backstop at these poses, so the visible difference, if any, will
+   be at poses outside the stamped set or in SD-mask behaviour, which
+   this arc did not re-measure.
+
+5. **Regression state.** T1–T6 (6/6) and the 16 real-scene suite (18/18)
+   were run on the a228 build after the instrument fixes and before the
+   A229 edits; A229 is entirely inside `if (window._plugCarve === true)`
+   and the default arm's numbers are identical in all four runs, so the
+   default path is unchanged at the gap-mask level.
