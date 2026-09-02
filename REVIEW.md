@@ -11151,3 +11151,64 @@ areas blurry etc."
    displacement. Plan for task #9 (next): collar measured against plateF
    before a126; a80 scan on; measure region, holes at the five poses,
    plug-only shots, on the six scenes.
+
+## Addendum 172 — which plate texels are EVER SEEN: the a162 bound is what fills the reveals, and the cores are in them
+
+**Instrument:** harness/a231_visible.js — bake the shipped full backstop,
+swap the plate's colour map for a texel-ID map (R = x&255, G = 16 + high
+bits, B = y&255, nearest-filtered) and the foreground's for black, render
+49 eye poses across the cone (9×5 grid to |x| 0.18, |y| 0.05 at z 0.199,
+plus the four stamped off-axis poses), decode the ID of every pixel where
+the plate reaches the screen, union. No theory: the renderer's own answer
+to "where can the plug be seen", all clamps and tears included. 0 bad IDs.
+
+1. **Ever-visible plate texels: 184,330 = 21.2% of the plate.** The
+   carve keeps 68.1%; the shipped backstop is 100%. Against the bake's
+   demand mask (disocc, 13.0%): 73.7% of demand is ever seen (26.3% of
+   the SD region is never revealed inside the cone), and 100,641 seen
+   texels lie OUTSIDE demand. By the carve's own criterion: demand
+   88,161/219,544 seen (40.2%), collar 90,025/306,912 (29.3%), rim
+   6,126/66,770 (9.2%), dropped 18/277,347 — the carve's dropped set is
+   right; its kept set is 3.2x the seen set.
+
+2. **The near cores ARE seen: 47,839 of 85,656 (55.9%).** Addenda 170/171
+   argued from A38/A62 that the unreached core "never shows". It shows.
+   Mechanism (bake_log.js, troll): a162's cross-texel ordering pushes
+   back 367,060 texels = 42.2% of the plate (mean 0.107, worst 0.455) —
+   every flush texel that could occlude the foreground from some eye is
+   moved to the exact bound shift(A) = shift(B) + dist, i.e. to the depth
+   at which it lands ON the silhouette's reveal zone at some eye. Those
+   texels are therefore what fills the reveal beside every silhouette,
+   NEARER than the band's far plate (troll: ~0.63 against the band's
+   0.24), carrying a ghost wash. That is the "improperly filled gaps /
+   bg extruded toward fg" the user sees, and it is why the collar keeps
+   the cores (a162's displacement is exactly what the collar measures —
+   measured: collar against pre-a126 changes 366 texels; against pre-a162
+   the collar drops to 17.4% but the rim law keeps 23.2% and 87–229 px of
+   holes reopen, because the pushed-back texels ARE covering reveals).
+
+3. **What the other ~48k seen-outside-demand texels are:** a dither
+   field over the ground and the left trees (map: red dots) — the plate
+   seen through A212 pre-tear pinholes (scan-gated tears on the ground's
+   own micro-cliffs), again at a162-bound depth with wash colour, not the
+   ground's own content. The a160b torn footprint (islandF beyond
+   disocc) accounts for only ~4.5k of the seen set.
+
+4. **What this settles for task #9.** "Only opaque where disocclusions
+   are possible" has an exact, general, oracle-free construction: the
+   plug's region is the ever-visible set of a cone sweep, plus the a62
+   pad, computed by the renderer at bake time (the RUNG-PLUG backstop
+   sweep already exists as infrastructure). It is 21% of the troll plate
+   where the carve is 68% and the sheet 100%, and it is hole-free at the
+   swept poses by construction (between-pose coverage is the pad's job
+   and gets measured at poses not in the sweep). Its CONTENT rule
+   follows from the same measurement: seen texels outside the torn
+   footprint are reveals and must carry the far continuation (added to
+   demand before the flush fill and wash — the a80 role, with the
+   renderer as the oracle instead of a warp that only prunes); seen
+   texels inside the torn footprint are pinholes and keep the source
+   clone at source depth (seamless). The a162 bound remains a ceiling
+   the plate must respect, not the depth it should have. Visibility
+   depends on the plate's own depth, so the sweep is iterated once after
+   the fill and the delta reported. Not built yet; the six-scene measure
+   of the seen set comes first.
