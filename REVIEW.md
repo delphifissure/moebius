@@ -11239,3 +11239,60 @@ to "where can the plug be seen", all clamps and tears included. 0 bad IDs.
    unaltered (rim fade or a blend), to be understood before the sweep
    becomes the bake's own oracle. Sheet: harness/shots/a231/
    ever_visible_sheet.png.
+   **CORRECTION (Addendum 173):** the "bad IDs" were the instrument's own
+   bug — the ID map packed the high bits of x in 2 bits, so any plate
+   wider than 1024 px mis-decoded. Re-measured with 4+4 bits (0 bad IDs
+   everywhere): bristlecone 36.1% seen (60.7% of demand seen, cores
+   34.3%), octopus 26.3% (51.2%, cores 42.0%), room 20.0% (58.9%, 44.1%),
+   star watcher 10.7% (52.0%, 36.5%), silver warrior 4.5% (21.3%, 22.4%).
+   The readings above stand qualitatively; the per-scene numbers in
+   the table are superseded by these. The warrior's 4.5% is still a
+   1:5–1:9 sampling lower bound.
+
+## Addendum 173 — sweep-defined demand falsified; the a162 flush exemption fixes the reveal content and exposes the band's width deficit
+
+1. **Sweep-defined DEMAND (A232 first cut), falsified and removed.** Joining
+   the seen set (minus the torn footprint) to the demand and iterating:
+   17×5 grid, three bakes, seen set 214,722 → 256,598 with the last pass
+   still growing by 41,876 — no convergence, because a texel lowered to
+   the far fill lags the foreground more and brings more plate into
+   view; ground pinholes reclassified as reveals rendered as wash
+   (mottled ground in the sheet-1 and mirror composites); holes +305 px
+   at the mirror pose, +109 at an off-grid pose; 38 minutes per pass on
+   this box. Removed (rule 7); the sweep remains as a REGION instrument
+   only, on a plate whose content it does not change.
+
+2. **A233 flush exemption (window._plateFlushExempt), measured on the
+   troll.** a162 no longer pushes back texels that sit at the source
+   depth (the a135 eps class, |plate − src| ≤ 2 quanta): they are the
+   foreground's own surface and cannot occlude it; they move with it.
+   Ever-visible plate: 21.2% → 15.3% of the plate. Near cores seen: 55.9%
+   → 26.6% — the remainder are pinholes (A212 tears inside the troll
+   showing the clone at its own depth, which is the right content).
+   The reveal beside every silhouette now shows the band's far fill
+   instead of the pushed-back ghost: the "improperly filled gaps" class.
+
+3. **What the exemption exposes: the band is too narrow.** With the ghost
+   texels no longer papering over the reveal, the FULL backstop itself
+   is short of coverage off-axis: holes vs the shipped backstop
+   +3,225 px at (0.100,−0.023), +499 sheet 2, +936 sheet 1, +3,129
+   mirror, +280/+5,481/+3,539 at the three off-grid poses (0.06–3.0% of
+   the frame). The demand band (cone-departure set, whose width is the
+   a62 hop budget = the lip's ±RWD window step in cone steps) is
+   narrower than the reveal at soft silhouettes, and inside the troll
+   the front cannot widen it because the interior is a62-"ground". The
+   shipped build never showed this because a162's pushed-back cores
+   filled exactly those pixels with the wrong content. This is the a127
+   demand-width defect measured in pixels for the first time.
+
+4. **Where this leads (next build, hole-driven demand):** the sweep
+   already sees every uncovered pixel at every pose. For each such pixel
+   the plate texel that WOULD cover it at the band's far depth is one
+   inverse shift away (the a104 ray law); those texels, and only those,
+   join the demand and take the far fill. Texels whose covering position
+   lies outside the frame are outpaint (a214) and are left empty. Unlike
+   the seen-set join this cannot run away: adding a texel to the far
+   fill closes holes and opens none (holes come from foreground motion,
+   not plate motion), so a second sweep should read ≈ 0. Pinholes are
+   untouched (they are covered). To be measured on the troll, then the
+   six.
