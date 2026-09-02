@@ -11068,3 +11068,86 @@ room, star watcher, silver warrior.
    front-stop rule built on that survives the six scenes is the next
    measurement, not a claim. Nothing shipped in this addendum; the six
    scenes' maps are in harness/shots/a229/<scene>/.
+
+## Addendum 171 — A230 recession front-stop: built, measured on six scenes, FALSIFIED and removed
+
+**User:** "build the recession front-stop and measure it on all six. also
+the plug is supposed to be just a plug (only opaque in areas where
+disocclusions are possible), not a full duplicate of the scene with some
+areas blurry etc."
+
+1. **Baseline probe first (a62 front state under the near cores, source
+   depth above the 90th percentile and not demand), all six scenes:** the
+   cores are classed GROUND by a62's luma/cliff flood at 90.6–100% (troll
+   98.8%, octopus 100%, room 100%, star 98.1%, warrior 90.6%, bristlecone
+   95.3%), object fronts claim 0.0–2.9% of them, and the a62 plate there
+   is the untouched source. The troll's 0.63 under the head (Addendum 170)
+   is therefore not a front that died; it is a126's slope limit bridging
+   from the 0.24 band up to the untouched 0.79 core with a cone tent. The
+   a62 ground flood covers 62–95% of every plate (troll 94.7%, the A73
+   "collapse"), so "ground" is not a footprint oracle on any of the six.
+
+2. **What was built (window._frontStop, bgDirectionalPlate):** object
+   fronts bid the anchor plane (no a85 cone rise), carry no hop budget,
+   claim any texel still a tear step proud of the carried plate, stop at
+   flush; the entry guard replaced the ground mask with a SUPPORT test:
+   a texel is support iff some cardinal walk that is smooth at window
+   scale (range ≤ tearStep), never ascends by more than a source quantum,
+   reaches the far limit or a frame edge, and accumulates tearStep/2 of
+   recession (A62d's own criteria, four O(N) scans). Fold fronts
+   unchanged.
+
+3. **Measured (ARM=fs, harness/a229_plugaudit.js):**
+
+   | scene | support % | a62-ground dug by object fronts | mean drop | demand % base → fs | near cores claimed |
+   |---|---|---|---|---|---|
+   | troll | 30.5 | 50.8% | 0.36 | 13 → 54 | 0.0% (still 0.807) |
+   | bristlecone | 0.1 | 99.9% | 0.76 | 50 → 97 | all, to 0.002 |
+   | octopus | 38.7 | 51.9% | 0.74 | 37 → 61 | 0.0% |
+   | room | 48.7 | 26.3% | 0.37 | 37 → 49 | all, to 0.003 |
+   | star watcher | 64.2 | 26.6% | 0.67 | 13 → 35 | all, to 0.000 |
+   | silver warrior | 77.7 | 10.8% | 0.76 | 12 → 21 | 0.0% |
+
+   Two failures, opposite in sign, on the same rule. (a) The troll's head
+   dome passes the smoothness test — the estimator's silhouette blur is
+   gentler at window scale than tearStep — so it walks down into the
+   background, classes as SUPPORT, and stays unclaimed (0.0%). (b) Real
+   ground under clutter breaks on the clutter's cliffs, fails support,
+   and is dug by sky-anchored fronts that win under farther-value-wins:
+   bristlecone's entire ground to sky depth, half of the troll's and the
+   octopus's. That is the A69 far-plane pit, at scene scale — the hop
+   budget was the crude answer to precisely this, and the rule that was
+   meant to replace it reproduces the disease it prevented. Falsified on
+   every scene; the code is REMOVED (rule 7), the harness arm stays so
+   the numbers can be regenerated. Troll composites under the flag
+   (harness/a228_carve.js FS=1): still hole-free at the five poses, but
+   the plug reaches the screen at rest in 5,215 px against 2,724 — the
+   dug ground showing through the wider A212 tear — and the plug-only
+   shot is a smear of the whole troll region over a dug floor.
+
+4. **What this settles.** Monocular depth does not carry, at window
+   scale, the information that separates "occluder interior" from "near
+   support surface": soft silhouettes look like slopes, cluttered ground
+   looks like objects. Three segmentation-flavoured rules (Addendum 170)
+   and one recession rule have now failed on the same six scenes for
+   the same reason. The A38/A62 statement that the unreached core "never
+   shows" is the physics that survives: inside the cone the core is
+   never revealed, so the plate there needs no content — it needs to be
+   ABSENT.
+
+5. **Where the user's second requirement actually lands.** "Only opaque
+   where disocclusions are possible" is a statement about the plug's
+   REGION, and that region is computable exactly without any footprint
+   oracle: the a80 all-viewpoint scan on the plate (skipped by default
+   since a121 because, with the cores never departing, it pruned 0 px).
+   The plug that satisfies both of the user's statements is: region =
+   the scan's reveal set; depth inside it = the far continuation the a62
+   band already has (troll band 0.24 vs background 0.20 — the tent is on
+   the CORE side, in plateF, from a126); core = transparent (carved),
+   which also removes the "depth clone" from every panel because the
+   clone is no longer part of the plug. The carve currently keeps the
+   cores through its COLLAR: a126's tent displaces core texels by far
+   more than the collar's minimum, and the collar reads that as a clamp
+   displacement. Plan for task #9 (next): collar measured against plateF
+   before a126; a80 scan on; measure region, holes at the five poses,
+   plug-only shots, on the six scenes.
