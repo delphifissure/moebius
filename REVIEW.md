@@ -11296,3 +11296,66 @@ to "where can the plug be seen", all clamps and tears included. 0 bad IDs.
    not plate motion), so a second sweep should read ≈ 0. Pinholes are
    untouched (they are covered). To be measured on the troll, then the
    six.
+
+## Addendum 174 — hole-driven demand + flush exemption + region sweep: the troll plug covers MORE than the full sheet at half the footprint
+
+**Build:** window._plugSweepBake({flush:true, holeDemand:true, nx:9}) —
+app 43f9940 (flagged; nothing default changed). Instrument:
+harness/a228_carve.js SWEEP=1 FLUSH=1 HOLE=1 NX=9, eight poses (five
+stamped + three off-grid), D arm = the flush-exempt full backstop.
+
+1. **What the sweep did (troll, 45 poses, 1:4 sampling):** pass-1
+   uncovered pixels whose covering far texel lies in-frame: 329,414 px
+   summed over the poses (4.19 M px outpaint, i.e. beyond-frame by the
+   a214 contract; 0 uncalibrated poses). Those name 295,513 texels, which
+   joined the demand (33.4% of the plate — large: the frame-edge reveal
+   strips are in it, legitimately). After the rebake the same sweep reads
+   38,327 px uncovered in-frame (−88%); seen set 145,011 → 226,901;
+   region with the 10-texel pad 442,976 (50.9% of the plate). 16 min on
+   this box for the three bakes and two sweeps.
+
+2. **Holes in the composite, eight poses, versus BOTH backstops:**
+
+   | pose | shipped sheet | flush-exempt sheet | hole-driven plug |
+   |---|---|---|---|
+   | rest | 97,888 | 97,888 | 97,888 |
+   | (0.100,−0.023) | 87,160 | 90,385 | **84,913** |
+   | (0.141,0.023) | 80,795 | 81,294 | **77,483** |
+   | (0.180,0.008) | 75,283 | 76,219 | **71,293** |
+   | (−0.141,0.023) | 109,261 | 112,390 | **107,389** |
+   | off-grid (0.06,0.012) | 90,510 | 90,790 | **89,082** |
+   | off-grid (−0.09,−0.02) | 106,959 | 112,440 | **105,645** |
+   | off-grid (0.16,−0.03) | 80,360 | 83,899 | **76,971** |
+
+   (holes = uncovered pixels of the whole 572×322 target, pillarbox
+   included, so only differences carry meaning.) The plug has FEWER
+   uncovered pixels than the shipped full sheet at every off-axis pose,
+   by 1,300–4,000 px, and covers the flush-exempt sheet's width deficit
+   completely — with a footprint of 24.1% of the frame at rest against
+   the sheet's 46.9% (19–33% off-axis against 39–58%). Composite change
+   vs the shipped build: 722 px at rest, 5.8–10.6 k px off-axis, in the
+   frame-edge reveal strips (now filled with the far wash where the
+   shipped build left them empty) and in ground speckle; the reveal
+   beside the woman is unchanged.
+
+3. **What is different from every previous attempt.** No segmentation, no
+   cliff test, no recession walk: the renderer is asked where it shows
+   the plate (region) and where it shows nothing (demand), and the
+   answers are used as measured. The a162 exemption keeps the
+   foreground's own surface out of the reveals, so the content in the
+   gaps is the band's far fill. The three constants are the fade-end
+   angle (the cone), the a62 pad, and the 1:minification sampling ratio
+   the sweep reports about itself; the 9×5 grid is an instrument
+   setting recorded with the result.
+
+4. **Open, honestly.** (a) 33% of the plate joined the demand: the SD
+   region grows accordingly and the plug-only shot needs the user's eye
+   (frame-edge strips are wash, the troll footprint is wash). (b) 38 k
+   px uncovered remain in the sweep after one rebake (a second hole pass
+   is a one-line option, cost one more bake + sweep). (c) The region's
+   10-texel pad turns the dithered seen set into 51% of the plate; a
+   pad derived from the between-pose shift instead of the sampling
+   ratio would be tighter and is the next measurement. (d) Generality:
+   the five other scenes are running now with the same flags. (e) Cost:
+   16 minutes on SwiftShader; on a GPU the 90 renders are seconds, but
+   it is a bake-time step and needs the user's workflow judgement.
