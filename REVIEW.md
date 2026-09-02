@@ -10996,3 +10996,75 @@ inside the flag). All numbers at the five stamped poses, z 0.199.
    A229 edits; A229 is entirely inside `if (window._plugCarve === true)`
    and the default arm's numbers are identical in all four runs, so the
    default path is unchanged at the gap-mask level.
+
+## Addendum 170 — the plug under the troll is a softened clone: diagnosis across six scenes, no rule shipped
+
+**User (on the a229 plug-only shots):** "almost a full clone of the troll
+(knees, chest) ... the depth is a clone of the troll ... it's supposed to
+be the area BEHIND the troll ... background depth, not so different from
+the plug behind the woman." And: "think about how whatever solution you
+suggest also will perform with our other examples, we need generalizable
+rules, not per file." Instrument: harness/a229_plugaudit.js (texture-
+space dumps of dQ, plateQ, plateF, disocc, the carve criterion per texel,
+and three candidate footprint rules), run on troll, bristlecone, octopus,
+room, star watcher, silver warrior.
+
+1. **What the plate holds under the troll (measured, troll, rest).** The
+   demand mask covers the troll's arms, shoulders and a ring inside the
+   silhouette; the head, torso core, fists and knees are NOT demand. Under
+   those unreached cores (source depth ≥ 0.7, 84,965 texels) the plate is
+   0% at source depth and 100% farther, but only by a median 0.16: plate
+   0.63 against source 0.79, while the band around them reached 0.24 and
+   the background behind the troll is 0.20. So the user's reading is
+   right in substance: it is the troll pushed back a quarter of the way,
+   not the background. Colour: the wash's seed test rejects those texels
+   (source − plate > 0.02), so they are filled by pull-push from the
+   surround; the "chest/knees" read is the head/torso/knee SHAPE of the
+   fill region plus the depth clone in the depth panels, not troll
+   texture (gradient correlation of the plug with the sharp source inside
+   the demand region, 7 px from its rim: 0.01). The woman's plug looks
+   right because she is thin: the front crosses her whole footprint.
+
+2. **Mechanism.** A38's own comment states it: the cone/directional
+   front "cannot floor content wider than 2·reach — the untouched core of
+   a very wide blob is covered at identical depth by the FG mesh and never
+   shows." A62 kept that property ("hop budget fixed at seed"). The core
+   is never revealed inside the cone, so the plate there is invisible in
+   the composite — but it is an intersecting sheet coincident with the
+   FG, it is what every depth/plug panel shows, and (carve audit) it is
+   KEPT by the carve almost entirely through the collar (80,353 of the
+   84,965 near-core texels), which means something after plateQ moved
+   plateF there by more than the collar's minimum — not yet identified.
+
+3. **Three candidate rules, measured, none clean.**
+   (a) *Naive core flood* — from every demand texel into non-demand
+   neighbours nearer than that texel's floor + 0.02: troll 83.6% of the
+   plate, bristlecone 75.9%, room 17.7%. It walks the ground plane
+   (nearer than the far background everywhere). Rejected.
+   (b) *Cliff-bounded flood* — same, but a component that steps
+   continuously (A212 per-cell fold test, |Δshift| ≤ √2 px) onto a
+   background-depth texel is a ramp and is rejected whole: troll 6.1%
+   but the HEAD is rejected (its estimated edge is soft enough to walk
+   down), the accepted core is the lower body only; octopus accepts the
+   frame-cut seafloor (560k texels, full width at the bottom);
+   bristlecone accepts one 1.0M-texel component. Rejected: monocular
+   depth boundaries are soft and frame-cut ground is a core by this test.
+   (c) *A62's own object footprint* (its ground segmentation, non-ground
+   = occluder): troll non-ground is 5.3% of the plate and the head is
+   classified GROUND; star watcher's largest "object" spans the full
+   width. The segmentation is not a footprint oracle either.
+
+4. **Where this leaves the rule.** The physical statement is not in
+   doubt: under a real occluder the far surface continues across the
+   whole footprint, and the plate's front should stop when it meets a
+   FLUSH surface, not when a budget dies. What is unsolved is telling
+   "occluder interior" from "near ground ahead of the front" without
+   a segmentation oracle — the A62 hop budget is exactly the crude
+   answer to that ambiguity (a far plate carried out of a trunk's cliff
+   lip into the near ground beside it is "proud" by the same test as the
+   trunk's core). The one discriminator with physics behind it is
+   recession: a support surface recedes smoothly to the far limit along
+   a walk (A62d's seed test), an occluder core does not. Whether a
+   front-stop rule built on that survives the six scenes is the next
+   measurement, not a claim. Nothing shipped in this addendum; the six
+   scenes' maps are in harness/shots/a229/<scene>/.
