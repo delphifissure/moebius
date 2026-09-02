@@ -11359,3 +11359,28 @@ stamped + three off-grid), D arm = the flush-exempt full backstop.
    the five other scenes are running now with the same flags. (e) Cost:
    16 minutes on SwiftShader; on a GPU the 90 renders are seconds, but
    it is a bake-time step and needs the user's workflow judgement.
+
+## Addendum 175 — generality pass: bristlecone shows the region pad turning pinhole dither into a sheet; pad split by seed class
+
+1. **Bristlecone, same flags as the troll (9×5, flush, hole-driven):**
+   pass-1 in-frame holes 170,450 px → 193,098 texels joined the demand;
+   after rebake 83,132 px (−51%, less than the troll's −88%). Seen set
+   41.2% of the plate = reveals 361,104 + PINHOLES 286,972: the foliage
+   against sky is torn almost everywhere, so the plate is seen through
+   the foreground's own tears over most of the tree. With ONE pad of
+   minif+6 = 10 texels around that dither the region came out at
+   1,498,443 texels = **95.3% of the plate**, plug footprint 95% of the
+   sheet — a sheet again, exactly the failure the user named. Holes vs
+   the flush sheet at eight poses: +0/+390/−197/−228/−890/+156/−822/−43.
+   36 minutes per sweep on this box (3.1 M triangles per mesh).
+
+2. **Why, and the fix (app, flagged):** the two seed classes are not the
+   same physics. A REVEAL is where the foreground moves away, so between
+   the sampled poses the plate must extend by the pad (sampling ratio +
+   a62). A PINHOLE is a tear in the foreground: the plate is seen through
+   it at the foreground's own depth and does not move relative to the
+   foreground, so it needs only the sampling ratio, not the a62 pad. The
+   region is now (reveals ⊕ (minif+6)) ∪ (pinholes ⊕ minif). Nothing
+   else changed; the troll is being re-verified with the split pad
+   before the five scenes run again (at a 5×5 grid, for time — the
+   off-grid poses in the hole test report the between-pose cost).
