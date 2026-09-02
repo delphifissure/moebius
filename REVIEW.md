@@ -11212,3 +11212,30 @@ to "where can the plug be seen", all clamps and tears included. 0 bad IDs.
    depends on the plate's own depth, so the sweep is iterated once after
    the fill and the delta reported. Not built yet; the six-scene measure
    of the seen set comes first.
+
+5. **The seen set on all six scenes (same sweep):**
+
+   | scene | ever seen, % of plate | demand ever seen | seen outside demand | near cores seen | carve-DROPPED texels that are seen |
+   |---|---|---|---|---|---|
+   | troll | 21.2 | 73.7% | 100,641 | 55.9% | 18 |
+   | bristlecone | 32.8 | 52.8% | 356,467 | 34.6% | 2 |
+   | octopus | 22.2 | 27.5% | 461,479 | 17.7% | **118,718** |
+   | room | 18.1 | 44.8% | 156,756 | 37.3% | 53,753 |
+   | star watcher | 10.0 | 34.5% | 143,095 | 25.1% | 53,417 |
+   | silver warrior | 4.4 | 7.2% | 318,012 | 0.7% | 298,354 |
+
+   Three readings. (a) The demand mask is the wrong set everywhere: on
+   the warrior 93% of it is never seen while 318k seen texels lie
+   outside it. (b) The a217/a229 carve was hole-free on the troll by
+   accident of that scene: it DROPS 119k seen texels on the octopus and
+   298k on the warrior — those are holes the a228 harness would have
+   counted had it been run there. The carve is not a general plug. (c)
+   Caveats of the instrument: the sweep renders at 572×322, so a 3000-px
+   plate is sampled at ~1 texel per 5×9 — the warrior's 4.4% is a lower
+   bound on area and the bake-time sweep must render at plate resolution
+   or dilate by the minification ratio; and bristlecone reports 15,215
+   undecodable IDs (octopus 1,305, star 498, warrior 220, troll/room 0)
+   — pixels where the plate shader did not pass the map through
+   unaltered (rim fade or a blend), to be understood before the sweep
+   becomes the bake's own oracle. Sheet: harness/shots/a231/
+   ever_visible_sheet.png.
