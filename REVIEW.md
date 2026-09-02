@@ -11384,3 +11384,29 @@ stamped + three off-grid), D arm = the flush-exempt full backstop.
    else changed; the troll is being re-verified with the split pad
    before the five scenes run again (at a 5×5 grid, for time — the
    off-grid poses in the hole test report the between-pose cost).
+
+3. **Measured with the split pad.** Troll (9×5): unchanged — hole-free at
+   all eight poses, fewer uncovered pixels than the sheet off-axis,
+   region 50.6% (pinholes add ~400 texels; the troll's region is reveal-
+   dominated). Bristlecone (5×5): region **93.2%** — the REVEAL seeds
+   alone, 279,567 texels as a dither over the whole tree, dilated by 10
+   texels, cover 1,460,936 texels; the pinhole pad was not the problem
+   there. Holes vs the flush sheet +0/+376/−194/−224/−899/+155/−829/−58.
+   A tree of thin branches against sky reveals sky at every branch edge,
+   so "where disocclusions are possible" genuinely is most of that plate
+   — the measurement is telling the truth about the scene; what is
+   arbitrary is the 10-texel pad.
+
+4. **The pad law (next, not built).** Between two adjacent sweep poses the
+   strip newly revealed at texel i is the displacement of the occluder
+   that covered it: shift_rim(dQ[i]) · 2/(NX−1) texels (the a104 law is
+   linear in the eye offset). That is the pad each reveal seed physically
+   needs: depth-aware and grid-aware, no constant. For the troll's near
+   silhouettes (≈400 px of rim shift) at 9 across it is ≈100 texels, and
+   the 10-texel pad was only saved by the hole-driven demand pass; for
+   bristlecone's mid-depth foliage at 5 across it is larger than the
+   foliage spacing, i.e. the region IS the plate. The consequence is not
+   a bigger pad but a denser grid: the grid spacing must be small enough
+   that shift_rim(near)·2/(NX−1) ≤ minif + a62 pad, which for the troll
+   is ≈80 poses per axis — seconds on a GPU, hours here. The sweep is the
+   right instrument; this box is the wrong place to run it densely.
