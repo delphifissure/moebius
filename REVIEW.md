@@ -11719,6 +11719,10 @@ all six; screengrabs sent with each result. Nothing default changed.
    quantum, (max − min) > qN (A160d: the tear's noise floor), and the
    mode-2 fold-point pass did not. On a near figure one 8-bit terrace of
    the depth has a rim-shift span above the cell extent, so every terrace
-   row folds. A241c adds the same gate to the fold-point pass — the
-   baked tear's own constant, nothing new — and the eight-pose run is
-   re-queued (item 5).
+   row folds. The buffer agrees (a196): down the figure's centre column
+   of the 8-bit depth (851×1023, all 256 values used) there are 156
+   one-quantum steps against 29 of two or more, and 146 of the 406 rows
+   in the figure's band step by exactly one quantum across more than
+   half their width — a terrace per row, which is the ladder. A241c adds
+   the same gate to the fold-point pass — the baked tear's own constant,
+   nothing new — and the eight-pose run is re-queued (item 5).
