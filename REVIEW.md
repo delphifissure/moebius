@@ -11589,3 +11589,39 @@ plate (A233) throughout.
    the claim on the same rim-shift law; six-scene re-probe and troll
    composites running. An existing knob was tried and recorded, nothing
    to remove.
+
+4. **A239 claim law (seed √2 px + claim √2 px of rim shift), six scenes:**
+
+   | scene | FG-torn texels (base → A239) | clone among torn | clone among torn-outside-demand | demand |
+   |---|---|---|---|---|
+   | troll | 40.6k → 61.3k | 14.5 → 12.9% | 45.8 → 43.4% | 13.0 → 16.3% |
+   | bristlecone | 206k → 541k | 11.7 → 8.5% | 39.5 → **15.7%** | 19.1 → 42.8% |
+   | octopus | 292k → 323k | 2.6 → 3.2% | 25.6 → 28.4% | 29.9 → 33.9% |
+   | room | 212k → 245k | 8.5 → 8.9% | 39.2 → 41.8% | 27.8 → 31.3% |
+   | star watcher | 41.1k → 46.1k | 16.0 → 16.3% | 57.2 → 57.6% | 12.6 → 13.3% |
+   | silver warrior | 143k → 147k | 9.4 → 9.8% | 42.9 → 44.6% | 11.7 → 12.2% |
+
+   Plate NEARER stays 0.0% everywhere. Troll composites (flush + A239):
+   the full backstop has slightly FEWER uncovered pixels than flush
+   alone at every off-axis pose (−19 to −590 px), so no hole regression;
+   the plug is seen at rest in 4,611 px against 2,606 (see 5).
+   Verdict: the claim law is right where fold fronts exist — bristlecone
+   (foliage over ground) drops its out-of-demand clones from 39.5% to
+   15.7% — and does nothing on the four scenes whose glancing gaps are
+   not fold-seeded at all (a62-claimed among those texels 17–59%; the
+   fronts do not reach them, for a reason a per-texel map has to show,
+   not another blind arm). Flagged, not default.
+
+5. **A cost that is not the plug's: tearing at rest.** Every A212 tear
+   removes a triangle from the foreground at ALL poses, including rest,
+   where the frame should be pixel-faithful to the source (A111's
+   lesson). At rest the plate shows through each tear; where the plate is
+   a clone the pixel is unchanged, where it is far-continued the source
+   pixel is replaced by wash. That is what plugSeen-at-rest measures:
+   2,606 px on the shipped-flush troll, 4,611 with A239 (more demand →
+   more scan-gated tears). Making the plug more accurate in the gaps
+   therefore costs rest fidelity as long as the tear is baked. The fix
+   is a foreground one: tear per FRAGMENT by the stretch at the current
+   pose (the band-cut family, armed at 1/w in quick mode = off), so a
+   gap opens only when the eye has actually opened it. That is the
+   foreground arc the previous addendum named, now with a number on it.
