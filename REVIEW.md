@@ -11499,3 +11499,33 @@ seen. Seconds per hundred poses, immune to the container restarts.
    fraction of the 45° figure, the plug the user wants is a matter of
    baking for the device's cone rather than the universal one — a
    per-DEVICE law that already exists in the file, not a per-image one.
+
+5. **Seen set vs cone half-angle (33×5, 1:1, flush-exempt plate;
+   region = reveals ⊕ 6 ∪ pinholes):**
+
+   | scene | ±10° | ±17° (Mac fade-start) | ±27° (Mac trackable) | ±35° | ±45° (shipped) |
+   |---|---|---|---|---|---|
+   | troll | 19.3% (reg 63%) | 23.9% (77%) | 30.0% (85%) | 35.1% (88%) | 43.2% (91%) |
+   | bristlecone | 78.2% (97%) | 83.0% (99%) | 87.6% (100%) | 89.9% | 91.7% |
+   | octopus | 43.5% (55%) | 47.9% (58%) | 50.7% (59%) | 52.1% (59%) | 53.5% (61%) |
+   | room | 28.9% (45%) | 33.0% (48%) | 36.5% (50%) | 38.4% (51%) | 40.6% (52%) |
+   | star watcher | 12.1% (27%) | 17.7% (32%) | 24.2% (36%) | 25.2% (38%) | 26.5% (40%) |
+   | silver warrior | (re-running; 45° = 21.5%, region 23%) | | | | |
+
+   Reading: the cone matters — the troll's seen set halves from 45° to
+   17° (43 → 24%), star watcher's more than halves (26.5 → 17.7%) — but
+   the a62-padded REGION stays large (troll 77% at the Mac's fade-start)
+   because the seen set is a lace of ground and branch pinholes and
+   reveal slivers through the whole plate, and a pad fills a lace. On
+   scenes with an isolated figure against a smooth background (warrior,
+   star watcher) the plug IS a plug (23–40%); on cluttered painterly
+   scenes it is most of the plate at any cone, because the FOREGROUND
+   is torn and stretched everywhere the ground and foliage have micro-
+   cliffs, and every tear shows the plate. That is the honest content
+   of "only opaque where disocclusions are possible": on the troll,
+   disocclusions are possible almost everywhere inside the cone. The
+   reducible part is not the plug but the FG's tear policy (A212 tears
+   at the ground's micro-cliffs because the disocc scan gates on them),
+   which is a foreground arc, not a plug arc. Nothing default changed;
+   the sweeps, the flush exemption and the hole-driven demand remain
+   opt-in and measured.
