@@ -11625,3 +11625,100 @@ plate (A233) throughout.
    pose (the band-cut family, armed at 1/w in quick mode = off), so a
    gap opens only when the eye has actually opened it. That is the
    foreground arc the previous addendum named, now with a number on it.
+
+## Addendum 178 — the per-texel why-map (six scenes) and the tear moved from bake to fragment
+
+**User:** "do the per-texel map, then the per-fragment tearing / also
+always send me screengrabs." Both done on the troll and the why-map on
+all six; screengrabs sent with each result. Nothing default changed.
+
+1. **Why the fronts miss the clones — harness/a240_whymap.js.** For every
+   torn-outside-demand texel that is a clone (|plate − src| ≤ 2 quanta,
+   flush plate, A239 claim law on), the probe records what the a62 fronts
+   did there: never visited; refused by the ground gate, the fold
+   proud-gate, the object claim, or the prominence bound; or claimed but
+   only within 2 quanta ("shallow"). Then the texel is placed on its own
+   local depth step: NEAR lip (the near surface repeated across the gap —
+   the wrong clone), FAR lip (the far surface — the correct content that
+   merely equals the source because the source IS the far surface there),
+   or flat (no step within the 5×5 window: nothing to be a clone OF).
+
+   | scene | clones (of torn-outside-demand) | never visited | refused (any gate) | claimed but shallow | NEAR lip (wrong) | FAR lip (correct) | flat | seed distance median / p90 |
+   |---|---|---|---|---|---|---|---|---|
+   | troll | 2,957 (43.4%) | 53.5% | 34.6% | 11.8% | **28 (0.9%)** | 1,759 (59.5%) | 1,170 | 0 / 7 |
+   | bristlecone | 31,005 (15.7%) | 41.1% | 38.1% | 20.7% | **0** | 23,480 (75.7%) | 7,525 | 0 / 1 |
+   | octopus | 6,031 (28.4%) | 48.0% | 12.4% | 39.5% | **0** | 4,944 (82.0%) | 1,087 | 0 / 1 |
+   | room | 14,053 (41.8%) | 66.6% | 9.4% | 23.9% | **0** | 11,675 (83.1%) | 2,378 | 0 / 1 |
+   | star watcher | 4,667 (57.6%) | 67.6% | 9.9% | 22.4% | **0** | 3,982 (85.3%) | 685 | 0 / 0 |
+   | silver warrior | 10,120 (44.6%) | 78.4% | 7.3% | 14.4% | **0** | 9,216 (91.1%) | 904 | 0 / 0 |
+
+   Budget death next to a clone: ≤ 8 texels on any scene (the hop budget
+   is not the limit). "Refused: fold proud-gate" is 0.4–16% (bristlecone
+   highest), "prominence bound" 0.2–24% (troll highest).
+
+2. **Reading — the clone count of Addendum 177 was measuring the wrong
+   thing.** The median clone sits AT a seed (distance 0) and is the far
+   lip of the fold that seeded it: the source texel there is already the
+   far surface, so plate = source is the right answer, not a copy of the
+   near surface. On five of six scenes not one clone is on the near lip;
+   on the troll 28 texels (0.9% of its clones, 0.001% of the plate) are.
+   The remaining third are flat cells with no step to clone. So the
+   "residual accuracy gap" of Addendum 177 item 2 (3–16% clone among
+   torn texels) is, after the lip split, a ≤ 0.9% near-lip residue on
+   one scene and zero on the rest. The fronts are not missing anything a
+   front could fix; what remains in the tears is the correct far surface
+   and flat cells. Consequence for A239: it stays flagged (it fixed the
+   one scene, bristlecone, where the fold-front claim was the gate) and
+   nothing further is proposed on the plate side of this question.
+
+3. **A241 per-fragment tear, mode 1 (window._fragTear = 1, flagged).**
+   The A212 fold law (a cell tears when the rim-shift span across it
+   exceeds √2 px of its extent) moved from the bake into the fragment
+   shader, evaluated at the CURRENT pose fraction from the depth
+   Jacobian (dFdx/dFdy of the sampled depth) so a gap opens only when the
+   eye has opened it; the mesh stays whole, u_poseFrac updated per frame.
+   Troll, flush plate, eight poses, holes and plug-seen against the
+   shipped baked tear:
+
+   | pose | holes baked → mode 1 | plug seen baked → mode 1 |
+   |---|---|---|
+   | rest | 97,888 → 97,888 | 2,606 → **8** |
+   | sheet1 | 76,219 → 76,219 | 15,167 → 18,329 |
+   | sheet2 | 81,294 → 81,294 | 13,347 → 15,408 |
+   | mirror | 112,456 → 112,390 | 6,422 → 6,609 |
+   | off1 | 90,790 → 90,790 | 7,654 → 7,017 |
+   | off2 | 112,350 → 112,440 | 6,003 → 5,717 |
+   | off3 | 83,740 → 83,899 | 15,550 → 17,898 |
+   | a221 | 90,240 → 90,385 | 11,176 → 11,978 |
+
+   Rest fidelity restored (the 2,606 px the baked tear replaced with
+   wash at rest are source pixels again; 8 remain); holes within
+   −66…+159 px of the baked tear at every pose (0.2% of the hole count).
+   Cost: the Jacobian of a bilinear depth sample is noisy at silhouettes
+   and the tear speckles — isolated fragments cut across the foreground
+   at the off-axis poses (a241_sheet1_baked_vs_frag.png, sent). The
+   derivative is the wrong carrier: it is per-fragment noise on a
+   per-cell law.
+
+4. **A241b, mode 2 (window._fragTear = 2): the fold point carried by the
+   vertices.** The derivative is replaced by A212's own per-cell quantity
+   computed once at bake: each scan-gated cell's fold point f = extent /
+   rim-shift span (the pose fraction at which its rim shift exceeds its
+   extent — A212's test made continuous in the eye offset), a vertex
+   carrying the minimum over its cells (A111's predicate), interpolated,
+   and compared per fragment with the current pose fraction |eye| / rim
+   offset. No speckle: the tear boundary is a continuous field of the
+   mesh, not per-quad noise (a241b_ungated_sheet1_crop.png, sent — the
+   arm's underside at sheet1 opens as one coherent gap, mode 1's dots are
+   gone; at rest the source pixels the baked tear removed are back, in
+   mode 2 as in mode 1). The a196 rule then found what the numbers did
+   not: at sheet1 the near figure tears in a LADDER
+   (a241b_ungated_sheet1_crop2.png, sent) — horizontal bands across the
+   whole figure, absent from the baked tear and from mode 1. Cause, from
+   the code not a guess: the baked A212 tear gates on the source depth
+   quantum, (max − min) > qN (A160d: the tear's noise floor), and the
+   mode-2 fold-point pass did not. On a near figure one 8-bit terrace of
+   the depth has a rim-shift span above the cell extent, so every terrace
+   row folds. A241c adds the same gate to the fold-point pass — the
+   baked tear's own constant, nothing new — and the eight-pose run is
+   re-queued (item 5).
