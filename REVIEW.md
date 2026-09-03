@@ -11726,3 +11726,45 @@ all six; screengrabs sent with each result. Nothing default changed.
    half their width — a terrace per row, which is the ladder. A241c adds
    the same gate to the fold-point pass — the baked tear's own constant,
    nothing new — and the eight-pose run is re-queued (item 5).
+
+5. **A241c (mode 2 + the source-quantum gate), troll, flush plate, eight
+   poses.** Holes are IDENTICAL to the baked tear's D arm at every pose
+   (rest 97,888; a221 90,385; sheet2 81,294; sheet1 76,219; mirror
+   112,390; off1 90,790; off2 112,440; off3 83,899 — the same eight
+   numbers as mode 1 and the un-gated mode 2). Plug seen through the
+   foreground:
+
+   | pose | baked tear | mode 1 | mode 2 un-gated | **mode 2 gated** |
+   |---|---|---|---|---|
+   | rest | 2,606 | 8 | 8 | **8** |
+   | a221 | 11,176 | 11,978 | 13,177 | 11,549 |
+   | sheet2 | 13,347 | 15,408 | 17,448 | 14,521 |
+   | sheet1 | 15,167 | 18,329 | 20,411 | 16,711 |
+   | mirror | 6,422 | 6,609 | 7,789 | 7,005 |
+   | off1 | 7,654 | 7,017 | 8,349 | 7,632 |
+   | off2 | 6,003 | 5,717 | 6,361 | 6,049 |
+   | off3 | 15,550 | 17,898 | 19,441 | 16,478 |
+
+   The ladder is gone (a241b_sheet1_crop2.png, sent: the figure is whole
+   at sheet1, only its silhouette tears); the un-gated excess of
+   1,300–5,200 px per off-axis pose drops to −22…+1,544 (the remaining
+   excess over the baked tear is the interpolation wedge: a cell whose
+   vertex touches a folding cell opens partly, where the baked tear cuts
+   whole cells — a fraction of a cell along every tear edge, and a
+   continuous boundary instead of a stepped one). Screengrabs sent:
+   figure window, arm window (no speckle), rest (pixel-faithful), full
+   frame.
+
+6. **Standing.** Per-fragment tearing does what Addendum 177 item 5
+   asked: at rest the foreground is the source again (8 px of plug seen
+   against 2,606 with the baked tear), off-axis the same gaps open with
+   the same hole counts, and the gap opens only as far as the eye has
+   opened it. Mode 1 (Jacobian) is falsified as the carrier — speckle —
+   and stays in the code only as the measured arm behind mode 2 until
+   the next cleanup; mode 2 with the quantum gate is the candidate. It
+   is flagged (window._fragTear = 2), not default: it changes the
+   foreground's tear texture at every off-axis pose, which is the user's
+   live pass to judge (Addendum 162 rule). Nothing default has changed
+   since a229. MacBook recipe, console: `window._plateFlushExempt = true;
+   window._fragTear = 2; bgQuickBake = true; buildBackgroundLayer();`
+   then move; `window._fragTear = 0` and rebake restores the baked tear.
