@@ -11768,3 +11768,174 @@ all six; screengrabs sent with each result. Nothing default changed.
    since a229. MacBook recipe, console: `window._plateFlushExempt = true;
    window._fragTear = 2; bgQuickBake = true; buildBackgroundLayer();`
    then move; `window._fragTear = 0` and rebake restores the baked tear.
+
+## Addendum 179 — the whole picture: where every gap comes from, what fills it today, and the complete rule set that leaves none
+
+**User:** "there can be NO gaps remaining, and what they are filled
+with should not be a clone, it should be a plausible wash. Think it
+through. Offer a comprehensive solution." This addendum is that
+answer, built from the code and the buffers rather than from another
+arm. It (1) names every class of screen pixel the cone can open, (2)
+states what fills each one TODAY and whether that is a gap, a clone or
+a wash, with the evidence, (3) gives the rule set under which no class
+is left uncovered or filled with the near surface, with every constant
+it uses already cited, and (4) the build and measurement order.
+
+### 1. What "a gap" is, exactly
+
+A pixel at eye offset e inside the fade cone is a gap if the ray
+through it misses the source surface. That happens in exactly four
+ways and no others (the surface is a height field over the frame):
+
+- **G1 silhouette disocclusion.** A near surface moves more than the
+  far one behind it; on its trailing side a band of the far surface
+  opens, of width e·(shift(d_near) − shift(d_far)) — Addendum 104's
+  law, linear in e, zero at rest.
+- **G2 fold (glancing self-occlusion).** Inside one continuous surface
+  a slope steeper than the cone's envelope (1/k, a102) turns edge-on
+  and then back-facing; the surface behind the crest opens. Same
+  width law with the crest's own step.
+- **G3 frame-edge reveal (outpaint).** The eye moving right opens a
+  band beyond the source's LEFT edge, width e·shift(d) of whatever
+  depth sits at that edge. No source content exists there at all.
+- **G4 nothing behind the plug.** If the last layer itself tore or
+  ended, the ray would hit the clear colour. This is the only class
+  that can ever be an actual hole.
+
+Everything else the user sees as "a gap" is a covered pixel whose
+CONTENT is wrong — a clone (the near surface again, sharp or blurred,
+whole or stretched) where a far continuation belongs. Those are the
+content classes: **C1** near-surface colour in the fill, **C2** the
+near surface's depth in the plug (a relief clone), **C3** the
+foreground's own skin stretched across a discontinuity, **C4** the
+plug stretched across its own step.
+
+### 2. What fills each class today, and the evidence
+
+| class | filled by | state | evidence |
+|---|---|---|---|
+| G1 depth | a62 directional plate + a135/a162 ordering clamps + a126 slope limit | far-continued 96–99.6% of the band, never in front | Addendum 177 item 1 |
+| G2 depth | a62 fold fronts (A239 claim law) | far-continued 84–97% inside the tears; residual "clones" are the far lip itself (correct) or flat | Addendum 178 item 1: near-lip wrong clones 28 texels on the troll, 0 on five scenes |
+| G3 | the extension geometry (bgExt) + the plate's frame border | present; never measured as a class | this addendum adds the measurement (item 4) |
+| G4 | the plug is one FULL-FRAME opaque sheet (a161) and never tears (the band cut excludes `u_isBackgroundLayer`; a126 turns its steps into ramps) | **zero by construction** | the harness's `holes` count is the outside-portal black; it has never separated an inside-portal hole — item 4 fixes the instrument |
+| **C1 colour** | **the wash: a pull-push pyramid seeded by every source texel with no depth replacement within 4 px (bgColorSeedMaterial, v3.9.1)** | **the blurred clone the user sees** | see below |
+| C2 | a162 pushes unreached cores toward the bound (a scaled relief of the near object); A233 flush exemption leaves them at source depth instead | flush: no relief in reveals; cores never seen except through G2 tears | Addenda 172–174 |
+| C3 | baked A212 tear (whole cells, at all poses) → A241c per-fragment tear at the pose | rest pixel-faithful, holes identical, ladder fixed; silhouette skins still stretch until each cell is edge-on | Addendum 178 items 3–5; a241b_sheet1_crop.png |
+| C4 | a126 ramps (the plug cannot tear: G4) | inherent to one layer; unmeasured inside the ever-seen set | item 4 measures it |
+
+**C1 is the defect the user is describing, and this is its mechanism,
+from the code.** The wash's seed rule (moebius.js, bgColorSeedMaterial)
+admits a source texel if no texel within ±4 px has src − plate > 0.02.
+Under an unreached occluder core the flush-exempt plate EQUALS the
+source depth (A233), so the whole core of the troll — knees, chest,
+shoulder — passes the seed test and feeds the pyramid; the band next
+to it, which the pyramid must fill, is then a distance-weighted blend
+of the far side AND the troll's own body. That is the blurred troll
+in the plug-only shots (a229/zoom_plug_flank_rest.png: the arm and
+shoulder as soft green blobs where the troll was; at sheet1 the same
+blobs stretched — "melting"). The pyramid is isotropic, so no
+direction gate exists; the 4 px guard is a silhouette-fringe erosion,
+not a side test. Before A233 the a162 push made those texels invalid
+seeds but put a relief clone in the depth (C2) instead; the two
+failures were traded, never both removed. The three fills tried since
+(a70 row colour, A213 nearest flood, A215 Shepard blend) all had the
+RIGHT domain — far-side rim only, gated by the tear step — and the
+user rejected each on texture ("striping", "streaky"): nearest-source
+and ray-sampled interpolants are piecewise, so they stripe. The user
+kept the wash for its smoothness while naming its clone. Both
+properties come from the same choice, the interpolant: the smooth one
+with a far-only boundary has not been built.
+
+### 3. The rule set (no new constants)
+
+**R1 — one continuous full-frame plug, never torn.** Coverage of G1,
+G2, G3 and G4 is by construction: every ray hits the foreground or the
+plug, and the plug has no edge inside the cone (its frame border is
+extended by the rim shift at the edge depth — G3). Carving (task #9)
+is an optimisation restricted to the never-seen set proved by the
+exact sweep (A236/A237); it is not part of correctness and stays off
+until that proof is default. "No gaps" is therefore not a measurement
+target, it is a property; the instrument (item 4) only confirms it.
+
+**R2 — plug depth = the far continuation, which is what the plate
+already is where it is ever seen.** Keep a62 + clamps. The one change:
+the fold points that tear the foreground (A241c) and the seeds that
+build the plate must be the same quantities, so that the plug is
+asked exactly where the foreground opens — both read the windowed
+step (bgSlide2D over RWD, the cited smear window) and the rim-shift
+span. Silhouette skins then tear as one unit (C3), instead of cell by
+cell as each becomes edge-on, and the band the plate was built for is
+the band the foreground opens.
+
+**R3 — plug colour = the harmonic (membrane) fill of the band from the
+far-side rim only.** Domain: the A213 domain exactly (band texels
+reachable from rim texels whose SOURCE depth agrees with the band's
+PLATE depth within the tear step; steps inside the band gated the same
+way, so no path crosses a cliff; pockets from resolved colour only;
+no reach bound, no clone fallback). Interpolant: the solution of
+Laplace's equation on that domain with the rim colours as boundary
+values — the membrane of Pérez, Gangnet & Blake 2003 (Poisson image
+editing with zero guidance) and the harmonic case of Bertalmio et al.
+2000; solved to convergence by multigrid (the pull-push pyramid of
+Gortler et al. 1996 IS this solver's V-cycle, which is why the user
+likes the wash's texture — the wash is a membrane too, only fed from
+the wrong side). Properties, not tunings: it is the smoothest function
+with those boundary values (no stripes: minimum gradient energy), it
+matches the rim exactly (no seam), it is weighted by distance so a
+narrow band takes its horizontal neighbours and a wide one blends the
+whole rim (no anisotropy knob), and by construction no near-surface
+colour is on its boundary (no clone, sharp or blurred). Constants used:
+the tear step (fgTearStep, a133b measured) and the texel — nothing
+new. Cores keep whatever colour they have: they are never seen except
+through G2 tears, where the fold fronts' far lips are inside the
+domain anyway.
+
+**R4 — the foreground tears per fragment, at the pose, by the windowed
+fold point, with a one-texel feather.** A241c is the mechanism; R2
+supplies the fold points; the feather (smoothstep over one texel of
+the fold-point field) removes the cell-resolution staircase at the
+tear edge. Default only after the user's live pass (Addendum 162).
+
+**R5 — what one layer cannot do, stated and measured, not hidden.**
+(a) C4: where the far surface has its own step inside the band (a tree
+behind the troll's arm), one continuous plug must ramp across it and
+that ramp smears its colour over the ramp's width; the cure is a
+second layer, which is the next arc, not a tuning of this one.
+(b) Texture: the membrane continues colour, not texture, so a wide
+band reads as a soft figure-shaped region even when its colours are
+right; that is what the user's deferred SD inpainting stage is for,
+and R3 is precisely the base it needs (right domain, right depth,
+right colours, no ghost to fight).
+
+### 4. Instruments (so each rule is checked, not believed)
+
+- **Inside-portal uncovered.** The harness counts alpha-below-threshold
+  inside the portal footprint only (mask = the rest-pose full-sheet
+  coverage, moved with the frame), reported per pose. Expected: 0 at
+  every pose on six scenes. This is R1's proof.
+- **Ghost index.** For every ever-seen band texel (the CPU sweep's seen
+  set), the plug colour's distance to the nearest far-rim source colour
+  versus the nearest near-lip source colour along its front direction;
+  the share nearer to the near lip is the clone fraction. Today's wash
+  gets a number on six scenes before R3, and R3 after.
+- **Seam and smoothness.** Colour step across the far rim (membrane:
+  ≈ 0) and gradient energy inside the band relative to the far side's
+  own (a wash should not exceed it); row/column anisotropy of that
+  energy (stripes show as a ratio far from 1).
+- **C3/C4 exposure.** Screen pixels per pose where a foreground cell is
+  rendered at more than edge-on stretch (should be 0 under R4), and
+  ever-seen plug pixels lying on an a126 ramp (R5a's price, reported).
+
+### 5. Order
+
+1. **A242 (flagged, window._plugMembrane):** R3 on the A213 domain
+   with a multigrid Laplace solve; plug-only shots at rest and sheet1,
+   ghost index and seam on six scenes, screengrabs. This removes the
+   defect the user is looking at.
+2. **A243:** R2/R4 — windowed fold points shared by plate seeds and
+   the per-fragment tear, one-texel feather; C3 exposure to 0.
+3. **Harness:** inside-portal uncovered, ghost index, C4 exposure.
+4. Six scenes, screengrabs, then the user's live pass on A242 + A243
+   as a pair; defaults change only on that verdict.
+5. Then: the carve on the proved never-seen set (task #9), the second
+   layer for C4, the SD stage on R3's base.
