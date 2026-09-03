@@ -11432,3 +11432,70 @@ stamped + three off-grid), D arm = the flush-exempt full backstop.
    default. window._plateFlushExempt, window._plugSweepBake({flush,
    holeDemand, nx}) and the region carve are opt-in and measured; the
    default bake is unchanged since a229 at the gap-mask level.
+
+## Addendum 176 — the CPU sweep (validated) measures the plug region densely on all six: it is not small
+
+**User:** "I'm stuck on a macbook, any other ideas? you can keep running
+these." Two answers. (1) The MacBook is the GPU: window._plugSweepReport
+({nx:33}) in moebius.html's console runs the flush-exempt hole-driven
+sweep plug on Apple silicon in seconds and window._plugToggleFG() shows
+the plug alone — the live pass the standing rule asks for. (2) A CPU
+sweep (window._plugCpuSweep, A236): the a104 ray law warps every
+foreground texel and the spans between untorn neighbours (its mesh
+edges) and every plate texel to a pose's screen cell, nearest wins, ties
+to the foreground (the polygon offset); a plate texel that owns a cell is
+seen. Seconds per hundred poses, immune to the container restarts.
+
+1. **Validation against the renderer sweep (troll, same 49 poses, same
+   1:4 sampling; harness/a236_cpusweep.js).** Texel identity does not
+   compare (both instruments mark one texel per covered cell and pick
+   different ones: recall 54%); covered AREA does: renderer 32.8% of the
+   plate, CPU 33.2%; 97.7% of the renderer's seen texels inside the CPU
+   area, 94.6% the other way. Torn-set models: none 30.5% (93.2%/93.1%),
+   A212 pre-tear 33.2% (97.7%/94.6%) ← the rendered mesh, a160 fold tear
+   45.5% (over-covers: its footprint goes to the plug, the mesh is NOT
+   torn there), both 47.6%. Ray sign is unobservable on a symmetric grid.
+   Modelling the FG shader's stretch cut changed nothing: in the quick
+   path the FG's cut threshold is 1/w, effectively off.
+
+2. **Dense region on all six, flush-exempt plate, 1:1 texel resolution,
+   5 rows, poses across the fade-end cone (harness/a237_cpuregion.js;
+   42 minutes for everything):**
+
+   | scene | seen 9×5 | 17×5 | 33×5 | 81×5 | of which pinholes | region +6 pad | hole cells/pose |
+   |---|---|---|---|---|---|---|---|
+   | troll | 35.4% | 38.5% | 43.2% | **46.5%** | 4.1% | 91.1% | 11% |
+   | bristlecone | 86.4% | 89.5% | 91.7% | **93.2%** | 38.2% | 100% | 10% |
+   | octopus | 52.5% | 53.0% | 53.5% | **53.8%** | 6.0% | 60.8% | 15% |
+   | room | 38.6% | 39.5% | 40.6% | **41.1%** | 1.6% | 51.7% | 9% |
+   | star watcher | 25.7% | 26.0% | 26.5% | **27.1%** | 0.4% | 40.2% | 11% |
+   | silver warrior | 21.2% | 21.3% | 21.5% | **21.5%** | 0.4% | 22.9% | 5% |
+
+   (seen = plate texels that own a screen cell at some pose; region =
+   reveals ⊕ 6 texels ∪ pinholes; hole cells = cells inside the plate
+   rectangle with no owner, i.e. frame-edge outpaint plus true holes.)
+
+3. **What the table says, plainly.** (a) The union converges only slowly
+   with pose density on the troll and bristlecone (+3 points from 33 to
+   81 across) and is converged on the others; the 9×5 grid understates
+   the troll by 11 points. (b) Inside the 45° fade-end cone, the plate
+   that is EVER seen at full resolution is 21–54% of the plate on five
+   scenes and 93% on the foliage scene — not the 15–24% the sparse,
+   1:4-sampled renderer sweeps suggested (Addenda 172/174). The earlier
+   "24% of frame" troll plug was a sampling artefact of 49 poses at one
+   texel in sixteen. (c) After the a62 pad the troll's region is 91%:
+   the seen set is a lace through the whole plate (branch and ground
+   pinholes plus reveal bands), and any pad fills a lace. So the honest
+   "plug that covers every disocclusion possible inside the shipped
+   cone" is most of the plate on painterly scenes with clutter. The
+   user's requirement is met exactly by this construction; what the
+   measurement adds is that the answer is large, and why.
+
+4. **The lever that is physical, not a pad: the cone.** The region is a
+   function of the eye range, and the shipped fade-end is ±45° while
+   the A127 device LUT says a Mac camera tracks ±27°/±16° and fades from
+   ±17°/±6°. Running now: seen set vs cone half-angle (10/17/27/35/45°)
+   on all six at 33×5. If the region at the device's own cone is a
+   fraction of the 45° figure, the plug the user wants is a matter of
+   baking for the device's cone rather than the universal one — a
+   per-DEVICE law that already exists in the file, not a per-image one.
