@@ -11573,3 +11573,19 @@ plate (A233) throughout.
    a fold front only at lips that reveal ≥ 24 px (a95). The arm running
    now sets the seed threshold to the tear criterion
    (window._seedRevealPx = √2) and re-probes; then the troll composites.
+
+3. **Seed-threshold arm: falsified.** Lowering the fold-seed lip
+   threshold to the tear criterion seeds more fronts (a62-claimed among
+   torn-outside-demand texels: troll 10.6 → 13.7%, bristlecone 26 → 44%,
+   room 38 → 52%) but the clone share does not move (troll 14.5 → 14.6%,
+   octopus 2.6 → 2.8%, room 8.5 → 9.1%, star 16.0 → 16.3%, warrior 9.4 →
+   9.9%; bristlecone worse, 11.7 → 14.5%). The fronts exist and do not
+   lower those texels. The gate that stops them is the CLAIM, not the
+   seed: a fold front may enter a ground texel only when the source is
+   proud of the carried plate by a full tear step (0.06 = 15 quanta),
+   while the gaps in question are 0.03–0.11 deep — most below the gate.
+   The foreground tears by a rim-shift law (√2 px per cell); the plate
+   claims by a depth constant. A239 (window._foldClaimPx, flagged) puts
+   the claim on the same rim-shift law; six-scene re-probe and troll
+   composites running. An existing knob was tried and recorded, nothing
+   to remove.
