@@ -11510,7 +11510,7 @@ seen. Seconds per hundred poses, immune to the container restarts.
    | octopus | 43.5% (55%) | 47.9% (58%) | 50.7% (59%) | 52.1% (59%) | 53.5% (61%) |
    | room | 28.9% (45%) | 33.0% (48%) | 36.5% (50%) | 38.4% (51%) | 40.6% (52%) |
    | star watcher | 12.1% (27%) | 17.7% (32%) | 24.2% (36%) | 25.2% (38%) | 26.5% (40%) |
-   | silver warrior | (re-running; 45° = 21.5%, region 23%) | | | | |
+   | silver warrior | 16.8% (22%) | 19.1% (22%) | 20.4% (23%) | 21.0% (23%) | 21.5% (23%) |
 
    Reading: the cone matters — the troll's seen set halves from 45° to
    17° (43 → 24%), star watcher's more than halves (26.5 → 17.7%) — but
