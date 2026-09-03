@@ -11529,3 +11529,47 @@ seen. Seconds per hundred poses, immune to the container restarts.
    which is a foreground arc, not a plug arc. Nothing default changed;
    the sweeps, the flush exemption and the hole-driven demand remain
    opt-in and measured.
+
+## Addendum 177 — accuracy, not size: what the plug holds inside the foreground's own tears, six scenes
+
+**User:** "in cases of dense foliage for example, yes, there's a plug
+basically everywhere, and that's fine. I just want the plug to be
+accurate — a single layer that is displaced to slot into glancing self
+occlusion gaps and behind disocclusions." So the question is no longer
+the region but the CONTENT per gap class. Instrument: harness/
+a238_tearprobe.js — for every texel the A212 pre-tear removes from the
+rendered foreground (the glancing gaps and the silhouette folds),
+classify the plate under it: CLONE (|plate − src| ≤ 2 quanta: the near
+surface again, which a126 then ramps across the gap = a stretched
+sliver), FAR-CONTINUED (plate behind the source by more), NEARER (plate
+in front of the source: would poke through), and whether an a62 front
+claimed it (fold front = the ground-behind-crest law). Flush-exempt
+plate (A233) throughout.
+
+1. **Baseline, six scenes:**
+
+   | scene | FG-torn texels | clone | far-continued (mean drop) | nearer | a62-claimed (fold) | torn outside demand: clone |
+   |---|---|---|---|---|---|---|
+   | troll | 40,553 (4.7%) | 14.5% | 85.5% (0.20) | 0.0% | 80.8% (78.0%) | 7,519: 45.8% |
+   | bristlecone | 206,406 (13.1%) | 11.7% | 88.3% (0.43) | 0.0% | 81.6% (0.2%) | 33,867: 39.5% |
+   | octopus | 291,585 (8.8%) | 2.6% | 97.4% (0.27) | 0.0% | 94.9% (66.8%) | 20,044: 25.6% |
+   | room | 212,112 (7.6%) | 8.5% | 91.5% (0.18) | 0.0% | 88.0% (26.5%) | 30,352: 39.2% |
+   | star watcher | 41,054 (1.6%) | 16.0% | 84.0% (0.23) | 0.0% | 83.5% (29.8%) | 7,329: 57.2% |
+   | silver warrior | 142,581 (1.6%) | 9.4% | 90.6% (0.37) | 0.0% | 87.1% (9.2%) | 22,206: 42.9% |
+
+   The demand band itself is far-continued 96–99.6% everywhere, clone
+   0.4–4%, nearer 0%.
+
+2. **Reading.** With the flush exemption the plug is, inside the gaps
+   the foreground actually opens, the far continuation in 84–97% of
+   texels and NEVER in front of the surface it backs (nearer 0.0% on all
+   six — the a135/a162 ordering holds). The residual clones are 3–16% of
+   torn texels, concentrated in tears OUTSIDE the demand band (the
+   glancing micro-folds a62 never seeded: 26–57% clone there, mean
+   depth behind only 0.03–0.11 — these are shallow gaps), amounting to
+   0.4–1.9% of a plate. That is the accuracy gap that remains, and it
+   is the seed-threshold mismatch of Addendum 176 item 5: the foreground
+   tears at the per-cell fold limit (√2 px of rim shift) while a62 seeds
+   a fold front only at lips that reveal ≥ 24 px (a95). The arm running
+   now sets the seed threshold to the tear criterion
+   (window._seedRevealPx = √2) and re-probes; then the troll composites.
