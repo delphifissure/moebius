@@ -12527,3 +12527,36 @@ whole stack is one console line (item 6). The user's screen decides.
     watcher's 715,337 against 584,939 — the corners and edges the
     foreground vacates now take the far fill; their effect on the eight
     poses is item 26.
+
+10. **Closing state — eight poses, troll, the whole stack (A244f/g/i
+    band and gates, membrane depth and colour, per-fragment tear,
+    A245f ring margin, window clip), uncovered pixels in the 572×322
+    window, all enclosed:**
+
+    | rest | a221 | sheet2 | sheet1 | mirror | off1 | off2 | off3 |
+    |---|---|---|---|---|---|---|---|
+    | 0 | 5 | 2 | 5 | 0 | 2 | 2 | 5 |
+
+    against the shipped bake's 76,000–112,000 outside-portal black per
+    pose and its 0–2 interior. The plug is seen at rest in the bars
+    beside the portrait frame (97,895 px: replicated edge, mode 1) and
+    nowhere inside the frame at rest (the per-fragment tear); the frame
+    itself is the source. Screengrabs: harness/shots/a228/a245f_three_poses.png.
+
+    **What is delivered, in one line each.** No gap: by construction
+    (continuous plug + ring + window clip), checked to ≤ 5 px per pose.
+    No clone: the wash's seed rule, the core-island depth, and the
+    band-dependent colour gate are each convicted and replaced; the
+    plug's colour in every reveal is the far rim's membrane. Plausible
+    wash: smooth (ratio 0.03–0.15 to the far side), isotropic
+    (0.9–1.1), seamed at 9–24 against 45–100. Where it does not hold:
+    porous occluders (bristlecone's canopy, the warrior's fur) tear to
+    dust — the second layer's case; the wash is textureless — the SD
+    stage's case; the reveal outline is toothed with the foreground
+    tear's steps — the tear edge's shape, unmeasured further here.
+
+    **Recipe** (unchanged from item 6; the refined far field is not
+    part of it): `window._plateFlushExempt = true; window._plugMembrane = 1;
+    window._fragTear = 2; window._plugMargin = 1; window._plugGeoBand({flush: true});`
+    then move. Nothing default has changed; the user's live pass
+    decides.
