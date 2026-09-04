@@ -11997,3 +11997,52 @@ composite shots at rest and sheet1, ghost map in texture space.
    the same equation (the pull-push V-cycle on the restricted domain)
    is the next step after the band is right. The equation and its
    boundary do not change; only the solver's time.
+
+5. **The sweep-defined band (A232 + A234, the exact reveal set with
+   hole-driven demand), troll:** the band grows from 113,523 to 408,739
+   texels (47% of the plate — the hole demand reaches under the core),
+   99.8% far-anchored. Ghost index wash 37.5% / membrane 36.2%, mean
+   distances 44 vs 56 (wash) and 37 vs 53 (membrane): on a band this
+   wide the single-texel index no longer separates near from far (the
+   far rim is hundreds of texels away and its one nearest texel is not
+   the fill's reference) — the instrument is right for the narrow band
+   and blunt here, and is read accordingly. The measures that do not
+   depend on a reference texel move the right way: far-rim seam wash
+   26.2 → membrane 14.8, anisotropy 1.49 → 0.87, smoothness ratio 0.09
+   → 0.07. Bake time under the sweep 30–32 minutes per arm on
+   SwiftShader (the sweep's passes, not the fill).
+
+6. **The teeth are the band's outline, not the core.** With the band
+   covering the core the sawtooth right of the troll's arm is
+   unchanged (a242s_sheet1_composite_zoom.png), and the plug-only shot
+   (a242s_sheet1_plugonly_zoom.png) shows it as the boundary between
+   the flat membrane and the far side's texture: row-wise steps of
+   5–10 px in the band's own outline. The wash blurred across that
+   outline (and pulled the clone with it); a fill that is exact at its
+   boundary shows the boundary's shape. Two consequences, both already
+   in Addendum 179: (a) the domain's outline must be as smooth as the
+   reveal it stands for — a reveal's width varies with the lip's step,
+   not row by row; the outline is filtered with the cited smear window
+   (RWD, the a62 window radius) before the fill, and the source of the
+   steps (front budgets or torn-triangle rows) is measured, not
+   guessed; (b) texture stops at the rim (R5b) — the first RWD texels
+   inside the band carry the rim's own texture (mirrored across the
+   rim, parameter-free) so the far side does not end on a line; the
+   membrane takes over behind them.
+
+7. **Solver.** The cascadic SOR converged badly on the real domain (the
+   fine level hit the cap: 2,434 sweeps narrow band, 3,000 wide band,
+   residual 0.67): its omega is set from the domain's deepest point
+   (L = 344–368) while most of the band is 10–20 texels wide, and
+   piecewise-constant aggregation without over-correction under-solves
+   the coarse levels. Replaced by a V-cycle correction scheme
+   (Galerkin coarse operators, Gauss-Seidel smoothing, no omega) with
+   the coarse correction over-relaxed by tau (Braess 1995 — aggregation
+   under-corrects by about 2 in 2D); tau = 2.0 diverges, 1.0
+   under-corrects (error 55 after the stop), 1.5 gives error 3.4 in 3
+   cycles on both synthetic domains; the stop is now the extrapolated
+   error from the cycle-to-cycle contraction, not the residual (a small
+   residual is not a small error for Laplace). The value of tau that
+   ships is the measured one, and it is a solver constant (it changes
+   the time to the same answer, not the answer): the equation and its
+   boundary are unchanged.
