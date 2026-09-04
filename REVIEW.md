@@ -11939,3 +11939,61 @@ right colours, no ghost to fight).
    as a pair; defaults change only on that verdict.
 5. Then: the carve on the proved never-seen set (task #9), the second
    layer for C4, the SD stage on R3's base.
+
+## Addendum 180 — A242: the membrane fill measured; the wash convicted by number; the band deficit is the next visible edge
+
+Instrument: harness/a242_ghost.js. For every band texel the plug
+colour's distance to the nearest FAR-rim source colour (the A213
+depth-compatible rim) against the nearest NEAR-lip source colour (the
+incompatible rim, the figure side). Ghost index = share nearer the
+near lip. Plus the seam at the far rim, gradient energy in the band
+against the far side's own, and row/column anisotropy. Plug-only and
+composite shots at rest and sheet1, ghost map in texture space.
+
+1. **The wash, troll, flush plate (the shipped colour):** band 113,523
+   texels, 98.6% far-anchored. **Ghost index 31.9%** (34,838 of 109,372
+   scored). Mean distance to the far colour 68.9, to the near colour
+   104.0 (sum of RGB). Far-rim seam 45.1. Gradient in the band 1.92
+   against 15.4 on the far side (ratio 0.12 — a wash), anisotropy 1.88
+   (the pyramid's row bias). The ghost map (wash_ghostmap.png) is red
+   along the troll's arms and shoulders — the texels the flush core
+   feeds, as Addendum 179 item 2 read from the seed rule. Also found:
+   the wash target is the CANVAS size (572×322 in the harness,
+   renderer.domElement), not the plate's (851×1023): the plug's colour
+   resolution follows the screen, not the source — a unit that changes
+   with the thing being varied (Addendum 93's rule), noted, not yet
+   priced.
+
+2. **The membrane (window._plugMembrane), same plate, same band:**
+   **ghost index 18.4%** (20,115), mean distance to the far colour 43.7,
+   to the near colour 112.9; seam 24.6; gradient ratio 0.13 (as smooth
+   as the wash); anisotropy 0.82 (isotropic). SOR on 113,508 coupled
+   texels, L = 344, omega 1.982, hit the 3,000-sweep cap at residual
+   0.501/255 — 40.6 s. The remaining red in the ghost map is the dark
+   band between the arms, where near and far colours are both near
+   black and the single-texel metric cannot separate them (mean
+   distances say the fill is far-anchored 2.6:1); the index has a floor
+   set by far-side texture contrast and is read as a difference between
+   arms, not as an absolute.
+
+3. **What the screen shows (a196 rule).** Plug-only at rest
+   (a242_rest_plugonly_zoom.png): the wash's soft green blobs — the
+   troll's arm and shoulder, blurred — are gone; the band is a flat
+   membrane matching the rim. But the membrane's hard edge exposes what
+   the wash blurred over: at sheet1 the composite
+   (a242_sheet1_composite_zoom.png) shows a SAWTOOTH to the right of
+   the troll's arm — the reveal is WIDER than the band, so its inner
+   part falls on the flush core, where the plug is the troll's own
+   source colour (never meant to be seen), and the band/core boundary
+   (the fronts' texel-stepped budgets) runs through the reveal as a
+   jagged line. The wash hid this deficit as smear; the membrane makes
+   it a line. It is Addendum 174's width deficit, which the hole-driven
+   demand (A234) closed: the band must be the exact reveal set, and the
+   sweep-defined bake (A232 + A234) is that. Running now: the same two
+   arms on the sweep-defined band.
+
+4. **Cost.** 3,000 SOR sweeps do not fit the user's live pass (tens of
+   seconds on the troll, minutes on bristlecone); a multigrid solve of
+   the same equation (the pull-push V-cycle on the restricted domain)
+   is the next step after the band is right. The equation and its
+   boundary do not change; only the solver's time.
