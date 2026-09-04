@@ -12446,3 +12446,10 @@ whole stack is one console line (item 6). The user's screen decides.
    texel at the demand stage, so every later gate reads one depth.
    Re-measured next on the star watcher and the troll, with and
    without the refined far field.
+
+   (e) **Silver warrior (3000×3000, 9M texels):** band 1,052,000 →
+   1,768,867 (20%; reveal 1,643,528 + pinholes 126,882); seam 71.8 →
+   12.1; smoothness ratio 0.05 → 0.03; anisotropy 1.54 → 1.06; bake
+   **969 s** — the far field over 9M unknowns and two 85-pose sweeps
+   over 9M texels each; the cost scales with the plate, and this plate
+   is ten times the troll's. Screen read in item 9.
