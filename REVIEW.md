@@ -12196,3 +12196,23 @@ composite shots at rest and sheet1, ghost map in texture space.
     At rest the per-fragment arm is pixel-faithful in both forms
     (a243_rest_composite_zoom.png: the baked tear's checkered patch on
     the troll's face is gone).
+
+16. **Control arm (per-fragment tear, no window, geometric band with
+    pass 3), troll:** teeth 1,539 (7.3%) — the same as with the baked
+    tear, so the per-fragment tear is not the outline's source either;
+    cells folding inside the cone 54,522 (3.1%) under the fronts' scan
+    gate, 172–185k (10–11%) once the geometric band widens the gate.
+    **Pass 3 diverged:** reveal texels 318k (through the fronts' plate)
+    → 307k (through pass 2's membrane depth) → after the pass-3 rebake
+    the re-measured reveal set is 506,186 with 222,529 outside the band.
+    The inversion is not a fixed point when the depth it inverts
+    through is defined by the band it produces — Addendum 173's
+    divergence in a new coat. The far depth behind an occluder does not
+    depend on the band: A244f computes it once as the membrane over the
+    WHOLE plate whose boundary values are the far-rim texels (source
+    texels next to the fronts' band whose depth agrees with the band's
+    plate — the far side of every silhouette), clamped behind the source
+    per texel; reveal cells invert through that field, the band is their
+    union plus the pinholes, and the band's depth IS that field. One
+    step, no iteration; the re-measured reveal set is then a check, not
+    a new input. Running.
