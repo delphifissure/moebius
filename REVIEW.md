@@ -12056,3 +12056,28 @@ composite shots at rest and sheet1, ghost map in texture space.
    couple weakly), so the stop is the cycle cap; the remaining error is
    a 2% low-frequency bias, below what the screen resolves. Whole quick
    bake with the membrane: 15.8 s on SwiftShader's CPU.
+
+9. **The teeth, measured (harness/a242_teeth.js).** A band run end is
+   a tooth when it reaches more than RWD (3 texels) beyond the median
+   end of the two rows above and below. Troll, fronts' band: 393 teeth
+   among 7,398 run ends (5.3%), excess median 10 texels, p90 34; by
+   content 86 rows front-claimed, 74 torn-foreground rows, 233 plain
+   demand rows. The densest cluster (teeth_crop.png, sent) is single-
+   row spikes on the ground — one row's plate a quantum lower than its
+   neighbours', flagged alone. The outline is row-wise because the
+   fronts are; a reveal is not.
+
+10. **A244 (window._plugGeoBand): the band's outline from the reveal
+    geometry.** Pass 1 bakes the fronts' plate; the CPU sweep (the
+    exact shift law, 17×5 poses) finds the cells no layer covers and
+    inverts each to the texel that covers it at the far depth (A234's
+    inversion, exact here — no per-pose calibration); pass 1b bakes with
+    those in the demand; a second sweep gives the seen set; its reveal
+    part (not through the foreground's own tears) padded by the a62 pad
+    plus the pinholes REPLACES the band (window._bandReplace at the
+    demand stage): texels the fronts flagged but no pose ever reveals
+    leave the band and return to their source depth — never seen, so
+    never a clone — and revealed texels the fronts missed join it and
+    take the far fill. Depth inside the band is unchanged (the fronts
+    where they reached, a58c elsewhere); colour is the membrane. Running
+    on the troll: teeth count, hole cells per pass, ghost index, shots.
