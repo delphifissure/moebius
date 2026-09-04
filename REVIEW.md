@@ -12105,3 +12105,26 @@ composite shots at rest and sheet1, ghost map in texture space.
     between-pose step of the pose grid (derived from the LUT and the
     grid, not chosen), plus the pinholes; that set replaces the band in
     one extra bake. Running now.
+
+12. **A244 on the reveal demand, troll (17×5 poses):** 5,976,801 reveal
+    cells over the cone (4,597 outpaint cells excluded) invert to
+    **318,469 reveal texels — 37% of the plate, 2.8× the fronts' band
+    (113,523)**, plus 36,529 pinholes; every front texel is inside the
+    reveal set (DROPPED 0: the fronts under-reach, they do not
+    over-reach). After the rebake the reveal set re-measured is 378,811
+    texels with 4 outside the band. Teeth: **393 → 12** (5.3% → 0.5% of
+    run ends), the outline is the reveal's. This first run padded the
+    set by the near texel's between-pose step (72 texels), which took
+    the band to 80% of the plate; wrong quantity — along any direction
+    the reveal at a smaller offset lies inside the reveal at a larger
+    one (the shift law is linear in the offset), so the union over the
+    grid's outer poses already contains every interior pose. Pad
+    removed (1 texel of rounding); re-running. What the number says:
+    the eye inside a 45° cone can see 37% of the troll plate's texels
+    behind the foreground — Addendum 176's "it is not small", now as a
+    demand set rather than a seen set — and the plug must carry far
+    depth and far colour over all of it. The membrane on that band is
+    smooth to a ratio of 0.02 against the far side and seams at 6.8;
+    the ghost index has no near lip left to score against (the band
+    reaches the core), so the screen and the seam carry the verdict
+    from here.
