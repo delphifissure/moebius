@@ -12242,3 +12242,15 @@ composite shots at rest and sheet1, ghost map in texture space.
     side, M the largest rim shift of any texel (derived from the LUT),
     with the textures' clamp-to-edge sampling as the outward
     continuation. Running with A244g.
+
+18. **A245 plug margin + A244g gate, troll:** enclosed holes at sheet1
+    **254 → 0**; total uncovered pixels in the 572×322 target 75,402 →
+    57 (the frame's leading-edge band, class G3, is now covered by the
+    plug's replicated edge — the same content the SD outpaint stage will
+    replace); at rest 97,888 → 0 (the plug extends past the portal on
+    every side). The band-independent fold gate brings the re-measured
+    reveal set's texels outside the band from 21,147 to 10,663 (3.5%);
+    the residual is the gate still admitting the demand band as well,
+    which is removed (far field only when the field exists) for the
+    next run. The membrane's colour error on the wide band is 6.5/255
+    at the 60-cycle cap.
