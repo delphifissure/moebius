@@ -12410,3 +12410,15 @@ whole stack is one console line (item 6). The user's screen decides.
    behind the field become boundary, so the canopy's own back layer
    sets the field under it) is the one single-layer move left and is
    queued on this scene; beyond it the answer is the second layer.
+
+   (b) **Octopus** (2229×1482): far rims 13,853; far field over 3.29M
+   texels (19 cycles, 23 s); band 989,042 → 1,819,516 (55% of the
+   plate); seam 75.6 → 10.4; smoothness ratio 0.21; bake 424 s. On
+   screen (octopus/a245w_sheet1_full.png, sent): the shipped bake's
+   second orange head — the mantle cloned into the reveal — is gone;
+   behind the head stands dark-water wash at the far depth with the
+   reveal's toothed outline; the mantle's own per-fragment tear reads
+   as slits along its depth terraces (two quanta or more; the quantum
+   gate holds the one-quantum ones). The octopus keeps its shape at
+   every pose in the pair: the single-layer stack holds where the
+   occluder is a solid.
