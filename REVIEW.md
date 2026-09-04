@@ -12453,3 +12453,22 @@ whole stack is one console line (item 6). The user's screen decides.
    **969 s** — the far field over 9M unknowns and two 85-pose sweeps
    over 9M texels each; the cost scales with the plate, and this plate
    is ten times the troll's. Screen read in item 9.
+
+9. **Screen verdicts, six scenes, the whole stack at sheet1 (sent as
+   screengrabs, all in harness/shots/a242/<scene>/a245w_*.png):**
+
+   | scene | seam wash → stack | band (% of plate) | bake (s) | on screen |
+   |---|---|---|---|---|
+   | troll | 45 → 12 | 41% | 93–113 | holds: no clone, no hole; wash regions flat with toothed outline; dark patch behind the figure (the gate fault of 8d) |
+   | bristlecone | 60 → 9 | 94% | 207 | **fails**: canopy dissolves into dust (single-layer limit, 8a) |
+   | octopus | 76 → 10 | 55% | 424 | holds: clone head gone, water wash behind; mantle slits |
+   | room | 100 → 16 | — | 349 | holds: ghost sunflower gone, sky wash |
+   | star watcher | 91 → 62 | 23% | 262 | **wrong**: dark silhouette beside the figure (the gate fault of 8d, fixed, re-measuring) |
+   | silver warrior | 72 → 12 | 20% | 969 | holds above: sky/snow wash beside the warrior; the fur group at the bottom tears to fragments (the foliage case again) |
+
+   What the table says as a whole: where the occluder is a solid the
+   stack does what Addendum 179 promised — no clone, no enclosed hole,
+   a far-anchored wash; where the occluder is porous (foliage, fur) the
+   per-fragment tear opens the truth of the geometry and a single far
+   layer cannot stand behind it. The gate fault (8d) is a bug, fixed;
+   the porous case is the second layer's, not a tuning of this one.
