@@ -12311,3 +12311,80 @@ composite shots at rest and sheet1, ghost map in texture space.
     foreground. A245e displaces the ring by the far field instead —
     what the vacated border shows is what lies behind the near content.
     Re-measured after the five scenes.
+
+## Addendum 181 — the stack, as built: what each rule of Addendum 179 became, what it measures, what is left, and how to look at it
+
+**Nothing default has changed.** Every piece below is a flag, and the
+whole stack is one console line (item 6). The user's screen decides.
+
+1. **What "no gaps" became.** Coverage is now a property checked by
+   two instruments rather than a target chased by arms: the plug is one
+   continuous sheet (never torn; its own steps are ramps) with a ring
+   margin beyond the frame (A245: four strips, M = the largest rim shift
+   of a foreground border texel, displaced by the far field, drawn
+   inside the portal window), and the harness counts uncovered pixels
+   ENCLOSED by content per pose (a228_carve `interior`). Troll, eight
+   poses: interior ≤ 9 px at every pose; rest 0 uncovered in the whole
+   window. The frame's leading-edge band (class G3) is covered by the
+   plug's replicated edge — the SD outpaint stage's content later, the
+   membrane's continuation now.
+
+2. **What "not a clone" became.** Three mechanisms, each convicted by a
+   buffer before it was replaced: (a) the wash's seed rule let the
+   flush-exempt core feed the pyramid — the blurred troll in the plug
+   (ghost index 31.9%); replaced by the membrane of the FAR RIM only on
+   the A213 depth-gated domain, solved by V-cycle multigrid (A242/A242c;
+   ghost 18–19% on the same band, the residue being the metric's floor;
+   seam 45 → 25; anisotropy 1.88 → 0.86). (b) The a58c depth
+   continuation took the core island as boundary once the band reached
+   it — a relief clone in depth that let the colour gate admit the
+   core's colours (the arm-shaped patch); replaced by the band's depth
+   = the far field (A244f), the membrane over the whole plate whose
+   boundary is the far rims. (c) The reveal-cell inversion through a
+   band-dependent depth, and the tear gate through the band, were not
+   fixed points (Addendum 173's divergence twice over); both now read
+   the a-priori far field (A244f/g), and the reveal set is a fixed
+   function of the foreground and the field.
+
+3. **What "plausible wash" is, and is not, today.** Inside the band the
+   fill is the smoothest function with the far rim's colours on its
+   boundary — gradient ratio 0.13 against the far side, anisotropy
+   0.9–1.0, seam 10–12 against the wash's 26–45. It is flat: a wide
+   reveal reads as a smooth figure-shaped region with a hard outline.
+   Two of that outline's sources are gone (the fronts' row budgets,
+   393 teeth → 12 on the fronts' band; the core island); one remains —
+   the reveal set inherits the foreground tear's own row-wise steps
+   (1,364–1,541 teeth at 7% of run ends on the geometric band), which
+   is the tear edge's shape, not the band's. And one new defect is on
+   record: behind the star-watcher figure the far field is too far
+   (the fill dark where the bright rock stands), because its boundary
+   is only the silhouette rims. A244h (flagged) adds every source texel
+   at or behind the field to the boundary and re-solves; queued.
+
+4. **Cost, measured on SwiftShader's CPU (the MacBook is faster):**
+   fronts' bake 10–13 s; + membrane 3.3 s (narrow band) / 9–10 s (wide);
+   far field 4.8 s; CPU sweep 17 s per pass at 17×5 poses (two passes);
+   whole stack 80–113 s per bake on the troll. The sweeps are the cost;
+   they are the exactness.
+
+5. **Falsified on the way, recorded, removed or flagged out:** the hole
+   inversion on span-rasterised cells (the frame-edge class counted as
+   holes); the between-pose pad (72 texels for nothing); the windowed
+   fold points in their first form (43% of the foreground); the
+   cascadic SOR (omega from the deepest point); the global-maximum
+   margin (4.3M vertices); the rest-footprint clip (1,059 holes in the
+   bars); the ring at the plate's edge depth (the mirror corner). Each
+   is one item of Addendum 180 with its number.
+
+6. **MacBook recipe (moebius.html console, any scene):**
+   `window._plateFlushExempt = true; window._plugMembrane = 1;
+   window._fragTear = 2; window._plugMargin = 1; window._plugGeoBand({flush: true});`
+   then move. `window._plugMargin = 2` keeps the bars beside a
+   non-matching aspect empty at rest (and lets torn foreground drifting
+   into them open onto nothing). `window._farFieldRefine = 1` before
+   the call arms the refined far field. To return: reload, or
+   `window._plugMembrane = 0; window._fragTear = 0; window._plugMargin = 0;
+   window._bandReplace = null; window._geoFarField = null; bgQuickBake = true; buildBackgroundLayer();`.
+
+7. **The five other scenes and the eight-pose rerun with the far-field
+   ring are running; their numbers follow as item 8.**
