@@ -12500,3 +12500,16 @@ whole stack is one console line (item 6). The user's screen decides.
     bright rock's colour — and the pale patch beside the arm becomes
     forest-dark wash matching its surroundings. Which of the two changes
     did what is the clean A/B queued behind (gate fix alone, item 24).
+
+24. **Refined far field + gate fix on the two scenes that failed.**
+    Bristlecone: 521,921 texels became boundary, 1,050,943 re-solved;
+    seam 9.5; **still dust** (bristlecone/a244h_sheet1_full.png): the
+    leaf cells tear one by one at the rim whatever the field says, and
+    one far layer stands behind them — the second layer's case, closed
+    here. Star watcher: 1,939,928 texels became boundary, 600,232
+    re-solved; seam 90.7 (shipped) → 61.9 (the gate fault) → **24.5**;
+    mean distance to the far colour 64 against 107 to the near; on
+    screen (starwatcher/a244h_sheet1_full.png, sent) the dark silhouette
+    and the black ground patches are gone and the reveal beside the
+    figure is sky wash. The clean A/B — gate fix alone — is next, so
+    the refined field's own contribution is separated from the bug's.
