@@ -12173,3 +12173,26 @@ composite shots at rest and sheet1, ghost map in texture space.
     shift of its edge depth, which the quick plate does not have. Next
     in order: A243 (windowed fold points; the teeth at the band edge
     are the foreground tear's), then the border margin, then six scenes.
+
+15. **A243 first form: falsified on sight.** Reading the cell's step
+    from the a62 window (radius RWD = 3) instead of its own vertices
+    made 745,420 cells (42.9% of the troll's foreground) fold inside the
+    cone against 228,756 with the fronts' band; at sheet1 the troll's
+    arm tears wholesale and the left third of the frame is black
+    (a243_sheet1_composite_zoom.png). Cause, not a guess: on a SLOPE the
+    window's range is the slope times the window width — seven times
+    the per-cell step — so the fold point ext/span falls seven-fold and
+    the cell tears at a fraction of the pose it should. The teeth did
+    not move either (1,428 against 1,541), so the band's outline steps
+    are not the fold field's; the "right ends" of the densest block
+    (453 ×8, 433 ×5, 438 ×3, 453…) step in row BLOCKS of 5–8 — the
+    fronts' plate that the reveal cells invert THROUGH (the pass-1 far
+    depth is the fronts' row-wise plate), not the reveal itself.
+    Two corrections, both in code: (a) the window stands in for the
+    cell only where it holds a CLIFF (windowed range above the tear
+    step — the A44 criterion; slopes keep their own step); (b) the
+    band's inversion runs a second time through pass 2's membrane
+    depth, which is smooth, and the band is rebaked from that (pass 3).
+    At rest the per-fragment arm is pixel-faithful in both forms
+    (a243_rest_composite_zoom.png: the baked tear's checkered patch on
+    the troll's face is gone).
