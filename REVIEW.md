@@ -12254,3 +12254,22 @@ composite shots at rest and sheet1, ghost map in texture space.
     which is removed (far field only when the field exists) for the
     next run. The membrane's colour error on the wide band is 6.5/255
     at the 60-cycle cap.
+
+19. **A245 sized wrong, then right.** The first margin took M = the
+    largest rim shift of ANY texel: 568 texels on the troll (the nearest
+    texel at the 45° rim), a 1988×2160-cell plug — 4.3M vertices for a
+    border. The quantity that matters is how far the FOREGROUND can
+    vacate the border: the largest rim shift among the foreground's
+    border texels. And across the margin the replicated depth is
+    constant, so the margin is a ring of four strips one cell across
+    (foreground density along the edge), a few thousand vertices. The
+    ring is drawn only inside the frame's rest footprint (u_restClip:
+    the window projection maps the portal to NDC [-1,1] at every pose,
+    so the footprint is the geometry's size over the terrarium's,
+    constant across poses): outside the footprint there is nothing to
+    cover at any pose — that is the outpaint class, the SD stage's —
+    and the first margin run had filled the black bars beside the
+    portrait frame at rest with replicated edge texture (a245_rest_full.png),
+    which is content the source does not have. Enclosed holes with the
+    full margin were 254 → 0; the ring is re-measured now, then the
+    eight poses and the five other scenes with the whole stack.
