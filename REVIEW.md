@@ -12513,3 +12513,17 @@ whole stack is one console line (item 6). The user's screen decides.
     and the black ground patches are gone and the reveal beside the
     figure is sky wash. The clean A/B — gate fix alone — is next, so
     the refined field's own contribution is separated from the bug's.
+
+25. **The clean A/B: the gate fix alone (A) against gate fix + refined
+    far field (B).** Troll: far distance 36.7 (A) vs 38.7 (B), seam
+    10.6 vs 10.1, re-measured reveal outside the band 864 vs 729. Star
+    watcher: seam 24.0 (A) vs 24.5 (B). The screen agrees
+    (troll/a244i_ab_full.png): the same frame. The gate fix (A244i) is
+    the whole of the improvement of items 23–24; the refined far field
+    adds nothing the instruments or the screen resolve and did not save
+    the foliage case — **removed (rule 7)**. Note that these A arms
+    also carry A245f (border-connected reveals join the band): the
+    troll's band is 448,115 here against 348,405 before it, the star
+    watcher's 715,337 against 584,939 — the corners and edges the
+    foreground vacates now take the far fill; their effect on the eight
+    poses is item 26.
