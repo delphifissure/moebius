@@ -12422,3 +12422,27 @@ whole stack is one console line (item 6). The user's screen decides.
    gate holds the one-quantum ones). The octopus keeps its shape at
    every pose in the pair: the single-layer stack holds where the
    occluder is a solid.
+
+   (c) **Room (sunflowers, 2047×1362):** seam 100.1 → 16.4; smoothness
+   ratio 0.04 → 0.15; anisotropy 0.85 → 0.95; margin M = 757 texels
+   (the front flower touches the border at near depth); bake 349 s.
+   On screen (room/a245w_sheet1_full.png, sent): the ghost sunflower
+   smeared into the sky is gone; behind the big head is sky wash with
+   a soft outline; the thin silhouette line in the sky is in both
+   bakes and thinner in the stack. **Holds.**
+   (d) **Star watcher (1920×1323):** far field over 2.53M texels (23
+   cycles); reveal 501,024 + 38,898 pinholes → band 319,018 → 584,939
+   (23%); seam 90.7 → **61.9 only**; bake 262 s. On screen
+   (starwatcher/a245w_sheet1_full.png, sent): **wrong** — the reveal
+   beside the figure fills with a dark navy-to-black silhouette where
+   the sky should be. Cause, in the code: the colour membrane's rim
+   gate reads the band's plate depth from plateQ (source rows,
+   pre-clamp), and on the texels the geometric band ADDS plateQ still
+   held the SOURCE depth (the far field had been written to plateF
+   only), so the gate admitted the near side — the figure and the
+   ground — and refused the sky rims. The same mismatch shaped the dark
+   patch behind the troll's figure (item 3) and the residual seams
+   everywhere. A244i writes the far field into plateQ for every band
+   texel at the demand stage, so every later gate reads one depth.
+   Re-measured next on the star watcher and the troll, with and
+   without the refined far field.
