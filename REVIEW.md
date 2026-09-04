@@ -12046,3 +12046,13 @@ composite shots at rest and sheet1, ghost map in texture space.
    ships is the measured one, and it is a solver constant (it changes
    the time to the same answer, not the answer): the equation and its
    boundary are unchanged.
+
+8. **V-cycle on the real domain, troll narrow band:** 7 levels
+   (113,508 → 108 unknowns), 60 cycles (the cap), extrapolated error
+   4.96/255, **3.3 s** against 40.6 s for SOR; the fill is the same
+   (ghost index 19.3% vs 18.4%, seam 24.9 vs 24.6, anisotropy 0.86).
+   The real domain converges slower than the synthetic ring (depth
+   gating makes it porous, and 2×2 aggregates on thin diagonal bands
+   couple weakly), so the stop is the cycle cap; the remaining error is
+   a 2% low-frequency bias, below what the screen resolves. Whole quick
+   bake with the membrane: 15.8 s on SwiftShader's CPU.
