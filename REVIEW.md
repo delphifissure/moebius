@@ -12216,3 +12216,29 @@ composite shots at rest and sheet1, ghost map in texture space.
     union plus the pinholes, and the band's depth IS that field. One
     step, no iteration; the re-measured reveal set is then a check, not
     a new input. Running.
+
+17. **A244f (a-priori far field), troll:** 5,990 far-rim texels; the
+    far field over 864,583 texels converges in 15 cycles (error 0.0009
+    depth, 4.8 s); 311,189 texels (36%) are clamped behind the source —
+    the field overshoots toward near far from any rim, where it is never
+    used. Reveal cells 5.72M → 298,204 reveal texels + 36,552 pinholes;
+    band 342,203 (39% of the plate; 3,740 front texels dropped). The
+    inversion is now a fixed function of the foreground and the field,
+    so the re-measured reveal set should be inside the band; it is not
+    yet (319,302 with 21,147 outside): the FOLD FIELD still depends on
+    the band — the A212 scan gate lets a cell tear only inside the
+    demand, so widening the band from 113k to 342k texels tears 172k
+    cells instead of 55k and opens more reveals. A244g makes the gate
+    band-independent as well: a cell may tear where something lies
+    behind it (source deeper than the far field by more than the tear's
+    noise floor), and the fold field is baked once under that gate
+    before the sweep. The cliff-only window (A243b) changes nothing the
+    outline measures (teeth 1,473 vs 1,364 without; folding cells
+    78,752 vs 54,522); it stays flagged, unmeasured on the skins it was
+    meant for, and is not part of the stack. **The remaining defect on
+    screen** (a244f_sheet1_composite_zoom.png): 254 enclosed black pixels,
+    every one 1–8 px outside the plug's receded left border — class G3
+    inside the frame. A245 gives the plug a margin of M texels on every
+    side, M the largest rim shift of any texel (derived from the LUT),
+    with the textures' clamp-to-edge sampling as the outward
+    continuation. Running with A244g.
