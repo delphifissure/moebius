@@ -12081,3 +12081,27 @@ composite shots at rest and sheet1, ghost map in texture space.
     take the far fill. Depth inside the band is unchanged (the fronts
     where they reached, a58c elsewhere); colour is the membrane. Running
     on the troll: teeth count, hole cells per pass, ghost index, shots.
+
+11. **A244 first run falsified its own hole step, and the probe said
+    why.** With hole inversion the band ballooned to 799k texels (92%
+    of the plate): the CPU sweep reported 8.3M uncovered cells over 85
+    poses. Two causes, both measured (harness/a244_cpucheck.js): the
+    edge-span rasteriser leaves the interior of a quad stretched in
+    both axes empty (fixed: each quad fills its warped bounding box —
+    conservative, one-texel quads), and the remaining "holes" are the
+    FRAME-EDGE bands (class G3 of Addendum 179: the scene shifts, rows
+    at the top and bottom of the frame empty out — 60,690 of 81,246 at
+    the pose 0.5x/0.28y, red bands in cpu_classmap_mid.png) whose
+    inversion through the far shift lands inside the plate. In-frame, at
+    every pose probed, the fronts' plate plus the continuous plate
+    quads cover every cell: at rest 0 holes, at the mid pose none
+    inside the frame. So the reveal deficit does not present as a hole
+    in either renderer — the plate's ramp quads cover it — it presents
+    as the ramp SMEAR (C4). A244 is therefore reformulated: the demand
+    is the set of cells the FOREGROUND does not cover at some pose
+    (in-frame: border-connected uncovered cells are outpaint, excluded),
+    each inverted through the far shift to the texel that must carry
+    far content — the reveal outline from geometry — dilated by the
+    between-pose step of the pose grid (derived from the LUT and the
+    grid, not chosen), plus the pinholes; that set replaces the band in
+    one extra bake. Running now.
