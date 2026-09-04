@@ -12287,3 +12287,27 @@ composite shots at rest and sheet1, ghost map in texture space.
     it keeps the bars empty at rest and lets torn foreground drifting
     into them open onto nothing. Ring: M = 570 texels on the troll (its
     feet touch the bottom border at near depth), 7,496 vertices.
+
+21. **Eight poses, troll, the whole stack against the shipped bake
+    (harness/a228_carve.js, D arm, interior = uncovered pixels enclosed
+    by content):**
+
+    | pose | shipped: uncovered / interior | stack: uncovered / interior | stack plug seen |
+    |---|---|---|---|
+    | rest | 97,888 (the outside-portal black) / 0 | **0 / 0** | 97,895 |
+    | a221 | 90,385 / 0 | 8 / 8 | 104,398 |
+    | sheet2 | 81,294 / 0 | 9 / 1 | 101,026 |
+    | sheet1 | 76,219 / 0 | 76 / 9 | 99,511 |
+    | mirror | 112,390 / 0 | 2,660 / 1 | 120,078 |
+    | off1 | 90,790 / 0 | 1 / 1 | 102,944 |
+    | off2 | 112,440 / 2 | 1,165 / 1 | 118,471 |
+    | off3 | 83,899 / 0 | 145 / 6 | 102,917 |
+
+    The window is covered to within ≤ 9 enclosed pixels at every pose;
+    the border-connected remainder at the mirror and off2 poses
+    (2,660 and 1,165) is the bottom-left corner
+    (a245w_mirror_full.png): the ring replicated the plate's edge depth,
+    which at the troll's feet is NEAR, so the ring moved away with the
+    foreground. A245e displaces the ring by the far field instead —
+    what the vacated border shows is what lies behind the near content.
+    Re-measured after the five scenes.
