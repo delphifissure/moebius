@@ -12128,3 +12128,31 @@ composite shots at rest and sheet1, ghost map in texture space.
     the ghost index has no near lip left to score against (the band
     reaches the core), so the screen and the seam carry the verdict
     from here.
+
+13. **Reveal band without the pad (geo3), troll:** band 113,523 →
+    364,201 texels (42%: kept 111,781, added 252,420, dropped 1,742
+    never-revealed front texels). Two findings. (a) After the rebake
+    the reveal set re-measured is 282,224 texels, **41,171 of them
+    outside the new band**: the inversion runs through the local far
+    depth, and the band's depth CHANGED with the band (see b), so the
+    texels the reveal cells invert to moved. The inversion has to be
+    self-consistent with the depth it is inverted through — one more
+    bake-and-sweep with the union, or the depth made stable first.
+    (b) The screen (a244_sheet1_composite_zoom.png, sent): the teeth
+    are gone from the band's outline but an arm-shaped patch of the
+    troll's own colour stands beside the arm at sheet1. Cause: the a58c
+    depth continuation is isotropic — it takes its boundary from EVERY
+    non-band texel — and with the band now reaching the troll's core,
+    the never-revealed core island pulls the band's depth toward the
+    near depth (a relief clone in depth, C2), whereupon the colour gate
+    (plate vs rim within the tear step) admits the core's colours. The
+    same one-sidedness the colour needed, the depth needs: A244d makes
+    the band's depth the membrane of the FAR rim only (rim texels whose
+    source depth agrees with the local reference far depth — the pass-1
+    plate nearest to the texel — within the tear step; the core island,
+    a cliff nearer, is excluded), same solver as the colour. (c) The
+    band's outline teeth count rises to 1,541 (7.4%) when measured on
+    the reveal set — those are the FOREGROUND TEAR's own row-wise steps
+    (the A212 per-cell fold points on a terraced depth), which the
+    reveal set inherits exactly; they are A243's (windowed fold points)
+    to remove, on the foreground and the band together.
