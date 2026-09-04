@@ -12273,3 +12273,17 @@ composite shots at rest and sheet1, ghost map in texture space.
     which is content the source does not have. Enclosed holes with the
     full margin were 254 → 0; the ring is re-measured now, then the
     eight poses and the five other scenes with the whole stack.
+
+20. **The ring margin, measured, troll.** With the clip at the source
+    frame's rest footprint, sheet1 had 1,059 enclosed holes — every one
+    OUTSIDE the footprint, in the bar beside the portrait frame where
+    the foreground had drifted and torn (x 57–151 of the 572-px target;
+    the footprint spans 152–419). The window is the portal, not the
+    source frame: with the clip at the whole window (mode 1) the
+    composite has **0 uncovered pixels at rest and 55 at sheet1, none
+    enclosed** (the 55 are border-connected slivers at the target's
+    edge); the plug alone leaves 16 enclosed pixels that the foreground
+    covers. Mode 2 (rest footprint) stays available for the user's eye:
+    it keeps the bars empty at rest and lets torn foreground drifting
+    into them open onto nothing. Ring: M = 570 texels on the troll (its
+    feet touch the bottom border at near depth), 7,496 vertices.
