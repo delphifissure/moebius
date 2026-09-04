@@ -12495,3 +12495,8 @@ whole stack is one console line (item 6). The user's screen decides.
     inversion is now within rounding of a fixed point); mean distance to
     the far colour 38.7 (the lowest of any arm), seam 10.1, anisotropy
     1.00.
+    On screen (a244h_sheet1_figure.png, a244h_sheet1_zoom.png, sent):
+    the dark blob behind the figure is gone — the fill there takes the
+    bright rock's colour — and the pale patch beside the arm becomes
+    forest-dark wash matching its surroundings. Which of the two changes
+    did what is the clean A/B queued behind (gate fix alone, item 24).
