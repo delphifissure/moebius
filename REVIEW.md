@@ -12388,3 +12388,25 @@ whole stack is one console line (item 6). The user's screen decides.
 
 7. **The five other scenes and the eight-pose rerun with the far-field
    ring are running; their numbers follow as item 8.**
+
+8. **Five scenes, the whole stack against the shipped bake (wash,
+   fronts' band).** (a) **Bristlecone:** far rims 20,855; far field over
+   1.55M texels in 24 cycles (13.2 s); reveal texels 1,423,522 +
+   500,223 pinholes → band 1,483,916 = **94% of the plate** (Addendum
+   176's "not small", exactly); seam 60.0 → 9.2; bake 207 s. **On screen
+   it fails** (bristlecone/a245w_sheet1_full.png, sent): at sheet1 the
+   canopy dissolves into dust. Mechanism, from the numbers: the
+   per-fragment tear opens every leaf cell whose step exceeds its
+   extent (the fold law is right: a leaf against sky IS a cliff), and
+   behind the canopy the far field is the sky and the ground — its
+   boundary is the silhouette rims, so under the foliage it
+   interpolates to the far surface around the tree — where the surface
+   actually behind a leaf is, mostly, other leaves at nearly the same
+   depth. The plug's depth there is wrong by the canopy's thickness,
+   and its colour is sky wash. The shipped bake hides the same geometry
+   under the rubber sheet (the smeared canopy, left panel). This is the
+   single-layer limit stated in Addendum 179 R5a, met on the first
+   foliage scene; A244h's refined far field (source texels at or
+   behind the field become boundary, so the canopy's own back layer
+   sets the field under it) is the one single-layer move left and is
+   queued on this scene; beyond it the answer is the second layer.
