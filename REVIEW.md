@@ -12487,3 +12487,11 @@ whole stack is one console line (item 6). The user's screen decides.
     OUTSIDE the plate, nothing else; the corner's texels join the band,
     take the far depth, shift less, and the plug stays under the
     corner. Re-measured after the queued runs.
+
+23. **Refined far field + the gate fix, troll:** 496,591 source texels
+    at or behind the field became boundary, 373,982 occluder texels
+    re-solved (9 cycles); band 348,405; after the rebake the re-measured
+    reveal set has **729 texels outside the band** (from 10,663 — the
+    inversion is now within rounding of a fixed point); mean distance to
+    the far colour 38.7 (the lowest of any arm), seam 10.1, anisotropy
+    1.00.
