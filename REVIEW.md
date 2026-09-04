@@ -12156,3 +12156,20 @@ composite shots at rest and sheet1, ghost map in texture space.
     (the A212 per-cell fold points on a terraced depth), which the
     reveal set inherits exactly; they are A243's (windowed fold points)
     to remove, on the foreground and the band together.
+
+14. **A244d (far-rim depth membrane), troll, sheet1:** the arm-shaped
+    patch is gone — the region beside the arm is wash
+    (a244_sheet1_composite_zoom.png, sent). The depth membrane took
+    15,354 far-rim boundary contacts and excluded 25,546 near-rim
+    contacts (the core island), 60 cycles, extrapolated error 0.015
+    depth, 7.9 s. Plug-only at sheet1 has no enclosed uncovered pixel;
+    the composite has **170 px** of enclosed holes at the left, new: the
+    plug's frame border receded by 8,455 border-connected pixels
+    against the fronts' plug (85,200 vs 76,745 magenta) because the
+    band at the frame's edge is now far and shifts less, and where the
+    foreground tears there it opens onto nothing. That is class G3 of
+    Addendum 179 (the frame-edge reveal) showing up inside the frame's
+    own border: rule R1 requires the plug's border extended by the rim
+    shift of its edge depth, which the quick plate does not have. Next
+    in order: A243 (windowed fold points; the teeth at the band edge
+    are the foreground tear's), then the border margin, then six scenes.
