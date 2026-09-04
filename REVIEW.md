@@ -12472,3 +12472,18 @@ whole stack is one console line (item 6). The user's screen decides.
    per-fragment tear opens the truth of the geometry and a single far
    layer cannot stand behind it. The gate fault (8d) is a bug, fixed;
    the porous case is the second layer's, not a tuning of this one.
+
+22. **The far-field ring made it worse, and said why.** Eight poses
+    with the ring displaced by the far field: uncovered 1,600–4,874 px
+    per pose, interior up to 4,293 (a221 2,790, off3 4,293) — against
+    ≤ 9 interior before. The ring and the plug are two meshes; displaced
+    by different depths they part along the frame's edge, and the gap
+    is the new hole. The ring goes back to the plug's own displacement
+    (continuous). The mirror-pose corner is a different fault: the
+    reveal demand called every border-connected uncovered cell
+    "outpaint" and excluded it, but the corner the troll's feet vacate
+    is border-connected AND a reveal of in-frame far content — its
+    inversion lands inside the plate. A245f: outpaint is what inverts
+    OUTSIDE the plate, nothing else; the corner's texels join the band,
+    take the far depth, shift less, and the plug stays under the
+    corner. Re-measured after the queued runs.
