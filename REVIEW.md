@@ -12774,3 +12774,118 @@ and 3 because it is one arm on the existing sweep and removes the
 largest visible defect; 2 before 3 because curves are extracted from
 the depth; 4 and 5 after 3 because both need regions; 6 and 7 last
 because both assume a stable base.
+
+## Addendum 184 — where the plan breaks, how it compares, and the plan re-cut for the real goal
+
+**The goal, restated as the user put it.** Not perfect fill: the widest
+usable head motion with every gap covered, so that a temporally
+consistent SD pass can paint the gaps later; a "close enough" near-splat
+from one image, very fast; rushes, scrubbing, proofs of concept for
+retrofitting films and comics to the face-tracked off-axis format. Under
+that goal the deliverable is GEOMETRY plus a canvas: correct parallax of
+the visible surface, the exact reveal regions, the right hidden DEPTH
+under them (SD paints colour, not depth — if the plug's depth is wrong,
+perfect colour still swims), a stable parametrisation for SD to paint
+once (an atlas in source texture space is view-independent by
+construction), and speed. The membrane's colour quality is a
+placeholder; Phase 4 of Addendum 183 (texture synthesis) drops out.
+
+**Where the plan breaks.**
+1. The mesh-with-tears paradigm. Every artefact class of the last
+   forty addenda — rubber sheet, fold law, quantum gates, teeth, the
+   missing feather, pops — is a consequence of CONNECTIVITY: a mesh must
+   decide per cell whether two texels are one surface. Porous and thin
+   things (foliage, fur, hair, fences, wires) have no right answer to
+   that question, and at a 45° cone 10–43% of the cells are torn anyway.
+   Phase 3 (curves) is a large build that treats the symptoms of
+   connectivity. A representation without connectivity has none of
+   them: per-texel oriented surfels (EWA surface splatting, Zwicker et
+   al. 2001; Pfister et al. 2000) separate at a discontinuity by
+   themselves, continuously, with soft edges, and this codebase already
+   ships an instanced EWA Gaussian splat renderer (SplatCloud, the 4D
+   portal path) and mixed splat-plus-mesh compositing.
+2. One hidden layer. At 45° the reveals cover 37–94% of the plate, and
+   under a wide reveal several surfaces stack (behind the troll's arm:
+   forest, ground, the woman's rock). The observed-depth median hides
+   that multiplicity; the plan needs k observed layers per texel where
+   the observations cluster, not one. Splats make extra layers cheap.
+3. The depth itself. Relative-depth errors, 8-bit terraces, smeared
+   silhouettes, the grounded-figure topology, sky at finite depth: none
+   of this is repaired by any layer scheme and all of it shows as swim
+   and halo at wide angles. Films add temporal depth flicker. The truth
+   instruments must therefore run on DEGRADED depth (quantised, blurred,
+   locally biased) as well as perfect depth, or they will certify a
+   pipeline the real estimators never feed.
+4. Speed. JavaScript on the CPU: 80 s for the troll, 16 minutes for a
+   3000×3000 plate. Rushes and per-frame precompute need the sweep, the
+   accumulation and the membrane on the GPU (fragment passes, which is
+   what the old atlas pass already was) and a resolution policy: bake
+   the geometry at 1–2 MP, sample the colour at full resolution.
+5. The window. At 45° the margin is 570–760 texels; the replicated edge
+   is a placeholder for an SD outpaint that must itself be consistent
+   across frames — the atlas gives that for a still, not for video.
+6. Video. A per-image atlas is view-consistent; consecutive frames are
+   not consistent with each other unless the hidden layer is tracked
+   across frames. Out of this plan's scope, named so it is not mistaken
+   for solved.
+7. Head Z. The shift law and the sweep are linear in the lateral eye
+   offset; dolly changes the reveal geometry non-linearly. The cone is a
+   disc today; if Z tracking lands, the sweep's pose set changes.
+
+**Against MPI and the Facebook 3D-photo family.** Facebook's pipeline
+(Kopf et al. 2020; Shih et al. 2020) is a layered depth image: detect
+discontinuities, inpaint colour AND depth behind each one with a
+learned model, iterate into several layers, render a multi-layer mesh.
+It is our skeleton — LDI plus completion — with a network where we
+have a membrane, designed for a phone swipe of a few degrees; at 45° its
+inpainting stretches and its depth is guessed, the same way ours would
+be. MPI (Tucker & Snavely 2020; AdaMPI; this codebase's v2) is 32–64
+fronto-parallel RGBA planes: soft alpha handles thin and porous content
+and never pops, rendering is trivial, but planes are cards — at wide
+angles they separate visibly, disocclusion content exists only as deep
+as the completion, and memory is heavy. Single-image Gaussian splats
+(Splatter Image 2023; Flash3D 2024) predict per-pixel Gaussians with a
+network: soft, fast, small baselines, hidden content hallucinated with
+no region for SD to own. The gap none of them fills and this project
+can: an EXPLICIT reveal region with observed hidden depth at a 45°
+cone, in a static atlas SD can paint, with soft splat rendering. That
+is the surfel-LDI: layer 0 = one oriented surfel per source texel;
+layer 1..k = the observed hidden layers of A246 as surfels with
+placeholder colour; margin as surfels; rendered by the existing
+SplatCloud. What it inherits from the mesh path unchanged: the a104
+parallax law, the a135/a162 ordering, the sweep and its inversion, the
+observed hidden layer, the membrane, the instruments. What it retires:
+the fold law, the tear gates, the band cut, the feather, the curves.
+What it risks: silhouette halos from surfel radius, grazing-angle
+coverage between surfels, blending cost for millions of splats (layers
+are height fields — render them back to front with the depth test and
+skip global sorting), memory at 9M texels.
+
+**The plan, re-cut.**
+0. Instruments: truth on synthetic scenes with perfect AND degraded
+   depth; the motion path; one table. Metrics weighted toward hidden
+   depth, coverage and pop, not colour. (1–2 sessions.)
+1. A246, the observed hidden layer: region, depth, confidence, and
+   k-clustered depths where observations disagree. (2 sessions.)
+2. The representation spike: render layer 0 + layer 1 as surfels through
+   SplatCloud on the troll and the bristlecone; measure holes, pops and
+   halos on the path against the mesh stack. This is the fork; it
+   decides whether Phase 3 of Addendum 183 exists. (2 sessions.)
+3a. If surfels win: retire the tear machinery; surfel size and
+   orientation from the depth gradient (cited); margin as surfels; k
+   hidden layers. 3b. If not: boundaries as curves, as planned.
+4. Depth pre-pass (guided dequantisation), measured on the degraded
+   truth. (1 session.)
+5. GPU port of sweep, accumulation and membrane; resolution policy;
+   target under 2 s per image on the MacBook, per-frame precompute
+   feasible offline. (2–3 sessions.)
+6. The SD interface: an exported bundle — source, hidden-layer depth,
+   reveal mask, confidence, placeholder colour, the UV mapping — and the
+   re-import of an inpainted atlas; consistency across head motion by
+   construction for stills; video tracking named as the next arc.
+7. Defaults by live pass; window policy; the carve as an optimisation.
+
+Texture synthesis is out. The "nigh-Gaussian-splat, very fast" target
+is step 3a plus step 5; nothing before it is wasted, because the
+geometry and the hidden layer are the part a splat needs and a network
+cannot give.
