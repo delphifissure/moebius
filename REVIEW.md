@@ -12560,3 +12560,111 @@ whole stack is one console line (item 6). The user's screen decides.
     window._fragTear = 2; window._plugMargin = 1; window._plugGeoBand({flush: true});`
     then move. Nothing default has changed; the user's live pass
     decides.
+
+## Addendum 182 — first principles: what the stack still lacks, and which pipeline it lives in
+
+**Which pipeline.** Everything from a58 to A245 is the QUICK BAKE
+(`bgQuickBake = true`, the quick branch of buildBackgroundLayer: the
+a62 plate, plateDT, bgLayerMesh). The app's defaults are `bgMPIMode =
+true, bgMPIFullPlanes = true, bgQuickBake = false` — the mode selector
+opens on v2 (MPI full planes); v1 (the RUNG plug with scene extension)
+sits behind the checkbox. Neither v1 nor v2 was touched. Every MacBook
+recipe in this log sets the quick bake explicitly.
+
+**The problem, stated without the code.** One colour image and one
+estimated depth; a window that the head looks through inside a cone.
+The ideal output at a pose is the image a camera there would have
+taken. Two things are missing from the input and one thing is wrong:
+(a) every surface hidden in the source, (b) the appearance of those
+surfaces, and (c) the depth itself is an estimate — quantised to 8
+bits, smeared over a few texels at every silhouette, and with the wrong
+topology (a grounded figure is depth-continuous with its ground, so no
+cliff loop encloses it). A complete solution has four parts: a
+DECOMPOSITION of the source into surfaces with explicit occlusion
+boundaries; for each surface, a COMPLETION of what it hides (depth and
+colour); a RENDERING that keeps each surface continuous and opens only
+at boundaries, with sub-pixel edges and no pops as the eye moves; and
+a MEASURE against truth. The stack has pieces of the second and third,
+built from per-texel and per-cell rules, and none of the first or the
+fourth.
+
+**What is lacking, ranked by how much of the remaining defect it
+explains.**
+
+1. **Boundaries as curves, regions as objects.** Every decision in the
+   stack is made per texel or per cell: a cell folds, a texel is a rim,
+   a texel is behind the field. A depth discontinuity is a CURVE with a
+   near side and a far side, and the regions between curves are the
+   surfaces. That is why the outline has teeth (a curve decided one row
+   at a time), why the fronts could not tell the troll from its ground
+   (no curve-level topology), why "which side" needed a gate at every
+   stage, and why foliage turns to dust (each leaf cell decides alone;
+   the canopy is one porous region). The missing object is a
+   segmentation: discontinuity curves with hysteresis and connectivity,
+   closed into regions, each region a layer with its own boundary. The
+   literature's single-image 3D-photo pipelines (Shih et al. 2020,
+   Kopf et al. 2020) all start here.
+
+2. **The hidden layer is "the farthest", not "the next".** The far
+   field is one hidden depth per texel, interpolated from silhouette
+   rims across the whole plate. Behind a leaf the next surface is
+   another leaf; behind a figure it is the wall right behind it, not
+   the horizon. A layered depth image gives each pixel the FIRST hidden
+   surface, per occluding region; the stack's one global membrane gives
+   the last. This is the second layer, and it follows from item 1: the
+   completion is per region, seeded from that region's own boundary.
+
+3. **The fill has colour but no texture.** The membrane is the correct
+   smooth extension of the rim's colours and nothing else; the eye reads
+   a smooth figure-shaped region as a ghost even when every colour is
+   right. Between "wash" and the deferred SD stage there is a classical
+   step: exemplar-based synthesis from the far side (PatchMatch, Barnes
+   et al. 2009; Criminisi et al. 2004), which copies the far surface's
+   own texture into the band along its structure. It is what the
+   3D-photo pipelines use for exactly this band.
+
+4. **No measurement against truth, and no measurement of motion.**
+   Every number in this log is self-consistency (holes, seams, ghost
+   index, teeth). None says whether a fill is RIGHT, and none looks at
+   two consecutive poses. The user experiences head motion; the stack
+   was judged on eight stills. Two instruments are missing: synthetic
+   scenes with known geometry (render a 3D scene at rest → colour +
+   depth → the pipeline → compare its novel views to the true renders,
+   per pixel), and a pose-path pass that measures frame-to-frame change
+   (pops: the per-fragment tear is a binary discard per cell as the pose
+   fraction crosses its fold point; nothing smooths that in time).
+
+5. **Edges are cell stairs.** Tears open at cell resolution with hard
+   edges; the one-texel feather was never built; boundaries as curves
+   (item 1) would give analytic coverage at the tear.
+
+6. **The depth is used as encoded, not as estimated.** Terraces of one
+   8-bit step drive the quantum gates; silhouettes are smeared over RWD
+   texels and every stage carries a window to cope. A guided,
+   edge-aware dequantisation of the depth against the colour (He et al.
+   2010; joint bilateral, Kopf et al. 2007) is the standard first step
+   and removes a class of gates rather than adding one. "Trust the
+   depth map" is trust in the estimator, not in its 8-bit container.
+
+7. **The reveal set is rasterised, not derived.** Two 85-pose CPU
+   sweeps per bake are the cost (80–970 s). For a silhouette curve the
+   reveal is the region it sweeps under the rim shift — a Minkowski
+   sum along the parallax direction, computable once per curve. Item 1
+   makes it a formula.
+
+8. **The plug is one sheet with ramps.** Where the far surface has its
+   own step inside a reveal the single plug ramps across it (C4);
+   layers (item 2) recurse until nothing is behind.
+
+9. **The window's semantics are undecided.** The margin fills the
+   frame's vacated edge with replicated edge colour; the choice between
+   that, an empty bar, and outpainting is a design decision the log
+   records as two flags and no verdict.
+
+**Order, if the user agrees:** the depth pre-pass (6) and the
+truth/motion instruments (4) first, because they change what every
+later number means; then boundaries and regions (1), which makes 2, 5
+and 7 direct consequences rather than arms; then the second layer (2)
+and texture (3) on that base. None of this changes a default; the
+quick bake stays the vehicle unless the user's screen is on v2, in
+which case the first question is which pipeline the work should be in.
