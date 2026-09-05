@@ -12889,3 +12889,354 @@ Texture synthesis is out. The "nigh-Gaussian-splat, very fast" target
 is step 3a plus step 5; nothing before it is wasted, because the
 geometry and the hidden layer are the part a splat needs and a network
 cannot give.
+
+## Addendum 185 — Phase 0 (truth, motion, boundary poses, hygiene) and A246, the observed hidden layer, measured
+
+Everything here is on the QUICK BAKE path, flagged, measured; no default
+changed. Numbers first, then what they mean, then what was falsified and
+removed. App commits: `e8f18cf`, `b370ab5`, `bea131d`, `dd69921`, `7b2504c`,
+`ef777da`, `1f97d28`, `097675a`, `6382383`, `ae43e5c`.
+
+### 1. What was built
+
+1. **Truth scenes** (`harness/p0_synth.js`, `harness/synth/`). Three
+   two-layer RGB-D scenes whose hidden layer is KNOWN everywhere: *figure*
+   (a figure standing on a receding ground before a checkered wall, feet
+   in contact), *screen* (a porous grid of 14-px bars before a checkered
+   wall with a gentle recession), *pole* (an 11-px pole before a smooth
+   depth and colour gradient). Each is written twice: a **16-bit** depth
+   (the perfect grade) and an **8-bit degraded** depth — the composite
+   depth blurred with a Gaussian of sigma RWD (4/1200 of the width, the
+   measured silhouette smear of Addendum 93), a 2 %-of-range low-frequency
+   bias, then quantised — the way an estimator hands depth to us. Truth
+   arrays: far depth, far colour, occluder mask, composite depth. 1024×768.
+   No third-party assets.
+2. **Truth metrics** (`harness/p0_truth.js`), texel space, per scene, grade
+   and arm:
+   - **R**, the true revealable set: far-layer texels under the occluder
+     that some pose of the cone exposes, computed by warping the TRUE
+     two-layer scene through the app's own shift law (the eight poses of
+     a228 plus the 17×5 grid's boundary).
+   - **coverage**: |B∩R| / |R| (band texels that are revealable) and
+     |R−B| — revealable texels the band leaves at the occluder's depth,
+     each a hole or a clone at some pose.
+   - **hidden depth**: plate depth minus true far depth over B∩R, in
+     source quanta and in rim-shift texels (the unit the screen sees),
+     with the in-front / behind split.
+   - **colour**: mean |plug − true far colour| over B∩R beside the *clone
+     scale* (|occluder colour − truth| on the same texels).
+   - error maps (depth: red in front, blue behind, purple = R−B; colour:
+     heat).
+3. **Motion path** (`harness/p0_motion.js`): one bake, then a 60-frame
+   figure-of-eight (x = 0.18 sin t, y = 0.03 sin 2t) with, per frame,
+   uncovered pixels, ENCLOSED uncovered pixels, plug-seen pixels, and the
+   FOLD SWITCHES — texels whose torn state (fold point below the shader's
+   pose fraction) differs from the previous frame; the pops.
+4. **Boundary poses** (`_plugCpuSweep({boundary})`): only the perimeter
+   of the pose grid.
+5. **A246, the observed hidden layer** (`_plugCpuSweep({observe})`,
+   `_plugGeoBand({observed:true})`). Per pose, every in-frame cell the
+   foreground leaves uncovered is walked AGAINST the parallax direction to
+   the first foreground-covered cell — the far lip of the gap (the near
+   occluder moved further than the far surface; the gap opens on its
+   trailing side) — and WITH the parallax to the near lip. The far lip's
+   source depth (the far corner of its quad) and colour are recorded; the
+   cell is inverted through the LIP depth (not an assumed field) to the
+   plug texel that must cover it; that texel accumulates the sample. Per
+   sample: the near lip must be nearer than the far lip by the source
+   quantum (else no step across the gap — two fronts or a frame-edge
+   sliver — and the far-field inversion decides), and the plug texel's
+   own source depth must be in front of the lip by the quantum (else the
+   texel at its source depth already covers the cell: "self-covered",
+   not band). Cells with no far lip in frame keep A244's far-field
+   inversion. Per texel: the MEDIAN lip depth; the hidden depth field is
+   the membrane with the rims AND the observed texels as boundary values
+   (the a-priori far field only where nothing was observed); the tear gate
+   and the band depth read it (one re-gate pass, reported). Colour: the
+   mean lip colour as a least-squares data term in the colour membrane
+   (weight 1 per observed texel, `_geoObsWeight`).
+   - **A246c, the ramp foot.** The first foreground cell beyond a gap is
+     the silhouette's blur ramp (intermediate depth, blended colour). The
+     walk continues while the next foreground cell is deeper by at least
+     the source quantum, at most 4 RWD cells (a Gaussian ramp of sigma RWD
+     lies 95 % inside ±2 sigma).
+6. **Pose fraction law.** The CPU sweep's per-pose tear used |f| =
+   hypot(fx, fy); the shader uses max(|fx|, |fy|/asp)
+   (`updateCameraAndProjection`). The sweep now uses the shader's law.
+   Under the old law it under-tore vertical poses by 1/asp and over-tore
+   the grid's corners by 15 %. Troll ghost index moved 27.3 → 24.4 % from
+   this alone (same arm, same everything else).
+7. **Hygiene.** A243's windowed fold points (`_foldWindow`) removed (rule
+   7; measured no effect, Addendum 180 item 13d).
+
+### 2. Truth: the a-priori far field against the observed hidden layer
+
+Stack in both arms: `_plateFlushExempt, _plugMembrane=1, _fragTear=2,
+_plugMargin=1`, geometric band; the observed arm adds `observed:true`.
+Hidden depth = mean |plate − truth| over B∩R, in source quanta (q) and
+rim-shift texels (px); "front/behind" = texel counts.
+
+| scene, grade | R (of occluder) | coverage geo → obs | hidden depth geo → obs | bias geo → obs | colour geo → obs (clone scale) |
+|---|---|---|---|---|---|
+| figure, 16-bit | 65,988 (75 %) | 89.7 % → **100 %** (6,811 → 0 missed) | 3.63 q = 6.2 px → **1.29 q = 2.3 px** | 42,010 in front / 15 behind → 2 / 14,750 | 28.9 → 27.1 (40.9) |
+| figure, 8-bit degraded | 65,988 | 89.0 % → **99.2 %** (7,231 → 518) | 8.85 q = 15.1 px → **3.63 q = 6.1 px** | all in front → 51,931 / 10,901 | 29.6 → 27.9 (40.9) |
+| screen, 16-bit | 162,731 (100 %) | 100 % → 100 % | 0.00 → 0.18 q = 0.3 px | — | 34.8 → 40.2 (104) |
+| screen, 8-bit degraded | 162,731 | 100 % → 100 % | 6.72 q = 12.2 px → **3.37 q = 6.1 px** | 161,635 / 192 → 132,468 / 17,348 | 47.6 → 38.4 (104) |
+| pole, 16-bit | 7,290 (100 %) | 100 % → 100 % | 0.10 q ≈ 0 px → 148 q(16-bit) = 0.0023 = 1.05 px behind | 0 / 114 → 0 / 7,290 | 0.1 → 0.9 (107) |
+| pole, 8-bit degraded | 7,290 | 100 % → 100 % | 4.48 q = 8.1 px → **1.70 q = 3.1 px** | 6,942 / 251 → 3,876 / 2,391 | 0.1 → 1.3 (107) |
+
+What the table says:
+- **The a-priori far field is biased toward the viewer wherever the
+  hidden surface is not a single plane.** Behind the figure the membrane
+  between the wall rims (far) and the ground rims at the feet (near)
+  bulges nearer than the true ground, by up to 20 q; the reveal inversion
+  through that field lands on the wrong texels and a wedge of ground
+  behind the lower body (10 % of the revealable set) never enters the
+  band (the purple wedge in `p0_truth_depthmaps.png`). With degraded
+  depth the bias doubles on every scene, because the rims themselves sit
+  on the blur ramp and read nearer than the surface.
+- **The observed layer removes the wedge and most of the bias.** Coverage
+  100 / 99.2 %; depth error ÷2.8 (figure, perfect), ÷2.4 (figure,
+  degraded), ÷2.0 (screen, degraded), ÷2.6 (pole, degraded). The residual
+  on perfect depth sits BEHIND the truth (the far corner of the lip quad
+  on a receding ground; a135's safe side); on degraded depth a smaller
+  in-front residual remains where the ramp's shallow tail stops the walk.
+- **Where the membrane is already exact (one plane behind thin bars, a
+  smooth gradient) the observation costs 0.3–1 px.** That is the price of
+  reading depth off the source at the lip instead of assuming it.
+- **Colour is a wash either way**; the lip-colour term is within a few
+  levels of the membrane on the checkers and slightly worse on the
+  screen. On the troll it is worse on the screen and in the ghost index
+  (§3).
+
+### 3. Troll (the real image): what the screen and the ghost index say
+
+| arm | band | ghost index | far-rim seam | band gradient / far side | anisotropy |
+|---|---|---|---|---|---|
+| geometric, old pose law | 448,115 | 27.3 % | 10.64 | 0.07 | 0.96 |
+| geometric, shader pose law | 449,442 | 24.4 % | 10.72 | 0.07 | 0.95 |
+| observed, lip colour w=1 | 567,333 | 35.5 % | 10.03 | 0.29 | 0.78 |
+| observed, lip colour w=0 | 567,333 | 33.4 % | 9.83 | 0.08 | 0.96 |
+| observed, w=0, a-priori gate (A246d) | 442,649 | 39.8 % | 10.20 | 0.07 | 0.89 |
+| observed, a-priori gate, two lips (A246g, final) | 425,066 | 35.6 % | 10.61 | 0.10 | 0.90 |
+
+- The observed depth disagrees with the a-priori field on 84 % of the
+  322,171 observed texels by more than two quanta and is DEEPER by a
+  median of 5 q (p10: 45 q deeper) — the same direction the truth scenes
+  measured for the membrane's bias.
+- The observed gate tears more (reveal set 419,851 → 524,863 texels after
+  the re-gate), so the band grows 449 k → 567 k (65 % of the plate).
+- **The lip-colour term is falsified on the screen** (rule a196: the
+  buffer, `a246_troll_geo_vs_obs_ghost_plugonly.png`): each texel takes
+  the colour of the rim in ITS parallax direction, so the band becomes a
+  wallpaper of horizontal tiles with hard vertical edges — anisotropy
+  0.78, band gradient ×4, ghost index +11 points. The ramp-foot walk
+  (5 % of samples walked) did not change it (34.5 → 35.5 %). The
+  membrane's flat wash is the better placeholder for SD.
+- **With the colour term off (w=0) the ghost index is still 33.4 %.** The
+  rise is not the colour: it is the BAND. The observed layer's band
+  reaches behind the head and under the arm where the geometric band had
+  nothing (the top-middle of the ghost map is black on the left and
+  red on the right, `a246_w0_ab.png`), and the membrane there — rims
+  compatible with the DEEPER observed depth — comes out a dark wash that
+  the instrument scores as "nearer the near lip" because the troll's skin
+  is dark too. The ghost index cannot tell a dark cave from a dark troll;
+  it was built for the case where the far side is light. On the
+  composite (`a246_w0_composite_crop.png`) the two fills differ in tone
+  behind the arm and both read as wash; the user's screen decides.
+- The w=0 membrane over 567 k texels hit the 60-cycle cap at an
+  extrapolated error of 13/255 (2.7/255 on the 449 k geometric band):
+  the solver budget is sized for the smaller band and needs a cycle
+  count from the domain size, not a constant (Addendum 180 item 4's
+  extrapolated stop already exists; the cap is the constant). With the
+  a-priori gate the domain is the geometric band's size (442 k) and still
+  stops at 21/255 where the geometric arm reached 2.7: the observed depth
+  field changes the coupling graph. A/B at 300 cycles: error 21 → 6.6/255, ghost 39.8 → 39.5 %, seam 10.20 → 10.20, fill unchanged on the screen; the cap is not what sets the tone, and the override was removed (rule 7).
+- **The ghost index is not arm-invariant here.** Its "far rim" reference
+  is the nearest source texel whose depth agrees with the PLUG depth of
+  the arm under test; the observed arms put the plug behind the arm
+  deeper (median 81 vs 99 q from far on the 115,558 texels that turn red
+  under the a-priori gate; source depth there 145 q, the troll), so the
+  instrument compares each arm against a different rim set. It measured
+  the wash-versus-membrane question well (Addendum 180) because both
+  arms shared the plate depth; between depth fields it moves its own
+  reference. The arm-invariant instrument is the truth harness, and it
+  says the observed depth is the more accurate one.
+
+### 4. Boundary poses (phase 0.4)
+
+Same law, same arm: the perimeter of the 17×5 grid (40 poses) gives a
+band that is a strict subset of the full grid's (446,621 vs 449,442;
+2,821 texels missing, 0 extra; IoU 0.994). Reveals are monotone along a
+direction, but 40 perimeter poses under-sample the directions the 85
+interior poses cover. The 33×9 perimeter (80 poses, the grid's cost)
+finds 456,515 texels: all but 1,891 of the grid's, plus 8,964 the grid
+never saw (IoU 0.976). Neither is a superset of the other: the reveal
+set is DIRECTION-sampled, and its union grows with the number of
+directions. Rule: at a given pose budget the perimeter is the better
+sampler (every pose is a distinct direction at full amplitude); the
+equality premise is falsified and the option stays as the sampler for
+the GPU sweep, with the reveal count reported per direction budget.
+
+### 5. Motion path (phase 0.2)
+
+Troll, 60-frame figure-of-eight, one bake per arm (`p0_motion.js`):
+
+| arm | holes / frame max, mean | enclosed max (frames with any) | plug seen max | fold switches / frame max, mean | texels that ever switch |
+|---|---|---|---|---|---|
+| geometric | 10, 2.3 | 7 (44 of 60) | 125,406 | 41,071, 5,646 | 88,945 (10.2 %) |
+| observed, w=1 | 14, 3.6 | 11 (49) | 126,034 | 47,006, 7,055 | 110,114 (12.6 %) |
+| observed, w=0, a-priori gate (A246d) | 12, 3.3 | 10 (48) | 125,404 | 41,071, 5,646 | 88,945 (10.2 %) |
+
+- Holes stay in single or low double digits on every frame of the path
+  in both arms (the ring margin and the geometric band hold on a path,
+  not only at the eight poses).
+- **The tear is front-loaded.** 17,026 texels open at pose fraction
+  0.095 (frame 1), 41,071 more between 0.095 and 0.19, and 65 % of every
+  texel that will ever tear is open by 0.19; from 0.45 on, fewer than
+  4,000 switch per frame. Cliffs with large shift spans fold at small
+  fractions by construction (f = extent / span), so the sheet opens
+  within the first centimetres of head motion. The per-frame switch
+  count IS the pop instrument the plan asked for; its shape says the
+  pops concentrate near rest, where the eye is most often.
+- The observed gate tears 24 % more texels (110 k vs 89 k) for +4
+  holes/frame at most — the extra tears open cells whose hidden depth
+  the observation places behind the source by more than 2 q; whether
+  those cells should open is a screen question. **The a-priori-gate arm
+  (A246d: band and depth from the observation, tear from the far field)
+  keeps the geometric arm's tear exactly** (same 88,945 texels, same
+  per-frame profile) with the observed band and depth, at holes max 12 /
+  mean 3.3 per frame; on the degraded figure it gives coverage 98.9 %
+  (vs 99.2 % under the observed gate) at the same hidden depth (3.63 q)
+  with 19 k fewer band texels outside the occluder. Chosen for the
+  six-scene run: observed layer, colour weight 0, a-priori gate.
+
+### 6. Six scenes with the chosen arm (observed layer, colour weight 0, a-priori gate)
+
+Geometric baseline = the Addendum 181 stack as re-measured today (troll) or
+in Addendum 181's run (others; the star watcher's baseline there predates
+A244i, whose seam fix is in both arms today).
+
+| scene | band geo → obs | ghost index geo → obs | far-rim seam geo → obs | band gradient ratio geo → obs | bake s geo → obs |
+|---|---|---|---|---|---|
+| troll | 449,442 → 442,649 | 24.4 → 39.8 % | 10.72 → 10.20 | 0.07 → 0.07 | 94 → 147 |
+| bristlecone | 1,456,850 → 1,488,621 | 53.8 → 36.9 % | 9.15 → 9.10 | 0.07 → 0.19 | 207 → 251 |
+| octopus | 1,796,114 → 2,041,616 | 44.2 → 59.1 % | 10.39 → 8.10 | 0.21 → 0.22 | 424 → 542 |
+| room | 1,199,117 → 1,222,528 | 29.1 → 30.9 % | 16.42 → 16.06 | 0.15 → 0.13 | 349 → 396 |
+| star watcher | 715,516 → 676,562 | 40.6 % (of 33,773 scored) → 36.8 % (of 676,562) | 24.09 → 24.85 | 0.03 → 0.03 | 256 → 317 |
+| silver warrior | 1,754,863 → 1,984,721 | 1.9 % → n/a (no near lip found: every band edge depth-compatible) | 12.09 → 11.58 | 0.03 → 0.02 | 969 → 1,398 |
+
+Eight poses, troll (a228, uncovered px rest/a221/sheet2/sheet1/mirror/off1–3):
+geometric 0/5/2/5/0/2/2/5 (Addendum 181) → observed 0/6/9/7/0/2/0/5, every
+one enclosed and under ten pixels; the ring margin and the band hold.
+
+Screen notes (`a246_bristlecone_ab.png`): the observed arm paints a light
+grey mass to the right of the canopy where the geometric arm had a dark
+teal wash — the observed depth there is the far field's (sky), so the
+membrane's admitted rims are the sky's; in the composite the canopy still
+dissolves to dust in front of it (the single-layer limit of Addendum 181
+item 8b, unchanged). Whether the light fill reads better than the dark
+one is the user's call. Octopus (`a246_octopus_ab.png`): both arms
+paint a head-shaped dark region behind the octopus at sheet1 — the band's
+outline IS the silhouette, so any fill whose tone differs from its
+surroundings draws the occluder's outline once more, displaced (Addendum
+179's C1 in its mildest form; only colour continuity removes it). The
+observed arm's fill is a flatter, darker navy (the rims admitted at the
+deeper depth are the deep water's), the geometric arm's a mix of blues;
+the ghost index calls the darker one a clone of the octopus's shadowed
+underside, and the far-rim seam (10.4 → 8.1) calls it the better join.
+The observed arm also shows a fine vertical comb at the top of the head
+in the plug-only view (a terrace in the observed depth field stretching
+the plug's colour texels; C4). **Silver warrior
+(`a246_silverwarrior_ab.png`): the observed arm removes the fur group's
+shredding** — the geometric plug carried a band of black speckle along the
+bottom (Addendum 181 item 8e, "the fur group shreds") that the composite
+showed as a broken dark strip below the mount; the observed plug is a clean
+wash there and the composite is whole. The ghost instrument found no near
+lip at all on this arm (every source texel adjacent to the band is within
+the tear step of the plug's depth), which says the plug meets the figure
+at the figure's own depth along its whole edge: read with the truth
+harness's figure result (coverage 100 %, residual behind), that is the
+plug sitting where the reveal begins, not a clone.
+
+### 7. Decisions, removals, and what is still open
+
+**Kept (flagged, `_plugGeoBand({observed:true, gateAPriori:true})`):**
+- The observed hidden layer for the BAND and the DEPTH. Truth: coverage
+  89–90 % → 99–100 % where the a-priori field failed, hidden depth error
+  ÷2 to ÷2.8 on every scene where the field was wrong, never worse than
+  1 px where it was right. Screen: the silver warrior's shredding gone;
+  the troll, room and star watcher within a tone; the bristlecone and
+  octopus change tone where the observed depth is deeper (the user's
+  call). Far-rim seam better or equal on all six scenes.
+- The a-priori TEAR gate (A246d): the observed layer's coverage with the
+  geometric arm's pops.
+- The ramp-foot walk with the slope-plus-quantum criterion (A246e).
+- The two-lip rule (A246g): the far lip is the farther lip; same-surface
+  lips interpolate; a walked-to lip nearer by a cliff is another front.
+- The perimeter sampler (boundary poses) as an option for the GPU sweep.
+
+**Removed (rule 7):**
+- The lip-COLOUR data term (`_geoObsWeight`, the colour sums in the
+  sweep, `_qbSrcColor`): a directional wallpaper on the troll, worse on
+  the screen scene, within a level elsewhere. The membrane's flat wash
+  stays the placeholder.
+- The `_obsNoRamp` A/B flag (the walk earned 0.4 q on the degraded
+  figure and is kept).
+- A243's windowed fold points (`_foldWindow`).
+
+**Open:**
+- (Resolved by A246g; kept for the record.) The pole's 1-px behind
+  residual on continuous depth: unchanged by A246e, so it is not the
+  ramp walk; the per-direction probe
+  (`p0_probe_dir.js`) says: for eye offsets to one side (fx<0) every gap
+  cell on the pole is classed "no step across the gap" and NOTHING is
+  observed there, so all samples come from the other side, whose lip is
+  3–7 px down the wall's gradient; on the figure both sides observe (63 k
+  samples each). The row probe (`p0_probe_row.js`, one screen row at
+  ±half-rim) shows why: **the zero-parallax plane lies inside the scene**,
+  so the far surface and the occluder move in OPPOSITE directions, and
+  the gap is the landing zone of the hidden texels. Behind the 11-px pole
+  the pole lands 40 cells away and BOTH lips of the gap are wall; the
+  "near lip must be nearer" test rejected every sample on one side and
+  accepted the other side only through the wall's own gradient (the +x
+  lip nearer than the −x lip by 0.035), always taking the deeper lip —
+  hence "all behind, 8 px down the gradient". Behind a wide occluder
+  (the figure) one lip is the occluder and the rule held. **A246g, two
+  lips:** the far lip is the farther of the two; when the two lips are
+  the same surface (within the A44 cliff step, fgTearStep, the app's own
+  criterion) the hidden depth is their position-weighted interpolation
+  (the surface continues under the occluder); when the walked-to lip is
+  nearer than the other by a cliff, the walk met another front and the
+  far-field inversion decides. Measured: pole probe, both sides now
+  observe (15 k + 19 k samples, "no step" 305,148 → 0), residual −21/−39
+  → −2/−2.5 ×1e-4 depth; pole truth, hidden depth 148 q → 10.5 q (16-bit)
+  = 1.05 → **0.07 rim-shift texels**, band outside the occluder 9,170 →
+  3,707. Figure d8 (a-priori gate): coverage 98.9 → 98.5 %, hidden depth
+  3.63 → 3.70 q — neutral. Screen d8 (a-priori gate, first run under that
+  gate): coverage 100 %, 4.30 q, band outside the occluder 339 k → 203 k.
+  Troll: 3.37 M of 6.87 M samples now lie between two far lips (thin
+  things: staff, fingers, foliage), self-covered cells 446 k → 1.78 M, band
+  442,649 → 425,066, ghost index 39.8 → 35.6 %, seam 10.20 → 10.61
+  (`a246_troll_final_ab.png`: plug-only and composite within a tone of
+  the geometric arm). Candidate: continue the lip's depth
+  under the occluder along the far surface's own slope (a first-order
+  continuation) instead of holding it flat.
+- The membrane's convergence on observed-depth domains is slow (6.6/255 after 300 cycles where the geometric domain reaches 2.7 in 60): the aggregation coarsens a more fragmented coupling graph; a domain-size-derived cycle count or a smoother-aware aggregation is the fix when it matters.
+- The fold switches' front-loading (65 % of the tear open by pose
+  fraction 0.19) is now measured; the representation spike (Addendum 184
+  step 2) is what addresses it, not another gate.
+- The recipe for the live pass (MacBook, moebius.html console):
+  `window._plateFlushExempt = true; window._plugMembrane = 1;
+  window._fragTear = 2; window._plugMargin = 1;
+  window._plugGeoBand({flush: true, observed: true, gateAPriori: true})`
+  — against the same without `observed`/`gateAPriori` (Addendum 181's
+  stack). The bake is 10–45 % longer than the geometric arm (the second
+  sweep and the observation), 104 s on the troll under SwiftShader.
+- Defaults: nothing default changed; the observed arm goes to the user's
+  live pass with the six A/B sheets of this addendum.
+- Instrument hygiene learned today: the ghost index moves its own
+  reference between depth fields (§3) — between arms that change the
+  plate depth, read the truth harness and the seam, and look at the
+  buffer; the shell-self-kill rule (never write the target's literal
+  name elsewhere in a `pkill` command) cost one more shell.
