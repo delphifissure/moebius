@@ -13240,3 +13240,109 @@ plug sitting where the reveal begins, not a clone.
   plate depth, read the truth harness and the seam, and look at the
   buffer; the shell-self-kill rule (never write the target's literal
   name elsewhere in a `pkill` command) cost one more shell.
+
+## Addendum 186 — the default was never on the bench: v2 against the quick-bake stack on the same screen, and the plan re-cut around it
+
+The user looked at the Addendum 185 sheets and said: big unfilled areas in
+the troll that the real-time version does not have. They were right, and
+the reason is a bench error that runs back through the whole quick-bake
+arc, so it goes first.
+
+### 1. What the user saw
+
+`v2build_vs_quickbake.png`, `v2_vs_quick_sheet1_zoom.png` (troll, rest /
+sheet1 / mirror; v2 from the pre-session commit c72673e, v2 from today's
+code, and the quick-bake observed arm):
+- **v2 (the app's default: bgMPIMode, full planes) fills the reveal
+  behind the arm with textured, continued cave.** Its fill carries a
+  cloned fist beside the head and a doubled statue in the gap (C1 in the
+  Addendum 179 taxonomy), but it reads as a filled scene.
+- **The quick-bake arm fills the same region with the membrane's flat
+  harmonic wash.** Every instrument counts it as covered (it is); the eye
+  counts it as a hole. Flat-and-clean reads worse than textured-with-
+  clones. That is the "unfilled area".
+- **Nothing regressed.** v2 from c72673e and from today's head render
+  identically at all three poses.
+- The frame-edge bars differ the same way: v2 extends a soft wash, the
+  quick bake shows the A245 ring's clamp-to-edge streaks.
+
+Harness note: the scratch page never builds a background at load (the
+app builds on the Build button, A112), so every earlier "v2" render in a
+harness that did not call `buildBackgroundLayer()` with `bgQuickBake =
+false` was the bare foreground over the clear colour — white holes that
+the user does not see. `p0_v2shot.js BUILD=1` is the v2 build; the main
+page cannot run headless without its CDN libraries.
+
+### 2. v2 measured with the image-space instruments (troll)
+
+| instrument | v2 build | quick-bake observed arm (A246g) | geometric stack (A181) |
+|---|---|---|---|
+| eight poses, uncovered px (rest/a221/sheet2/sheet1/mirror/off1–3), all enclosed | 1/20/28/22/25/12/20/30 | 0/6/9/7/0/2/0/5 | 0/5/2/5/0/2/2/5 |
+| motion path, holes max / mean per frame | 394 / 57.5 (the 394 at x = −0.18: 374 border-connected, a black wedge at the lower-left rim where the skirt runs out, `motion_f45_v2_vs_quick.png`; 12–38 elsewhere) | 12 / 3.3 | 10 / 2.3 |
+| motion path, enclosed max (frames with any) | 40 (60 of 60) | 10 (48) | 7 (44) |
+| build time (SwiftShader) | 18 s | 104 s | 94 s |
+
+v2 leaves about three times the pinholes of the quick-bake arms, opens a
+374-pixel edge wedge at one rim of the cone where its skirt ends (the
+A245 ring covers it; item 4 of §4 is therefore not a tie), and is five
+to six times faster to build. All counts are under 30 pixels of a
+184 k-pixel frame. The texel-space truth harness (Phase 0) cannot score
+v2 yet: it reads the quick bake's band and plate; v2 keeps its hidden
+depth in per-layer planes and an under-sheet. That adapter is the first
+task below.
+
+### 3. What v2 already is
+
+Read from the code, not remembered: v2 = top-K depth components as
+planes (`bgMPIMaxLayers = 10`), each with its own colour fill by
+pull-push from that layer's surrounding real background (`bgFillMode =
+'smooth'`), a band-limited UNDER-SHEET that completes the local far
+surface behind internal cliffs (arm over torso, limb over cave), a
+backdrop plate that keeps its cliff cells on purpose ("a hidden rubber
+wall beats a hole"), the a136 ordering clamp, and the a165/a176 smear
+gate. That is most of what Addendum 184 scheduled as future work
+(multiple layers, a local far-surface completion, a placeholder colour
+that reads as filled), built earlier and shipped as the default. The
+quick-bake arc built a second stack beside it and never put the first on
+the same bench.
+
+### 4. What the quick-bake arc contributed that v2 lacks
+
+- **The observed hidden layer (A246, A246g).** v2's hidden depth is a
+  continuation; the observed layer reads it off the source at the gap's
+  lips and measured 2–3× closer to the truth, with coverage 89–90 % →
+  99–100 % where the a-priori field failed. This is the transferable
+  piece.
+- **The exact reveal set from the sweep** (A244) and the truth harness
+  (Phase 0), which v2 has never been scored by.
+- **The far-side depth gate on colour sources** (A213/A242): v2's
+  pull-push admits near-side texels (the fist, the statue). The gate is
+  what removes those without touching the look.
+- **The ring margin** (A245): v2 has the a139/a113 skirt; the two should
+  be measured against each other on the edge-black instrument, not
+  assumed.
+
+### 5. The plan, re-cut
+
+1. **v2 is the base.** The quick-bake path stays as the bench where the
+   truth harness runs; nothing default changes until the user's live
+   pass, as before.
+2. **Truth adapter for v2**: score v2's planes and under-sheet with
+   Phase 0's coverage and hidden-depth metrics (read the per-layer depth
+   and the composite reveal set the same way the quick bake exposes its
+   band and plate). Until this exists, v2's geometry is unmeasured.
+3. **Observed hidden layer into v2**: the observation (lips, two-lip
+   rule, median depth) feeds the under-sheet's depth and the layer band
+   in place of the continuation. Colour stays v2's pull-push.
+4. **Far-side gate on v2's pull-push sources**: the membrane's depth gate
+   applied to the sources of the smooth fill, judged by the ghost index,
+   the seam and the screen (the fist and the statue are the test cases).
+5. Live pass; then the surfel spike and the GPU port as in Addendum 184.
+
+### 6. Where it breaks, restated for v2
+- Stacked occluders beyond one under-sheet (three surfaces deep).
+- Degraded depth: the 3.7 q in-front residual on blurred silhouettes.
+- Dense foliage: a plane per layer still dissolves to dust.
+- Pops: the mesh tear's front-loading (65 % open by pose fraction 0.19)
+  applies to v2's tears as well; only the representation change removes
+  it.
