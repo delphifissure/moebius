@@ -12668,3 +12668,109 @@ and 7 direct consequences rather than arms; then the second layer (2)
 and texture (3) on that base. None of this changes a default; the
 quick bake stays the vehicle unless the user's screen is on v2, in
 which case the first question is which pipeline the work should be in.
+
+## Addendum 183 — the plan
+
+**Vehicle.** The quick bake, as it has been since a58. Confirm the live
+view is on `quick` in the mode selector before any verdict; v2 stays
+untouched. Nothing becomes default before the user's live pass.
+
+**Phase 0 — instruments first (they change what every later number
+means).**
+0.1 Truth: three synthetic scenes rendered in Three.js with known
+    geometry — a figure on a ground plane before a textured wall; a
+    porous screen (a fence or leaf cluster) before a textured wall; a
+    thin pole before a gradient. Each gives colour + float depth at
+    rest AND the true renders at the eight poses and along a path.
+    Metrics against truth: hidden-depth error of the plug, colour error
+    inside the reveals, coverage. This is the first time "plausible"
+    gets a number that is not self-consistency.
+0.2 Motion: a 60-frame path inside the cone; frame-to-frame change
+    restricted to plug and tear pixels (pop energy), and the count of
+    per-fragment cells that switch per frame. Judged against the
+    shipped bake on the same path.
+0.3 One runner, one table: interior holes, seam, ghost index (narrow
+    bands only), teeth, truth error, pop energy — per scene (six real +
+    three synthetic), per arm, from one script.
+0.4 Sweep cost: reveals are monotone along any direction (the shift law
+    is linear in the offset), so the union over the cone's BOUNDARY
+    poses contains every interior pose; 85 poses → ~40 (the grid's
+    outer ring), a 2× cut before any code beyond the pose list.
+0.5 Hygiene: remove the flagged windowed fold points (their premise was
+    falsified), retire the harness arms that reference removed flags.
+
+**Phase 1 — the observed hidden layer (A246).** The synthesis of the old
+hole-patch pass and the new sweep. Per pose, per cell the foreground
+leaves uncovered: walk against the parallax direction to the first
+foreground-covered cell — the hole's far lip — and take that cell's
+source texel: its depth is the hidden depth observed at this pose, its
+colour an observation of the hidden colour. Invert the cell through
+THAT depth to the plug texel behind it; accumulate per plug texel the
+depth samples (median), the far-lip texel ids, and the count. Band =
+texels with at least one observation (+1 texel rounding), so the band is
+observed, not inferred. Depth = the median where observed, membrane
+between observed texels. Colour = least squares: smoothness one per
+edge, one data term per observation at its median colour — every
+equation counts once, no weighting constant. The tear gate reads the
+same observations: a cell may open where an observed hidden surface
+lies behind it by more than the quantum. Expected: the star-watcher and
+troll figures right by construction; foliage and fur get leaf-coloured,
+leaf-deep backing instead of sky. Acceptance: truth error on the three
+synthetic scenes lower than the far field's; six real scenes not worse
+on any instrument; the screen.
+
+**Phase 2 — depth as estimated, not as encoded (A248).** A guided,
+edge-preserving dequantisation of the source depth (colour-guided,
+radius RWD; steps above the tear step preserved exactly) applied once,
+flagged, before everything. Targets the ladder class (the star-watcher
+figure, the octopus mantle slits) and the quantum gates that exist to
+cope with terraces. Acceptance: truth depth error not increased on the
+synthetic scenes; ladder cases gone at equal holes; fold-cell counts
+reported before and after.
+
+**Phase 3 — boundaries as curves (A247).** Extract the discontinuity
+mask (the A44 windowed step above the tear step), thin it, link it into
+chains with a near and a far side, and use the chains four ways: (a)
+fold points smoothed along each chain so a silhouette tears as one
+edge (teeth → 0); (b) a distance-to-chain field for a one-texel feather
+at every tear (edges stop being cell stairs; pop energy down); (c) the
+reveal per chain segment as the region it sweeps under the rim shift —
+the band in closed form, with the pose sweep kept as its check; (d)
+region labels for Phase 5. Acceptance: teeth ≈ 0, holes unchanged,
+band-from-chains equals band-from-sweep within rounding on six scenes,
+pop energy below Phase 1's.
+
+**Phase 4 — texture in the fill (A249).** Exemplar synthesis from the
+far side into the band (PatchMatch), initialised by the membrane and
+constrained to copy only from far-rim-compatible texels. Measured
+against the synthetic textured walls (truth) and the screen. This is
+the step between "wash" and the SD stage, and it is optional if the SD
+stage arrives first.
+
+**Phase 5 — the second layer (A250).** For regions that are porous
+(many small reveals per area, from Phase 3's labels) or that stand
+before a mid surface, the observed hidden layer of Phase 1 is rendered
+as its own mesh with its own tear law, and the far plug behind both.
+This is the foliage and fur case, and the ramp case (C4): recursion to
+depth two. Acceptance: bristlecone and the warrior's bear group on
+screen; truth on the porous synthetic scene.
+
+**Phase 6 — cost, defaults, policy.** Bake under 5 s on the MacBook
+(the analytic band from Phase 3, or the sweep on the GPU); then the live
+pass on the whole stack; then the window policy (empty bar, replicated
+edge, or outpaint) decided by the user; then the carve (task #9) as an
+optimisation over the proved never-seen set.
+
+**Phase 7 — the SD stage** on that base: outpaint for the window's
+margin, texture for the band, both landing on regions whose depth and
+colour boundaries are already right.
+
+**Decisions that are the user's:** the vehicle (quick); the synthetic
+scene set; the window policy; every default.
+
+**Order and why:** 0 before 1 because Phase 1's claim ("the observed
+depth is closer to the truth") needs truth to be measured; 1 before 2
+and 3 because it is one arm on the existing sweep and removes the
+largest visible defect; 2 before 3 because curves are extracted from
+the depth; 4 and 5 after 3 because both need regions; 6 and 7 last
+because both assume a stable base.
