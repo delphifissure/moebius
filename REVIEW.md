@@ -13346,3 +13346,110 @@ the same bench.
 - Pops: the mesh tear's front-loading (65 % open by pose fraction 0.19)
   applies to v2's tears as well; only the representation change removes
   it.
+
+## Addendum 187 — the real-time comparison done properly, the debug sheet extended (A248), and the gated pull-push (A247) measured
+
+### 1. The comparison the user asked for, and why it took three tries
+
+The user's question was the vanilla page — no bake of any kind, the
+per-frame pull-push inpainting — against the quick bake. Two of my
+attempts compared the wrong thing (the v2 build, then the raw scene pass
+of the real-time path), because in the headless SwiftShader harness the
+real-time pipeline's depth pass produces nothing, so its pyramid and both
+inpaint targets come out empty and the final composite is the scene pass
+with its gaps. That is a harness limitation, now understood
+(`p0_v2shot.js` FINALTEX/INPAINT/NOSWEEP switches document it); the
+user's own grabs settled the comparison:
+- In-app, no bake (pull-push, 45 fps): the gap behind the troll's arm is
+  filled with blurred cave that continues its surroundings. Reads filled.
+- Console `toDataURL` of the same, no bake: the gap grey. The WebGL
+  canvas's buffer holds the scene pass; the composite is presented later
+  in the frame. The recipe for a correct console grab is to read the
+  canvas inside an animation frame (two `requestAnimationFrame`s after
+  setting the camera); the Debug Sheet does the equivalent.
+- Console grab, quick bake (single pass, so the canvas IS the frame):
+  the same gap as the membrane's pale flat wash, the ring's streaks at
+  the frame edge. Next to the first grab it reads empty. The user's
+  original complaint, confirmed on their screen.
+
+### 2. What the user's two debug sheets say about the real-time DEPTH
+
+Sheet (mode=v2 label, bgBuilt=NO, path=PIPELINE, the vanilla page) and
+sheet (mode=quick, baked), same pose (0.060, −0.030, 0.200), 18.6° of 45°:
+- Real-time "mesh footprint" is solid white: the mesh is never torn; the
+  gaps are per-fragment discards that change every frame.
+- Real-time "rim target depth (in gaps)" is a patchwork of large flat
+  rectangles: the depth the diffusion aims at is tiled, and the tiles
+  flip as the eye moves. Together with the per-frame gap mask this is
+  the mechanism of the flicker the user reports.
+- Real-time "COMPLETED DEPTH": behind the arm, far and plausible; beside
+  the woman, her NEAR depth is carried into the gap on her right as a
+  light band, so the colour pass treats that gap as foreground and pulls
+  her colour into it — the depth form of the clone, and the origin of the
+  stacked silhouettes seen in v2 (each plane repeats it at its own
+  parallax).
+
+### 3. A248, the debug sheet extended (app `dbff965`)
+
+Below the existing panels: for the four harness poses (rest, a221,
+sheet1, mirror) the LIVE composite (read from the canvas after two full
+frames), the gap mask and the completed depth; in the footer, at the pose
+the sheet was opened from, the mean absolute colour difference over the
+gap pixels between two consecutive frames at the SAME pose and after ONE
+eye step of 1 % of the rim offset (the per-frame instability and the
+per-motion change of the fill), plus frame path, inpaint method, split and
+whether a bake exists. One click vanilla, one click after the quick bake,
+and the two sheets are a like-for-like comparison with numbers.
+
+### 4. A247, the gated pull-push (app `e1a0d68`, `7fe68a5`, `b8b2da4`)
+
+The quick bake's colour was a pull-push before the membrane (the "wash"
+arm of Addendum 180, convicted by the ghost index for pulling the
+occluder's colour into the band). A247 is the same pyramid diffusion
+(Gortler et al. 1996; Kraus & Strengert 2007), ONCE, in the plug's texture
+space, seeded only by far-side texels: a non-band texel is a seed when its
+source depth agrees within the A44 tear step with the plate depth of the
+nearest band texel (A213's rim gate carried outward by a multi-source
+BFS). Two corrections on the way, both textbook: pull weights are the
+saturated SUM of the children, not their mean (the mean trusted a
+one-seed block 25 % and dragged the coarse global average into the whole
+band: seam 23.5); the push is a weight-aware bilinear upsample, not the
+nearest parent (the nearest parent left the pyramid's squares in the
+fill). Troll, same geometry (observed layer, a-priori gate):
+
+| colour arm | ghost index | far-rim seam | band gradient / far side | look (`a247_three_arms.png`) |
+|---|---|---|---|---|
+| membrane (A242) | 35.6 % | 10.61 | 0.10 | smooth wash |
+| gated pull-push (A247c) | 40.7 % | 11.57 | 0.06 | smooth wash, near-identical to the membrane |
+| old ungated wash | 36.4 % | 25.79 | 0.06 | dark near-side pull behind the head |
+
+**Finding.** With the far-side gate, the pull-push converges to the
+membrane: both are smooth washes, within one seam unit; the pull-push is
+five points worse on the ghost index. The gate, not the solver, is what
+the arms share, and it is the gate that removes the clones. The
+"texture" the user sees in the real-time fill is therefore NOT the
+pull-push's: at plate resolution a gated diffusion has none. It comes
+from what the real-time pipeline diffuses FROM and OVER — the untorn,
+stretched sheet (the C3 class of Addendum 179) covers most of each gap
+with streaked, stretched texture, and the per-frame pull-push fills only
+the fragments the shader discards. That is why it reads as filled, why it
+clones, and why it flickers.
+
+### 5. Consequence for the plan
+
+A "plausible wash" that reads as filled needs far-side TEXTURE in the
+band, and neither solver supplies it. The honest next arm is texture
+continuation from the far side, not synthesis: the membrane (or A247c)
+for the low frequencies, with the high frequencies of the far-side
+texture carried across the rim by reflection — the guided form of the
+membrane (Pérez, Gangnet & Blake 2003: the fill's gradient field is the
+mirrored far-side gradient, the boundary values are the rims), which the
+app already has in an ungated form as the v1 `bgFillMode = 'reflect'`.
+Gate its source the same way (far-side seeds only), measure with the
+ghost index, the seam and the A248 flicker numbers (which will read 0 for
+any bake), and judge on the screen. The v2 stack of silhouettes is the
+same mechanism seen through the layers and is fixed by the same gate;
+it waits behind this.
+
+A247 stays as a flagged, measured arm (`window._plugWashGated`); nothing
+default changed.
