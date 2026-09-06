@@ -13453,3 +13453,105 @@ it waits behind this.
 
 A247 stays as a flagged, measured arm (`window._plugWashGated`); nothing
 default changed.
+
+## Addendum 188 — A249, the guided membrane: texture back in the band without clones; what the arm taught; what is still unexplored
+
+### 1. Two forms, one kept
+
+**A249 (Poisson form, removed — rule 7).** Pérez, Gangnet & Blake 2003 as
+written: the fill solves the Poisson equation with the rims as boundary
+values and the guidance field the gradient of the far-side texture
+MIRRORED across the rim (each band texel reflected through its nearest
+far-side seed; the seed set is A247's depth-gated far side; guidance
+dropped across a change of mirror cell). Put on the right-hand side of
+`bgMembraneSolve` it did not converge — the aggregation V-cycle was built
+and validated for Laplace; with a source term the extrapolated error was
+732/255 and the plug carried saturated blobs (troll ghost 44.1 %, seam
+18.0; figure colour 81.7 against a clone scale of 40.9). Removed from the
+solver path; the mirror construction stays.
+
+**A249b (kept, flagged `_plugGuided` with `_plugMembrane`).** The
+equivalent, stable composition: u = membrane + (M − lowpass_d(M)), where
+M is the mirrored far-side patch and the low-pass scale d is the texel's
+own distance to the rim (the membrane's `dRim`). At the rim the whole
+mirrored detail is kept (it is continuous with the far side there); deep
+in the band only detail finer than the distance to the rim survives, the
+membrane supplying everything coarser. No constant: d is the band's
+geometry in texels; the low-pass is a valid-weighted box pyramid of M
+sampled bilinearly at level log2(d).
+
+### 2. Measured (same geometry: observed layer, a-priori gate)
+
+| arm | troll ghost | troll seam | band texture / far side | figure d16 colour (clone 40.9) |
+|---|---|---|---|---|
+| membrane (A242) | 35.6 % | 10.61 | 0.10 | 27.2 |
+| gated pull-push (A247c) | 40.7 % | 11.57 | 0.06 | — |
+| guided membrane (A249b) | 37.0 % | **10.61** | **0.73** | 27.1 |
+
+- The seam is untouched (the mirrored detail is continuous with the far
+  side at the rim by construction) and the ghost index moves 1.4 points.
+- The band's texture energy rises from a tenth of the far side's to
+  three quarters: the plug reads as the same surface continuing
+  (`a249b_troll.png`, the composite behind the arm).
+- **Per-texel colour error does not move (27.2 → 27.1).** On a periodic
+  checker the mirror is in phase only near the rim; deeper it is out of
+  phase half the time and averages to the wash's error. That is the
+  right result for the wrong metric: the goal is a PLAUSIBLE wash, and
+  plausibility is texture statistics, not per-texel identity. The truth
+  harness's colour column measures identity; the band-texture ratio and
+  the screen measure plausibility. Both are reported; neither is
+  promoted.
+- Artefacts: short horizontal streaks where mirror cells meet (the
+  reflection through a different seed is a different patch), visible in
+  the plug-only view near the lower left; recognisable mirrored features
+  are possible on large gaps (a mirror is a copy). 210 k of the troll's
+  425 k band texels have a mirrored source; the rest keep the membrane.
+
+### 3. Recipe for the live pass
+`window._plateFlushExempt = true; window._plugMembrane = 1; window._plugGuided = 1;
+window._fragTear = 2; window._plugMargin = 1;
+window._plugGeoBand({flush: true, observed: true, gateAPriori: true})` —
+against the same without `_plugGuided`. The A248 sheet's flicker line
+reads 0 for any bake; the real-time page's reading is the comparison.
+
+### 4. What else is unexplored or was missed (the user's question)
+
+1. **Mirror-cell seams.** Blend the mirrored detail across cell borders
+   (feather the high-pass by the distance to the nearest cell change)
+   or choose the seed by a smooth field rather than nearest; measured by
+   the anisotropy and the streak count on the plug-only view.
+2. **The ring margin** still carries clamp-to-edge streaks; the frame
+   edge is a rim like any other and A249b's mirror applies to it (the
+   outpaint class G3 gets the same treatment as G1).
+3. **The real-time page** fills gaps with the stretched sheet plus a
+   per-frame pull-push whose target depth is tiled; the observed hidden
+   layer's depth could replace those tiles (the "rim target depth"
+   panel) and the plug's baked texture could replace the per-frame
+   solve where a bake exists — the flicker would go with it. A248
+   measures the before and after.
+4. **v2's stacked silhouettes** are the near-depth leak in its per-plane
+   fill; the same far-side gate on its diffusion sources is the fix, and
+   the under-sheet should take the observed depth. Unstarted.
+5. **Two layers from the observations.** The lip samples already carry
+   several depths per texel behind arm-over-torso cliffs; clustering
+   them into two plug layers is the multi-layer step (Addendum 184,
+   step 1) and the only fix for the torso-behind-arm case.
+6. **Depth pre-pass.** The certified "sharpened" depth record exists for
+   the troll only (RUNG-A); a general guided dequantisation and
+   silhouette sharpening, measured on the degraded truth grade (3.7 q
+   in-front residual), is the largest remaining geometric error.
+7. **Instruments.** The ghost index moves its reference between depth
+   fields (Addendum 185 §3); a texture-statistics metric (band vs far
+   side, per octave) would score plausibility directly; the truth
+   harness needs its v2 adapter; the motion instrument should count
+   pops on the real-time page (A248 gives one pose; the path is next).
+8. **Speed.** Everything new here is CPU at plate resolution (the pull-
+   push and the pyramid are a second each on the troll; the sweep and
+   membrane are the cost); the GPU port remains the route to "very very
+   fast".
+9. **Patent note (not legal advice).** The Poisson editing patent family
+   filed by Microsoft in 2003 would have run its 20-year term by 2023;
+   what is used here is in any case the public-domain decomposition
+   (membrane plus band-limited detail), not the patented solver form.
+
+Nothing default changed. App commits: `457b1de` (A249), `7192f66` (A249b).
