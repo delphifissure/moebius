@@ -13555,3 +13555,185 @@ reads 0 for any bake; the real-time page's reading is the comparison.
    (membrane plus band-limited detail), not the patented solver form.
 
 Nothing default changed. App commits: `457b1de` (A249), `7192f66` (A249b).
+
+## Addendum 189 — the guided membrane on six scenes; the depth of each layer at four poses; the depth pass did not tear (A251)
+
+### 1. What was asked
+
+"Keep going, send me the six-scene sheet when it lands, but also send the
+depth for the layers (FG and BG, and composite) too so we can see where
+the gaps still remain (which should be filled in with some depth, e.g. the
+side of the troll's face)." Both sheets were sent
+(`a249_six_scenes.png`, `troll_depth_layers.png`); this addendum records
+what they show and what had to be fixed to make the second one truthful.
+
+### 2. The final colour arm, six scenes
+
+Arm: `_plugMembrane=1, _plugGuided=1, _fragTear=2, _plugMargin=1`, observed
+geometry with the a-priori gate (`_plugGeoBand({flush, observed,
+gateAPriori})`). Guided = A249d: membrane + mirrored far-side detail above
+the texel's rim distance, feathered to zero at mirror-cell borders over
+min(rim distance, RWD). Baseline = the same geometry with the plain membrane.
+
+| scene | ghost: membrane → guided | seam: membrane → guided | band texture / far side: membrane → guided | far side's own texel gradient |
+|---|---|---|---|---|
+| troll | 35.6 → 36.6 % | 10.61 → 10.61 | 0.10 → 0.58 | 13.8 |
+| bristlecone | 36.9 → 43.0 % | 9.10 → 8.01 | 0.19 → 0.47 | 11.9 |
+| octopus | 59.1 → 60.9 % | 8.10 → 9.68 | 0.22 → 0.57 | 4.5 |
+| room | 30.9 → 32.6 % | 16.06 → 17.42 | 0.13 → 0.48 | 17.4 |
+| starwatcher | 36.8 → 36.8 % | 24.85 → 32.33 | 0.03 → 0.43 | 37.8 |
+| silverwarrior | n/a | 11.58 → 12.35 | 0.02 → 0.32 | 15.3 |
+
+Reading it honestly:
+
+- **Texture comes back on every scene** (0.02–0.22 of the surround's
+  gradient energy → 0.32–0.58). That is the arm's purpose and it holds
+  across six unrelated images with no per-image setting.
+- **The seam is not free.** Three scenes are flat or better (troll,
+  bristlecone, room within a point); octopus and starwatcher rise. A seam
+  number has to be read against the far side's own texel-to-texel
+  gradient (last column): starwatcher's 32.3 is below its ground's 37.8,
+  so the join is no rougher than the ground itself; octopus's 9.7 against
+  a 4.5 surround is a visible step in its smooth water. The seam metric
+  penalises texture at the rim by construction — a textured band next to
+  a textured rim differs texel-to-texel even when it is the same surface.
+- **The ghost index moves 0–6 points, up on five scenes.** Mirrored
+  detail is far-side texture by construction, so this is not a near-lip
+  clone; the index measures colour distance to the two lips and any
+  departure from the flat membrane (which sits at the far rim's colour)
+  reads as "nearer the other lip". Bristlecone's +6 is the exception
+  worth naming: see the next point.
+- **A mirror is a copy.** On the bristlecone the mirrored patch carries a
+  bright trunk highlight into the plug as a white streak left of the tree,
+  visible in the composite; the star watcher's plug shows mirrored
+  ground shadows as stripes. These are recognisable features, not
+  texture. Addendum 188 §2 predicted it; the six-scene run shows how
+  often: two of six scenes have a feature I can point at. The feather
+  (A249c/d) removed the mirror-cell streaks, not the copies.
+- The silver warrior's ghost index is not computable with the present
+  instrument: its near-lip search finds no near lip for any of the 1.96 M
+  band texels (plate 3000 × 3000). Seam and texture are unaffected.
+  Unresolved; noted so it is not mistaken for a zero.
+
+A249c/d for the record: the feather over the texel's whole rim distance
+removed two thirds of the texture (troll 0.73 → 0.24); over min(rim
+distance, RWD) it keeps 0.58 and the cell streaks are gone. A250 (the
+ring margin sampled with mirrored-repeat wrapping) painted a full mirrored
+copy of the scene in the side bars and was removed (rule 7).
+
+### 3. A251: the depth pass did not tear
+
+The first depth-layer sheet showed **no interior hole at any pose** in the
+FG-only depth while the colour composite showed the plug through the
+tears. Cause: the per-fragment tear (A241, A241b) lived only in the colour
+fragment shader; the depth pass's fragment shader (its own gap logic,
+tunnel detection and the classic detectors) never saw `u_fragTear`,
+`u_poseFrac` or `vFoldAt`, so it reported the stretched sheet as covered
+foreground wherever the colour pass had discarded it.
+
+That matters beyond this sheet. The depth pass drives the real-time gap
+classification, the debug sheet's gap mask and "completed depth" panels
+(including the A248 pose strip), the SD inpaint mask and the plug-error
+view. With the tear armed, all of those were describing the untorn sheet.
+The motion instrument was not affected (it counts alpha in the colour
+render). Fixed: the depth material takes the same uniforms and varying and
+applies the same two rules (vertex fold points for mode 2, the Jacobian
+stretch law for mode 1). A251b, from the same sheet: with `_plugMargin = 2`
+the colour pass clips the plug to the frame's rest footprint (A245) and the
+depth pass did not; same clip now. I first read the green side bars of the
+troll sheet as that clip — wrong: the arm on the sheet is `_plugMargin = 1`
+(clip = whole window), and the bars are black on screen because the A171
+aperture crop discards them in the colour pass, which the depth pass does
+not apply. The plug margin IS behind the bars in both passes; the depth
+sheet shows it, the screen crops it. Both changes are inert on the default
+path (`u_fragTear` 0, `u_restClip` 0).
+
+### 4. The depth of each layer (troll, final arm)
+
+`harness/p0_depthviews.js`: at rest / a221 / sheet1 / mirror, the FG-only
+depth (red = torn open = demand), the plug-only depth (FG hidden), the
+composite depth (red = still uncovered) and a "who wins" panel (grey FG,
+green plug, red nothing), plus the colour composite. Uncovered pixels are
+counted in total and ENCLOSED (not connected to the frame border).
+
+| pose | FG holes (enclosed) | after the plug (enclosed) | plug wins |
+|---|---|---|---|
+| rest | 97 888 (0) | 0 (0) | 97 888 |
+| a221 | 104 286 (7 623) | 7 (7) | 104 279 |
+| sheet1 | 99 039 (13 316) | 72 (5) | 98 967 |
+| mirror | 122 558 (5 558) | 1 (1) | 122 557 |
+
+(The tens of thousands of non-enclosed holes are the letterbox beyond the
+851 × 1023 frame in a 16:9 view, which the plug's margin covers in the depth
+pass and the aperture crop hides on screen; the enclosed count is the
+interior demand.)
+
+What the sheet shows about the user's question:
+
+1. **Geometrically the gaps are closed.** 7 / 5 / 1 enclosed pixels remain
+   at the three off-centre poses, single-pixel slivers at the tear's
+   feather; every reveal behind the troll's arms, the head, the hanging
+   figure and the ground contact has depth behind it.
+2. **The depth behind them is the far surface, not the side of the face.**
+   In the plug-only panel the region behind the troll's head and arms is
+   the cave wall's depth (dark = far); at the head's silhouette the
+   composite depth steps from the head straight down to the wall. There
+   is no face-side ramp because nothing in the stack models one: the plug
+   is a single far layer whose depth is the observed far lip (A246), and
+   the a-priori rule since Addendum 62 has been "trust the depth map —
+   the reveal behind a silhouette is what the depth map says is behind
+   it", which is the wall.
+3. Whether that is right depends on the object, and the depth map cannot
+   tell. A head has a side that continues a few centimetres behind its
+   silhouette before the wall; a thin pole or the hanging figure's staff
+   does not. A skirt from the near lip's depth to the far lip's depth over
+   the reveal width (the a126 ramps, class C4 of Addendum 179's taxonomy, applied only
+   where a reveal opens) would give the head a side and the pole a false
+   one. The truth scenes are flat cut-outs and would score the wall as
+   correct, so they cannot decide it; the user's screen can. This is a
+   modelling decision, not a bug, and it is left open here.
+
+The five other scenes' depth sheets are in `harness/shots/depth/<scene>/`;
+their enclosed-after-plug counts are in §5.
+
+### 5. Enclosed holes after the plug, six scenes (depth pass, tear applied)
+
+Enclosed uncovered pixels (FG alone → after the plug) at a221 / sheet1 /
+mirror, from `depth_six_sheet1.png`:
+
+| scene | FG alone | after the plug |
+|---|---|---|
+| troll | 7 623 / 13 316 / 5 558 | 7 / 5 / 1 |
+| bristlecone | 34 197 / 37 990 / 28 401 | 9 / 7 / 0 |
+| octopus | 20 811 / 31 109 / 18 626 | 8 / 3 / 3 |
+| room | 14 625 / 17 400 / 17 924 | 3 / 5 / 1 |
+| starwatcher | 4 630 / 1 991 / 3 259 | 1 / 1 / 4 |
+| silverwarrior | 903 / 384 / 1 662 | 0 / 0 / 0 |
+
+Task 16's claim ("enclosed holes to 0 on six scenes") was made on the colour
+render's alpha; this is the first time it is measured in the depth pass with
+the tear applied, and it holds to within single pixels on all six. Two
+things the sheet shows that the numbers do not:
+
+- **The bristlecone's crown tears into a speckle field** in the depth pass
+  exactly as it does in colour (the fold points are dense wherever the depth
+  map has needle-scale structure), and the plug behind every speckle is the
+  far sky. That is the mode-2 tear being faithful to a noisy depth map, not
+  a hole problem; it is the depth pre-pass item (Addendum 188 §4.6).
+- **The fill depth is the far surface on every scene.** Tentacles, sunflower
+  heads, the star watcher's figure, the warrior: behind each silhouette the
+  composite depth steps to the far layer. §4.3's question is the same on all
+  six.
+
+The silver warrior's 1 932 non-enclosed pixels at sheet1 are a one-pixel
+column at the window's left edge (the margin strip's outer seam), visible
+as a red line in its composite-depth panel.
+
+### 6. State
+
+Nothing default changed (`bgMPIMode`, `bgMPIFullPlanes`, `bgQuickBake`
+untouched since a229). App commits: `9a5d599` (A249c, A250), `b88e4d9`
+(A249d), `99afbba` (A250 removed), `6123283` (A251/A251b, the depth-view
+harness), plus the A251b comment correction. The guided arm is behind `_plugGuided` on the quick-bake path;
+its live pass is the recipe in Addendum 188 §3, now with the depth views
+as a second instrument.
