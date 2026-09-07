@@ -135,10 +135,13 @@ closed form:
    photographed fraction of what is visible at depth d is
    `f(d, e) = 1 − e·d / (W·(D + d))`, clamped at 0. The rest is content beside the photographed
    frustum: a strip of width e·d/D per side at that depth.
-2. **The window shrinks on screen.** Everything is seen through the window's projected area, which
-   falls as cos²θ (the distance grows as 1/cosθ and the foreshortening adds another cosθ): 0.75 at
-   30°, 0.50 at 45°, 0.25 at 60°, 0.067 at 75°, 0.0076 at 85°, 0.0003 at 89°. At 89° the whole scene
-   is a sliver.
+2. **The window shrinks on screen.** Everything is seen through the window's projected solid angle.
+   For a viewer walking a line parallel to the wall (constant D) the distance to the window is
+   D/cosθ and the flat window foreshortens by cosθ, so Ω = W·H·cosθ/(D/cosθ)² ∝ **cos³θ**: 0.65 at
+   30°, 0.35 at 45°, 0.125 at 60°, 0.017 at 75°, 0.00066 at 85°, 0.000005 at 89°. (An earlier draft
+   of this note said cos²θ; it counted the distance once instead of squared. For a viewer on a
+   sphere of radius D around the window the law is cosθ.) At 89° the whole scene is a sliver. The
+   truth kit's retinal weight uses cos³θ and states it.
 3. **The photographed depth reach collapses.** Rays through the window stay inside the photographed
    frustum only to depth `d* = W·D / (e − W)` for e > W; deeper than that they have exited its side.
    Our diorama (W 0.16, D 0.2): d* = 0.80 m at 45°, 0.17 m at 60°, 0.055 m at 75°, 0.015 m at 85°,
@@ -147,7 +150,7 @@ closed form:
 
 Consequences:
 - **The outpaint scope is bounded**, not dominant: per side and per depth layer it is a strip of
-  width e_max·d/D beside the frame, and its visibility weight over the envelope falls as cos²θ, so
+  width e_max·d/D beside the frame, and its visibility weight over the envelope falls as cos³θ, so
   the weighted scope concentrates within roughly half a window width of the frame edge at the
   scene's depths. The extreme angles add regions almost no pixel ever lands on; the artist's
   highlight ranking and the generation budget should follow the weight, not the union.
@@ -155,7 +158,7 @@ Consequences:
   the content is behind the glass; pop-out content (allowed by decision) diverges as it approaches
   the eye and is clipped by the frame, so its scope is bounded by the aperture.
 - **Sides.** At offset θ the eye sees an object's flank up to θ from the front; at 60–85° the flank
-  is seen nearly frontally, but through an aperture that has shrunk by cos²θ. The side is a surface
+  is seen nearly frontally, but through an aperture that has shrunk by cos³θ. The side is a surface
   that must exist, closed to the equator; how much of it is ever seen in pixels is again the weight.
 - Numbers for the diorama at sheet1 (42°): the deepest layer is 81 % photographed — the 19 % is
   today's orange A214 mark — through a window at 55 % of its head-on area.
@@ -185,7 +188,7 @@ behind the portal) while the subject plane holds; across cuts nothing moves at r
 | # | element | consequence at gallery angles |
 |---|---|---|
 | V0 | **the envelope**: e up to ~85°, D from a hand's length to a room's width | every rule must be measured at 60–85°, not 10–45°; nothing published operates there (§2.7) |
-| V1 | **outpaint beside the frame at depth**: a strip of width e_max·d/D per side per layer, visibility-weighted by cos²θ | a background model defined beyond the frame (planes, ground, sky) and a generative texture stage are first-class; the scope is bounded and concentrates near the frame edge |
+| V1 | **outpaint beside the frame at depth**: a strip of width e_max·d/D per side per layer, visibility-weighted by cos³θ | a background model defined beyond the frame (planes, ground, sky) and a generative texture stage are first-class; the scope is bounded and concentrates near the frame edge |
 | V2 | **vertical offsets** (crouching, standing, looking down into the tank) | floor and ceiling planes carry the same load as walls; the sweep is 2-D |
 | V3 | **the rest pose must stay pixel-faithful** | unchanged |
 | V4 | **temporal coherence along a walk** | plug, sides and outpaint must be pose-independent assets; per-pose fills would swim over a metre of travel |
