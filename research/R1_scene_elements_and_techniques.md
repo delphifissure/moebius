@@ -152,6 +152,29 @@ centre eye saw through the same window: the interval of the same width centred a
   a fringe to be filled from the rim: it is a surface that has to exist, closed to the equator, with
   its own texture. This is the strongest possible form of E4.
 
+
+**Correction after reading the code (A65, A208, `updateCameraAndProjection`).** The claim made in
+conversation that "a longer lens gives more generated content at the same head angle" assumed the
+envelope is specified as an angle at the window with the eye's lateral offset e independent of the
+lens. That is not how the app normalises across cuts. Two things scale with the lens together:
+the dolly distance D = (W/2)·(f/18 mm) (A208: doubling the focal length doubles the camera's
+travel), and the lateral eye offset per unit of head motion, e = k·tan(hfov/2) (A65: head motion
+measured in focal-plane frame widths; 90° is identity). The portal rect stays fixed and the
+subject plane is pinned by the lateral gain g = (e − q)/(e0 − q) plus the A208 corner adjustment
+(rect scaled by k = h(h0 − z)/(h0(h − z)), centre moved by e·(1 − a)(1 − k)); measured 0.000 px
+drift of portal-plane points across the dolly sweep at offsets 0 / 0.1 / 0.2. Under that
+normalisation, with tan(hfov/2) = 18/f for a 36 mm frame, e/D ∝ (18/f)², so the slide of the
+visible strip at depth d, e·d/D, falls with the SQUARE of the focal length for the same head
+motion, and the photographed fraction rises: a telephoto cut has a far smaller world envelope and
+far less scope than a wide cut, not more. With the shipped head gain (camOff 0.2, scalar 1, face
+deviation ±0.5 → e_max = 0.1 m × tan(hfov/2)) and W = 0.16 m, the window angle reached at the edge
+of head travel is about 51° for a 90° lens, 12° for a 45° lens, and 2° for an 18° lens. The
+gallery envelope of this section is therefore reachable only for wide content unless the
+head-tracking scalar is raised per cut; whether the envelope is specified in head units (world
+angle lens-dependent, scope small on long lenses) or in window angle (head gain varies per cut) is
+the decision to make. Within a dolly the far background breathes by design (89–214 px measured
+behind the portal) while the subject plane holds; across cuts nothing moves at rest.
+
 | # | element | consequence at gallery angles |
 |---|---|---|
 | V0 | **the envelope**: e up to ~85°, D from a hand's length to a room's width | every rule must be measured at 60–85°, not 10–45°; nothing published operates there (§2.7) |
