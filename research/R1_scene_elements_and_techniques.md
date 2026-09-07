@@ -66,15 +66,49 @@ the two inputs actually tell us, and what our current pipeline does.
 | M8 | **halos** | a band of intermediate depth around objects | a false thin layer at every silhouette |
 | M9 | **relative vs metric scale** | affine-invariant disparity; no world scale | thickness, parallax budget and eye-offset limits are all guesses |
 
-### 1.4 Viewer and display cases
+### 1.4 The viewing envelope (revised: the fishtank / gallery target)
 
-| # | element | note |
+The target is not a ±45° cone. It is the full half-space in front of the window: a viewer walking
+past a picture in a gallery, or looking into a fishtank from any point short of the wall's own
+plane (never crossing 180°), with the frame keystoning and occluding more of the scene as the
+offset grows. Reflections, specularity and transparency (M1–M3) are deferred by decision. This
+section fixes the geometry, because it decides what the pipeline must be.
+
+**Window model.** Eye at lateral offset e and distance D from a window of width W in the plane
+z = 0; scene content at depth d behind the window. Through the window the eye sees, at depth d,
+the interval of width W·(D + d)/D centred at x = −e·d/D. The source photograph is what the
+centre eye saw through the same window: the interval of the same width centred at 0. So:
+
+- **Visible strip at depth d = the source strip shifted by e·d/D.** The fraction of what the eye
+  sees at depth d that was ever photographed is
+  `f(d, e) = 1 − e·d / (W·(D + d))`, clamped at 0. Everything else is content beyond the frame at
+  that depth — outpainting at depth, not disocclusion.
+- **The frame keystones exactly as the user says**: the window's own aperture is what bounds the
+  visible strip; the strip does not shrink with e (its width is W(D + d)/D regardless), it slides.
+  What shrinks is the photographed part of it.
+- Numbers. Our diorama (W = 0.16, D = 0.2, inner depth 0.04): at e = 0.18 (sheet1, 42°) the
+  deepest layer is 81 % photographed — the 19 % is exactly the A214 outpaint demand we mark
+  orange today; at e = 0.96 (78°) the deepest layer is 0 % photographed. A metric room (W = 0.5 m,
+  D = 0.5 m, back wall 4 m deep): the back wall is 0 % photographed beyond e = 0.56 m, i.e. **48°**.
+  At 75° (e = 1.87 m) nothing deeper than 0.18 m behind the glass is photographed at all.
+- **Parallax of near content**: the shift of a point at depth d behind the window relative to the
+  window plane is e·d/(D + d) — bounded by e, so reveals beside objects grow linearly with e and
+  never diverge as long as everything is behind the glass (pop-out content in front of the window,
+  z > 0, does diverge as z → D and is clipped by the frame; a fishtank has none).
+- **Sides.** At offset angle θ the eye sees an object's flank up to θ from the front; at 60–85° the
+  flank is seen nearly frontally and is as large on screen as the object's front was. The side is not
+  a fringe to be filled from the rim: it is a surface that has to exist, closed to the equator, with
+  its own texture. This is the strongest possible form of E4.
+
+| # | element | consequence at gallery angles |
 |---|---|---|
-| V1 | eye offsets up to ~45° of the portal distance | reveals 80–100 texels wide beside near objects on a 851-px plate; every rule must hold there, not only at 10° |
-| V2 | vertical offsets | reveals above and below objects; floor and ceiling continuation matter more than in the horizontal sweep the DIBR literature assumes |
-| V3 | the rest pose must be pixel-faithful | any layer or fill must be invisible at rest |
-| V4 | temporal coherence under continuous head motion | a fill that pops between poses is worse than a fill that is wrong but stable |
-| V5 | real-time budget | anything per-frame must be a shader; anything heavier is a bake |
+| V0 | **the envelope**: e up to ~85°, D from a hand's length to a room's width | every rule must be measured at 60–85°, not 10–45°; nothing published operates there (§2.7) |
+| V1 | **outpaint at depth dominates beyond ~45–50° for scenes deeper than the window is wide** | a background model that is defined beyond the frame (planes, ground, sky) and a generative texture stage are first-class, not "later" |
+| V2 | **vertical offsets** (crouching, standing, looking down into the tank) | floor and ceiling planes carry the same load as walls; the sweep is 2-D |
+| V3 | **the rest pose must stay pixel-faithful** | unchanged |
+| V4 | **temporal coherence along a walk** | plug, sides and outpaint must be pose-independent assets; per-pose fills would swim over a metre of travel |
+| V5 | **real-time budget** | the shader still gets three rules; everything else is a bake — but the bake now produces a small scene, not a fringe |
+| V6 | **the diorama depth is a design lever** | the fraction photographed at the back is 1 − e·d/(W(D + d)); a shallower diorama keeps more of the gallery walk photographed at the cost of flatter parallax; a metric-scale scene makes the walk mostly generated content |
 
 ## 2. What the literature offers per element
 
@@ -410,9 +444,10 @@ methods are washes, good methods are minutes per frame).
   ±1.5 % of the frame; Google Cinematic Photos solve the parallax amplitude per photo against a
   "stretchiness" loss; Apple spatial photos limit the baseline to one IPD and warn that 2–3 % of
   width of convergence offset "dramatically alters depth perception". **No published single-image
-  method operates anywhere near our 45° eye offsets; we are an order of magnitude beyond the
-  literature's parallax budget.** That is not a reason to stop, but it is the reason every artefact
-  is magnified and why the synthetic suite must sweep eye offset as a first-class axis.
+  method operates anywhere near 45°, and the gallery envelope of §1.4 runs to 85°; we are one to two
+  orders of magnitude beyond the literature's parallax budget.** That is not a reason to stop, but it
+  is the reason every artefact is magnified, why the synthetic suite must sweep eye offset to 85°, and
+  why the far half of the envelope is a generation problem (V1) before it is a disocclusion problem.
 
 ## 3. Techniques to combine
 
@@ -434,6 +469,26 @@ part is a shader with three rules.
 | A8 object backs | Poisson inflation with c = 2 (Monster Mash): thickness 0.71 × local width, in world units through the focal; per-part layers at internal cliffs (Photo Wake-Up / ARAP-L); side terminates on the ground plane at the silhouette's lower edge | §2.4 | the medial-ball envelope and the bulge-fitted scale | E4, E2, E9 |
 | A9 boundary layer | Zitnick's 4-px matte strip (alpha, foreground colour, alpha-weighted depth) as a sparse foreground layer; the discontinuity mask dilated by b is the free trimap | §2.3 | the hard tear at one depth | E8 |
 | A10 plug | k-layer LDI (2–3 layers) from the pose sweep, extent bounded by SLIDE's analytic disocclusion condition at b_max; depth = plane / far-rim continuation with Kopf's edge continuation into the hole, or TMPI's farthest local disparity mode where no plane exists, never the near depth, never below the deeper lip of a solid interior step, second sample as a positive increment behind the first (Flash3D); colour = depth-weighted push–pull wash from the far rim; texture later by depth-conditioned diffusion prompted with fattened-foreground masks | §2.1, §2.2, §2.5 | the single-layer median plug | E1, E2, E5, B5–B7 |
+
+### 3.1b What the gallery envelope changes in the bake
+
+- **A7 grows from "background behind things" to "the scene beyond the frame".** Planes, the ground
+  plane and the sky are the only background models defined outside the photographed strip; they
+  are the geometry of the outpaint. The membrane cannot extrapolate a metre.
+- **A8 must close the object to its equator**, textured on the side: Monster Mash's inflation already
+  produces a closed front-and-back surface; the texture of the flank is generated (a wash is
+  acceptable geometry, not acceptable appearance at 75°).
+- **A10 becomes a small layered scene**: k-layer LDI for hidden layers between things AND an
+  outpaint layer at depth for V1, both with pose-independent texture, sized by f(d, e) over the
+  envelope instead of by the sweep's per-pose reveals.
+- **The demand region is the envelope integral**: for each plate texel and depth, the set of eye
+  positions on the gallery envelope that see it through the aperture; the frame's keystoning
+  removes near-side content and adds far-side content. This replaces the 85-pose cone sweep with a
+  closed-form visibility footprint per depth layer (the window model above is linear in e).
+- **The texture stage moves forward.** Depth-conditioned diffusion inpainting/outpainting (§2.5,
+  §2.2: ControlNet-depth / SD2-depth with fattened-foreground masks for the plug, Invisible-Stitch-
+  class depth completion for its depth) is the only known way to produce the far half of the
+  envelope. It runs once per image in the bake and its output is an asset, so V4 holds.
 
 ### 3.2 The real-time part
 
@@ -470,8 +525,9 @@ local depth variance) rides along for seeding weights and silhouette alpha.
 - One element per scene, ground truth for what lies behind every occluder, and the SAME scene
   rendered from the offset eye through the portal's own sheared frustum — the gold standard none of
   the 3D-photo papers use.
-- Two axes crossed with every scene: eye offset {10°, 20°, 30°, 45°} × {horizontal, vertical,
-  diagonal}; and a depth-degradation ladder that reproduces the estimators (§2.7): 16-bit vs 8-bit
+- Two axes crossed with every scene: eye offset {15°, 30°, 45°, 60°, 75°, 85°} × {horizontal,
+  vertical, diagonal}, at viewing distances {0.5, 1, 2} × window width, through the portal's own
+  sheared frustum with the frame's aperture applied (so keystoning is in the truth); and a depth-degradation ladder that reproduces the estimators (§2.7): 16-bit vs 8-bit
   (linear and disparity), edge blur σ ∈ {0, 1, 2, 4} px scaled by image/network width, edge erosion/
   dilation ±1–3 px (halos), affine scale/shift in disparity, ±20–30 % focal error, low-frequency
   floor/sky bowing, thin-structure erasure below 1–2 network pixels, and finally a real estimator
@@ -485,7 +541,7 @@ local depth variance) rides along for seeding weights and silhouette alpha.
   true geometry; Kubric for object-on-table variants; one Habitat + Replica pass for real scanned
   interiors with annotated mirrors.
 
-### 4.2 The scenes (26; our existing four in brackets)
+### 4.2 The scenes (26; our existing four in brackets; S17–S20 deferred with the material classes)
 
 | # | scene | isolates | GT needed beyond the standard set |
 |---|---|---|---|
@@ -505,16 +561,19 @@ local depth variance) rides along for seeding weights and silhouette alpha.
 | S14 | text and signage behind an occluder | strokes (B7), hallucination penalty | — |
 | S15 | sky + far mountains + a near occluder | infinity handling, near-zero parallax (B3, B4) | — |
 | S16 | receding wall at a grazing angle with a ridge [screen / fold wall] | glancing continuity (E3), jump vs crease | — |
-| S17 | glass pane in front of an object | M1: first-surface vs through-glass truth (LayeredDepth-Syn precedent) | both truths |
-| S18 | mirror on a wall | M2: documented failure mode | virtual-depth flag |
-| S19 | water surface with a submerged object | M1 refraction | both truths |
-| S20 | strong specular on curved metal | M3; view-dependent shading sets the metric noise floor | — |
+| S17 | glass pane in front of an object — DEFERRED | M1 | both truths |
+| S18 | mirror on a wall — DEFERRED | M2 | virtual-depth flag |
+| S19 | water surface with a submerged object — DEFERRED | M1 | both truths |
+| S20 | strong specular on curved metal — DEFERRED | M3 | — |
 | S21 | night scene, point lights, bloom | M4 low-SNR edges | — |
 | S22 | motion blur and defocus (Cycles) | E8 where depth edge and image edge disagree | — |
 | S23 | toon-shaded versions of S1, S5, S9 | M5 illustration style (estimator behaviour) | real-estimator ladder only |
 | S24 | cluttered shelf | B5 many small disocclusions | k = 3 |
 | S25 | figure standing on the floor with a cast shadow and a floor reflection | B8 shadows and reflections attached to the ground | hidden-occluder render without the object's shadow |
 | S26 | a vertical-offset set: overhang, table edge, ceiling beam | V2 vertical reveals | vertical eye offsets emphasised |
+| S27 | a room deeper than the window is wide (fishtank): back wall, side walls, floor, one object | V1 outpaint at depth: f(d, e) per layer; how much of the walk is photographed | wider-FOV source render (the truth beyond the frame) |
+| S28 | the same room at three diorama depths (V6) | parallax realism vs photographed fraction | as S27 |
+| S29 | gallery walk: a continuous eye path from −85° to +85° at two distances | V4 coherence of plug, sides and outpaint along a walk | GT video along the path |
 
 ### 4.3 Metrics
 On the offset-eye render, per eye offset, reported separately for the full frame, the exact
@@ -528,16 +587,17 @@ disocclusion region (GT flow has no source), and a ±2 px depth-edge band (Sprin
 5. Depth Pro's boundary F1 and matting recall (port `boundary_metrics.py`) on our snapped depth;
 6. degradation sensitivity — the slope of 1–3 against the ladder; a robust rule has a flat slope;
 7. FID/KID on pooled disocclusion patches for the hallucination-only scenes (S12, S14);
-8. failure flags for S17–S20, excluded from aggregates.
+8. the photographed fraction f(d, e) per layer reported alongside every score, so a fill is judged as disocclusion or as outpaint, never mixed;
+9. (deferred with S17–S20) failure flags for the material classes.
 Whole-frame PSNR is kept only as a sanity check. No perceptual study exists for head-tracked
 disocclusion tolerance at our offsets; a small paired-comparison study on five scenes is the only
 validation of the metric ranking.
 
 ### 4.4 Order of construction
-S1, S2, S5, S7, S10, S11 first — they are the six elements that failed this year (planes, contact,
-thin, porous, interior step, side thickness) and each needs only BlenderProc primitives plus one
-Infinigen tree. Then S9, S16, S26 (layers and viewing geometry). The material scenes S17–S22 last;
-their purpose is to document limits, not to pass.
+S27 and S11 first — the two facts the gallery envelope turns on (how much of a walk is
+photographed at all; how large an object's side really is at 75°) — then S1, S2, S5, S7, S10 (the
+elements that failed this year: planes, contact, thin, porous, interior step). Then S9, S16, S26,
+S29 (layers, viewing geometry, the walk). S21–S23 after; S17–S20 deferred with the material classes.
 
 
 ## 5. What the current pipeline is missing, in one list
@@ -564,11 +624,13 @@ their purpose is to document limits, not to pass.
 11. **An analytic fill extent.** The sweep finds reveals empirically per pose; SLIDE's condition gives the same set in closed form from b_max and the parallax gain, and bounds the plug depth with it. (A10)
 12. **Ground truth.** Four synthetic scenes and six photographs; no offset-eye truth, no hidden-layer
     truth for real elements, no degradation ladder, whole-frame metrics. (§4)
-13. **An honest statement of the parallax budget.** We operate an order of magnitude beyond any
-    published single-image parallax; the suite must sweep eye offset so every rule is measured at
-    the offset the product actually uses.
+13. **The envelope itself.** No budget in the pipeline is derived from the gallery envelope: the
+    sweep cone, the margin, the outpaint demand and the layer count are all per-pose or constant.
+    The window model of §1.4 gives every one of them in closed form from (W, D, e, d); the suite must
+    measure at 60–85°, where the far half of the envelope is generated content by construction.
 
-Two things are decisions rather than gaps, and they are the user's: whether E4 follows the
-literature ("side first, then background", thickness 0.71 × width) or the stronger principle
-("never the distant background"); and whether the material classes M1–M4 are flagged and left, or
-given a fallback (flat card at the surface's depth).
+Decided by the user on reading the first draft: the envelope is the gallery half-space to ~85°
+(§1.4), and the material classes M1–M3 are deferred. Still the user's: whether E4 follows the
+literature ("side first, then background", thickness 0.71 × width) or the stronger principle — at
+gallery angles the two converge, because a closed side to the equator IS most of what is seen; and
+the diorama-depth lever V6, which sets how much of the walk is photograph and how much is generated.
