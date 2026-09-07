@@ -1,6 +1,6 @@
 # Research note R1 — what a single-image parallax portal must accommodate, and what the literature offers
 
-Status: first complete draft (all seven literature passes folded in; full pass reports in `research/R1_passes/`). Passes: (DIBR hole
+Status: second draft — seven literature passes folded in (full reports in `research/R1_passes/`), revised for the gallery envelope (§1.4) and for the stated purpose, an inpainting scope for the artist and SD (§0b). Passes: (DIBR hole
 filling; single-image 3D photography and layered representations; depth edges, thin structures,
 foliage and matting; amodal completion and back-surface priors; interiors, layout and background
 completion; benchmarks and synthetic scene generation; depth-estimator artefacts and scale).
@@ -17,6 +17,58 @@ mis-segmented by a sagging membrane. The pattern is that we never wrote down the
 elements the system has to handle, so every rule was general in intent and local in test. This note
 does that first, then asks the literature which mechanisms cover which elements, then designs a
 synthetic suite that isolates each element with ground truth for what lies behind it.
+
+## 0b. The purpose, restated: a scope map for the artist and Stable Diffusion
+
+The stable, semi-plausible depth and RGB we build for the gaps are not the product. They exist to
+**show the artist the scope of what has to be generated** — highlighted, clean regions of depth and
+RGB — and to give Stable Diffusion a depth to condition on and a mask to fill. That fixes the
+success criteria, in this order:
+
+1. **Scope correctness.** Every texel that some eye position in the gallery envelope sees through
+   the aperture and that was never photographed must be in the scope, with its class (disocclusion
+   behind a thing, object side, outpaint beyond the frame, porous holes, boundary matte), and no
+   photographed texel may be in it. The window model of §1.4 gives this set in closed form per
+   depth layer; the synthetic suite gives it exactly as ground truth. This is a precision/recall
+   problem, and it is measurable.
+2. **Stability.** The scope, its depth and its placeholder RGB are computed once per image and live
+   in a static layered atlas; nothing is per pose, so nothing can flicker along a walk. A fill that
+   swims is worse than a fill that is wrong, because the artist cannot paint into it and SD cannot
+   condition on it.
+3. **Depth plausibility inside the scope.** SD is conditioned on depth (ControlNet-depth / SD2-depth);
+   the generated texture lands in 3D where the depth says. A plane-continued wall, a ground plane
+   bounded by gravity, a closed object side at 0.71 × width, a second LDI sample behind a first —
+   these are what make the generated pixels sit still when the viewer moves. Depth error inside the
+   scope against the peeled ground truth is the second measurable.
+4. **Cleanliness of the placeholder.** The placeholder RGB must read as "unpainted": a smooth wash
+   in the rim's colours, no clones (the artist reads a clone as finished), no streaks or skirts (they
+   pollute the mask and the conditioning), a visible highlight of the scope in the artist's view.
+   This is why the membrane/wash was the right choice from Addendum 179 on, and why every stretched
+   texel of Addendum 190 was a defect even where coverage was perfect.
+5. **RGB fidelity of the fill is not a criterion.** That is SD's job and the artist's. The placeholder
+   is judged on 1–4 only.
+
+Consequences for the representation and the tooling:
+
+- **A static layered atlas is the deliverable** (Addendum 184's "static atlas for SD", Kopf 2020's
+  chart atlas): per layer — foreground, boundary matte, k hidden layers, object sides, outpaint at
+  depth — a 2-D chart with depth, placeholder RGB, scope mask, class label and a confidence
+  (distance to the nearest photographed texel; visibility weight over the envelope). Charts must be
+  low-distortion for a 2-D inpainter: Kopf's flat charts by seed-and-grow, or **plane-rectified
+  charts** for stuff surfaces (rectify the back wall, floor or ceiling into its own frame, outpaint
+  there so perspective texture is consistent, re-project) — the natural home of V1's outpaint.
+- **A visibility-weighted scope.** Each scope texel carries the fraction of the envelope that sees it
+  (weighted toward central poses if the product wants): the artist sees what matters first, and the
+  suite scores recall by visibility, not by texel count.
+- **SD runs per chart with the chart's own depth and mask**, outpainting for V1 and inpainting for
+  disocclusions and sides, with fattened-foreground masks so it borrows only from the far side
+  (SLIDE's training discipline as a prompt-time rule); cross-chart consistency by overlap and
+  iterative order (Text2Room, NeRFiller's tiling prior); the boundary matte's alpha is carried
+  through as the layer's alpha. Depth for the residue can itself be completed by an
+  InFusion-class model conditioned on the generated colour, then re-fed.
+- **The artist's view**: the rest image with the scope highlighted per class, a turntable at three
+  envelope positions with the placeholder in place, and the per-chart atlas for painting — nothing
+  else in the UI needs to change for the purpose.
 
 ## 1. Scene elements to accommodate
 
@@ -576,8 +628,21 @@ local depth variance) rides along for seeding weights and silhouette alpha.
 | S29 | gallery walk: a continuous eye path from −85° to +85° at two distances | V4 coherence of plug, sides and outpaint along a walk | GT video along the path |
 
 ### 4.3 Metrics
-On the offset-eye render, per eye offset, reported separately for the full frame, the exact
-disocclusion region (GT flow has no source), and a ±2 px depth-edge band (Spring's region maps):
+The purpose of §0b orders them. Primary, per layer and per class, against the synthetic truth:
+- **scope precision and recall**, visibility-weighted over the envelope (the set of unphotographed
+  texels visible from anywhere in the envelope is exact in the synthetic renders);
+- **depth error inside the scope** against the peeled / hidden-occluder truth (median and bad-pixel
+  rate) — what decides whether SD's texture will sit still;
+- **stability**: change of scope mask, depth and placeholder RGB along the gallery walk (zero by
+  construction for a static atlas; measured to catch anything per-pose that leaks in);
+- **placeholder cleanliness**: clone index against the near lip (the ghost index of Addendum 180),
+  streak/stretch count (grazing-triangle and edge-band tests), highlight legibility;
+- **end-to-end**: SD inpainting on the atlas with the chart depth and mask, rendered through the
+  envelope, scored on the exact scope region with masked LPIPS/DISTS and the disocclusion bad-pixel
+  rate against the offset-eye truth — the only metric that says whether the scope and depth were
+  good enough for the purpose.
+Secondary, on the offset-eye render per eye offset, reported for the full frame, the exact
+disocclusion region and a ±2 px depth-edge band (Spring's region maps):
 1. masked LPIPS and DISTS on the disocclusion region — appearance of the fill (SynSin InVis precedent);
 2. disocclusion bad-pixel rate: rendered depth vs the peeled layer-2 depth beyond δ (Middlebury bad2
    analogue) — "did the plug land at the right depth", which a head-tracked viewer sees as swimming;
@@ -602,6 +667,9 @@ S29 (layers, viewing geometry, the walk). S21–S23 after; S17–S20 deferred wi
 
 ## 5. What the current pipeline is missing, in one list
 
+0. **The deliverable as an object.** There is no static layered atlas with per-texel scope, class,
+   depth, placeholder and visibility weight; the scope exists only implicitly as "where the plug
+   draws" plus the orange outpaint mark, per pose, in the renderer. (§0b)
 1. **A metric frame.** No focal length, no metric depth, so no x/z ratio, no thickness in world
    units, no analytic hole width; every constant in normalised depth units means something different
    in every image. (A1, A2)
