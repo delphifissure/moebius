@@ -126,32 +126,39 @@ plane (never crossing 180°), with the frame keystoning and occluding more of th
 offset grows. Reflections, specularity and transparency (M1–M3) are deferred by decision. This
 section fixes the geometry, because it decides what the pipeline must be.
 
-**Window model.** Eye at lateral offset e and distance D from a window of width W in the plane
-z = 0; scene content at depth d behind the window. Through the window the eye sees, at depth d,
-the interval of width W·(D + d)/D centred at x = −e·d/D. The source photograph is what the
-centre eye saw through the same window: the interval of the same width centred at 0. So:
+**Window model.** Eye at lateral offset e and perpendicular distance D from a window of width W
+in the plane z = 0; scene content at depth d behind the window; θ = atan(e/D). Three effects, all in
+closed form:
 
-- **Visible strip at depth d = the source strip shifted by e·d/D.** The fraction of what the eye
-  sees at depth d that was ever photographed is
-  `f(d, e) = 1 − e·d / (W·(D + d))`, clamped at 0. Everything else is content beyond the frame at
-  that depth — outpainting at depth, not disocclusion.
-- **The frame keystones exactly as the user says**: the window's own aperture is what bounds the
-  visible strip; the strip does not shrink with e (its width is W(D + d)/D regardless), it slides.
-  What shrinks is the photographed part of it.
-- Numbers. Our diorama (W = 0.16, D = 0.2, inner depth 0.04): at e = 0.18 (sheet1, 42°) the
-  deepest layer is 81 % photographed — the 19 % is exactly the A214 outpaint demand we mark
-  orange today; at e = 0.96 (78°) the deepest layer is 0 % photographed. A metric room (W = 0.5 m,
-  D = 0.5 m, back wall 4 m deep): the back wall is 0 % photographed beyond e = 0.56 m, i.e. **48°**.
-  At 75° (e = 1.87 m) nothing deeper than 0.18 m behind the glass is photographed at all.
-- **Parallax of near content**: the shift of a point at depth d behind the window relative to the
-  window plane is e·d/(D + d) — bounded by e, so reveals beside objects grow linearly with e and
-  never diverge as long as everything is behind the glass (pop-out content in front of the window,
-  z > 0, does diverge as z → D and is clipped by the frame; a fishtank has none).
-- **Sides.** At offset angle θ the eye sees an object's flank up to θ from the front; at 60–85° the
-  flank is seen nearly frontally and is as large on screen as the object's front was. The side is not
-  a fringe to be filled from the rim: it is a surface that has to exist, closed to the equator, with
-  its own texture. This is the strongest possible form of E4.
+1. **The strip slides.** Through the window the eye sees, at depth d, an interval of width
+   W·(D + d)/D centred at x = −e·d/D. The photograph is the same interval centred at 0, so the
+   photographed fraction of what is visible at depth d is
+   `f(d, e) = 1 − e·d / (W·(D + d))`, clamped at 0. The rest is content beside the photographed
+   frustum: a strip of width e·d/D per side at that depth.
+2. **The window shrinks on screen.** Everything is seen through the window's projected area, which
+   falls as cos²θ (the distance grows as 1/cosθ and the foreshortening adds another cosθ): 0.75 at
+   30°, 0.50 at 45°, 0.25 at 60°, 0.067 at 75°, 0.0076 at 85°, 0.0003 at 89°. At 89° the whole scene
+   is a sliver.
+3. **The photographed depth reach collapses.** Rays through the window stay inside the photographed
+   frustum only to depth `d* = W·D / (e − W)` for e > W; deeper than that they have exited its side.
+   Our diorama (W 0.16, D 0.2): d* = 0.80 m at 45°, 0.17 m at 60°, 0.055 m at 75°, 0.015 m at 85°,
+   2.8 mm at 89°. A metric room (W 0.5, D 0.5): unbounded at 45° (e = W), 0.68 m at 60°, 0.18 m at
+   75°, 0.048 m at 85°.
 
+Consequences:
+- **The outpaint scope is bounded**, not dominant: per side and per depth layer it is a strip of
+  width e_max·d/D beside the frame, and its visibility weight over the envelope falls as cos²θ, so
+  the weighted scope concentrates within roughly half a window width of the frame edge at the
+  scene's depths. The extreme angles add regions almost no pixel ever lands on; the artist's
+  highlight ranking and the generation budget should follow the weight, not the union.
+- **Parallax of near content** relative to the window plane is e·d/(D + d), bounded by e as long as
+  the content is behind the glass; pop-out content (allowed by decision) diverges as it approaches
+  the eye and is clipped by the frame, so its scope is bounded by the aperture.
+- **Sides.** At offset θ the eye sees an object's flank up to θ from the front; at 60–85° the flank
+  is seen nearly frontally, but through an aperture that has shrunk by cos²θ. The side is a surface
+  that must exist, closed to the equator; how much of it is ever seen in pixels is again the weight.
+- Numbers for the diorama at sheet1 (42°): the deepest layer is 81 % photographed — the 19 % is
+  today's orange A214 mark — through a window at 55 % of its head-on area.
 
 **Correction after reading the code (A65, A208, `updateCameraAndProjection`).** The claim made in
 conversation that "a longer lens gives more generated content at the same head angle" assumed the
@@ -178,7 +185,7 @@ behind the portal) while the subject plane holds; across cuts nothing moves at r
 | # | element | consequence at gallery angles |
 |---|---|---|
 | V0 | **the envelope**: e up to ~85°, D from a hand's length to a room's width | every rule must be measured at 60–85°, not 10–45°; nothing published operates there (§2.7) |
-| V1 | **outpaint at depth dominates beyond ~45–50° for scenes deeper than the window is wide** | a background model that is defined beyond the frame (planes, ground, sky) and a generative texture stage are first-class, not "later" |
+| V1 | **outpaint beside the frame at depth**: a strip of width e_max·d/D per side per layer, visibility-weighted by cos²θ | a background model defined beyond the frame (planes, ground, sky) and a generative texture stage are first-class; the scope is bounded and concentrates near the frame edge |
 | V2 | **vertical offsets** (crouching, standing, looking down into the tank) | floor and ceiling planes carry the same load as walls; the sweep is 2-D |
 | V3 | **the rest pose must stay pixel-faithful** | unchanged |
 | V4 | **temporal coherence along a walk** | plug, sides and outpaint must be pose-independent assets; per-pose fills would swim over a metre of travel |
@@ -547,9 +554,10 @@ part is a shader with three rules.
 
 ### 3.1b What the gallery envelope changes in the bake
 
-- **A7 grows from "background behind things" to "the scene beyond the frame".** Planes, the ground
-  plane and the sky are the only background models defined outside the photographed strip; they
-  are the geometry of the outpaint. The membrane cannot extrapolate a metre.
+- **A7 grows from "background behind things" to "the scene beside the frame".** Planes, the ground
+  plane and the sky are the only background models defined outside the photographed frustum; they
+  are the geometry of the outpaint, extended by e_max·d/D per side per depth. The membrane cannot
+  extrapolate that far; a plane is defined there by construction.
 - **A8 must close the object to its equator**, textured on the side: Monster Mash's inflation already
   produces a closed front-and-back surface; the texture of the flank is generated (a wash is
   acceptable geometry, not acceptable appearance at 75°).
