@@ -1,8 +1,13 @@
 # Sprint 1 report — truth kit, scope instrument, atlas v0
 
 Status: Sprint 1a–1c delivered as instruments and first measurements. No app defaults changed. All
-code in the app repo under `harness/truthkit/` (commit 5f1fc70 and follow-ups); outputs under
-`harness/truthkit/out/` (gitignored) and `harness/shots/a257probe/<scene>/`.
+code in the app repo under `harness/truthkit/` (commits 5f1fc70, 2dcd647); outputs under
+`harness/truthkit/out/` (gitignored) and `harness/shots/a257probe/<scene>/`. Bakes this sprint:
+six (the troll and five synthetic scenes), about a minute each.
+
+Not done in this sprint: the cleanliness metric for the app's fills (needs the fill RGB, which the
+probe does not dump) and any 2-D (diagonal-pose) term in the closed-form instrument; both noted in
+§7.
 
 ## 1. What was built
 
@@ -108,17 +113,52 @@ can be adjudicated directly (no truth), and §3 says the instrument under-detect
 | scene | truth hidden px | app band px | precision | recall | band depth error (median abs / p90) |
 |---|---|---|---|---|---|
 | S27 fishtank | 4 894 | 125 332 (35 % of plate) | 0.04 | 1.00 | 0.000 / 0.079 m (scene 0.24 m) |
-| S11 rounded | | | | | |
-| S2 contact | | | | | |
-| S9 stacked | | | | | |
-| S10 limbs | | | | | |
+| S11 rounded | 36 512 | 173 436 (48 %) | 0.21 | 1.00 | 0.000 / 0.054 m (0.096 m) |
+| S2 contact | 16 454 | 131 524 (37 %) | 0.13 | 1.00 | 0.001 / 0.055 m (0.128 m) |
+| S9 stacked | 62 704 | 175 346 (49 %) | 0.36 | 1.00 (things 1.00, sides 0.92) | 0.000 / 0.043 m (0.112 m) |
+| S10 limbs | 52 680 | 200 027 (56 %) | 0.26 | 1.00 (things 1.00, sides 1.00) | 0.000 / 0.055 m (0.096 m) |
 
-S27 (`out/S27/check_app.png`): the app's band covers the box correctly and then the whole near
-floor, a fan under the box and horizontal stripes across the ceiling. The stripes and the floor are
-8-bit quantisation terraces of slow gradients being read as rims (M3), i.e. the mega-band we saw on
-the troll is not a troll property: it appears on a clean synthetic room. Depth on the true scope is
-right where the far rim is the wall (median error 0) and 0.08 m too deep where the truth is the
-floor behind the box.
+Precision at recall 1.0 across the five scenes: 0.04–0.36, i.e. the bake fills 3–25× the true scope.
+
+The buffers (`out/<scene>/check_app.png`) show the same anatomy on every scene: the objects are
+covered exactly (green), then the whole near floor, horizontal stripes across the ceiling, and
+fans that spray from the objects' bases across the wall. The stripes and the floor are 8-bit
+quantisation terraces of slow gradients being read as rims (M3); the fans are hole-driven demand
+propagating along the shift direction from those false rims. The mega-band we saw on the troll is
+therefore not a troll property: it appears on clean synthetic rooms with exact geometry. Recall is
+1.00 everywhere (the bake never misses a true reveal), depth on the true scope is right where the
+far rim is the wall (median error 0) and 0.04–0.08 m too deep where the truth is a floor or a
+nearer object behind the occluder.
+
+### 5b. The full envelope (39 eyes to 85°, ±25° vertical): what each scene asks for
+
+Display GT, mean over the 39 eyes (retinal cos³ mean in brackets); atlas = ever-visible rest
+samples in the frame, and in the 0.5 W canvas margin.
+
+| scene | photographed | outpaint | bg disocc | thing disocc | own side | own interior | atlas bg / thing / side / interior px | outpaint px |
+|---|---|---|---|---|---|---|---|---|
+| S27 fishtank 1.5 W | 0.49 [0.78] | 0.51 [0.21] | 0.003 | 0 | 0.001 | 0 | 2 635 / 0 / 126 / 0 | 200 584 |
+| S28 room 0.25 W | 0.63 [0.89] | 0.36 [0.10] | 0.002 | 0 | 0.014 | 0 | 2 799 / 0 / 625 / 0 | 200 552 |
+| S28 room 0.75 W | 0.52 [0.81] | 0.47 [0.18] | 0.005 | 0 | 0.003 | 0 | 4 060 / 0 / 310 / 0 | 200 984 |
+| S28 room 2.0 W | 0.49 [0.77] | 0.51 [0.22] | 0.003 | 0 | 0 | 0 | 2 146 / 0 / 113 / 0 | 200 592 |
+| S1 corner | 0.68 [0.82] | 0.25 [0.18] | 0 | 0 | 0 | 0 | 34 / 0 / 0 / 0 | 205 543 |
+| S2 contact | 0.51 [0.80] | 0.47 [0.18] | 0.013 | 0 | 0.002 | 0 | 9 214 / 0 / 1 553 / 0 | 200 564 |
+| S3 floating | 0.51 [0.80] | 0.47 [0.18] | 0.011 | 0 | 0.003 | 0 | 10 618 / 0 / 1 728 / 0 | 200 564 |
+| S4 pop-out figure | 0.55 [0.78] | 0.30 [0.15] | 0.042 | 0.005 | 0.099 | 0 | 18 088 / 150 / 17 038 / 0 | 196 284 |
+| S5 poles | 0.56 [0.85] | 0.44 [0.15] | 0.002 | 0 | 0.001 | 0 | 906 / 0 / 906 / 0 | 200 552 |
+| S7 canopy | 0.47 [0.74] | 0.49 [0.20] | 0.019 | 0 | 0.010 | 0.010 | 19 918 / 279 / 12 299 / 10 634 | 200 584 |
+| S9 stacked cards | 0.51 [0.77] | 0.45 [0.17] | 0.019 | 0.021 | 0 | 0 | 31 872 / 15 046 / 370 / 0 | 200 556 |
+| S10 limbs | 0.51 [0.76] | 0.43 [0.16] | 0.041 | 0.008 | 0.004 | 0.001 | 29 443 / 3 950 / 6 468 / 0 | 200 552 |
+| S11 rounded | 0.52 [0.79] | 0.45 [0.16] | 0.028 | 0.001 | 0.005 | 0 | 20 422 / 0 / 5 880 / 0 | 200 552 |
+
+Read: over the gallery envelope the display is, on average, half photograph and half content
+beside the frame; disocclusions of any kind are 0.3–5 % of the display (10 % for the pop-out figure,
+whose own sides dominate). Retinal weighting moves the split to roughly 80/20 because the extreme
+eyes see the window as a sliver. The outpaint region beyond the frame is the same ~200 k samples for
+every room (it is a property of the room walls and the envelope, not of the objects). A canvas
+margin of 0.5 W per side holds 92–94 % of the retinal-weighted outpaint display area across these
+scenes (`scope_summary.json: outpaint_on_canvas_retinal`); the remainder is what the extreme eyes
+see beyond it, and the display GT keeps it.
 
 ## 6. Atlas v0 numbers, S27 truth (`out/S27/atlas_truth.json`)
 
@@ -140,6 +180,9 @@ carries the rest.)
 2. The closed-form instrument is the reference for hard-edged depth and a floor for soft depth; the
    truth kit is the reference for both. Every Sprint 2 producer is scored against `scope_gt.npz`.
 3. cos³θ, not cos²θ, is the retinal weight; R1 corrected.
+4. Still owed by the instruments: a cleanliness score (dump the fill colour in the probe and compare
+   against the hidden RGB placeholder on the true scope), and a check of the instrument's axis-only
+   pose set against the full 17×5 grid (corners of objects; second order, unmeasured).
 
 ## 8. Open decisions (unchanged from the plan, now with numbers behind them)
 
