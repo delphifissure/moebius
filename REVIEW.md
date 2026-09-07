@@ -13737,3 +13737,473 @@ untouched since a229). App commits: `9a5d599` (A249c, A250), `b88e4d9`
 harness), plus the A251b comment correction. The guided arm is behind `_plugGuided` on the quick-bake path;
 its live pass is the recipe in Addendum 188 §3, now with the depth views
 as a second instrument.
+
+
+## Addendum 190 — why the fill is too deep (measured per texel), the rest-silhouette object rule (A253), and the skirt toggle
+
+### 1. The question
+
+The user, reading the composite-depth sheets of Addendum 189: the glancing gap on the troll's
+left cave wall is filled deeper than the wall it obviously belongs to; the area beside the knee
+reads too deep though it is leg; the side of the face likewise; inside the silver warrior's
+silhouette the backdrop shows through self-occlusions. The principle offered: **the head-on
+silhouette defines the object; a gap that opens inside it on rotation is a self-occlusion and
+must never show the distant background.** Extent gaps (face against the cave) have no data; try
+"leave far" and a "side skirt" side by side behind a toggle.
+
+### 2. A252: the lip instrument, and what it falsified before any fix
+
+Every observation sample in the sweep now keeps the two lips it was made from (far lip after the
+ramp walk, the far lip before it, the near lip), its kind (two-lip interpolation / step / no near
+lip), the lip distances, and whether the far walk crossed plate-owned cells. `_plugGeoBand` reduces
+them per texel (deeper lip, nearer lip, spread, majority kind, provenance of the depth: observed
+median / field solve / clamped / bound / changed after the field) and classes the band. The
+exports feed `harness/a252_lips.py`, which prints per region the share of texels whose baked
+depth is deeper than the DEEPER lip by more than half a cliff, split by cause.
+
+Troll, final arm, 85 poses (rows are `harness/a252_regions_troll.json`):
+
+| region | class | n | plate deeper than the deeper lip | of which the observation itself was wrong | of which the plate sank after the field | median excess |
+|---|---|---|---|---|---|---|
+| all | continuous | 51 562 | 40 % | 9 | 20 627 | +0.16 steps |
+| all | step | 188 822 | 27 % | 64 | 51 640 | 0 |
+| all | single lip | 63 348 | 56 % | 4 | 35 707 | +0.69 |
+| knee | continuous | 1 561 | 89 % | 1 | 1 393 | +4.3 |
+| knee | step | 15 667 | 41 % | 10 | 6 417 | +0.29 |
+| head left | continuous | 47 | 100 % | 0 | 47 | +2.1 |
+| left cave wall | continuous | 3 208 | 57 % | 1 | 1 819 | +0.73 |
+| face right side | step | 6 053 | 29 % | 0 | 1 734 | 0 |
+
+Octopus: 65–72 % of the tentacle regions' band texels are 3–5 steps deeper than the deeper lip;
+the observation was wrong on 412 of 1.7 M texels; the rest is post-field.
+
+So:
+- **The observed hidden layer is right.** The far-lip walk lands on the surface beside the gap; the
+  ramp walk moves no lip (median drop 0); the walk crosses no plate-owned cell. My earlier
+  offline proxy (the band's row borders as lips) had said the knee's observation was 0.043 against
+  surfaces at 0.285 — that was the proxy's error, and the step-3 "walk fixes" of the plan are
+  closed without code (task 22).
+- **The depth is made too deep AFTER the field**, by the passes that push the plate behind every
+  source texel: a162's cross-texel ordering (moebius.js 14663–14720: `shift(plate at A) ≤ min_B
+  [shift(src at B) + dist(A,B)]`) and a126's slope limit. On the troll 45 % of the band ends
+  deeper than the field by more than a quantum; on the octopus 80 %.
+- **Colour and depth already disagreed**: the colour gate reads the field (`plateQ`, 13298), the
+  rendered depth is the sunk plate.
+
+### 3. Why a162 does this, and the invariant change
+
+a162 encodes "the plug is always the farthest thing: it may never occlude any source texel from
+any eye in the cone". That was true when the plug was the background continuation. An INTERIOR
+fill — the thigh behind the calf, the wall behind its own glancing edge, the body behind the cape
+— is nearer than the background source texels beside it and MAY occlude them: the thigh is in
+front of the cave. a162 pushes such a fill down until it cannot occlude the cave texel a few
+texels away, which is exactly "too deep, obviously part of the leg".
+
+The invariant becomes: the plug may not stand in front of its own source texel (a135, kept), and
+may not be deeper than the deeper lip of the gap it fills less one source quantum (the A253 lip
+floor). Everything in between is the plate's business. The floor re-creates steps that a126 had
+smoothed; those steps are where the object's far part meets the background fill — the plate
+carries them as stretched quads (or tears, under the plate-tear arm), measured below.
+
+### 4. A253: objects, classes, bound, floor, skirt (flag `_plugObjectRule`, `_plugExtent`)
+
+- Objects at rest: `dQ − farField > fgTearStep` (in front of the a-priori background
+  continuation), 4-connected components. No model, no constant beyond the cliff step.
+- Per sample: CONTINUOUS when the two lips' own slopes (measured outside the gap on each side over
+  `rampMax` cells) extrapolate to meet at the cell within `qN·(1 + k/rampMax)` — interpolation;
+  INTERIOR when both lips are in one object — the far lip's depth; EXTENT otherwise — the far lip
+  (`far`) or the interpolation (`skirt`).
+- Bound in the field: `depth ≥ min(deeper lip, source) − qN`, carried to unobserved texels by the
+  same membrane; floor after a126 on the plate: the same bound.
+- Colour (`_geoLipSeed`): a continuous texel (and a skirt texel) admits seeds from both lips (its
+  gate is its own lip spread plus the quantum); every other texel keeps the cliff step, and the
+  interior fill's seeds follow its raised depth automatically.
+- Toggle: the "gaps" select in the bake controls (default / object rule · far / object rule ·
+  skirt) runs the full recipe on the quick-bake path; console equivalent
+  `window._bakeGapRule('far'|'skirt'|'default')`.
+
+### 5. Measured (E1)
+
+**Depth, plate never deeper than the deeper lip** (a252 tables, `plate > deeper lip + step/2`):
+
+| scene / region | baseline | object rule (far) |
+|---|---|---|
+| troll, all observed classes | 24 % | 0.0 % (105 texels of 300 k) |
+| troll knee (continuous / step) | 89 % / 41 % | 0.1 % / 0.0 % |
+| troll head left | 100 % / 40 % | 0 / 0 |
+| troll left cave wall | 57 % / 39 % | 0.0 % / 0.1 % |
+| octopus tentacles (continuous / step) | 52–70 % / 70–72 % | 0.0 % / 0.0 % |
+| octopus mantle | 72 % / 9 % | 0 / 0 |
+
+The residual median excess is +0.07 step = the one-quantum setback of the floor, by construction.
+Floor counts: troll 187 k band texels raised (mean 0.085 of the range, max 0.58); octopus 1.60 M
+(mean 0.23, max 0.80); the bound in the field raised 0 on both (the field was never the problem).
+
+**Per-sample classes** (troll, 85 poses): 282 k samples joined as one surface by the slope test
+on top of the 3.37 M equal-depth two-lip samples; 279 k interior steps; 3.43 M extent steps.
+Octopus: 288 k / 26.5 M / 8.73 M interior / 15.2 M extent. Objects at rest: troll 41 components
+(374 k texels), octopus 243 (1.71 M).
+
+**Coverage** (`p0_depthviews`, enclosed uncovered pixels after the plug at a221 / sheet1 / mirror):
+troll baseline 7 / 5 / 1 → far 5 / 3 / 0, skirt 5 / 3 / 0. A new border-connected sliver of
+660 px at two poses: the ring margin was sized by the foreground's border shift only, and the floor
+had raised the plate's bottom-right edge texels; the margin now takes the plate border's shift as
+well (A253b), re-measured in §5b.
+
+**What the sheets show** (`troll_arms_sheet1_mirror.png`, `troll_arms_zoom_sheet1.png`, sent):
+behind the troll's left arm and beside the knee the composite depth is the wall / leg depth
+instead of the cave; the far arm's plug depth carries row-wise steps where the floor's plateau meets
+the a126-smoothed plate; the skirt's ramps are smoother. Whether the skirt's side reads right is
+the user's call on the live toggle.
+
+**Ghost index, with a caveat.** Overall troll 36.6 → 29.9 % (far) / 26.9 % (skirt); octopus 60.9 →
+35.3 % (far). Part of this is the instrument's reference moving (Addendum 185 §3): the harness
+picks the "far rim" by compatibility with the PLATE depth, which the floor raised, so the reference
+lips changed. The colour itself had NOT changed in those runs: the colour gate keys on `plateQ`
+(the field), the floor acted on `plateF` after it. A253c applies the same floor to `plateQ` in
+pass 2 so colour seeds follow the raised depth (the octopus's tentacle-behind, the thigh); the runs
+after commit `b4d6078` carry it; the six-scene depth sheets are those runs.
+
+### 5b. Truth (fold, figure, screen, pole), colour, and the two-layer texel
+
+**Truth regressions, 8-bit grade, hidden depth |err| over B∩R:** figure 3.70 → 3.66 q, screen 4.30 → 4.31 q,
+pole 4.46 → 4.87 q (+0.4 q, all texels moved toward the front: the floor pins the fill at the observed
+lip less a quantum, and on the blurred grade that lip sits a fraction up the silhouette's ramp — the
+floor's cost, inside the half-quantum tolerance set in the plan, recorded as such).
+
+**The fold scene** (`harness/synth/fold_*`: a receding textured wall, a ridge on it at the wall's own
+depth, a horizontal thigh bar at 0.50 in front of the wall, a vertical calf bar at 0.60 crossing it;
+per-class truth):
+
+| grade / arm | continuous (ridge) | interior step (calf over thigh) | extent (calf over wall) |
+|---|---|---|---|
+| 16-bit baseline | 1.50 q | 69.3 q (behind) | 0.67 q |
+| 16-bit object rule far | 1.27 q | 34.9 q | 0.56 q |
+| 8-bit baseline | 5.47 q | 62.8 q (behind, a quarter of the range) | 5.29 q |
+| 8-bit object rule far | 6.30 q | 39.7 q | 5.58 q |
+
+At 8 bit the synthetic calf-over-thigh IS sunk by a quarter of the depth range at baseline — the
+troll's knee mechanism reproduced — and the object rule recovers only a third of it. The instrument
+says why: **one plate texel carries two hidden layers.** Under the calf in the thigh's rows, the
+horizontal poses reveal the thigh and land it on those texels; the vertical poses reveal the wall
+behind the thigh's top and bottom edges and invert into the SAME texels (7 323 of the 11 845 interior
+texels have a thigh cluster holding 60 % of their samples, yet the median deeper lip is the wall on
+most). A single-layer plug has one depth per texel; the median gives it to whichever layer sent more
+samples. On the troll 80 k of 300 k observed texels carry two layers; the near layer is the plurality
+on 2.4 k of them.
+
+Two arms were built on that: `_geoObsMode = 'near'` (the near cluster wins as the plurality — inert
+in practice, as the counts say) and `'near2'` (the near cluster wins when a second pose confirms it:
+the layer directly behind the occluder owns the texel; a deeper layer seen past it would need a
+second plug layer). near2 moved the fold's interior texels to the thigh in the FIELD (0.509) and the
+plate stayed at 0.29: the ordering pass sank them again and the floor, then keyed to the median
+deeper lip (0.277), could not restore them. A253e keys the floor to the texel's OBSERVED depth; the
+re-run is in §5c.
+
+**The skirt and the truth harness.** B∩R and the per-texel depth error assume the covering texel is
+the true far texel. The skirt inverts each reveal through a nearer depth and lands on different
+texels, so B∩R falls to 86 % and the columns are not readable for it; screen-space coverage
+(`p0_depthviews`) is its measure, and that was unchanged (5 / 3 / 0 enclosed).
+
+**Colour.** Two-sided seeds for CONTINUOUS texels (`_geoLipSeed`): troll ghost 29.9 → 29.5 % (far),
+26.9 → 26.3 % (skirt); the fold's continuous class colour unchanged at 9.8. Two-sided seeds for the
+SKIRT's extent texels were measured and REMOVED (rule 7): fold colour 20.8 → 122 (interior) and
+48 → 104 (extent) against a clone scale of 68–73, and the troll's side carried body-coloured
+patches. The colour gate now takes the same floor as the plate (A253c), so an interior fill's seeds
+are the object's far part; measured on the octopus far arm that the colour had not moved with the
+depth before this.
+
+**The third extent arm, 'near'** (the user's reading of the depth sheets: "still huge gaps in the
+wall, the knee area, face"): under the object rule those three are EXTENT (their far lip is the
+background), so `far` leaves the cave there by design and `skirt` ramps. `'near'` gives an extent
+sample the near lip's depth less a quantum — the object continues flat behind its own silhouette,
+one quantum behind its own texels, and the colour gate seeds from the object's edge: "fill from the
+near pixels", the C3 class as a deliberate choice, behind the third position of the select.
+
+### 5c. The user's screen, twice, and what it removed
+
+1. **"Still huge gaps in the wall, the knee area, face."** Under the object rule those are EXTENT (their
+   far lip is the local background), so `far` leaves the cave there by design. Two arms were built for
+   them and one was removed on the screen:
+   - `near` (extent samples at the near lip's depth: the object continued flat behind its silhouette)
+     — REMOVED (rule 7): "tunnelling all over the place, the woman stretching into the background".
+   - `near2` (a texel that receives two hidden layers takes the near one when a second pose confirms
+     it) — REMOVED (rule 7). It moved the fold's thigh texels to the thigh in the field, and beside
+     the woman it handed the texels that carry her disocclusion (the cave) to her own interior reveals
+     (her depth, inverted through her larger shift): the same tunnelling. Sample count is the better
+     proxy for what the eye needs at a texel; the median stays. The two-layer conflict is recorded per
+     texel (`_geoLipNearMode`, `_geoLipNearFrac`) and its fix is a second plug layer, not a vote.
+2. **The multi-view reading the user gave** ("the woman stands off the background because the gap is
+   present and offset from her in every view; the wall's side and the knee are glancing self-occlusions
+   that must be filled at an angle from the neighbouring surface") is, in the sweep's data, the near
+   surface's own slope beside the lip. `side` (A253f): continue the near surface at that slope across
+   the gap; if it reaches the far lip's depth within the gap the gap is glancing and the fill is the
+   continued surface (never deeper than the far lip, coloured from the near edge fading to the far
+   side); if it does not reach, a true disocclusion, the far side. Tolerance is the slope's own
+   quantisation noise over the gap. On the troll it fires on 363 k of 3.43 M extent samples.
+3. **The margin, second reading.** The 660-px wedge survived the plate-border fix; the strips must
+   reach the WINDOW's edge after their own displacement, which lies a letterbox bar beyond the frame.
+   Margin per axis = bar + largest border shift (troll Mx 1054, My 570). Wedge gone (5 / 5 / 0).
+
+Troll, final arms (no near2), enclosed uncovered at a221 / sheet1 / mirror: far 5 / 5 / 0, side
+5 / 5 / 0, skirt 5 / 5 / 0 (baseline 7 / 5 / 1). Ghost: far 29.5 %, side 31.1 %, skirt 26.3 %
+(baseline 36.6 %, with the reference caveat of §5).
+
+### 5d. "The problem is not being solved" — the diagnosis, and A257 object backs
+
+The user, on the corrected sheets: still huge gaps in the wall, the knee, the face; then tunnelling
+when the near arms tried to fill them. Both are the same fact seen from two sides: **the plug is one
+displaced layer, one depth per plate texel, and beside a rounded object the gap needs the object's own
+side first and the background after. Both land on the same plate texels at different eyes.** Every
+per-texel rule picks one and fails the other: the median gives the cave (pits), the near rules give the
+woman's depth to her disocclusion (tunnelling). The instrument had already counted it (80 k two-layer
+texels of 300 k on the troll, 47 % of the silver warrior's band). No vote fixes that; the object's side
+must be its own layer.
+
+**A257 object backs** (`window._plugBack`, the "far + object BACKS" position of the select):
+- Objects: the rest-silhouette components (A253).
+- The central plane: the silhouette depth read one estimator blur width (RWD, Addendum 93) inside the
+  edge, so the ramp does not count, carried across the component as a membrane (the same solver, in
+  world z through the shift law's own depth→z map).
+- The back, first form (A257, superseded): the front mirrored through that plane. The user's screen:
+  "the silhouette inflation is a great idea, but not sure if you've actually done it" — right. A mirror
+  only gives thickness where the estimator's front already bulges; a depth map that reads a leg as a
+  flat plate (most of them do) gets a paper-thin leg and the cave shows beside the knee exactly as
+  before. That form is out of the code.
+- The back, second form (A257b, **silhouette inflation**): the object is the union of the maximal
+  balls of its head-on silhouette — the medial-axis transform (Blum 1967) lifted to 3D, which is what
+  "Teddy" (Igarashi, Matsuoka & Tanaka, SIGGRAPH 1999) inflates from a chordal axis. Every interior
+  texel u carries a ball of radius dist(u) (exact Euclidean distance to the silhouette edge) and the
+  half-thickness at t is the envelope of those balls, h(t)² = max_u [dist(u)² − |t − u|²]. Both the
+  distance and the envelope are one Felzenszwalb–Huttenlocher transform each (Distance Transforms of
+  Sampled Functions, Theory of Computing 8, 2012; the second on f = −dist²): exact, separable, O(N);
+  the 1-D kernel was checked against brute force (0 mismatches on 200 random rows) and a disc of radius
+  20 texels gives h(centre) = 21.0. Texels become world units through the projection at the plane's
+  depth (a texel spans w0/pw · (D − z)/D world along the reference rays), so an object is as deep as it
+  is wide — a shape prior with no constant. The back is the central plane minus that half thickness,
+  or the mirrored front where the depth map's own bulge is larger, clamped never in front of the front
+  and never behind the a-priori background. The only constant remains RWD (the ring).
+- Rendering: its own mesh (the plug's geometry and shader, its own displacement and colour textures,
+  alpha 0 outside objects), between the foreground and the plug; the depth test decides per pixel.
+  The plug keeps the far side, the continuity rule for the receding wall, and the interior-step rule.
+
+**Troll, first result** (`troll_backs.png`, `troll_backs_zoom.png`, sent): enclosed uncovered pixels
+0 / 0 / 0 at a221 / sheet1 / mirror (plug-only object rule 5 / 5 / 0, baseline 7 / 5 / 1); the back wins
+10 837 / 19 132 / 16 258 pixels. In the composite depth the fills beside the arm, the torso, the knee and
+the head are the object's side, continuous with the body; the woman keeps the far side.
+
+**Inflation, first troll run, and what the buffer said (A257c).** Enclosed uncovered 0 / 0 / 0 at
+a221 / sheet1 / mirror, back wins 10 430 / 18 135 / 15 496 px. Beside the arm, the torso, the knee and
+the head the composite depth is now the object's side, continuous with the body. But beside the woman
+the back showed horizontal terraces. The buffer (`harness/a257_probe.js` dumps the back depth, mode,
+plane, half-thickness, distances, source, far field and object ids; `a257_probe.py` reads them):
+- The rest-silhouette mask is not the troll and the woman. It is 41 components over 374 k texels
+  (43 % of the plate): one mega-component of 284 k (the troll **and** the floor **and** the left cave
+  wall, joined where the feet meet the ground and the arm meets the wall at the same depth) and a
+  90 k component that is the right cave wall. The walls and floor are "in front of the far field"
+  because the a-priori far-field membrane is only anchored at far rims and sags under any large
+  continuous surface that has none — it is not a statement about those surfaces.
+- Half the mask (187 572 texels) had its back clamped to the far field (the inflated side reaches the
+  background: 134 k inflation, 54 k mirrored bulge). Under the walls and floor that far field is
+  terraced — its row-to-row jumps inside the mask average 0.0079 of the depth range against 0.0013
+  for the front, 10 % of pairs jumping more than three quanta — and the terraces were the back.
+- Half-thickness: median 0.0055 world, p90 0.012, max 0.019 against a z span of 0.06; front-to-back
+  median 0.126 of the depth range (32 quanta); 1.2 % zero thickness.
+- A257c: where the inflated side reaches the a-priori background there is no side to add — the plug's
+  far field is the surface there — so those texels carry no back (alpha 0, the mesh's displacement
+  takes the far field to stay continuous). This removes the wall and floor backs and the terraces and
+  leaves the troll's own sides, which never reached the background where they mattered (the knee,
+  the head, the torso's edge zone). No new constant; the mega-component itself is left as it is,
+  because the inflation reads each texel's distance to the nearest non-mask texel, which for the
+  troll's body is its own silhouette regardless of where the feet join the floor.
+- After A257c the buffer is clean (the leg's back is as smooth as the front: row-to-row jumps
+  0.0016 vs 0.0015) but the composite still showed a staircase beside the woman. The back layer
+  rendered alone (a new `BACKONLY=1` shot of `p0_depthviews`, with and without its per-fragment
+  tear) shows the same staircase — and it is the woman's own back: her silhouette is a stack of
+  widths (head, shoulders, waist, hips, legs, the staff), the maximal-ball envelope gives each width
+  its own half-thickness, and seen from the side that is a stepped profile. That is what the model
+  says and what Teddy's inflation looks like before its axis is pruned; a pruning scale would be a
+  new constant, so it is reported, not hidden — the user's screen decides whether a stepped side
+  beside a thin figure is worse than the far cave.
+- The back-only shot also showed the whole plate in the depth pass: the colour pass discards
+  alpha-0 texels (beyond-frame plug texels by the a214 contract, every texel without a back on the
+  back layer) but the depth pass drew them as cover, so the back layer covered the entire plate at
+  its fill depth and "back wins" counted far-field texels. The depth pass now discards exactly what
+  the colour pass discards (A257c). Coverage numbers before this are upper bounds only where a plug
+  texel was transparent; the enclosed counts below are re-measured.
+
+**Troll after A257c** (`troll_infl_zoom_small.png`, `troll_backonly.png`, `troll_infl_small.png`,
+sent): 186 410 texels carry a back (of 373 982 in the mask); enclosed uncovered 4 / 3 / 0 px at
+a221 / sheet1 / mirror (object rule alone 5 / 5 / 0, baseline 7 / 5 / 1); the back wins 10 000 /
+17 122 / 13 074 px. Beside the arm, the torso, the knee and the head the composite depth is the
+object's side, continuous with the body; the woman keeps the far cave behind her; her own side is
+the stepped profile described above. In colour the sides are the object's edge pixels stretched
+across the reveal — the honest texture of a surface that was never photographed; the SD stage's
+job, not a clone of the background.
+
+**The user's screen on the inflation: "still has the stretching to the background" (A257d).**
+Measured, not eyeballed: at sheet1 the band to the right of the woman is 44 shot px wide (about
+110 texels) and its depth runs from hers (0.56) down to 0.20 of the range. Her own back reaches
+0.37, so most of the band is the troll's back peeking out past her — his torso and leg, 60–80 texels
+of half-width, inflated in diorama units to 0.011–0.015 world in a scene whose whole depth is
+0.06 — and the colour on both sides is the limb's few texels magnified along the recession. Two
+faults, both mine, both in A257b's "no constant":
+- **Isotropy was a constant in disguise.** A texel of width = a texel of depth holds only if the
+  depth map's z is scaled like its x; it is not (the volume sliders and the estimator's range set z
+  independently). The factor is measurable on the data: the ball model predicts the visible front,
+  front − plane = s·h, and s is the least-squares slope of the measured bulge against the envelope
+  height (through the origin, bounded below by zero). On the troll's dump: s = 0.49 of isotropic over
+  the troll, 0.38 over the woman, 0.30 over the leg, 1.10 over the head — the round head is round,
+  the body is a half-thickness relief, the woman a third. A257d fits s per image over the
+  cliff-bounded texels beyond the blur ring and inflates with it; where the front's own bulge is
+  larger the front is mirrored (round parts keep their roundness). At sheet1 the torso's side is then
+  ~27 texels of parallax instead of 54, the woman's ~15 instead of 30.
+- **The side's colour.** A back texel carried its own source colour, so the side showed the limb's
+  texels stretched — the same look as every skirt the user has rejected. The fill rule for surfaces
+  never photographed is a plausible wash: the back's colour is now the membrane of the source colour
+  over the back texels, Dirichlet on every texel without a back (the silhouette's own colours and the
+  object's interior), the A242 machinery. `window._plugBackTex = 1` keeps the raw texels for A/B.
+- **Which texels.** The rest-silhouette mask still held the floor and walls (§5d); a back now
+  belongs only to texels whose nearest non-mask texel is a cliff (a step larger than the tear step
+  across the mask edge — the head-on silhouette in the user's sense). The distance transform carries
+  the nearest texel's index, so the test is free. Soft-bounded texels (mask edges where the far field
+  merely sags) carry no back.
+
+**What the stretching actually was (A257e).** A257d's first troll run made it worse, not better:
+the back-only depth shot showed a slab 100 shot px wide to the right of the woman at nearly her
+depth. Not her back, not the troll's: the back mesh is the plug's full-plate grid, displaced per
+vertex, and between a back texel and its back-less neighbour the mesh spans the whole depth gap as a
+ramp — one texel of colour drawn across a hundred pixels. The foreground tears such ramps by the
+A241 stretch law; the plug never tears by design, and the back layer inherited the plug's exemption
+(`!u_isBackgroundLayer` on both tear branches). First try: the back layer tears by the stretch law
+like the foreground. Result: back wins 1 070 / 1 232 / 1 572 px (from 8 150 / 13 601 / 8 998), a
+sliver — the law tore exactly the sides the layer exists to draw, because a side seen edge-on IS a
+stretched surface, and by the mirror symmetry the back's limb texels stretch as much as the front's
+limb texels that the foreground tear opens the gap with. Removed (rule 7). What distinguishes the
+skirt from the side is not stretch but alpha: the layer's alpha is 1 on back texels and 0 elsewhere,
+so across the skirt the filtered alpha runs 1 → 0. A257e as kept: back-less texels take the NEAREST
+back texel's depth as displacement (a multi-source BFS; no ramp at the back's boundary at all) and
+the shader discards alpha < 0.5 on this layer in both passes. The side keeps its steepness.
+
+**Troll after A257d/e** (`troll_e_torso_woman4x.png`, `troll_e_zoom_small.png`,
+`troll_e_backonly.png`, sent): 102 119 texels carry a back (of 373 982 in the mask; 270 383 are
+soft-bounded — floor and walls — and carry none); measured scale 0.643 of isotropic over 92 976
+cliff-bounded texels; enclosed uncovered 5 / 4 / 0 px at a221 / sheet1 / mirror; the back wins
+1 660 / 2 529 / 2 707 px (against 10 000 / 17 122 / 13 074 with the isotropic scale and the skirts).
+The stretching is gone. What remains is the honest geometry: at the thickness the depth map itself
+supports, an object's side is a band of 10–30 texels of parallax at sheet1, and beyond it the reveal
+is the far background again — the same picture as the object-rule "far" arm with a thin lip. The
+knee stays the thigh (interior step, the plug), the left wall stays continuous (class 1), the woman
+keeps the cave; the head's side is the mirrored front where its own bulge exceeds the fitted scale.
+
+**Where this leaves the user's principle.** "A gap that opens inside the silhouette must never show
+the distant background" and "no stretching" cannot both be met by geometry read from this depth
+map: the troll stands ~1 cm in front of the cave in a 6 cm diorama and measures ~0.3 cm thick, so at
+42° off-axis the reveal beside his torso is 88 texels wide and his side covers 27 of them. Filling
+the rest at the object's depth is the tunnelling the user rejected; filling it with the object's
+side at an invented thickness is a constant with no backing in the data (the isotropic run was that
+constant, and it looked like stretching because it was). The remaining honest levers are (a) the
+viewing cone — the reveal width scales with the eye offset, and sheet1 is 42° — and (b) the SD
+stage painting what is genuinely unseen. That decision is the user's.
+
+### 5e. Six scenes with the backs
+
+Per scene, "far + backs" (A257e) at a221 / sheet1 / mirror: enclosed uncovered px, and the pixels
+the back layer wins.
+- Troll: 5 / 4 / 0; back wins 1 660 / 2 529 / 2 707.
+- Silver warrior: 0 / 0 / 0; back wins 2 851 / 5 679 / 3 291 (object rule "far" alone also 0 / 0 / 0).
+  The man's right flank and the bears' sides are the back's wash; beyond them the sky, as the depth
+  map has it (the baseline's uncovered strip at the left bar is gone with the depth-pass discard
+  fix). Each silver warrior arm takes ~65 min on the 3000² plate in SwiftShader.
+- Octopus: 4 / 4 / 3; back wins 10 293 / 14 267 / 16 400. This is the scene the backs are for: the
+  tentacles' bands (the striped tearing in the baseline composite) are the object's own sides in the
+  depth view, and the black stripes are gone from the colour composite.
+- Room (sunflowers): 6 / 7 / 11; back wins 10 208 / 13 340 / 9 168. The heads and stems get sides;
+  the reveal beside the big head is still sky beyond the side, as the map has it.
+- Bristlecone (first A257e run): 16 / 16 / 3 enclosed, but the composite is unacceptable — metre-long
+  orange bars across the sky at sheet1 (`bristlecone_e_small.png`). Same mechanism as the skirt,
+  one level down: the alpha discard removes ramps between a back texel and a back-less one, but
+  the foliage is a speckle field whose back texels sit at very different depths side by side, and
+  the grid spans a ramp between two BACK texels too. **A257f**: the back mesh gets its own index —
+  a quad survives only if all four corners carry a back and their back depths lie within one tear
+  step (`fgTearStep`, the FG's own cliff constant; the A212 pre-tear applied to this layer). A side's
+  texel-to-texel step is a few quanta (the troll's torso: ~3 at the limb, less inside), a skirt's is
+  the depth gap, so the sides survive and the bars do not. All six scenes are re-baked with it.
+  The first A257f run reproduced the bars exactly (identical back-wins counts): the index was
+  never built — the decoupled plug geometry carries no PlaneGeometry parameters, so the guard
+  skipped it silently. `harness/a257_diag.js` (bake the troll, report the back mesh's geometry)
+  showed `sameGeom: true`; the grid is now read from the uv layout, and the troll keeps 98 138 of
+  868 700 quads. The a134 rule again: arms must diverge before numbers are read — identical numbers
+  after a change are a null result to investigate, not a confirmation.
+- A257f troll: 5 / 4 / 0 enclosed; back wins 1 429 / 2 281 / 2 508 (diverged from A257e's
+  1 660 / 2 529 / 2 707 by the removed ramps; the sides stand).
+- A257f bristlecone: bars reduced (back wins 17 274 / 20 305 / 19 895 from 28 534 / 35 812 /
+  31 390), not gone. A quad within one tear step (0.06 of the range) can still span 20+ texels of
+  parallax at the cone's edge near the front of the volume, where the z law is steepest; chains of
+  such quads are the bars. The foreground is torn by the A241 stretch law at exactly this point.
+  **A257g**: the back layer obeys the same stretch law (mode 1, ungated) in both passes, on top of
+  its index and alpha discard. The earlier removal of the stretch law was wrong in degree: it takes
+  the steepest ~40 % of the sides' pixels (troll back wins 1 070 / 1 232 / 1 572 against 1 429 /
+  2 281 / 2 508), which is the part a texel cannot honestly cover — the same standard the FG is
+  held to. All six scenes re-baked with A257g.
+- A257g troll: 5 / 4 / 0; back wins 1 108 / 1 256 / 1 611.
+- A257g bristlecone: 16 / 16 / 3; back wins 4 737 / 3 502 / 4 949 — and the orange bars are
+  STILL there (`bristlecone_g_small.png`). The who-wins panel settles it: the bars are green, the
+  plug, not cyan. They were never the back layer; the back was small in every run (A257e's
+  28 k "back wins" on this scene was the skirts, A257f/g cut them to 3–5 k, the bars did not
+  move). The bars are the OBJECT RULE's plug: the bristlecone's foliage is a porous silhouette,
+  the rest-silhouette mask is one mega-object with thousands of sky holes, and a gap between two
+  branches classifies as an INTERIOR STEP (both lips in the same object) — filled at the far
+  branch's depth, near the front of the volume, then displaced 20+ texels at the cone's edge:
+  tunnelling between branches, in the tree's colour. Physically the gap between two branches is
+  air with the sky behind it; the interior-step rule assumes a solid body (the thigh behind the
+  calf). The multi-view median does not rescue it: the lip walk stops at the first source cell
+  against the parallax, which in foliage is a branch far more often than a sky texel, so the
+  observations say "branch" too. Prediction, to be checked when the bristlecone "far" arm lands
+  (queued last): it shows the same bars without any back layer. Candidate rules, for the user's
+  decision, none built: (a) porosity of the object at rest (holes enclosed by the mask over its
+  area) — a threshold, i.e. a constant unless derived; (b) require the far lip's surface to be at
+  least as wide as the gap it is asked to fill (the thigh is; a branch is not) — scale-free, the
+  gap width is measured per sample already; (c) fall back to the far field for interior steps
+  whose far lip is thinner than the blur ring RWD (the one constant already in use).
+- A257g starwatcher: 1 / 1 / 3 (baseline 4 630 / 1 991 / 3 259 enclosed FG holes, of which the
+  plug leaves 1 / 1 / 3); back wins 1 514 / 1 288 / 628 — a thin side along the figure, the man
+  on the bears likewise; the far mesas keep their far side; nothing streaks.
+- A257g octopus: 4 / 9 / 3; back wins 4 810 / 4 221 / 6 340. The tentacle bands stay filled —
+  that fill is the object rule's interior step (segment behind segment, the plug, green), which on
+  a solid body is the right reading; the backs add slivers along the arms.
+- A257g room: 6 / 8 / 11; back wins 3 549 / 3 615 / 2 207.
+- A257g silver warrior: 0 / 0 / 0; back wins 1 258 / 1 834 / 1 438.
+
+Six-scene sheets sent: `six_g_sheet1_small.png`, `six_g_mirror_small.png` (baseline | object rule
+far | far + backs A257g, colour and composite depth, enclosed px per arm). Summary of what the back
+layer does across the six at the measured thickness: a thin side along every cliff-bounded object
+(1–6 k px at sheet1), never a streak after A257e/f/g, no change to coverage (the plug already
+covers); the visible gains of this arc on the sheets are the object rule's (octopus bands, troll
+knee/head interior fills, silver warrior's figure) and its one visible loss is the bristlecone's
+porous silhouette (§5e above), which the object rule's "far" arm alone should reproduce.
+
+### 6. State
+
+Nothing default changed; everything above lives on the quick-bake path behind flags and the "gaps"
+select (default / object rule · far / skirt / side / back). App commits on `main`: `4def289` (A252 +
+A253 + A255 + fold scene), the select, `01a7879` (skirt seeds removed), `5196f23` (A253e observed
+floor), `6591cd6` (near arm + margin), `fb185c1` (side arm; near removed), `a9c7aba` (near/near2
+removed), `2a651c9` (A257 mirror backs), `51abfc6` (A257b inflation), `4180338` (A257c: no back where
+the side reaches the far field, depth-pass alpha discard, probe), `98b3cda` (A257d/e: measured
+thickness scale, cliff gate, colour wash, ramp discard), `436a5bb` + `45dccc9` (A257f back index),
+`d015c95` (A257g stretch law on the back layer).
+
+Removed this arc (rule 7): the mirror-through-plane back; isotropic texel-to-world inflation; the
+raw-texel side colour (kept behind `_plugBackTex`); the far-field displacement fill for back-less
+texels; the back layer's exemption from the stretch law (removed, then its removal reversed — see
+§5e). Open, for the user: (1) the porous-silhouette failure of the interior-step rule on the
+bristlecone (three candidate rules in §5e, none built); (2) the principle question of §5d — at the
+data's own thickness the reveal beyond an object's side is the far background, and the levers left
+are the viewing cone and the SD stage; (3) the live pass on the select. Pending in the harness when
+this was written: the object-rule "far" arms for room, bristlecone (the prediction of §5e) and
+starwatcher; their numbers go into the next addendum or an amendment here.
+
+Rules restated by this arc: identical numbers after a change are a null result to investigate (the
+A257f index that never ran); "no constant" must be checked in units — a texel of width equal to a
+texel of depth was a constant; the who-wins panel, not the composite, says which layer drew a pixel.
