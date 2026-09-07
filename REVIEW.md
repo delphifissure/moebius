@@ -14174,6 +14174,11 @@ the back layer wins.
   a solid body is the right reading; the backs add slivers along the arms.
 - A257g room: 6 / 8 / 11; back wins 3 549 / 3 615 / 2 207.
 - A257g silver warrior: 0 / 0 / 0; back wins 1 258 / 1 834 / 1 438.
+- **Prediction checked.** The bristlecone's object-rule "far" arm, no back layer at all, shows the
+  same orange bars, pixel for pixel in the who-wins panel (`bristlecone_far_vs_backs_small.png`;
+  enclosed 16 / 16 / 3, identical to the backs arm). The back layer is exonerated; the bars are the
+  interior-step plug on a porous silhouette, an A253 limitation, open as listed above. Room's far
+  arm: 6 / 9 / 11, the same as with backs.
 
 Six-scene sheets sent: `six_g_sheet1_small.png`, `six_g_mirror_small.png` (baseline | object rule
 far | far + backs A257g, colour and composite depth, enclosed px per arm). Summary of what the back
@@ -14200,9 +14205,10 @@ texels; the back layer's exemption from the stretch law (removed, then its remov
 §5e). Open, for the user: (1) the porous-silhouette failure of the interior-step rule on the
 bristlecone (three candidate rules in §5e, none built); (2) the principle question of §5d — at the
 data's own thickness the reveal beyond an object's side is the far background, and the levers left
-are the viewing cone and the SD stage; (3) the live pass on the select. Pending in the harness when
-this was written: the object-rule "far" arms for room, bristlecone (the prediction of §5e) and
-starwatcher; their numbers go into the next addendum or an amendment here.
+are the viewing cone and the SD stage; (3) the live pass on the select. The object-rule "far" arms for room,
+bristlecone and starwatcher landed after the first commit of this addendum (room 6 / 9 / 11,
+bristlecone 16 / 16 / 3 with the bars, starwatcher 1 / 1 / 3 — each identical to its backs arm) and
+the six-scene sheets (`six_g_sheet1_small.png`, `six_g_mirror_small.png`) carry all three arms.
 
 Rules restated by this arc: identical numbers after a change are a null result to investigate (the
 A257f index that never ran); "no constant" must be checked in units — a texel of width equal to a
