@@ -115,6 +115,12 @@ can be adjudicated directly (no truth), and §3 says the instrument under-detect
 ## 5. The app's band vs exact truth (synthetic scenes, app's own 45° sweep, app given the scene's
 8-bit depth and its exact mapping)
 
+Path note (from the code read, CODEMAP §10/§19): every probe in this section fed the app the
+8-bit depth PNG, which is the path where the quick bake consumes the live-baked (sharpened)
+depth. A 16-bit PNG takes a different path in which the quick bake reads the raw decode and the
+live bake's sharpening is discarded. The 16-bit reruns of all nine scenes are in §5c; they also
+test the terrace claim below directly, since a 16-bit source has no 1/255 terraces.
+
 | scene | truth hidden px | app band px | precision | recall | band depth error (median abs / p90) |
 |---|---|---|---|---|---|
 | S27 fishtank | 4 894 | 125 332 (35 % of plate) | 0.04 | 1.00 | 0.000 / 0.079 m (scene 0.24 m) |
@@ -122,8 +128,34 @@ can be adjudicated directly (no truth), and §3 says the instrument under-detect
 | S2 contact | 16 454 | 131 524 (37 %) | 0.13 | 1.00 | 0.001 / 0.055 m (0.128 m) |
 | S9 stacked | 62 704 | 175 346 (49 %) | 0.36 | 1.00 (things 1.00, sides 0.92) | 0.000 / 0.043 m (0.112 m) |
 | S10 limbs | 52 680 | 200 027 (56 %) | 0.26 | 1.00 (things 1.00, sides 1.00) | 0.000 / 0.055 m (0.096 m) |
+| S12 frame-cut | 16 975 | 135 075 (38 %) | 0.13 | 1.00 (things 1.00, sides 1.00) | 0.000 / 0.076 m (0.128 m) |
+| S15 open (sky, hills, tree) | 26 133 | 59 796 (17 %) | 0.43 | 0.99 (bg 0.99, things 1.00, sides 1.00, interior 1.00) | 3.07 / 8.57 m (8.64 m) |
+| S16 ridge vs jump | 15 114 | 72 415 (20 %) | 0.07 | **0.32** (bg 0.32) | 0.000 / 0.003 m (0.16 m) |
+| S26 overhangs | 25 631 | 166 255 (46 %) | 0.15 | 1.00 (things 1.00, sides 1.00) | 0.011 / 0.055 m (0.112 m) |
 
-Precision at recall 1.0 across the five scenes: 0.04–0.36, i.e. the bake fills 3–25× the true scope.
+Precision at recall 1.0 across the first five scenes: 0.04–0.36, i.e. the bake fills 3–25× the
+true scope. The four scenes added afterwards (bakes run after the sufficiency review) change the
+picture in two places:
+
+- **S16 is the first recall failure.** The scene has a grazing wall whose top half continues as a
+  crease (a ridge, no reveal) and whose bottom half steps 0.06 W back (a jump, a wide reveal of
+  the far wall). The app's band covers the jump's near lip (green) but misses most of the far-wall
+  strip the jump reveals (blue in `out/S16/check_app.png`): recall 0.32. The reveal is a wide,
+  low-contrast strip on a wall that is itself at a grazing angle, so the rims the far field is
+  anchored to are weak and the demand propagates only a few texels past the lip. Meanwhile the
+  band still sprays the usual fans and terraces over the near wall (precision 0.07). This is the
+  case the sufficiency review predicted: a ridge-vs-jump scene separates "there is a depth step"
+  from "there is a reveal", and the band gets both halves wrong in opposite directions.
+- **S15 exposes the depth of the band, not its footprint.** Recall is 0.99 and the footprint is
+  the tightest of the nine (precision 0.43: the tree canopy, trunk and signpost are covered
+  almost exactly, with fans only on the ground). But the band's plate depth is wrong by a median
+  3.1 m on an 8.6 m scene: behind the tree and the post the truth is the hills and the ground,
+  and the far field (a membrane anchored at the far rims, which on an open scene are the sky)
+  puts the band at sky depth. On a room scene the far rim IS the back wall, so this error never
+  showed. For an open scene the fill would parallax as sky where the viewer expects ground.
+- S12 and S26 repeat the room anatomy: objects exact (the frame-cut box, the pole, the ball; the
+  table with its legs, the shelf and the beam), recall 1.00, precision 0.13–0.15 from ceiling
+  terraces, the floor and fans.
 
 The buffers (`out/<scene>/check_app.png`) show the same anatomy on every scene: the objects are
 covered exactly (green), then the whole near floor, horizontal stripes across the ceiling, and
