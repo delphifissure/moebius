@@ -641,3 +641,29 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
    the shipped default.
 10. The legacy sweeps' `slider/400` eye units, the v1 path, the hole-patch system and the
     depth-peeling passes are all dead or non-default code; none of them touches the quick bake.
+
+## 20. Sprint 2 code (added 2026-09-08; line numbers of that day's file)
+
+- **Envelope (shipped).** L148 `bgViewFadeEndDegV = 30`; L149 `bgEnvAspect()` = tan(V)/tan(H);
+  L150 `bgPoseFrac(x, y, D)` (rectangular pose fraction, replaces the window-aspect rule in
+  `u_poseFrac`); L156 `bgFadeFrac(x, y, D)` (fade from 0.700 of either rim, used by
+  `updateViewFade`, the SV stamp and the debug angle stamp). The CPU sweep and the sweep bake take
+  `asp = bgEnvAspect()` (L7604, L7798). §19 item 8 is closed by this.
+- **Rim law (flag `window._tearLaw = 'rim'`).** L393 `bgRimLawFor(pw, ph)` → `{t, gmin, hfov, D,
+  zeAt, joined}`; L420 `bgRimLawOn()`. Users: the CPU sweep (L7790: `rimL/rimJ`; quads drawn iff
+  four joined edges, otherwise a point splat, counted in `rimCut`), the sweep's cut length (L7899:
+  ∞ under the flag), the first FG tear (L14126 `_rimL`, replaces the fold test), the A212 baked
+  tear (L15778 `rimT`), and the quick-bake FG material (L14923: `u_useBandCut`/`u_bandCutAll` off).
+- **Reach-anchored far field (flag).** `_plugGeoBand` L8142–: from every unjoined 4-edge, walk into
+  the near side along the edge's axis for |shift(d_far) − shift(d_near)| texels at e_max (LUT
+  `bgShiftLUTFor(pw, ph)`; × `bgEnvAspect()` for vertical edges) or to the next unjoined edge;
+  those texels are the membrane's unknowns, every other texel is fixed at its own depth
+  (`fixedFF`); `solveField(fixedFF, dQ)` as before; `[S2b] reach:` log. The observed-lip merge
+  keeps `fixedFF` texels fixed (L8325 region).
+- **Sweep plate pass under the flag.** L8051 `if (revealTex && rimFF)`: the far field
+  (`opts.farField`) is warped in the plate pass, a hole cell's owner is the demand texel, an owner
+  whose far field equals its source within a quantum (`window._qbSrcQuantum`, else 1/255) is
+  self-covered; the A246/A252 observe walk is skipped when `rimFF` is set.
+- **Probe.** `harness/a257_probe.js` dumps `geoClass`, `obsDepth`, `obsCount`, `lipDeep`,
+  `lipNear`, `fgTorn`; `POSES="fx:fy,…"` writes per-pose class maps and reveal sets.
+- **Truth kit.** `scenes.py` S16 gained `jump_ledge` (the step was an open slot; S2 report §3).
