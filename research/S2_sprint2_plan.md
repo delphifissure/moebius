@@ -25,6 +25,10 @@ Inputs: S1 report §5/§5c (the band's anatomy and the fold-tear cause), CODEMAP
   envelope rim along the edge's axis), not the far rims alone (membrane sags under rim-less
   surfaces) and not pass 1's band (imports its misses). The sweep's plate pass warps that field and
   names the demand texel per hole cell. Added after the first A/B rounds; see the report §1.
+- Separation (S2b.4, after the user's reading of the S15 shots): the plate is torn at its own rims
+  instead of slope-limited or pushed (a126/a162 off on this arm), the far field is solved once with
+  Neumann at joined boundaries (components with no far rim keep their own depth), sky and ground are
+  never blended, the band colour is the membrane, and sky is its own layer at infinity (2c).
 - A/B: 16-bit bakes of S2, S16, S27, S15, S12, S26 with the flag, scored with `check_app_band`
   against the regridded truths; arms must diverge (a134) and the buffers are looked at (a196).
   Results: `S2_sprint2_report.md`.

@@ -694,3 +694,8 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `bgLayerMesh.userData.sky` (PlaneGeometry at z − Z_sky, scale (Z+D)/D × 3, CanvasTexture with
   the column continuation), added/removed with the ring. Scorer: `plate_depth_err_m` from
   `plateF.f32` (bottom-up rows). Shot harness: `HIDE=fg,plate,sky,ring`.
+- **Neumann solve well-posedness.** In `solveField` (rim law only): isolated unknowns and unknown
+  components with zero boundary weight are fixed at `val` before the multigrid (`[S2b] far field: …
+  components … keep their own depth`); a non-converging Neumann solve falls back to the Dirichlet
+  solve with a console warning. A 1e-3 Tikhonov anchor was tried and removed (screening length 63
+  texels; S2 report §3).

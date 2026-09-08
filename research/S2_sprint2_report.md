@@ -175,7 +175,29 @@ true positives.
 | S15, rim law with S2b.3 (+ sky at infinity) | 34 867 | | | 0.82 / 0.93 | 39 497 | 1.04 |
 | **S15, S2b.4 + sky layer** | 34 867 | | | **0.83 / 0.96** | 40 430 | **0.14** (plate = field) |
 
-Rows for S16/S27/S12/S26 under S2b.4 are re-run by the chain and appended below when it lands.
+| S16 (ledge closed), S2b.4 | 4 513 | | | 0.48 / 0.92 | 8 606 | 0.001 |
+
+The first S2b.4 chain run of S16 came back with 777 band texels (recall 0.10): the far-field
+multigrid had diverged (residual 6 × 10⁶) under the Neumann boundaries and the per-texel clamp then
+set the whole field to the source. Cause: a reach region whose boundary carries no far-rim value at
+all (a pure-Neumann component, constant null space; the aggregated coarse operators lose diagonal
+dominance under the solver's over-relaxation). A Tikhonov anchor of 10⁻³ per texel was tried and
+REMOVED (rule 7): its screening length is √(4/ε) ≈ 63 texels, which pulled every wide reach back
+toward the source (S15 band depth 0.14 → 1.47 m). What stands: the unknown components are labelled
+and a component with zero boundary weight is fixed at its own depth (exact; it has no far side but
+itself); a solve that still fails to converge falls back to Dirichlet at every fixed neighbour and
+logs it. S16/S2/S15 re-baked: S16 0.48 / 0.92 (depth 0.001 m), S2 and S15 unchanged from the rows
+above.
+
+| scene, S2b.4 | truth px | rim P / R | band px | depth median (m) | before S2b.4 (P / R, depth) |
+|---|---|---|---|---|---|
+| S27 one box | 4 894 | 0.82 / 1.00 | 6 002 | 0.005 | 0.86 / 1.00, 0.003 |
+| S12 pole, sphere, box | 16 975 | 0.85 / 1.00 | 19 792 | 0.000 | 0.92 / 1.00, 0.000 |
+| S26 table, shelf | 25 631 | 0.77 / 1.00 | 33 057 | 0.002 | 0.77 / 1.00, 0.002 |
+
+The room scenes give up 0.04–0.07 of precision to S2b.4 (the foot strips take the far depth and are
+demanded; they are never rendered) and keep recall at 1.00; depth on the band is unchanged. Sheet of
+all six: `out/sheet_rim_s2b4.png` (sent).
 
 S15's sky-reveal recall (class 7) is 0.95 after S2b.4 (0.90 before; 0.95 under the fold law); the
 misses are gaps between leaves inside the crown. S15's band depth went from 1.0 m (the sky/ground
