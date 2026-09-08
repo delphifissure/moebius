@@ -189,6 +189,52 @@ hill is genuine, so that orange is a kit convention, not an app error. Blue (tru
 the far-wall strip behind the jump; its wedge shape is the reveal width growing with the depth gap
 along the jump, and the two lobes are the envelope's two vertical pose rows.
 
+### 5c. The same nine bakes with 16-bit depth (the A99 float path)
+
+Same scenes, same flags, same env45 truth; the only change is `rest_depth16.png` instead of
+`rest_depth8.png`. Per CODEMAP §10 this also bypasses the live bake's sharpening (irrelevant on
+exact synthetic depth, which has nothing to sharpen). Buffers: `out/<scene>/check_app16.png`.
+
+| scene | 8-bit: precision (band % of plate) | 16-bit: precision (band %) | recall 8 / 16 | band depth median abs, 8 / 16 |
+|---|---|---|---|---|
+| S27 fishtank | 0.04 (35 %) | 0.02 (56 %) | 1.00 / 1.00 | 0.000 / 0.000 m |
+| S11 rounded | 0.21 (48 %) | 0.23 (45 %) | 1.00 / 1.00 | 0.000 / 0.000 |
+| S2 contact | 0.13 (37 %) | 0.11 (42 %) | 1.00 / 1.00 | 0.001 / 0.001 |
+| S9 stacked | 0.36 (49 %) | 0.32 (55 %) | 1.00 / 1.00 | 0.000 / 0.000 |
+| S10 limbs | 0.26 (56 %) | 0.31 (48 %) | 1.00 / 1.00 | 0.000 / 0.000 |
+| S12 frame-cut | 0.13 (38 %) | 0.11 (44 %) | 1.00 / 1.00 | 0.000 / 0.000 |
+| S15 open | 0.43 (17 %) | 0.14 (53 %) | 0.99 / 1.00 | 3.07 / 0.015 m (p90 8.6 / 6.8 m) |
+| S16 ridge vs jump | 0.07 (20 %) | 0.04 (30 %) | **0.32 / 0.33** | 0.000 / 0.000 |
+| S26 overhangs | 0.15 (46 %) | 0.17 (42 %) | 1.00 / 1.00 | 0.011 / 0.014 |
+
+Reading:
+
+1. **A better depth source does not shrink the band; on six of nine scenes it grows it.** The
+   room scenes go from stripes-plus-fans to solid ceiling and floor (S2, S12, S27; S27's band is
+   now 56 % of the plate for a truth of 1.4 %). S15's open ground, which the 8-bit bake left
+   mostly alone (precision 0.43, the best row in §5), becomes solid band at 16 bits (0.14). This is
+   the fold-tear mechanism of the §5 correction acting without the quantum gate's accidental
+   protection: any grazing plane whose parallax gradient exceeds one texel per texel at the rim
+   is torn and rebuilt as band.
+2. **Recall is unchanged everywhere**, S16's miss included (0.32 → 0.33): the far-wall strip
+   behind the jump is not a quantisation casualty either. It is a demand-propagation limit at a
+   low-contrast rim on a grazing wall, and it needs its own fix.
+3. **S15's depth column is not a like-for-like improvement.** The median fell from 3.07 m to
+   0.015 m because the band is now dominated by ground texels whose far field is the ground
+   itself; on the tree's and post's true reveal the far field is still the sky (p90 6.8 m of 8.6 m).
+4. The depth of the band on the room scenes is identical in both formats (median 0, p90 0.03–0.09
+   m): the far field is a membrane anchored at far rims and does not care about the source's
+   quantum.
+
+Decision recorded (rule 7 candidate for the app, not applied here): the tear criterion "rim
+shift span > cell extent" is not a disocclusion test. It fires on compression, which opens
+nothing, and it ignores the direction of head motion relative to the depth gradient. A reveal
+opens only where a surface STRETCHES beyond the mesh's cut length or where two surfaces are not
+joined (a step); the instrument of §3 uses exactly that test and has precision 0.86 on the same
+scene where the app has 0.02–0.04. Changing the app's tear is a geometry change and needs the
+user's live pass before it ships (standing constraint); the measurement that would justify it
+is now on file.
+
 ### 5b. The full envelope (39 eyes to 85°, ±25° vertical): what each scene asks for
 
 Display GT, mean over the 39 eyes (retinal cos³ mean in brackets); atlas = ever-visible rest
