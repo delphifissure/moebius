@@ -54,3 +54,36 @@ S15 (sign, trunk, crown) and S2 as the control (nothing should change: one surfa
 box). Read: band precision/recall as before, the two-layer depth error, the S15 shots at 0.1,
 0.25 and 0.5 of the rim (the sign's far side must read hill then sky as the head moves), the
 crown crop.
+
+## 5. First pass (built the same evening; `moebius.js` on main, flag arm)
+
+Built as planned: `bgFarSidePlane` records per texel the run seen once the first-arriving run has
+passed (the nearest run covering its exit pose, else the next to arrive inside the envelope; none
+if the first never passes); `_plugGeoBand` exports it (`_geoFarField2`, `_geoFarRim2`); the quick
+bake builds plate 2 on the source grid (only triangles whose three texels carry a second layer and
+are one surface on it; nearest-filtered depth; colour = the rim window's mean along its axis;
+`matQ.clone()`; `bgLayerMesh.userData.plate2`, added, hidden and disposed with the plate); the
+probe dumps `farField2`, `plateF2`, `plateColor2`; `check_app_band` reports `layer2`
+(app/kit/both counts, layer 2 against the kit's second visible layer, best-of-two against the
+kit's first); `HIDE=plate2` in the shot harness.
+
+Two defects on the way (a196): the second layer admitted runs that never arrive inside the
+envelope (a crown leaf at head fraction 21) — restricted to f0 < 1; and plate 2 rendered at the
+app's *default* depth volume (its sign-shaped patch moved 56 display px per unit head fraction
+where the hill it carried moves ~700) because the per-frame depth-law uniform sync (`_syncBG`)
+knew only plate 1 — plate 2 is now synced. (The A257 object-back mesh is not in that sync
+either; noted, not touched.)
+
+Numbers (S15, 16-bit, plane arm): 11 236 band texels carry a second layer (of 39 260); band
+P/R unchanged at 0.83 / 0.94 (plate 2 does not change the band); best of the two layers against
+the kit's first hidden layer: median 0.0525 m (layer 1 alone 0.0624), p90 unchanged 8.57 m; the
+app's layer 2 against the kit's *second* visible layer: median 3.4 m on the 3 410 texels where
+both exist — the kit orders layers along the rest ray, the app in pose order, so that comparison
+is not the right one and is recorded only as such. S2 (control): 1 089 texels get a second layer
+(floor behind a box's top rows after the wall's line passes), band and depth unchanged.
+
+Screen (`sheet_S15_s4.png`, sent): plate 2 alone shows the sign's silhouette carried at the
+second hill's depth and the crown's second leaves, moving with the parallax of what they are;
+combined with plate 1 the sign's reveal keeps content across 0.1–0.5 of the rim where plate 1's
+own torn patches leave holes; the visible difference is small on this scene. The layer exists and
+renders right; whether it earns its cost is a screen call on real pictures.
