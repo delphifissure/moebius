@@ -13,7 +13,11 @@ Plan: `S3_sprint3_plan.md`. Code: CODEMAP §21. Everything on the rim-law arm be
    line (over the g + 1 samples nearest the texel, g the rim distance; fewer only if the run is
    shorter, which is counted) extrapolates to a disparity behind the texel by more than the bound.
    A crease neighbour extrapolating nearer (a box's top face from its front) is passed over; one
-   extrapolating behind (the floor under a foot, up the column) is the far side.
+   extrapolating behind (the floor under a foot, up the column) is the far side. Among several runs
+   behind the texel on one side, the first-arriving one is taken: the shift law is affine in
+   disparity, so a run g texels away and Δ behind starts to show at head fraction ∝ g/Δ. (The
+   first run behind was tried first: on S15 it named the leaf 2 cm behind a leaf, which covers three
+   texels of a 54-texel reveal, for the whole reveal; recall 0.80.)
 3. **The ground.** Rising column runs (disparity increasing downward) whose zero-disparity rows agree
    are horizontal surfaces — parallel planes share a vanishing line (Hartley & Zisserman ch. 8).
    The shared row is found by interval stabbing of each run's zero row with its 3σ least-squares
@@ -27,7 +31,11 @@ Plan: `S3_sprint3_plan.md`. Code: CODEMAP §21. Everything on the rim-law arm be
    tolAt·(½ + G/(2(w−1)))) → the line through both rims; two planes crossing inside the gap →
    switch at the crossing (floor meets the wall's foot; ground meets the sky at the horizon); no
    crossing → switch at the midpoint. Never a blend.
-5. **Two axes.** The axis with the nearer rim wins. Texels with no candidate are their own far side.
+5. **Two axes.** A finite far side beats the plane at infinity from the other axis (the sky is what
+   remains when nothing finite intervenes; S15's sign board: the column crossed sky with ground at
+   the horizon, the row saw hills on both sides). Then two rims on one plane beat an axis whose two
+   rims differ (a positive detection of a continuing surface against a boundary guess). Then the
+   nearer rim. Texels with no candidate are their own far side.
 6. **The reach** walks from each unjoined edge with a per-texel span, shift(d_edge) − shift(far side
    of that texel), positive only when the texel's own far side lies behind the occluding edge, and
    stops at the first failure. Sky class = far side at infinity. No membrane, no Neumann solve, no

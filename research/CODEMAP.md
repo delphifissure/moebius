@@ -713,10 +713,16 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `window._geoHorizon = {rowL, rowC, rowR, nRuns, nTex, a, b, c}`. `cand(ax, l, x, dir, i)`
   walks outward run by run to the first whose line at the texel lies behind it by more than
   `tol[i]` (window = min(run length, g + 1) samples nearest the texel; a candidate extrapolating
-  under the ground is cut at the ground; `len < g + 1` counted as thin evidence). `combine`: same
-  plane (`tol·(½ + G/(2(w−1)))`) → the line through both rims (kind 2); crossing inside the gap
-  (kind 3); else the midpoint switch (kind 4); one side only (kind 1). The axis with the nearer rim
-  wins (`farAxis` 1 row, 2 column). Disparity back to normalised depth by bisection on `dispAt`;
+  under the ground is cut at the ground; `len < g + 1` counted as thin evidence); among the runs
+  behind it on one side the FIRST-ARRIVING one is taken (smallest g / (disp_i − v): the shift law is
+  affine in disparity, so that ratio is the head fraction at which the run starts to show). `combine`:
+  same plane (`tol·(½ + G/(2(w−1)))`) → the line through both rims (kind 2); crossing inside the gap
+  (kind 3); else the midpoint switch (kind 4); one side only (kind 1). Axis choice: a finite result
+  beats the plane at infinity from the other axis; then two rims on one plane (kind 2) beat a
+  boundary guess; then the nearer rim (`farAxis` 1 row, 2 column). Ground selection: rising column
+  runs whose zero rows agree (interval stabbing of 3σ least-squares bars, σ from each run's own
+  residual floored at tolAt/4) are horizontal; the smallest slope per column is the ground; plane by
+  medians (slope, Theil–Sen tilt, intercept) then least squares over the runs within their bound. Disparity back to normalised depth by bisection on `dispAt`;
   sky (`v < dispAt(skyQ)`) → 0. Log line `[S3] far side by the plane law: …`. Returns
   `{farField, farDisp, farKind, farAxis, horizon, ground, nThin, nCand, nGroundCut, kindCount}`.
 - **Wiring in `_plugGeoBand`** (L8386–L8433): `planeFS` computed before the reach; `walkP`
