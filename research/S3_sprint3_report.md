@@ -64,6 +64,16 @@ units of each run's own standard error; invariant to resolution, depth range and
   it failed the containment test by rounding (S31: all floor runs excluded, the hedge's two-texel
   top face left as the ground). Fixed (midpoint of the most-covered stretch).
 
+- (After the first shots.) The horizontal streaks in S15's crown were not the far side: the plate-only
+  shot showed 200-px streaks from every leaf-depth plate patch toward the hill, and they survived a
+  change that removed every extrapolated ramp (a thin run — shorter than the gap it crosses — now
+  continues at constant depth, or along the fitted ground plane if it is a ground run). They were
+  the plate's displacement texture, still linearly filtered: the plate's vertices sit at k/(pw−1),
+  the texel centres at (k+0.5)/pw, so a vertex beside a torn plate edge took a blend of both sides
+  and its triangle stretched across the tear. The foreground had been given nearest filtering in
+  S2b.4 for exactly this reason; the plate had not. Fixed for the whole rim-law arm (both A/B arms
+  benefit; the S2b.4 arm's vertical hill streaks beside the crown were the same defect).
+
 ## 3. Offline test (scratch `s3_unit.js`, exact synthetic scenes through the app's law, 16 bits)
 
 | scene | occluder texels | median |err| (norm. d) | texels > 4 q | horizon |
@@ -175,9 +185,10 @@ channel, 0–255; "clone" = what copying the source colour would score):
 Equal on the rooms (both are washes on a checkered floor), better on S15's ground and hills, worse
 in the crown, where the truth's first layer is the next leaf and the plane arm fills with the hill
 or sky behind. On the screen (`sheet_S15_s3c.png`, sent): the brown wedge behind the trunk and the
-grey band behind the post are gone on the plane arm; the crown region is bad on both arms in
-different ways (vertical sky-texture and hill streaks on S2b.4, horizontal leaf-green streaks on the
-plane arm; the foreground-only shot shows neither, so both are the plate's band fill). Fixed on the
+grey band behind the post are gone on the plane arm. The crown's streaks on both arms were the
+plate's linearly filtered depth texture (§2, last item); with nearest filtering the plate in the
+crown is small leaf-depth patches and the rest of the reveal is the sky layer, whose vertical
+bands are the stand-in sky texture's per-column continuation (known since Sprint 2). Fixed on the
 way: a band texel whose plate depth is its own (the band's margin, pinholes) keeps its own colour
 and is outside the colour domain; the domain's ring is its own outline (with "touching a non-band
 texel" the box outlines were interior and the whole box went floor-grey); a component with no ring
@@ -203,10 +214,12 @@ value keeps its per-texel rim colours (the aggregation multigrid diverged on S15
 
 ## 6. Next
 
-- The crown (foliage, thin structures): the one place both arms fail on the screen. The plane law
-  treats two leaf rims at one depth as a surface continuing between them; a porous object has sky
-  or hill between its leaves. Needs the second layer below, or a porosity test on the "same plane"
-  rule (run lengths against the gap) — to be measured, not guessed.
+- The second layer (`S4_second_layer_plan.md`): the sign's far side is the hill when the reveal
+  opens and the sky for 85 % of the envelope; the crown's is the next leaf in its dense parts and
+  the sky or hill in its sparse parts. Both choices are implemented (`window._farPick`: first
+  arrival by default, pose coverage as the alternative) and neither is complete; the arrival
+  order the plane law already computes is the layered depth image, and plate 2 is where its
+  second entry goes.
 - One texel, one depth: the crown (leaf, leaf, hill, sky behind one texel) and S16's edge-on
   ledge and return face need a second layer where the reach finds more than one arriving surface
   (A257's object-back machinery, or an LDI-style second plate). The plane law already lists the
