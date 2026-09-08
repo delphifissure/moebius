@@ -151,9 +151,38 @@ single depth per texel cannot hold (see §5). Sky-reveal recall 0.91 against 0.9
 - **S15.** Band and recall essentially unchanged (0.83 / 0.94 vs 0.83 / 0.96), depth median 0.055 m
   from 0.142 m, the ground behind the trunk exact, the hill behind the sign right instead of sky.
 
-## 4b. Colour
+## 4b. Colour (added after the first S15 shots)
 
-(the plane-law colour pass; filled in when the colour probes land)
+The S15 shots of both arms were identical to the eye although the depth differed everywhere: the
+wedge each vertical occluder uncovers was filled brown behind the trunk and grey behind the post on
+both. Cause (from the code, not the numbers): the A242 membrane seeds a band texel's colour from
+non-band texels whose *source* depth is within `fgTearStep = 0.06` normalised units of the band
+texel's plate depth. That gate's units are the depth volume's; on the 8.64 m scene 0.06 spans half a
+metre at the trunk, so the trunk itself seeded the ground behind it. Under the plane far side every
+band texel already knows which rims it continues from, so on that arm its colour is the mean over
+each rim's window mixed by the same weight as its depth, the band's outline holds those as
+Dirichlet values and the interior is the harmonic membrane between them (no gate, no constant).
+Scored against the kit's first-hidden-layer colour on true-positive band texels (mean |Δ| per
+channel, 0–255; "clone" = what copying the source colour would score):
+
+| scene | texels behind which the truth is | S2b.4 membrane | plane colour | clone |
+|---|---|---|---|---|
+| S2 | background (floor, wall) | 26.7 | 27.1 | 50.1 |
+| S2 | the box's own side | 60.8 | 59.2 | 59.9 |
+| S15 | background (ground, hills) | 13.6 | 11.5 | 60.3 |
+| S15 | leaves behind leaves (side, interior) | 58.7 / 56.9 | 78.1 / 80.7 | 20.0 / 16.4 |
+
+Equal on the rooms (both are washes on a checkered floor), better on S15's ground and hills, worse
+in the crown, where the truth's first layer is the next leaf and the plane arm fills with the hill
+or sky behind. On the screen (`sheet_S15_s3c.png`, sent): the brown wedge behind the trunk and the
+grey band behind the post are gone on the plane arm; the crown region is bad on both arms in
+different ways (vertical sky-texture and hill streaks on S2b.4, horizontal leaf-green streaks on the
+plane arm; the foreground-only shot shows neither, so both are the plate's band fill). Fixed on the
+way: a band texel whose plate depth is its own (the band's margin, pinholes) keeps its own colour
+and is outside the colour domain; the domain's ring is its own outline (with "touching a non-band
+texel" the box outlines were interior and the whole box went floor-grey); a component with no ring
+value keeps its per-texel rim colours (the aggregation multigrid diverged on S15's crown, error
+1.4e5/255, the same null space as S16's Neumann components in Sprint 2).
 
 ## 5. Decisions
 
@@ -174,6 +203,10 @@ single depth per texel cannot hold (see §5). Sky-reveal recall 0.91 against 0.9
 
 ## 6. Next
 
+- The crown (foliage, thin structures): the one place both arms fail on the screen. The plane law
+  treats two leaf rims at one depth as a surface continuing between them; a porous object has sky
+  or hill between its leaves. Needs the second layer below, or a porosity test on the "same plane"
+  rule (run lengths against the gap) — to be measured, not guessed.
 - One texel, one depth: the crown (leaf, leaf, hill, sky behind one texel) and S16's edge-on
   ledge and return face need a second layer where the reach finds more than one arriving surface
   (A257's object-back machinery, or an LDI-style second plate). The plane law already lists the
