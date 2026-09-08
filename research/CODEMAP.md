@@ -680,3 +680,17 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `isSweeping = true`, `camera.position.set`, `render()`, canvas `toDataURL`).
 - **Truth kit.** `tk.py` `Quad` handles non-orthogonal axes (Gram system) — S16's ledge is a
   parallelogram.
+- **S2b.4 separation (rim law only).** Plate: a126 slope limit skipped and a162 cross-texel push
+  skipped (both logged `[S2b] … skipped under the rim law`); plate index torn by `joinedIdx` on
+  the plate's own depth after the clamps (`[S2b] plate torn at its own rims`; grid from
+  `L.mesh.geometry.parameters` because the clone has none); sky-valued plate triangles dropped
+  under `_skyInf`. Far field: `solveField(fixed, val, {neumann})` — a fixed neighbour for which
+  `neumann(i, j)` is true contributes no boundary value; `_plugGeoBand` passes
+  `joinedIdx || skyClass[j] || sky(dQ[j])`; the reach walk records `dSky`/`dGnd` and
+  `window._geoSkyClass`; sky-class texels are fixed at 0 (`valFF`); membrane values under one
+  source quantum snap to 0 under the flag; the A246 merge re-solve is bypassed (`merged = ffRes`).
+  Colour: the A242 membrane fill is on under the rim law (`bgRimLawOn()` in both gates).
+  Foreground depth texture: nearest filtering asserted (it already was). Sky layer:
+  `bgLayerMesh.userData.sky` (PlaneGeometry at z − Z_sky, scale (Z+D)/D × 3, CanvasTexture with
+  the column continuation), added/removed with the ring. Scorer: `plate_depth_err_m` from
+  `plateF.f32` (bottom-up rows). Shot harness: `HIDE=fg,plate,sky,ring`.

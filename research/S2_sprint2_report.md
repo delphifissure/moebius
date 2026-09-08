@@ -57,6 +57,28 @@ sweep bake; `bgFadeFrac` fades on the rectangular envelope (start at 0.700 of ei
    difference is the jump minus the slope), the ground joins at any grazing angle. Sky joins
    nothing but sky. S15 precision 0.51 → 0.82 at unchanged recall; S2 unchanged.
 
+5. *Separation (S2b.4; after the user's live reading of the S15 shots: "the foreground stretching /
+   tunneling to the background — they need to be separated").* The skirts were measured layer by
+   layer (`HIDE=` shots) and traced to four things, none of them the foreground mesh:
+   - the plate's a126 slope limit turned every plate cliff into a ramp 1/step texels wide (16 px for
+     a hill against the sky at 800 px, 50+ px round a leaf) — the sheet from near to far;
+   - the far field blended a hill at 8 m with the sky at infinity into a tilted surface inside every
+     footprint whose rims were both (the sign: 0.146 → 0.128 across its width);
+   - the far field ramped from the far rim down to the near surface's own depth at the reach limit;
+   - a second solve (the A246 observed merge, Dirichlet at every fixed neighbour) re-fed the band
+     from the joined crown above and foot below (trunk band 0.4734 where the far rims say 0.4353),
+     and the a162 cross-texel push then sank the plate a further 0.07 and opened a one-texel slit at
+     every rim at rest.
+   Under the rim law now: no slope limit and no a162 push — the plate is torn at its own rims by the
+   same `joinedIdx` on its own depth (its cliffs are the reach limits, behind the near foreground at
+   every pose); the far field is solved once, Dirichlet only at far rims, Neumann at every joined
+   boundary; a reach texel nearer to a sky rim than to any other far rim is sky (fixed at the far
+   end, rendered at infinity) and a ground-class unknown never takes a sky boundary value; and the
+   band's colour is the membrane (the standing rule: a plausible wash, never a clone — the source
+   colour had carried the trunk's brown and the leaves' green into every reveal). Measured: the
+   rendered plate depth now equals the far field (scorer reports both); the skirts are gone from the
+   foreground-only, plate-only and full renders.
+
 **2c — sky at infinity (`window._skyInf`).** A sky texel (source depth below half a source quantum:
 the estimator's zero) and a plate texel whose far field is sky are displaced to z = −Z_sky, where
 Z_sky = e_max·D·(display px per metre) is the depth whose under-move relative to infinity is one
@@ -77,7 +99,18 @@ sky so its motion can be cross-correlated; canvas 572 × 322, 3575 px/m):
 | +0.1 rim vertical (3.3° v) | 0.012 | 41.19 rows | 41.31 | 40.29 | 40.38 |
 
 The sky moves at 0.998 e with the flag (the closed form with Z_sky, to 0.1 px) and at 0.977 e
-without (outer/(D + outer) exactly). On S15 the volume already spans the true 8.64 m so the two
+without (outer/(D + outer) exactly). After S2b.4 the sky is drawn by its own layer (below) and the
+measurement was repeated: 0.998–0.999 e horizontally at 4.5° and 11°, 0.997 e vertically.
+
+*The sky layer.* A plane at z = −Z_sky scaled by (Z + D)/D about the rest eye, textured with the
+source where it is sky and, below the sky in each column, the lowest sky colour continued downward
+(the horizon's colour, what is behind a hill at the horizon), three window widths across with
+ClampToEdge (the margin as the border colour's continuation, R3 D3's zero-parameter version). It is
+drawn behind everything; plate triangles whose texels are all sky are left to it, and plate cliffs
+between a hill and the sky open onto it. In the kit the sky mask is depth == far end (exact for
+S15); on a photograph that is the estimator's zero and needs the segmentation mask R3 D1 asks for —
+a room's back wall at the far end would otherwise be "sky" (S2's wall is at d = 0), so the flag is
+only right on open scenes until the mask exists. On S15 the volume already spans the true 8.64 m so the two
 differ by 2 %; at the app's 0.02 default the same flag takes the sky from 9 % of its rate to 100 %.
 The band on S15 is unchanged by the flag (precision 0.82 either way; the reach into a hill from a
 sky rim grows by the 21 px between the sky shift and the far end's).
@@ -92,7 +125,14 @@ sky rim grows by the 21 px between the sky shift and the far end's).
 | rim law + stretch net off, rims-only far field | 49 k | 0.33 | 1.00 | — | — |
 | + source-anchored far field | — | 0.62 | 0.88 | — | — |
 | + plate pass takes the far-field warp as the demand | 14 844 | 0.887 | 0.800 | 0.010 | 0.046 |
-| **+ reach anchoring (kept)** | **17 937** | **0.895** | **0.976** | **0.004** | **0.043** |
+| + reach anchoring | 17 937 | 0.895 | 0.976 | 0.004 | 0.043 |
+| **+ S2b.4 (Neumann far side, plate torn, no a162, single solve)** | **20 811** | **0.788** | **0.997** | **0.003** | **0.044** |
+
+S2b.4 trades 0.11 of precision for 0.02 of recall on S2: the strip under each foot now takes the
+wall's depth instead of ramping to the floor (it is never seen — the floor's foreground is joined and
+covers it — but it is in the band), and the box fronts' lower middles are all reached. The rendered
+plate depth equals the field (median 0.003 m; before S2b.4 the plate was 0.009 m where the field was
+0.004 m).
 
 Truth hidden: 16 454 px. Depth error is on true-positive band texels only, in metres against the
 first hidden layer, scene depth 0.128 m. The fold-law arms' 0.7 mm median is the observed-lip
@@ -133,13 +173,15 @@ true positives.
 | S16 with the ledge closed | 4 513 | 0.06 / 0.98 | 0.04 / 1.00 | 0.48 / 0.92 | 8 606 | 0.003 |
 | S15 open field (sky counted), rim law before S2b.3 | 34 867 | 0.57 / 0.97 | 0.18 / 0.97 | 0.51 / 0.93 | 63 134 | 1.00 |
 | S15, rim law with S2b.3 (+ sky at infinity) | 34 867 | | | 0.82 / 0.93 | 39 497 | 1.04 |
+| **S15, S2b.4 + sky layer** | 34 867 | | | **0.83 / 0.96** | 40 430 | **0.14** (plate = field) |
 
-S15's sky-reveal recall (class 7) is 0.90 under the rim law and 0.95 under the fold law; the
-misses are the gaps between leaves inside the crown. S15's band DEPTH is worse under the rim law
-(median 1.0 m against 0.015 m for the fold-law 16-bit arm): the fold arms took the observed-lip
-depth (A246) and the rim arm takes the membrane, which behind the tree ramps between the sky rims
-(0) and the ground; re-enabling the observe walk under the flag is the first item of §5, and the
-class-aware far side (R3 D2) is the principled fix.
+Rows for S16/S27/S12/S26 under S2b.4 are re-run by the chain and appended below when it lands.
+
+S15's sky-reveal recall (class 7) is 0.95 after S2b.4 (0.90 before; 0.95 under the fold law); the
+misses are gaps between leaves inside the crown. S15's band depth went from 1.0 m (the sky/ground
+blend and the merge) to 0.14 m median with S2b.4, against 0.015 m for the fold-law 16-bit arm's
+observed-lip depth on a band that was 82 % wrong; the p90 (8.6 m) is the sky-class texels whose
+truth is a hill, i.e. the nearest-rim rule standing in for the horizon (R3 D2's estimator).
 
 The false band that remains on every room scene is the same object: a thin margin around each
 silhouette and the strip under each foot (§2). On S26 the margins run round the table top and the
@@ -185,14 +227,48 @@ x ≈ 671 fully covered (green).
 - Sky at infinity is measured, not assumed: 0.998 e on the screen against the closed form.
 - Two kit corrections are recorded as such (S16's open slot; `Quad` on skew axes), not as app
   results.
+- Under the rim law the plate is a torn surface, not a slope-limited backstop (a126 and a162 are
+  off on that arm): with the far field as the band's depth the ordering they enforced holds by
+  construction, and their ramps were the skirts. The fold-law default keeps both.
+- The far side of an occluder is never a blend of two far surfaces at different classes; where the
+  kit has no horizon, the nearest far rim decides sky vs surface.
 
 ## 5. Next
 
-- The observe walk (A246/A252) under the rim law: the band's depth where a lip is seen, the
-  membrane elsewhere (S15's 1.0 m median is the membrane behind the tree).
+- The horizon (R3 D2) in place of the nearest-rim class rule, and the ground plane's affine
+  continuation behind objects standing on it (the foot strip, the tongue behind boxes).
+- The observe walk (A246/A252) under the rim law, if the lip depth beats the reach field where a
+  lip is seen (to be measured; the reach field is now 0.14 m on S15 and 3 mm on S2).
 - The class-aware far side (ground below the horizon, sky above): the S15 fill depth and the S2
   foot strip (R3 D2).
 - The sky margin as a continuation rather than ClampToEdge replication (R3 D3) once the ring is on
   the quick path by default.
 - Live-pass notes for the user: how to turn the flag on, what to look at (floors, box feet, S16's
   crease), what the fold law showed before.
+
+## 6. Live-pass notes (for the user's screen; nothing here changes a default)
+
+1. Load a scene; in the console set the flags, then run the probe's recipe so the bake matches the
+   numbers above:
+   ```
+   window._tearLaw = 'rim'; window._skyInf = 1;
+   window._plugGeoBand({ flush: true, observed: true, gateAPriori: true });
+   ```
+   (The gap-rule select's "experiment recipe" also runs `_plugGeoBand`, but it turns on the A253
+   object rule, `_fragTear = 2` and the plug margin as well; the console call is the probe's exact
+   arm.) `window._tearLaw = undefined` and the same call gives the fold-law arm for comparison.
+2. What to look at, in order: an open floor or ceiling off-axis (the fold law tore and re-filled it;
+   the rim law leaves it as one surface — stretch, no band); a box or figure standing on the floor
+   (the band should be its footprint plus a thin margin; the foot strip is the known false band); a
+   crease (a room corner) — no tear; a free edge against a far wall — a tear with the far wall's
+   continuation behind it; on an outdoor picture the horizon (no band along it) and the sky, which
+   should now move with the head at the rate of the hills' vanishing point, not with the hills.
+3. Console lines to expect: `[S2b] rim law: t = …`, `[S2b] reach: …`, `[S2c] sky at infinity:
+   Z_sky = …`, and the A212 pre-tear line ending "S2b RIM LAW".
+4. Known open items you will see: the strip under feet (§2, never visible, in the band only), sky
+   showing behind an object where the truth is a hill (the nearest-rim class rule, §3), side faces
+   (the return of a step) that the display needs wider than the rest image holds (§3, S16), the sky
+   margin as a replicated border colour, and the membrane's brownish wash behind a trunk (the foot's
+   own colours are boundary values where the trunk meets the ground).
+5. On a photograph with an estimator depth, do NOT turn `_skyInf` on for a room: the sky mask is
+   "depth at the far end" until a segmentation mask exists (R3 D1).
