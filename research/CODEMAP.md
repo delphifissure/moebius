@@ -588,6 +588,25 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - Fact L26235–26977 A227 embedded splat support (fzstd, .splat/.ply/.spz/.splatv parsers, EWA
   renderer); splats ride the same camera and are hidden in pipeline debug views.
 
+## 18b. The CPU sweep's hole rule (7691–7930), read after the 16-bit reruns
+
+- Fact L7699–7708: the sweep's `torn` set defaults to `_qbFgTorn` (the A212 disocc-gated tear);
+  `_qbTorn` (the first, ungated fold tear) is NOT applied to the sweep's foreground ("including it
+  over-covers by 45 %"). With `_fragTear` the per-pose fold points `_qbFoldTex` replace it.
+- Fact L7845: `if (torn && torn[i]) continue;` — a torn texel is neither splatted nor quad-filled.
+  The screen cells it would have covered are "uncovered" unless another texel lands there.
+- Fact L7848–7856: untorn texels are drawn as QUADS over the warped bounding box of (i, i+1,
+  i+pw, i+pw+1) when the two edge lengths are ≤ cutLen = 1/bgBandCutStretchFrac; so an untorn
+  stretched surface stays covered. Compression never opens a hole under any splat rule.
+- Fact L7858–7862 / L7876+: every in-frame cell not owned by the FG is a reveal cell, inverted
+  through the far field to the plate texel that covers it → band demand along the pose's shift
+  direction (one streak per pose).
+- Consequence (measured on S2's dumps, see S1 report §5 correction): the fold criterion
+  (shift span over the cell > extent, directionless) tears ~90 % of a grazing ceiling/floor, so the
+  sweep sees holes where a continuous surface was, and the band takes the whole plane. The
+  A212 quantum gate hides this on 8-bit sources (one-level treads exempt), exposing only risers
+  (the stripes); on 16-bit sources the whole plane goes.
+
 ## 19. What this read changed (facts that contradict or sharpen earlier notes)
 
 1. **Two depth paths, not one.** With an 8-bit depth PNG the quick bake consumes the LIVE-BAKED

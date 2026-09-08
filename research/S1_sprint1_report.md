@@ -159,13 +159,35 @@ picture in two places:
 
 The buffers (`out/<scene>/check_app.png`) show the same anatomy on every scene: the objects are
 covered exactly (green), then the whole near floor, horizontal stripes across the ceiling, and
-fans that spray from the objects' bases across the wall. The stripes and the floor are 8-bit
-quantisation terraces of slow gradients being read as rims (M3); the fans are hole-driven demand
-propagating along the shift direction from those false rims. The mega-band we saw on the troll is
+fans that spray from the objects' bases across the wall. The mega-band we saw on the troll is
 therefore not a troll property: it appears on clean synthetic rooms with exact geometry. Recall is
-1.00 everywhere (the bake never misses a true reveal), depth on the true scope is right where the
-far rim is the wall (median error 0) and 0.04–0.08 m too deep where the truth is a floor or a
-nearer object behind the occluder.
+1.00 on the room scenes (the bake never misses a true reveal there), depth on the true scope is
+right where the far rim is the wall (median error 0) and 0.04–0.08 m too deep where the truth is
+a floor or a nearer object behind the occluder.
+
+**Correction (after the code read and the 16-bit reruns, §5c).** An earlier draft of this section
+said the stripes and the floor were 8-bit terraces read as rims (M3). That was a guess and the
+16-bit reruns falsified it: with a continuous depth source the stripes and fans disappear and the
+ceiling and floor become SOLID band (S2 precision 0.13 → 0.11). The cause is the tear rule, not the
+quantisation. The CPU sweep does not draw texels the bake has torn (`_plugCpuSweep`, L7845), and
+the bake tears every cell whose rim shift span exceeds its own extent (A160 at L13975, A212 at
+L15623). On S2 that is 92 % of ceiling cells and 86–88 % of floor cells in BOTH depth formats
+(measured on the dumped `dQ.f32` with the app's own shift law; the horizontal-pose-only fold rate
+is 0–2 %, i.e. the test is directionless and tears the ceiling for poses that cannot fold it). A
+grazing plane compresses under one head direction and stretches under the other; compression
+never opens a hole and the sweep's quad fill already covers stretching up to the cut length. So the
+tear removes exactly the geometry that was covering the screen, the sweep counts the gap it
+opened as a reveal, and the far-field inversion lays a streak of demand along that pose's shift
+direction — one streak per pose, 85 poses, hence the fans from every object base. With 8-bit
+depth the A212 quantum gate (depth span > 1/255) exempted the one-level treads and left only the
+risers tearing, which is what made stripes; at 16 bits every cell passes the gate and the whole
+plane tears. The terraces modulated the pattern; they did not cause it.
+
+Two further readings of the colour key. In S15 the hill rims against the sky are orange because
+the truth kit files sky as class 6 and does not count it as hidden content; a sky reveal behind a
+hill is genuine, so that orange is a kit convention, not an app error. Blue (truth only) on S16 is
+the far-wall strip behind the jump; its wedge shape is the reveal width growing with the depth gap
+along the jump, and the two lobes are the envelope's two vertical pose rows.
 
 ### 5b. The full envelope (39 eyes to 85°, ±25° vertical): what each scene asks for
 
