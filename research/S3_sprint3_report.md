@@ -68,7 +68,7 @@ units of each run's own standard error; invariant to resolution, depth range and
 
 | scene | occluder texels | median |err| (norm. d) | texels > 4 q | horizon |
 |---|---|---|---|---|
-| box on a floor, wall behind | 6 433 | 3e-8 | 3 (0.05 %) | 224.4 / 225 |
+| box on a floor, wall behind | 6 433 | 3e-8 | 0 (max 1e-7) | 224.5 / 225 |
 | hedge across a room | 103 200 | 3e-8 | 0 | 224.5 |
 | hedge on open ground, sky | 203 200 | 2e-6 | 1 600 (0.79 %: the two rows at the kit's finite ground edge) | 224.5 |
 
