@@ -212,8 +212,42 @@ What is *not* a pure function of f is the envelope convention, which is the open
       tan(hfov/2) = W/(2D) under the dolly, so e ∝ 1/D and θ_max = atan(e_ref·D_ref/D²) — the (18/f)²
       law of R1 §1.4.
 
-`dolly.py S30` runs the family (S30: a figure at the window plane, a mid box, a fishtank behind) for
-f = 18…144 mm under both conventions. Results in the next revision of this section.
+`dolly.py S30` runs the family (S30: a figure at the window plane, a mid box, a fishtank 1.5 W deep
+behind) for f = 18…144 mm under both conventions. The extreme horizontal eye of each envelope, 480 px
+plate (`out/dolly/S30/dolly_table.json`, `dolly_sheet.png`):
+
+| f | D | hfov | (a) θ = 45°: photographed / outpaint / disocc | max shift | (b) head units: θ | photographed / outpaint / disocc | max shift |
+|---|---|---|---|---|---|---|---|
+| 18 mm | 0.080 | 90° | 0.70 / 0.21 / 0.10 | 180 px | 80.9° | 0.50 / 0.33 / 0.17 | 1 125 px |
+| 25 | 0.111 | 72° | 0.66 / 0.24 / 0.10 | 228 | 72.8° | 0.39 / 0.52 / 0.09 | 738 |
+| 35 | 0.156 | 54° | 0.59 / 0.32 / 0.08 | 283 | 58.8° | 0.41 / 0.54 / 0.05 | 468 |
+| 45 | 0.200 | 44° | 0.56 / 0.40 / 0.04 | 327 | 45.0° | 0.56 / 0.40 / 0.04 | 327 |
+| 65 | 0.289 | 31° | 0.44 / 0.53 / 0.03 | 393 | 25.6° | 0.65 / 0.26 / 0.09 | 188 |
+| 90 | 0.400 | 23° | 0.32 / 0.65 / 0.03 | 450 | 14.0° | 0.72 / 0.19 / 0.09 | 112 |
+| 144 | 0.640 | 14° | 0.21 / 0.76 / 0.02 | 524 | 5.6° | 0.82 / 0.09 / 0.09 | 51 |
+
+Read:
+- **(a) fixed window angle.** The trend is smooth and follows the closed form: with the eye at
+  45° from a camera position D, the visible strip at the back wall slides by e·d/D = d·tan45° =
+  0.24 m at every f while its width W(1 + d/D) shrinks with the longer lens, so the photographed
+  share falls from 0.70 to 0.21 and the far wall's shift grows toward its orthographic limit (z·px/m
+  = 720 px). Content at a given metric depth behind the pinned subject moves the same number of
+  pixels per head angle at every lens (shift → tanθ·z for z ≪ D): the "everything feels the expected
+  size" property extends to the parallax.
+- **(b) the app's head units today.** θ at the edge of head travel runs from 81° at 18 mm to 5.6°
+  at 144 mm. At the wide end the same head move puts the eye 0.5 m to the side of an 8 cm-distant
+  window: half the display is generated, the far wall slides 1 125 px on a 480 px plate. At the long
+  end almost nothing moves (51 px). The generated scope varies by ~20× across the lens range for the
+  same physical head motion.
+- The in-frame band of the instrument is 12–14 k px in every cell: the subject's and the box's
+  footprints saturate (their relative shift exceeds their width) in all cases, so the in-frame scope
+  is set by the objects, and the lens moves the outpaint and the depth budget.
+
+Which convention is right is the open decision, now with numbers: (a) is the one consistent with
+the pinned-subject dolly (same head position → same view through the window at every lens); the
+app's lensGain = tan(hfov/2) ∝ 1/f is the inverse of what (a) needs (e ∝ D ∝ f), a factor f² apart,
+which is the (18/f)² law. A65's rationale for tan(hfov/2) should be read against this table before
+anything is changed (REVIEW.md, A65).
 
 ## 8. Open decisions (unchanged from the plan, now with numbers behind them)
 
