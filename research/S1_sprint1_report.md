@@ -216,17 +216,27 @@ What is *not* a pure function of f is the envelope convention, which is the open
 behind) for f = 18…144 mm under both conventions. The extreme horizontal eye of each envelope, 480 px
 plate (`out/dolly/S30/dolly_table.json`, `dolly_sheet.png`):
 
-| f | D | hfov | (a) θ = 45°: photographed / outpaint / disocc | max shift | (b) head units: θ | photographed / outpaint / disocc | max shift |
-|---|---|---|---|---|---|---|---|
-| 18 mm | 0.080 | 90° | 0.70 / 0.21 / 0.10 | 180 px | 80.9° | 0.50 / 0.33 / 0.17 | 1 125 px |
-| 25 | 0.111 | 72° | 0.66 / 0.24 / 0.10 | 228 | 72.8° | 0.39 / 0.52 / 0.09 | 738 |
-| 35 | 0.156 | 54° | 0.59 / 0.32 / 0.08 | 283 | 58.8° | 0.41 / 0.54 / 0.05 | 468 |
-| 45 | 0.200 | 44° | 0.56 / 0.40 / 0.04 | 327 | 45.0° | 0.56 / 0.40 / 0.04 | 327 |
-| 65 | 0.289 | 31° | 0.44 / 0.53 / 0.03 | 393 | 25.6° | 0.65 / 0.26 / 0.09 | 188 |
-| 90 | 0.400 | 23° | 0.32 / 0.65 / 0.03 | 450 | 14.0° | 0.72 / 0.19 / 0.09 | 112 |
-| 144 | 0.640 | 14° | 0.21 / 0.76 / 0.02 | 524 | 5.6° | 0.82 / 0.09 / 0.09 | 51 |
+Three conventions: (a) window angle fixed at 45°; (b) the app's head units today (e ∝ tan(hfov/2)
+∝ 1/D); (c) head motion constant in metres, e = 0.2 m at every f — which is "head motion in
+focal-plane frame widths" literally, since under the dolly the frame width at the focal plane is W.
+
+| f | D | hfov | (a) θ 45°: phot / outp / disocc, shift | (b) app head units: θ, phot / outp / disocc, shift | (c) const e: θ, phot / outp / disocc, shift |
+|---|---|---|---|---|---|
+| 18 mm | 0.080 | 90° | 0.70 / 0.21 / 0.10, 180 px | 80.9°, 0.50 / 0.33 / 0.17, 1 125 px | 68.2°, 0.56 / 0.36 / 0.08, 450 px |
+| 25 | 0.111 | 72° | 0.66 / 0.24 / 0.10, 228 | 72.8°, 0.39 / 0.52 / 0.09, 738 | 60.9°, 0.53 / 0.41 / 0.07, 410 |
+| 35 | 0.156 | 54° | 0.59 / 0.32 / 0.08, 283 | 58.8°, 0.41 / 0.54 / 0.05, 468 | 52.1°, 0.53 / 0.41 / 0.05, 364 |
+| 45 | 0.200 | 44° | 0.56 / 0.40 / 0.04, 327 | 45.0°, 0.56 / 0.40 / 0.04, 327 | 45.0°, 0.56 / 0.40 / 0.04, 327 |
+| 65 | 0.289 | 31° | 0.44 / 0.53 / 0.03, 393 | 25.6°, 0.65 / 0.26 / 0.09, 188 | 34.7°, 0.56 / 0.36 / 0.09, 272 |
+| 90 | 0.400 | 23° | 0.32 / 0.65 / 0.03, 450 | 14.0°, 0.72 / 0.19 / 0.09, 112 | 26.6°, 0.61 / 0.31 / 0.09, 225 |
+| 144 | 0.640 | 14° | 0.21 / 0.76 / 0.02, 524 | 5.6°, 0.82 / 0.09 / 0.09, 51 | 17.4°, 0.62 / 0.29 / 0.09, 164 |
 
 Read:
+- **(c) constant head motion in metres is the lens-invariant one.** Photographed share 0.53–0.62 and
+  outpaint 0.29–0.41 across the whole 18–144 mm range, shift 164–450 px: the generated budget for a
+  given head move barely depends on the lens. This is what A65's own text asks for ("head motion
+  measured in focal-plane frame widths is lens-invariant"); the tan(hfov/2) gain it implemented was
+  derived with D fixed, and the dolly makes 2D·tan(hfov/2) = W constant, so under the dolly the
+  right gain is 1.0 and the implemented gain adds a 1/D factor (b).
 - **(a) fixed window angle.** The trend is smooth and follows the closed form: with the eye at
   45° from a camera position D, the visible strip at the back wall slides by e·d/D = d·tan45° =
   0.24 m at every f while its width W(1 + d/D) shrinks with the longer lens, so the photographed
@@ -243,11 +253,13 @@ Read:
   footprints saturate (their relative shift exceeds their width) in all cases, so the in-frame scope
   is set by the objects, and the lens moves the outpaint and the depth budget.
 
-Which convention is right is the open decision, now with numbers: (a) is the one consistent with
-the pinned-subject dolly (same head position → same view through the window at every lens); the
-app's lensGain = tan(hfov/2) ∝ 1/f is the inverse of what (a) needs (e ∝ D ∝ f), a factor f² apart,
-which is the (18/f)² law. A65's rationale for tan(hfov/2) should be read against this table before
-anything is changed (REVIEW.md, A65).
+Which convention is right is the open decision, now with numbers. (a) is the physical-screen model
+(same head position → same view angle through the window at every lens; scope then varies with the
+lens, 0.70 → 0.21 photographed). (c) keeps the generated budget lens-invariant and is what A65 says
+it wanted. (b), the implementation, is (c) with an extra 1/D: 81° at 18 mm and 5.6° at 144 mm for the
+same head move, a ~20× swing in generated content across a cut. The change from (b) to (c) is one
+line (`lensGain = 1` under the dolly, `moebius.js:19516`), is an interaction-path change, and is the
+user's live pass to make; nothing was changed.
 
 ## 8. Open decisions (unchanged from the plan, now with numbers behind them)
 
