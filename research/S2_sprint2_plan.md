@@ -37,7 +37,8 @@ Inputs: S1 report §5/§5c (the band's anatomy and the fold-tear cause), CODEMAP
   is sky are displaced with z → −Z_inf so shift → −e (the plane-at-infinity law, R3 §2).
 - Sky margin: the A245 ring at e_max per side (1.25 W at 45°) for sky rows.
 - Scored on S15 (sky reveal recall, band precision) and by the sky's measured parallax against
-  the closed form −e.
+  the closed form −e. Done: report §1 (2c) — 0.998 e measured on the screen, band unchanged.
+- Added in the same pass: S2b.3, the grazing-plane rescue in the rim law (S15's horizon strip).
 
 ## Not in this sprint
 

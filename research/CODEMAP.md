@@ -667,3 +667,16 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - **Probe.** `harness/a257_probe.js` dumps `geoClass`, `obsDepth`, `obsCount`, `lipDeep`,
   `lipNear`, `fgTorn`; `POSES="fx:fy,…"` writes per-pose class maps and reveal sets.
 - **Truth kit.** `scenes.py` S16 gained `jump_ledge` (the step was an open slot; S2 report §3).
+- **Grazing-plane rescue (S2b.3).** In `bgRimLawFor` (L422–): `dispAt`, `tolAt`, `joinedIdx(i, j,
+  dQ, pw)` — ratio test OR affine prediction in disparity from either side within
+  |disp(d+q) − disp(d−q)|; sky joins only sky. All four users of the law (sweep quads L7829,
+  first tear L14234, A212 tear, reach walk) call `joinedIdx` with texel indices.
+- **Sky at infinity (`window._skyInf`).** L467 `bgSkyInfOn`, `bgSkyQ` (half a source quantum),
+  L469 `bgSkyZ()` → `{Z, Zneed, Zcap, capped}` with Z = e_max·D·(display px/m), capped at
+  camera.far/2. Shift LUT: key includes the flag; `skyPx` (L361) and `bgShiftPxAt` returns it for
+  d < skyQ (L367). Shader: `u_skyInf`, `u_skyQ` uniforms (prefix + `materialUniforms`), override
+  in `viewSpaceDisplacementLogic` (L2968). Quick bake sets them on the FG material (L14989 block)
+  and on the plate clone `matQ` (L14860). Harness: `harness/s2c_skyshot.js` (canonical shot:
+  `isSweeping = true`, `camera.position.set`, `render()`, canvas `toDataURL`).
+- **Truth kit.** `tk.py` `Quad` handles non-orthogonal axes (Gram system) — S16's ledge is a
+  parallelogram.
