@@ -699,3 +699,41 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   components … keep their own depth`); a non-converging Neumann solve falls back to the Dirichlet
   solve with a console warning. A 1e-3 Tikhonov anchor was tried and removed (screening length 63
   texels; S2 report §3).
+
+## 21. Sprint 3 code (added 2026-09-08; line numbers of that day's file; flag arm only)
+
+- **The plane far side (`window._farRule === 'plane'`, rim law only).** L507 `bgFarRuleOn()`;
+  L508 `bgFarSidePlane(dQ, pw, ph)`: a pure function of the source depth and the app's depth law
+  (through `bgRimLawFor`'s `dispAt`/`tolAt`/`joined`). Rows and columns are cut into runs
+  (interior second differences of disparity within `tolAt`; a two-sample run must pass the ratio
+  test; sky never joins a finite run); per line prefix sums of disparity and position·disparity
+  give O(1) least-squares lines (`fit`, L+1 slots per line). The ground (L544 block): per column
+  the rising run with the smallest slope whose rise exceeds its own slope uncertainty; one plane
+  a + b·x + c·y fitted to all of them; `ground.at(x, y)`, `rowZeroAt(x)` (the horizon);
+  `window._geoHorizon = {rowL, rowC, rowR, nRuns, nTex, a, b, c}`. `cand(ax, l, x, dir, i)`
+  walks outward run by run to the first whose line at the texel lies behind it by more than
+  `tol[i]` (window = min(run length, g + 1) samples nearest the texel; a candidate extrapolating
+  under the ground is cut at the ground; `len < g + 1` counted as thin evidence). `combine`: same
+  plane (`tol·(½ + G/(2(w−1)))`) → the line through both rims (kind 2); crossing inside the gap
+  (kind 3); else the midpoint switch (kind 4); one side only (kind 1). The axis with the nearer rim
+  wins (`farAxis` 1 row, 2 column). Disparity back to normalised depth by bisection on `dispAt`;
+  sky (`v < dispAt(skyQ)`) → 0. Log line `[S3] far side by the plane law: …`. Returns
+  `{farField, farDisp, farKind, farAxis, horizon, ground, nThin, nCand, nGroundCut, kindCount}`.
+- **Wiring in `_plugGeoBand`** (L8386–L8433): `planeFS` computed before the reach; `walkP`
+  replaces `walk` — per texel span `(shift(d_edge) − shift(farField[i])) × (aspect if vertical)`,
+  positive only when the texel's own far side is behind the occluding edge; the walk stops at the
+  first failure. Sky class = `free && farField < skyQ` (no `dSky/dGnd`). `fixedFF` all 1, `valFF` =
+  the plane field on free texels, the source elsewhere; `ffNeumann = null`; `ffRes` built directly
+  (no `solveField`, no membrane, no clamp needed: candidates are behind by construction).
+  `window._geoFarKind`, `window._geoFarAxis` exported; reset at the top of the reach block.
+- **Probe / harness.** `a257_probe.js` dumps `farKind.u8`, `farAxis.u8`, `skyClass.u8`; its
+  console filter and `s2c_skyshot.js`'s forward `[S3]` lines.
+- **Truth kit.** `scenes.py`: `S31_hedge` (room, full-width low box at 0.3 W, 0.35 H tall),
+  `S32_hedge_open` (ground 300 W with sky, the same hedge 0.7 H tall, above eye level). Truth on
+  the shipped env45 grid in `out/S31_env45`, `out/S32_env45`.
+- **Offline test.** Scratch `s3_unit.js` evaluates the function's source out of `moebius.js`
+  against synthetic exact scenes (box on a floor; hedge in a room; hedge open with sky) built
+  through the same depth law at 16 bits: far side exact to the quantum on the hedges (0 texels
+  over 4 q in the room; 0.79 % on the open one, the two rows at the kit's finite ground edge),
+  horizon 224.4–224.5 of 450 (eye level = 225), box scene median error 3e-8 (the residue is at
+  the wall's foot row where two rims straddle the crease).
