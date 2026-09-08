@@ -74,8 +74,112 @@ units of each run's own standard error; invariant to resolution, depth range and
 
 ## 4. A/B on the truth kit (16-bit, rim law, shipped envelope)
 
-(filled in below from `check_app_band`; arms: S2b.4 as shipped vs + `_farRule = 'plane'`)
+Arms: S2b.4 as shipped (`_tearLaw='rim'`, `_skyInf` on the open scenes) against the same plus
+`_farRule='plane'`. Both arms baked in this session on the same truths (S31/S32 new; the others
+regridded in Sprint 2). Depth error is on true-positive band texels against the truth's first
+hidden layer, in metres. Sheet: `out/sheet_s3_plane.png` (sent).
+
+| scene | truth px | arm | band px | P | R | sky R | depth median (m) | depth p90 (m) | scene depth (m) |
+|---|---|---|---|---|---|---|---|---|---|
+| S2 | 16454 | S2b.4 | 20811 | 0.788 | 0.997 | — | 0.003 | 0.044 | 0.128 |
+| S2 | 16454 | plane | 18190 | 0.901 | 0.996 | — | 0.000 | 0.043 | 0.128 |
+| S27 | 4894 | S2b.4 | 6002 | 0.815 | 1.000 | — | 0.005 | 0.030 | 0.240 |
+| S27 | 4894 | plane | 5623 | 0.870 | 1.000 | — | 0.000 | 0.000 | 0.240 |
+| S12 | 16975 | S2b.4 | 19792 | 0.855 | 0.997 | — | 0.000 | 0.076 | 0.128 |
+| S12 | 16975 | plane | 18013 | 0.935 | 0.992 | — | 0.000 | 0.076 | 0.128 |
+| S26 | 25631 | S2b.4 | 33057 | 0.773 | 0.998 | — | 0.002 | 0.055 | 0.112 |
+| S26 | 25631 | plane | 29782 | 0.858 | 0.998 | — | 0.000 | 0.055 | 0.112 |
+| S16 | 4513 | S2b.4 | 8606 | 0.484 | 0.924 | — | 0.001 | 0.006 | 0.160 |
+| S16 | 4513 | plane | 12203 | 0.359 | 0.972 | — | 0.000 | 0.000 | 0.160 |
+| S31 | 70400 | S2b.4 | 79988 | 0.880 | 1.000 | — | 0.000 | 0.000 | 0.128 |
+| S31 | 70400 | plane | 72798 | 0.967 | 1.000 | — | 0.000 | 0.000 | 0.128 |
+| S15 | 34867 | S2b.4 | 40286 | 0.832 | 0.961 | 0.95 | 0.142 | 8.554 | 8.640 |
+| S15 | 34867 | plane | 39546 | 0.832 | 0.944 | 0.91 | 0.055 | 8.567 | 8.640 |
+| S32 | 42400 | S2b.4 | 79997 | 0.080 | 0.151 | — | 42.961 | 42.973 | 43.200 |
+| S32 | 42400 | plane | 47995 | 0.717 | 0.811 | — | 0.000 | 0.000 | 43.200 |
+
+**Depth by what is actually behind the texel** (rooms; the first hidden layer's class in the kit):
+
+| scene | arm | background texels: median / p90 (m) | side-face texels: median (m) |
+|---|---|---|---|
+| S2 | S2b.4 | 0.0014 / 0.0136 | 0.047 |
+| S2 | plane | **0.0000 / 0.0000** | 0.047 |
+| S27 | S2b.4 | 0.0036 / 0.0229 | 0.113 |
+| S27 | plane | **0.0000 / 0.0000** | 0.114 |
+| S12 | S2b.4 | 0.0000 / 0.0092 | 0.076 |
+| S12 | plane | **0.0000 / 0.0000** | 0.076 |
+| S26 | S2b.4 | 0.0007 / 0.0043 | 0.057 |
+| S26 | plane | **0.0000 / 0.0000** | 0.057 |
+
+On every room the plane far side is exact to the quantum wherever the truth behind the texel is a
+background surface (floor or wall); the residual p90 in the main table is entirely the side-face
+texels, where the truth's first layer is the object's own side (never in the rest image) and the
+app carries the layer behind it — the S2 check showed the app's value equals the truth's *second*
+layer to 0.000 m on all 2 793 of them. That layer is A257's, not this sprint's.
+
+S15 by class (plane arm): the ground behind the trunk and the post is exact (median 0.000 m, p90
+0.009 m on 6 399 texels; the S2b.4 membrane had 0.031 / 1.1 m); the hills behind the sign are
+0.011 m median (S2b.4: 0.076 m); the crown's leaves-behind-leaves (side/interior classes, 12 800
+texels) read sky or hill where the kit's first layer is the next leaf 2 cm back — the layered case a
+single depth per texel cannot hold (see §5). Sky-reveal recall 0.91 against 0.95: the same crown.
+
+**What the scenes say, one by one (a196, from the buffers):**
+
+- **S2, S27, S12, S26.** Precision up 0.05–0.11 with recall held; the foot strips are gone. What is
+  left of the false band is a strip a few rows deep just above each box's back foot: the plane law
+  puts the floor behind the box there, correctly, but the box's own depth shadows that floor from
+  every side eye, and the rest depth map does not carry a box's thickness. A modelling limit
+  (occluder thickness), recorded, not a bug.
+- **S31 (hedge across a room).** 0.97 / 1.00, depth exact: the floor's line from below crosses the
+  wall's line from above at the wall's foot, hidden behind the hedge. The S2b.4 membrane also got
+  the depth right here (Dirichlet at the wall, Neumann at the floor gave the wall everywhere, and
+  the wall is most of the truth) with a fatter band (0.88).
+- **S32 (hedge on open ground, sky).** The decisive case for the horizon: S2b.4 called everything
+  behind the hedge sky (nearest far rim; 43 m error, 0.08 / 0.15); the plane law puts the ground up
+  to the horizon row 224.5 (eye level is 225) and sky above, exact in depth (0.000 m), 0.72 / 0.81.
+  The remaining misses are ground rows near the horizon that move over a window height at the
+  envelope rim and fall between the sweep's five vertical poses; the false band is the sky and far
+  ground strips the kit's display-weighted truth excludes because the top eyes compress them below
+  one display pixel per rest texel. Both are measurement limits; the far side is right.
+- **S16.** Recall 0.97 (was 0.92), precision 0.36 (was 0.48). The extra false band is the wedge
+  above the jump wall's top and the strip beside the return face, both wider than under S2b.4:
+  the plane law names the back wall (row axis) or the jump wall (column) as the far side and the
+  reach opens for their full slide, but what a low or side eye actually sees in those gaps is the
+  ledge's underside and the pilaster's return face, surfaces that are edge-on at rest and occupy
+  one row or four texels of the rest grid. The same collapsed-surface limit as the S2 report's §3;
+  a rest-texel representation cannot hold them, and the kit scores them as one row.
+- **S15.** Band and recall essentially unchanged (0.83 / 0.94 vs 0.83 / 0.96), depth median 0.055 m
+  from 0.142 m, the ground behind the trunk exact, the hill behind the sign right instead of sky.
+
+## 4b. Colour
+
+(the plane-law colour pass; filled in when the colour probes land)
 
 ## 5. Decisions
 
+- The far side of an occluder on the rim-law arm is the plane law's (`_farRule='plane'`), not the
+  membrane: exact on every planar far side in the kit, and the only arm that puts ground behind a
+  full-width occluder up to the horizon. The nearest-rim class rule is superseded and stays only on
+  the S2b.4 arm for comparison.
+- The horizon is the fitted ground plane's zero-disparity line. No estimator is trained or run:
+  with a trusted depth map the vanishing line is exact (224.5 of 450 on every scene; eye level 225).
+- Three rule choices were made from the buffers and are recorded with their evidence: first-arriving
+  run over first-run-behind (S15 crown, recall 0.80 → 0.94), finite over sky across axes and same
+  plane over boundary guess (S15 sign, 1 137 texels of sky where the truth is a hill), ground by the
+  shared vanishing line over smallest slope (S15 hills).
+- Removed under rule 7: least-squares ground plane over all lowest rising runs (four texels tilted
+  it 0.1 %); the first-run-behind candidate; the bar edge as the stabbing row.
+- Nothing ships as a default. Live-pass recipe: `window._tearLaw='rim'; window._skyInf=1;
+  window._farRule='plane'; window._plugGeoBand({flush:true, observed:true, gateAPriori:true})`.
+
 ## 6. Next
+
+- One texel, one depth: the crown (leaf, leaf, hill, sky behind one texel) and S16's edge-on
+  ledge and return face need a second layer where the reach finds more than one arriving surface
+  (A257's object-back machinery, or an LDI-style second plate). The plane law already lists the
+  candidates per texel in arrival order; the second layer is the second arrival.
+- Occluder thickness for the reveal test (the strip above each box's back foot): the top face's
+  back edge, where visible, gives it for boxes; symmetric inflation otherwise.
+- The sweep's vertical pose grid (5) under-samples far surfaces on open scenes (S32's misses).
+- The rule's behaviour on an estimator's depth (texture noise breaks runs; the thin-evidence count
+  and the horizon bars will show it) before any of this is tried on a photograph.
