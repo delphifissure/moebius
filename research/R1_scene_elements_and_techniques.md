@@ -185,6 +185,17 @@ angle lens-dependent, scope small on long lenses) or in window angle (head gain 
 the decision to make. Within a dolly the far background breathes by design (89–214 px measured
 behind the portal) while the subject plane holds; across cuts nothing moves at rest.
 
+**Second correction (Sprint 1, after re-reading the code rather than recalling it).** "Two things
+scale with the lens together" above is wrong as a description of the app. They are two independent
+controls: the dolly (`dollyDistForFocal`, `updateCameraAndProjection`) moves only `camera.position.z`,
+and the A65 gain `tan(contentLensFovDeg/2)` is applied to head motion only when `window.setLensFov`
+is called per cut (default 90°, gain 1). So during a dolly the head displacement is constant in
+metres and the window angle at the edge of head travel falls as 1/D, not 1/D²; the (18/f)² law and
+the 51° / 12° / 2° figures describe a cut that both dollies to the new lens and applies the A65 gain
+for it. The measured table for all three conventions (fixed window angle; constant head motion,
+which is the dolly as implemented; both controls applied) is in `S1_sprint1_report.md` §9; the
+constant-head-motion convention is the one whose generated scope barely depends on the lens.
+
 | # | element | consequence at gallery angles |
 |---|---|---|
 | V0 | **the envelope**: e up to ~85°, D from a hand's length to a room's width | every rule must be measured at 60–85°, not 10–45°; nothing published operates there (§2.7) |

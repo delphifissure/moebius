@@ -216,9 +216,21 @@ What is *not* a pure function of f is the envelope convention, which is the open
 behind) for f = 18…144 mm under both conventions. The extreme horizontal eye of each envelope, 480 px
 plate (`out/dolly/S30/dolly_table.json`, `dolly_sheet.png`):
 
-Three conventions: (a) window angle fixed at 45°; (b) the app's head units today (e ∝ tan(hfov/2)
-∝ 1/D); (c) head motion constant in metres, e = 0.2 m at every f — which is "head motion in
-focal-plane frame widths" literally, since under the dolly the frame width at the focal plane is W.
+Three conventions: (a) window angle fixed at 45°; (b) head displacement scaled by the A65 lens gain
+with the dolly distance matched to the same lens (e ∝ tan(hfov/2) ∝ 1/D); (c) head motion constant
+in metres, e = 0.2 m at every f — "head motion in focal-plane frame widths" literally, since under
+the dolly the frame width at the focal plane is W.
+
+**Correction (after re-reading the code, not memory).** The dolly and the lens gain are two
+independent controls in the app. The dolly (`dollyDistForFocal`, `updateCameraAndProjection`)
+moves only `camera.position.z`; the head offset is `deviation · camOff · scalar · lensGain` with
+`lensGain = tan(contentLensFovDeg/2)`, and `contentLensFovDeg` is set only by `window.setLensFov`
+per cut (default 90°, gain 1). So **the dolly as implemented is convention (c)**: the head
+displacement stays constant in metres while D moves. Convention (b) arises only when a cut calls
+`setLensFov` with the new lens *and* the dolly is set to the matching distance; a cut that calls
+`setLensFov` without dollying is A65's fixed-D law (e ∝ tan(hfov/2), D unchanged), which this table
+does not cover. An earlier draft of this section, and the "correction after reading the code" in R1
+§1.4, treated (b) as the implementation; both were wrong on that point and are amended.
 
 | f | D | hfov | (a) θ 45°: phot / outp / disocc, shift | (b) app head units: θ, phot / outp / disocc, shift | (c) const e: θ, phot / outp / disocc, shift |
 |---|---|---|---|---|---|
@@ -255,11 +267,11 @@ Read:
 
 Which convention is right is the open decision, now with numbers. (a) is the physical-screen model
 (same head position → same view angle through the window at every lens; scope then varies with the
-lens, 0.70 → 0.21 photographed). (c) keeps the generated budget lens-invariant and is what A65 says
-it wanted. (b), the implementation, is (c) with an extra 1/D: 81° at 18 mm and 5.6° at 144 mm for the
-same head move, a ~20× swing in generated content across a cut. The change from (b) to (c) is one
-line (`lensGain = 1` under the dolly, `moebius.js:19516`), is an interaction-path change, and is the
-user's live pass to make; nothing was changed.
+lens, 0.70 → 0.21 photographed). (c) keeps the generated budget lens-invariant, is what A65 says it
+wanted, and is what the dolly does today. (b) is what happens if a cut both dollies to the new lens
+and applies the A65 gain for it: 81° at 18 mm and 5.6° at 144 mm for the same head move, a ~20×
+swing in generated content. The practical point is that the two controls must not both be applied
+for one lens change; which single law to keep (a or c) is the user's live pass. Nothing was changed.
 
 ## 8. Open decisions (unchanged from the plan, now with numbers behind them)
 
