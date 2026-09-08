@@ -754,3 +754,13 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   seed the ground behind it) is skipped on this arm. Log `[S3] plane colour: …`. Probe dumps
   `plateColor.u8` (RGBA, source rows) from `_qbPlateColor`. A far side whose clamped value is within
   `tol` of the texel's own depth is recorded as none (kind 0, no rims).
+- **Later in Sprint 3.** `plateDT` (L14304) is nearest-filtered under the rim law (the plate's
+  vertices sit at k/(pw−1), its texel centres at (k+0.5)/pw; the linear blend across a torn plate
+  edge was S15's horizontal streaks). In `bgFarSidePlane`'s `cand`: a thin run (`len < g + 1`)
+  is not extrapolated — it continues along the fitted ground plane if its texels are the ground's
+  (`groundTex`), else at constant depth; among the runs behind a texel on one side the default
+  pick is the first-arriving (`f0 = g/(k·Δ)`, `k = e·ppw·D` from `bgShiftLUTFor`, × the envelope
+  aspect on columns), and `window._farPick = 'coverage'` selects instead the run seen for the
+  largest part of the envelope (each run's pose interval `[g/(kΔ), (g+len)/(kΔ)]`, nearer runs
+  occluding farther ones, sky runs never passing). A far side whose clamped value is within `tol`
+  of the texel's own depth is none (kind 0).
