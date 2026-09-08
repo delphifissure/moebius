@@ -72,9 +72,10 @@ wall is visible at all in this room: the side wall fills the window (display GT:
 | exact (16-bit) | 5 698 | 0.86 | 1.00 |
 | 8-bit linear | 5 575 | 0.88 | 1.00 |
 | 8-bit disparity law | 8 241 | 0.59 | 1.00 |
-| blur σ 1 | 4 654 | 0.98 | 0.93 |
-| blur σ 2 | 3 513 | 0.98 | 0.71 |
-| blur σ 4 | 0 | – | 0.00 |
+| blur σ 1 (edge-localised) | 4 654 | 0.98 | 0.93 |
+| blur σ 2 (edge-localised) | 3 513 | 0.98 | 0.71 |
+| blur σ 4 (edge-localised) | 0 | – | 0.00 |
+| blur σ 2, whole map (control) | 3 513 | 0.98 | 0.71 |
 | halo dilate 2 / 4 px | 6 068 / 6 439 | 0.81 / 0.76 | 1.00 |
 | blur σ 2 + dilate 2 | 3 664 | 0.89 | 0.66 |
 | thin loss r2 | 5 686 | 0.86 | 1.00 |
@@ -90,6 +91,10 @@ Truth hidden scope: 4 894 px (bg) + 338 (own side) of a 360 000 px plate. Read:
   the envelope never reaches. A depth-only instrument cannot know that; the atlas can.
 - **Soft edges kill the per-pixel ratio test** (σ 2: recall 0.71; σ 4: nothing found). Ramp
   handling (R1 §2.2: boundary-layer / ramp snapping) is not optional; it is Sprint 2's first item.
+  The blur rungs were rebuilt to ramp only within 3σ of the exact rims (an estimator smooths across
+  occlusion boundaries, not along plane gradients); for this instrument the numbers did not move at
+  all against the whole-map blur (a null result, recorded: the ratio test never fires on plane
+  gradients either way). The two versions will differ for the app, which reads terraces as rims.
 - **Pixel noise floods it** (0.02 of range → 7× over-band). The rim test must be scale-aware
   (multi-pixel support), not a two-pixel ratio.
 - The disparity law and affine offsets change the *geometry* (the app maps the given numbers with
@@ -183,6 +188,32 @@ carries the rest.)
 4. Still owed by the instruments: a cleanliness score (dump the fill colour in the probe and compare
    against the hidden RGB placeholder on the true scope), and a check of the instrument's axis-only
    pose set against the full 17×5 grid (corners of objects; second order, unmeasured).
+
+## 9. The dolly family is one parameter, and it is measured
+
+The app's off-axis dolly zoom keeps the window W×H, moves the camera to D(f) = (W/2)·(f/18 mm)
+(A208) and pins the subject plane at the window, so the focal object keeps its frame position and
+size across a cut. In the truth kit D is already a free parameter, so "testing with the dolly zoom"
+is the same scene photographed from each D(f) through the same window, with the subject at z = 0.
+It needs no new geometry and no new instrument:
+
+- every pixel quantity is a function of z/D and of the eye's window angle θ = atan(e/D): the shift
+  is e·z/(D − z)·px/m = tanθ · (z/D)/(1 − z/D) · px/m, hole widths are differences of it, the
+  visible strip at depth d is W(1 + d/D), the photographed reach is d* = W·D/(e − W);
+- scaling W, D, z and e together changes no pixel, so the family is fully described by D/W, i.e.
+  by f; and the *photograph itself* changes with f exactly as a real lens change would (the
+  background compresses behind the pinned subject: the dolly-zoom stretch).
+
+What is *not* a pure function of f is the envelope convention, which is the open decision:
+
+  (a) window angle fixed (θ_max = 45° at every f): the eye travels e = D tan45°, further for a
+      longer lens;
+  (b) the app's head units today: e = deviation · camOff · scalar · lensGain with lensGain =
+      tan(hfov/2) = W/(2D) under the dolly, so e ∝ 1/D and θ_max = atan(e_ref·D_ref/D²) — the (18/f)²
+      law of R1 §1.4.
+
+`dolly.py S30` runs the family (S30: a figure at the window plane, a mid box, a fishtank behind) for
+f = 18…144 mm under both conventions. Results in the next revision of this section.
 
 ## 8. Open decisions (unchanged from the plan, now with numbers behind them)
 
