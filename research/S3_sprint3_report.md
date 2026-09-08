@@ -96,17 +96,20 @@ hidden layer, in metres. Sheet: `out/sheet_s3_plane.png` (sent).
 | S27 | 4894 | S2b.4 | 6002 | 0.815 | 1.000 | — | 0.005 | 0.030 | 0.240 |
 | S27 | 4894 | plane | 5623 | 0.870 | 1.000 | — | 0.000 | 0.000 | 0.240 |
 | S12 | 16975 | S2b.4 | 19792 | 0.855 | 0.997 | — | 0.000 | 0.076 | 0.128 |
-| S12 | 16975 | plane | 18013 | 0.935 | 0.992 | — | 0.000 | 0.076 | 0.128 |
+| S12 | 16975 | plane | 18011 | 0.935 | 0.992 | — | 0.000 | 0.076 | 0.128 |
 | S26 | 25631 | S2b.4 | 33057 | 0.773 | 0.998 | — | 0.002 | 0.055 | 0.112 |
 | S26 | 25631 | plane | 29782 | 0.858 | 0.998 | — | 0.000 | 0.055 | 0.112 |
 | S16 | 4513 | S2b.4 | 8606 | 0.484 | 0.924 | — | 0.001 | 0.006 | 0.160 |
-| S16 | 4513 | plane | 12203 | 0.359 | 0.972 | — | 0.000 | 0.000 | 0.160 |
+| S16 | 4513 | plane | 12164 | 0.360 | 0.972 | — | 0.000 | 0.000 | 0.160 |
 | S31 | 70400 | S2b.4 | 79988 | 0.880 | 1.000 | — | 0.000 | 0.000 | 0.128 |
 | S31 | 70400 | plane | 72798 | 0.967 | 1.000 | — | 0.000 | 0.000 | 0.128 |
 | S15 | 34867 | S2b.4 | 40286 | 0.832 | 0.961 | 0.95 | 0.142 | 8.554 | 8.640 |
-| S15 | 34867 | plane | 39546 | 0.832 | 0.944 | 0.91 | 0.055 | 8.567 | 8.640 |
+| S15 | 34867 | plane | 39260 | 0.830 | 0.935 | 0.91 | 0.062 | 8.567 | 8.640 |
 | S32 | 42400 | S2b.4 | 79997 | 0.080 | 0.151 | — | 42.961 | 42.973 | 43.200 |
 | S32 | 42400 | plane | 47995 | 0.717 | 0.811 | — | 0.000 | 0.000 | 43.200 |
+
+(Final code state: plate depth texture nearest-filtered, thin-run rule, first-arrival pick. The
+earlier run of the same table, before those, differed only in S15 recall 0.944 and S16 band 12 203.)
 
 **Depth by what is actually behind the texel** (rooms; the first hidden layer's class in the kit):
 
@@ -179,8 +182,8 @@ channel, 0–255; "clone" = what copying the source colour would score):
 |---|---|---|---|---|
 | S2 | background (floor, wall) | 26.7 | 27.1 | 50.1 |
 | S2 | the box's own side | 60.8 | 59.2 | 59.9 |
-| S15 | background (ground, hills) | 13.6 | 11.5 | 60.3 |
-| S15 | leaves behind leaves (side, interior) | 58.7 / 56.9 | 78.1 / 80.7 | 20.0 / 16.4 |
+| S15 | background (ground, hills) | 13.6 | 11.3 | 60.3 |
+| S15 | leaves behind leaves (side, interior) | 58.7 / 56.9 | 79.7 / 82.9 | 19.9 / 16.5 |
 
 Equal on the rooms (both are washes on a checkered floor), better on S15's ground and hills, worse
 in the crown, where the truth's first layer is the next leaf and the plane arm fills with the hill
