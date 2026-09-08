@@ -743,3 +743,14 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   over 4 q in the room; 0.79 % on the open one, the two rows at the kit's finite ground edge),
   horizon 224.4–224.5 of 450 (eye level = 225), box scene median error 3e-8 (the residue is at
   the wall's foot row where two rims straddle the crease).
+- **Band colour under the plane rule** (quick bake, `S3 PLANE COLOUR` block just before `A213 DEPTH-GATED
+  BAND FILL`): when `bgFarRuleOn()` and `window._geoFarRim` (exported by `_plugGeoBand`: per texel the
+  rim texel index and window length for the −1 and +1 sides of the winning axis, and the −1 side's
+  weight, straight from `bgFarSidePlane`'s `farRimJ/farRimW/farMix`), a band texel whose plate depth is
+  behind its own (`plateQ[i] < dQ[i] − q`) takes the window-mean colour of each rim mixed by the
+  depth's weight; the band's outer ring holds those colours as Dirichlet values and the interior is
+  `bgMembraneSolve`'s harmonic fill. Sets `plateColorTex`, so the A242 membrane (whose seeds pass a
+  `fgTearStep = 0.06` normalised-depth gate — half a metre on the 8.64 m scene, which let the trunk
+  seed the ground behind it) is skipped on this arm. Log `[S3] plane colour: …`. Probe dumps
+  `plateColor.u8` (RGBA, source rows) from `_qbPlateColor`. A far side whose clamped value is within
+  `tol` of the texel's own depth is recorded as none (kind 0, no rims).
