@@ -129,7 +129,7 @@ test the terrace claim below directly, since a 16-bit source has no 1/255 terrac
 | S9 stacked | 62 704 | 175 346 (49 %) | 0.36 | 1.00 (things 1.00, sides 0.92) | 0.000 / 0.043 m (0.112 m) |
 | S10 limbs | 52 680 | 200 027 (56 %) | 0.26 | 1.00 (things 1.00, sides 1.00) | 0.000 / 0.055 m (0.096 m) |
 | S12 frame-cut | 16 975 | 135 075 (38 %) | 0.13 | 1.00 (things 1.00, sides 1.00) | 0.000 / 0.076 m (0.128 m) |
-| S15 open (sky, hills, tree) | 26 133 | 59 796 (17 %) | 0.43 | 0.99 (bg 0.99, things 1.00, sides 1.00, interior 1.00) | 3.07 / 8.57 m (8.64 m) |
+| S15 open (sky, hills, tree) | 26 133 → **34 867 with sky reveals (R3)** | 59 796 (17 %) | 0.43 → **0.57** | 0.99 (bg 0.99, things 1.00, sides 1.00, interior 1.00) → **0.97 (sky reveal 0.95)** | 3.07 / 8.57 m (8.64 m) |
 | S16 ridge vs jump | 15 114 | 72 415 (20 %) | 0.07 | **0.32** (bg 0.32) | 0.000 / 0.003 m (0.16 m) |
 | S26 overhangs | 25 631 | 166 255 (46 %) | 0.15 | 1.00 (things 1.00, sides 1.00) | 0.011 / 0.055 m (0.112 m) |
 
@@ -204,6 +204,17 @@ exact synthetic depth, which has nothing to sharpen). Buffers: `out/<scene>/chec
 | S10 limbs | 0.26 (56 %) | 0.31 (48 %) | 1.00 / 1.00 | 0.000 / 0.000 |
 | S12 frame-cut | 0.13 (38 %) | 0.11 (44 %) | 1.00 / 1.00 | 0.000 / 0.000 |
 | S15 open | 0.43 (17 %) | 0.14 (53 %) | 0.99 / 1.00 | 3.07 / 0.015 m (p90 8.6 / 6.8 m) |
+| S15 open, sky reveals counted (R3 §4) | 0.57 (17 %) | 0.18 (53 %) | 0.97 / 0.97 (sky reveal 0.95 / 0.95) | unchanged (sky has no metric depth) |
+
+**Sky accounting (R3, user decision).** With the sky behind the hills and above the tree counted as
+revealed content, S15's truth grows from 26 133 to 34 867 texels (17 566 sky-reveal texels, 95 % of
+which the app's band covers: the hill rims that were orange in the first pass are green in
+`out/S15/check_app.png`, with a thin blue line on the far side of each hill where the band stops a
+few texels short). The definitional change also moves S15's full-envelope fractions: sky that the
+photograph shows in the same direction is 0.018 of the display on average, sky the photograph did not
+show 0.002, and 0.69 is outpaint — at the shipped cone every off-axis sky pixel is a direction the
+photograph never saw (closed form in R3 §2), so sky outpaint, not sky reveal, is the open scene's
+main demand.
 | S16 ridge vs jump | 0.07 (20 %) | 0.04 (30 %) | **0.32 / 0.33** | 0.000 / 0.000 |
 | S26 overhangs | 0.15 (46 %) | 0.17 (42 %) | 1.00 / 1.00 | 0.011 / 0.014 |
 
