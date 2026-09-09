@@ -792,3 +792,8 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   cell not covered by the foreground (`own[c] !== -2`), before the depth test; the `S2b RIM-LAW
   DEMAND` block then also marks `revealTex[i]` for every landed texel whose far field is more than
   a quantum behind its own depth. Cumulative over the pose grid.
+- **Margins are outpaint (same night).** `farLip` (Uint8Array G, per pose: filled 0 when the observe
+  walk runs, 1 otherwise) is set for a cell whose walk against the parallax finds a foreground cell
+  (`cFar >= 0`) before the frame edge. The rim-law demand skips cells with `farLip[c] == 0`
+  (counted as `revealOut`), and the landed mark requires `farLip[c]` and either an empty cell or a
+  winner joined with the lander on the far field (`rimL.joined(rimFF[id], rimFF[own[c]])`).

@@ -95,6 +95,21 @@ plates hidden, on magenta = nothing drawn):
   does not cover) now joins the demand, still excluding pinholes (far field within a quantum of
   own). On the kit's exact planes neighbouring copies land side by side without overtaking, so no
   change is expected there; measured below.
+- **The frame's margins are outpaint, and a loser counts only behind its own sheet** (fifth
+  change, after the kit rerun of the fourth). The eight scenes said the third and fourth changes
+  over-demand: S26 precision 0.858 → 0.346 (band 29 782 → 74 009), S16 0.360 → 0.148, S15
+  0.830 → 0.414 with the band depth median 0.062 → 2.734 m; recall rose everywhere (S15 0.935 →
+  0.999, S32 0.811 → 0.868). The S26 sheet shows where: a 60-row band across the ceiling at the
+  top of the frame. Those are the frame's own margins — at a vertical pose the far content slides
+  down and vacates the top strip; with a far side at every texel (no walk) the ceiling's copies
+  land there and the sweep named them reveals, while the truth's hidden scope stops at the frame
+  (the content there is beyond the picture: outpaint). The sweep's observe pass already walks
+  from each uncovered cell against the parallax to find the foreground lip; a cell whose walk
+  reaches the frame edge first has no occluder — it is the margin. That flag (`farLip`) now
+  gates both the winner demand and the landed mark, and a landed loser is demanded only when the
+  cell is empty or its winner is the same sheet (joined on the far field): a copy behind a nearer
+  sheet's copy is hidden for real (S15: sky copies behind hill copies, the 2.7 m). Rerun of the
+  photograph and the eight scenes below.
 
 Offline on the same buffers after the change: (380, 340) far 0.061 kind 2 (the cave, by the
 column); (388, 340) far 0.051 kind 4 (the cave first, the head's left half second); (360, 340)
