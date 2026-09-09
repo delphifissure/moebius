@@ -154,6 +154,33 @@ exactly this; the plane arm has not been scored on them yet (rungs now built for
 7, 7, 5, 5, 5 at a 960-px long side) is the published treatment; its window is in pixels, i.e. not
 invariant to the image size, so it is not adopted without a measurement on the rungs.
 
+### 4a. The kit's degradation rungs on the plane arm (v7; exact truth, degraded input)
+
+| scene | input depth | band px | P | R | depth median (m) | depth p90 (m) |
+|---|---|---|---|---|---|---|
+| S2 | exact 16-bit | 18 644 | 0.882 | 0.999 | 0.000 | 0.043 |
+| S2 | soft edges σ 1 px | 20 763 | 0.792 | 0.999 | 0.002 | 0.037 |
+| S2 | soft edges σ 2 px | 21 066 | 0.774 | 0.991 | 0.003 | 0.040 |
+| S2 | 8-bit quantised | 23 387 | 0.703 | 1.000 | 0.000 | 0.044 |
+| S15 | exact 16-bit | 58 326 | 0.593 | 0.993 | 0.183 | 8.566 |
+| S15 | soft edges σ 2 px | 82 965 | 0.416 | 0.990 | 0.789 | 5.355 |
+| S15 | 8-bit quantised | 57 837 | 0.598 | 0.991 | 3.411 | 8.567 |
+
+- **Soft edges (the estimator's fringe, M1):** on the room the plane law keeps recall and depth
+  (3 mm) and pays 9–11 points of precision — the ramp texels are runs of their own and offer far
+  sides, so the band widens by the ramp; nothing tears, nothing is lost. On the open scene the
+  ramp costs more (0.183 → 0.789 m median): a ramp between a hill and the sky is a "surface" at
+  intermediate depth that arrives first. The fringe is worth a treatment, and Shih 2020's
+  discontinuity-aware median is the published one; its window is in pixels at a fixed image size,
+  so it needs the rung measurement across σ before it is adopted. Not done tonight.
+- **8-bit quantisation (M3):** harmless on the room (depth exact, precision −18 points from
+  terraces offering far sides), and it wrecks S15's depth (median 3.4 m): on an 8.64 m scene a
+  quantum of normalised depth at the hills is metres, and the terraces break the hills into runs
+  whose lines say whatever the step says. The photograph is 8-bit. This is the S1 finding ("the
+  app reads terraces as rims") at the plane law's level, and it says the plane law's numbers on a
+  photograph are only as good as the source's resolution in the far field — a 16-bit (or float)
+  estimator output is the cheap fix upstream of everything here.
+
 ## 5. Results on the photograph (shots `harness/shots/s2c_skyshot/sheet_photo_ab.png`, face crop sent)
 
 Band (texels demanded of 870 573) and undrawn pixels inside the picture (alpha 0 in x 190–400 of
