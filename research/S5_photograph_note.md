@@ -637,7 +637,7 @@ lies outside the rectangle empty (632 of 1 244). Recommendation for the recipe: 
   envelope or the volume should shrink for a smaller texture band; the 16-bit re-export of the
   photograph's depth (`harness/depth16.py`).
 
-## 8. Sprint 6 — your decisions built as bake-time options (commit `99a9b5e`)
+## 8. Sprint 6 — your decisions built as bake-time options (commits `99a9b5e` … `fabe9c6`)
 
 Decisions (from the brief in `S5_plan.md`): build both fills and choose at bake time; build
 both margins and choose at bake time; tier the band by first-uncover pose with "paint all" as an
@@ -659,4 +659,115 @@ option; 16-bit deferred but standing.
 - **Measurement**: the photograph baked at ±30° horizontal (`ENV_DEG=30` in the harness), band
   against ±45°.
 
-Results follow.
+
+### 8a. What ran (all on `main`; commits `a297339`, `ea7248e`, `50a735d`, `fabe9c6`)
+
+One serial chain per stage, watchdog on: the photograph three ways (full recipe with the mirrored
+fill; the same with the wash; the plane arm at ±30°), then the kit eight with the recipe defaults,
+then the follow-ups the results demanded (below). Every option is off in the kit chain, so the kit
+is a regression check of the Sprint 6 code: **all eight scenes are bit-identical to v11** (band,
+precision, recall, depth, carriers, clones: the v11 table in §6 stands unchanged).
+
+### 8b. The band by first-uncover angle (decision C: the tier)
+
+`bandPose` is the smallest pose fraction at which the sweep demanded a texel; the buckets are head
+angles (fraction = tan θ / tan 45°). The sweep grid is 17 × 5, so its first horizontal pose is
+7.1° and its first vertical pose 16.1°: a scene whose reveal is only vertical (S31's full-width
+occluder, S32) shows nothing inside 15° for that reason, not because nothing opens.
+
+| bake | band | ≤ 15° | ≤ 25° | ≤ 35° | ≤ 45° |
+|---|---|---|---|---|---|
+| photograph ±45° | 412 329 (47.4 % of the picture) | 24 % | 54 % | 85 % | 100 % |
+| photograph ±30° | 359 220 (41.3 %) | 27 % | 71 % | 100 % | 100 % |
+| S2 | 18 531 | 70 % | 89 % | 98 % | 100 % |
+| S26 | 52 608 | 29 % | 64 % | 99 % | 100 % |
+| S15 | 48 020 | 91 % | 97 % | 99 % | 100 % |
+| S16 | 23 078 | 29 % | 45 % | 82 % | 100 % |
+| S27 | 5 695 | 88 % | 93 % | 97 % | 100 % |
+| S12 | 18 209 | 68 % | 97 % | 99 % | 100 % |
+| S31 | 74 398 | 0 % | 58 % | 100 % | 100 % |
+| S32 | 47 202 | 2 % | 76 % | 100 % | 100 % |
+
+Reading: on the photograph a quarter of the band opens inside 15° and half inside 25°; the tier
+at 35° (the bake panel's default) is 85 % of it. **The inner tiers are more precise than the whole
+band** (`check_app_band.py`, tiers scored against the same truth: S2 precision 0.944 at ≤ 15°,
+0.937 at ≤ 25°, 0.905 at ≤ 35°, 0.887 whole; S15 0.765 / 0.734 / 0.724 / 0.723): what is
+demanded early is hidden content, what is demanded only at the rim carries the over-demand. So
+tiering the texture stage costs nothing in precision and saves 15–46 % of the paint at 35° / 25°
+on the photograph. The SD bundle now carries the pose map (`dir_band_first_uncover.png`) and the
+tier mask (`dir_mask_inpaint_tier.png`, `meta.band_tier_deg`).
+
+**Envelope (the C2 number):** ±30° horizontal shrinks the band from 47.4 % to 41.3 % of the
+picture, not the ×0.58 the slide ratio suggests. The band is bounded by the far runs, not by the
+slide: most of the photograph's reveals are already fully open well inside 30° (71 % of the ±30°
+band opens by 25°), so the outer 15° of head angle adds only the last 13 % of texels. The envelope
+is not the lever for the atlas; the tier is.
+
+### 8c. Fill: wash vs mirrored far side (decision A)
+
+Holes are unchanged by the fill (both 8 / 0 / 17 / 31 with the picture margin and faces; v11 was
+91 / 15 / 395 / 65 without them), so this is a colour question. Kit colour error against the
+truth's first hidden layer (mean |Δ| /255 on true-positive band texels):
+
+| scene | wash | 1-D mirror (S5) | 2-D reflection (S6, tried) |
+|---|---|---|---|
+| S15 (open, textured far side) | 65.4 (median 56.7) | 32.4 (17.7) | 33.2 (18.3) |
+| S2 (room, brick) | 32.8 (28.7) | — | 32.9 (29.0) |
+
+- The **2-D reflection across the local rim line** (S6's streak fix) is falsified: the kit says
+  equal, and on the photograph's plate texture (`plate_wash_1d_2d.png`) it is a patchwork of box
+  streaks where the 1-D mirror is a coherent, if warped, continuation of the cave wall. The rim's
+  tangent from three rim texels is too noisy on an 8-bit rim to define a reflection. Removed
+  (rule 7), the 1-D mirror restored as the "mirrored far side" option (commit `fabe9c6`).
+- The mirror halves the error where the far side is textured and the reveal wide (S15); on a
+  room with a regular texture the wash is as good (S2). On the photograph the mirror reads as a
+  warped copy of the wall behind the arm (`s6_face_sheet.png`, right column): more "something is
+  there" than the wash, and more that the SD stage will have to overrule. Both remain bake
+  options as you decided; **the plane recipe keeps the wash** until you have seen both live.
+
+### 8d. Margins (decision B)
+
+Nothing new to measure beyond §6 Item 6: picture margin 8 / 0 / 17 / 31, window margin closes the
+outside corners too. Both are in the panel; the recipe's default is the picture margin.
+
+### 8e. Step faces: the criterion was wrong, twice, and is now derived (decision E)
+
+The Sprint 5 test ("parallel lines": the two runs' slopes along the rim's line equal within the
+fit uncertainty) drew 977 faces on the photograph, and the Sprint 6 sheets showed what they were:
+**bars across the reveal behind the arm and a picket fence along the arm's top** — faces between
+the arm's silhouette and the cave wall, a true occlusion, not a step (`s6_isolate.png`). The
+first correction (`ea7248e`, both axes' slopes equal) removed 672 of them but also **every one of
+S16's 217 return-face pairs**: the diagnostic showed S16's two walls with identical column slopes
+(0 = 0) and row slopes of −0.00138 vs −0.00134, sixty times the uncertainty. That is not noise:
+a plane n·X = ρ is the disparity plane A x + B y + C with (A, B, C) = (n_x, n_y, n_z f)/(f ρ), so
+**parallel planes at different distances have proportional gradients, not equal ones** — the
+equal-slope test was only ever passing planes whose slope along the line was zero. The derived
+test (`50a735d`): the normal is ∝ (A, B, C/f) with f the focal length in texels
+((pw/2)/tan(hfov/2), from the portal), C from the fitted disparity at the rim texel and the two
+slopes; two rims are a step when the two normals are parallel (cross product zero) within the
+uncertainties propagated from the fits (slope tol/(2(len−1)) as before; value tol/2). No new
+constant.
+
+| bake | Sprint 5 (parallel lines) | equal slopes, both axes | parallel normals |
+|---|---|---|---|
+| S16 (grazing wall, jump row) | 217 | 0 | 209 (422 rims not parallel) |
+| S2 (contact) | 248 | 105 | 105 (569 not parallel) |
+| photograph | 977 | 305 | 361 (2 258 not parallel, 446 without a gradient across the line) |
+
+On S16 the return face closes the slit along the jump row again (`steps_v3_zoom.png`). On the
+photograph the count is back near a third of Sprint 5's and the faces that remain are between
+terraces: **on 8-bit depth a jump between two flat terraces is, geometrically, a step between two
+parallel fronto-parallel planes**, and no depth-only criterion can tell it from an occlusion —
+the arm's curvature that would fail the test is below the quantum. Undrawn with faces v3: 18 / 0 / 28 / 44 (the Sprint 5 faces were covering a few holes: 8 / 0 / 17 / 31 with them).
+Decision as recorded: faces are a bake option, on in the kit's recipe (exact depth), **off by
+default for 8-bit photographs** until the 16-bit re-export (decision D) makes the test honest
+there too. The segment colouring (one mean per rim segment) holds: S2's box side is one colour
+instead of the checkerboard's stripes.
+
+### 8f. Standing items
+
+- **16-bit re-export of the photograph's depth** (`harness/depth16.py`, decision D): still the
+  gate for step faces on photographs and for the far field (§4a); waiting on the estimator's
+  output format.
+- Open geometries unchanged: S26 beam gap (plane law far from the rim), rim-law join sparing
+  curvature (would make the Shih pre-filter safe).

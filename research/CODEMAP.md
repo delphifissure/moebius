@@ -862,8 +862,22 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   and `window._qbBandTier` (when `window._bandTierDeg > 0`), logs `[S6] band by first-uncover angle`. The
   SD bundle (`bgDirectionalExport` branch) writes `dir_band_first_uncover.png` and `dir_mask_inpaint_tier.png`
   and `meta.band_tier_deg`.
-- **2-D mirror**: in `_plugGeoBand`'s self-occlusion block, `rimOf(i)`, the tangent from the neighbouring
-  lines' rim texels, reflection across the boundary line half a texel before the far run's first texel.
+- **Mirrored fill**: in `_plugGeoBand`'s self-occlusion block the mirror sample is the texel the same distance
+  into the far run along the texel's own line (the Sprint 5 form). A 2-D reflection across the local rim line was
+  tried and removed (`fabe9c6`; note §8c: equal on the kit, a patchwork on the photograph's plate).
+- **Step rims** (`bgFarSidePlane`, block `S5 STEP RIMS`, ~L755–780): a pair of adjacent runs on a line, both
+  ≥ 2 samples, not joined, not sky, is a step when the two planes' normals are parallel. `perpSlopeAx` gives the
+  slope on the other axis from the texel's run there (null if < 2 samples: rejected, counted "without a gradient
+  across the line"); `planeAt` builds (A, B, C/f) with `fTex = (pw/2)/tan(rl.hfov/2)`, C from the fitted
+  disparity at the rim texel, uncertainties slope tol/(2(len−1)) and value tol/2; `parallelPlanes` is the cross
+  product within the propagated uncertainties. Log `[S5] step rims: N … rejected: a not parallel, b without a
+  gradient`. History: Sprint 5 compared along-line slopes for equality (977 faces on the photograph, bars across
+  the reveal); `ea7248e` compared both axes for equality (lost S16's 217 pairs: parallel planes at different
+  distances have proportional gradients); `50a735d` is the derived form (S16 209, S2 105, photograph 361).
 - **Step-face colour**: in `S5 STEP FACES`, pairs are grouped into rim segments (consecutive pairs across
   the line) and each segment's quads take the mean of all its rim texels.
-- **Harness**: `ENV_DEG` (probe and shots) sets `bgViewFadeEndDeg` before the bake.
+- **Harness**: `ENV_DEG` (probe and shots) sets `bgViewFadeEndDeg` before the bake; `a257_probe.js` dumps
+  `bandPose.f32` and `bandTier.u8`; `check_app_band.py` reports `tiers` (px, fraction of the band, precision at
+  15/25/35°). Console filters pass `[S6]`.
+- **Sprint 6 results**: note §8 (band by first-uncover angle per scene, ±30° measurement, fill colour errors,
+  step-face history, the 8-bit terrace limit on step faces).
