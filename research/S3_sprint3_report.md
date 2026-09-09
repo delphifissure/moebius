@@ -232,3 +232,6 @@ value keeps its per-texel rim colours (the aggregation multigrid diverged on S15
 - The sweep's vertical pose grid (5) under-samples far surfaces on open scenes (S32's misses).
 - The rule's behaviour on an estimator's depth (texture noise breaks runs; the thin-evidence count
   and the horizon bars will show it) before any of this is tried on a photograph.
+  → Done the same night on the default photograph: `S5_photograph_note.md` (two ground-validity
+  rules, candidates beyond a rim, kind 4 as two layers with the nearer first, the reach walk
+  replaced by the sweep's demand, the band-size trade, and the kit rerun that prices it).
