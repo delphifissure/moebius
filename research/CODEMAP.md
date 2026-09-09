@@ -846,3 +846,24 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   source depth (`matQ.clone()`), coloured with the two rim texels' mean; `bgLayerMesh.userData.steps`,
   added/disposed/synced beside plate 2; `HIDE=steps` in the shot harness; `stepPairs` in the probe's
   meta.
+
+## 23. Sprint 6 code (2026-09-09 evening; flag arm; `S5_plan.md` decisions)
+
+- **Plate options** (`moebius.html` ~L303, ids `bgPlateFarSel`, `bgPlateFillSel`, `bgPlateMarginSel`,
+  `bgPlateFacesSel`, `bgPlateBandSel`, `bgPlateSkySel`; the same markup in `harness/scratch_moebius.html`).
+  `_wireDebugSheetControls` (block `S6 PLATE OPTIONS`) maps them to `window._tearLaw/_farRule/_skyInf/
+  _selfSample/_plugMargin/_stepFaces/_bandTierDeg`, persists `localStorage.bgPlateOptions`, exposes
+  `window._bakePlate` / `window._applyPlateOptions`; the Build button calls `_bakePlate` when the far
+  side is plane (a `_plugGeoBand({flush, observed, gateAPriori})` run), else the ordinary build. HUD stamp
+  `plate=far/fill/margin/faces/band/sky`.
+- **Band tier**: `_plugCpuSweep` keeps `bandPose[t]` = min pose fraction (`max(|fx|,|fy|)`) over the marks
+  (`markPose` at the three `revealTex` sites and the layer-2 site), returned as `bandPose`; `_plugGeoBand`
+  unions both sweeps (min), fills pinholes/rounding from reveal neighbours, exports `window._qbBandPose`
+  and `window._qbBandTier` (when `window._bandTierDeg > 0`), logs `[S6] band by first-uncover angle`. The
+  SD bundle (`bgDirectionalExport` branch) writes `dir_band_first_uncover.png` and `dir_mask_inpaint_tier.png`
+  and `meta.band_tier_deg`.
+- **2-D mirror**: in `_plugGeoBand`'s self-occlusion block, `rimOf(i)`, the tangent from the neighbouring
+  lines' rim texels, reflection across the boundary line half a texel before the far run's first texel.
+- **Step-face colour**: in `S5 STEP FACES`, pairs are grouped into rim segments (consecutive pairs across
+  the line) and each segment's quads take the mean of all its rim texels.
+- **Harness**: `ENV_DEG` (probe and shots) sets `bgViewFadeEndDeg` before the bake.

@@ -636,3 +636,27 @@ lies outside the rectangle empty (632 of 1 244). Recommendation for the recipe: 
 - Yours to call: wash vs mirrored far side as the placeholder; `_plugMargin` 1 vs 2; whether the
   envelope or the volume should shrink for a smaller texture band; the 16-bit re-export of the
   photograph's depth (`harness/depth16.py`).
+
+## 8. Sprint 6 — your decisions built as bake-time options (commit `99a9b5e`)
+
+Decisions (from the brief in `S5_plan.md`): build both fills and choose at bake time; build
+both margins and choose at bake time; tier the band by first-uncover pose with "paint all" as an
+option; 16-bit deferred but standing.
+
+- **Bake panel** (`moebius.html`, Debug View row, group "plate"; wired in
+  `_wireDebugSheetControls`): far side (membrane | plane), fill (wash | mirrored far side),
+  margin (off | picture | window), step faces (off | on), texture band (paint all | tier ≤ 35° /
+  25° / 15°), sky (off | on). Remembered in `localStorage` (`bgPlateOptions`); the Build button
+  runs the plane recipe when the far side is plane; stamped on the HUD (`plate=…`). Defaults are
+  today's behaviour (membrane, wash, no margin, no faces, paint all, no sky) until you choose.
+- **Band tier**: the sweep records per texel the smallest pose fraction at which it is demanded
+  (`bandPose`); `_plugGeoBand` logs the band by first-uncover angle (15/25/35/45°) and builds the
+  tier mask for the chosen angle (`tan(tier)/tan(envelope)`, no new constant); the SD bundle
+  adds `dir_band_first_uncover.png` (the pose map) and `dir_mask_inpaint_tier.png` (the tier).
+- **Smoothing**: the mirrored fill reflects the texel across the *local rim line* (tangent from
+  the rim texels of the neighbouring lines) instead of along its own row; a step face takes one
+  colour per rim segment (the run of pairs sharing the rim), the mean of its rim texels.
+- **Measurement**: the photograph baked at ±30° horizontal (`ENV_DEG=30` in the harness), band
+  against ±45°.
+
+Results follow.
