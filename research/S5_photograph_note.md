@@ -310,3 +310,14 @@ the cave as its second layer across the whole half. Band 264 382 (30.4 %), carri
 plate. The same-sheet test between a lander and a cell's winner is now the rim law's ratio test on
 cached eye distances; calling `joined()` per cell had tripled the sweep's time (the photograph's
 probe took 10 min at v7; 7 min now, the plate-2 pass included). Shots and the kit below.
+
+Shots (v9): undrawn 95 / 15 / 407 / 73 (v8: 95 / 15 / 413 / 73). The comb of slits right of the
+head at 0.5 is still there although plate 2 now carries the cave on the notch's right half: the
+slits are the seams between layer assignments. A texel whose *first* layer is already the cave
+(kind 1 or 2, x 389, 391, 409 on row 340) has no second layer, so plate 2 has no vertex there and
+plate 1's vertex there is torn from its neighbours (their first layer is the head's left half).
+Two meshes, each torn at the other's seam, leave a one-texel slit. Fix to apply after the kit run:
+plate 2's vertices where no second layer exists take plate 1's depth and colour, and a plate-2
+triangle is kept when any corner has a second layer and all three are joined — plate 2 then bridges
+plate 1's seams with coincident, same-coloured triangles (no clone: plate 2's colour canvas starts
+from plate 1's wash, not from the source).
