@@ -510,3 +510,23 @@ line in the bake log — the mesh was never built. The harness passes flags as n
 before its run; the step shots are queued again after the Shih rerun. The untouched numbers are
 worth keeping: S2 has 23 875 undrawn pixels at pose 0.5 and S16 7 868 at −0.25 — the sides and the
 return face are where the plane arm still leaves holes on the kit, and where the faces must show.
+
+### Item 6 — result: the A245 plug margin fills the picture's margins (`_plugMargin=1` joins the recipe)
+
+Undrawn pixels, photograph (interior x 190–400 | left strip x 152–200 | bottom-right corner):
+
+| arm | 0.5, 0 | −0.25, 0 | 0, 0.4 |
+|---|---|---|---|
+| rim arm | 442 \| 33 \| 1 531 | 15 \| 4 763 \| 505 | 9 \| 39 \| 720 |
+| plane v11 | 395 \| 1 \| 1 244 | 15 \| 1 643 \| 505 | 65 \| 39 \| 720 |
+| plane v11 + plug margin | 28 \| 1 \| 31 | 0 \| 368 \| 0 | 65 \| 0 \| 0 |
+
+M = 570 texels (the largest border rim shift, from the LUT), four strips, 7 496 vertices. The
+corner and the strips fill; what remains of the left strip at −0.25 (368) is the strip's own
+displacement at that pose. One effect to know: the strips also stand behind the picture's
+*interior*, so interior holes fall too (395 → 28 at 0.5) — filled with the border's replicated
+colour, a backdrop, not the far side. That is a fill in the sense you asked for (never a clone of
+the foreground; the border texel's own colour continued), but it also hides holes from the
+undrawn-pixel measure, so hole counts stay on the arm without the margin. The recipe for the live
+pass is now `window._tearLaw='rim'; window._skyInf=1 (open scenes); window._farRule='plane';
+window._plugMargin=1; window._plugGeoBand({flush:true, observed:true, gateAPriori:true})`.
