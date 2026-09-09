@@ -321,3 +321,33 @@ plate 2's vertices where no second layer exists take plate 1's depth and colour,
 triangle is kept when any corner has a second layer and all three are joined — plate 2 then bridges
 plate 1's seams with coincident, same-coloured triangles (no clone: plate 2's colour canvas starts
 from plate 1's wash, not from the source).
+
+### Kit under Items 1 + 2 (band = winners + layer-2 demand; carriers separate)
+
+| scene | truth px | band S3 → v7 → now | P S3 → v7 → now | R S3 → v7 → now | depth median (m) | carriers | plate-2 carriers | clones (final) |
+|---|---|---|---|---|---|---|---|---|
+| S2 | 16 454 | 18 190 → 18 644 → 18 529 | 0.901 → 0.882 → 0.887 | 0.996 → 0.999 → 0.999 | 0.000 | 18 548 | 1 108 | 0 |
+| S27 | 4 894 | 5 623 → 5 725 → 5 703 | 0.870 → 0.855 → 0.858 | 1.000 | 0.000 | — | 60 | — |
+| S12 | 16 975 | 18 011 → 19 540 → 18 642 | 0.935 → 0.865 → 0.905 | 0.992 → 0.996 → 0.994 | 0.000 | — | 30 | — |
+| S26 | 25 631 | 29 782 → 73 325 → 50 833 | 0.858 → 0.349 → 0.496 | 0.998 → 1.000 → 0.983 | 0.000 | 73 033 | 21 218 | 0 |
+| S16 | 4 513 | 12 164 → 29 320 → 22 216 | 0.360 → 0.150 → 0.198 | 0.972 → 0.973 → 0.973 | 0.000 | 28 351 | 593 | 1 |
+| S31 | 70 400 | 72 798 → 74 400 → 74 398 | 0.967 → 0.946 → 0.946 | 1.000 | 0.000 | 74 398 | 0 | 0 |
+| S15 | 34 867 | 39 260 → 58 326 → 43 466 | 0.830 → 0.593 → 0.749 | 0.935 → 0.934 → 0.934 | 0.062 → 0.183 → 0.131 | 51 134 | 5 163 | **223** |
+| S32 | 42 400 | 47 995 → 50 398 → 47 995 | 0.717 → 0.730 → 0.717 | 0.811 → 0.868 → 0.811 | 0.000 | — | 0 | — |
+
+Reading: the split gives back most of the precision the losers had cost (S12 0.865 → 0.905, S15
+0.593 → 0.749), and S15's recall returns to the S3 level (0.934) — the v7 recall 0.993 had come
+from losers, i.e. from carriers that are still there but no longer counted as demand; S32's gain
+went the same way. Layer 2's best-of-two against the truth's first layer: S15 0.078 m median.
+
+- **S15's 223 clones (final plate).** Non-carrier texels on rows 131–278 (the hills), pushed from
+  d 0.274 to 0.262 by a whole-plate depth pass — 39 % of them have no far side at all. That is the
+  a126 slope limiter (a chamfer for the continuous-plate arm), which lowers a texel toward a
+  neighbour that dropped; under the rim law the plate is torn instead, so the pass is redundant
+  there and now makes clones. To guard: skip a126 when the rim law is on, as a162 already is.
+- **S26 still +21 000 over S3, all in the top 64 rows (29 037 band texels).** With losers out these
+  are winners: the beam's own stretched quads (their corners run from the ceiling line to the
+  wall, kind 3) take their FARTHEST corner as the quad's depth in the sweep, i.e. the wall's, and
+  tie with the ceiling copies at wall depth; ties go to the first lander, and rows 0–64 splat
+  before rows 72–88. Item 4 as planned: a quad's cells take the depth interpolated from its
+  corners, so a stretched near-line quad beats a far copy where both land.
