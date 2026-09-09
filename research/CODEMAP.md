@@ -792,8 +792,12 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   cell not covered by the foreground (`own[c] !== -2`), before the depth test; the `S2b RIM-LAW
   DEMAND` block then also marks `revealTex[i]` for every landed texel whose far field is more than
   a quantum behind its own depth. Cumulative over the pose grid.
-- **Margins are outpaint (same night).** `farLip` (Uint8Array G, per pose: filled 0 when the observe
-  walk runs, 1 otherwise) is set for a cell whose walk against the parallax finds a foreground cell
-  (`cFar >= 0`) before the frame edge. The rim-law demand skips cells with `farLip[c] == 0`
-  (counted as `revealOut`), and the landed mark requires `farLip[c]` and either an empty cell or a
-  winner joined with the lander on the far field (`rimL.joined(rimFF[id], rimFF[own[c]])`).
+- **Withdrawn the same night:** a per-cell "far lip" margin gate (the observe block that would set it
+  runs only under `if (revealTex && !rimFF)`, never on this arm; and the S26 over-demand it was meant
+  to cure is the rim law tearing the ceiling from the far-end wall at the clamp, see
+  `S5_photograph_note.md` §3). What stayed: the landed mark requires an empty cell or a winner
+  joined with the lander on the far field (`rimL.joined(rimFF[id], rimFF[own[c]])`).
+- **Kind 4 order corrected (same night).** `combine`'s last branch returns the NEARER line (larger
+  disparity) as the value, `mixL` = 1 if it is the −1 side's; the S4 block takes the other side (the
+  farther line) as layer 2. The farther-first version lasted one kit run (S15 sign: sky first below
+  the horizon).

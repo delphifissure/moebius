@@ -110,6 +110,30 @@ plates hidden, on magenta = nothing drawn):
   cell is empty or its winner is the same sheet (joined on the far field): a copy behind a nearer
   sheet's copy is hidden for real (S15: sky copies behind hill copies, the 2.7 m). Rerun of the
   photograph and the eight scenes below.
+- **The margin gate withdrawn the same hour (rule 7), and what the S26 buffer actually said.** The
+  flag never ran: the sweep's observe block sits under `if (revealTex && !rimFF)`, skipped on the
+  rim-law arm, so the flag stayed 0 and the photograph's band fell to 5 535 texels — the check
+  that caught it. Then the S26 probe (a196): column 400, rows 0–64 are the ceiling (d 0.48 → 0.27,
+  near the portal plane), rows 72–88 fall 0.12 → 0.02 → 0.00 and the wall sits at d = 0, the
+  volume's far end. The rim law tears there — a receding surface meeting the far-end clamp — and
+  every ceiling texel's column candidate beyond that rim is the wall's plane (kind 1, far field
+  0). At a downward pose the wall slides down 100+ texels while the ceiling, at the portal plane,
+  stays; the gap that opens at the crease is filled by the ceiling texels' copies at wall depth,
+  and all 40 000 of them are demanded because all of them land in it. The kit's truth has a
+  crease with no gap, so it scores them as false positives — but the app's own mesh is torn
+  there, and without the fill the gap is a hole. The over-demand is not a frame margin; it is the
+  rim law tearing at the far-end clamp, an S2b question upstream of this arm. Recorded, not
+  changed tonight. (The photograph's real margins — the left strip, the bottom-right wedge — get
+  no copies at all, `own = −1`, and were never demanded.)
+- **Kind 4: the nearer line first** (sixth change). S15's 2.7 m was the farther-first order: on the
+  sign's texels below the horizon the ground's line passes in front of the sky, and the farther
+  line (sky) was made layer 1 where the truth is the hill; the reach argument for farther-first
+  fell with the walk. Of two surfaces that both continue behind a texel the nearer occludes the
+  farther — the layered depth image's order — so layer 1 is the nearer line and layer 2 the
+  farther. On the troll's right half this puts the head's left half first and the cave second;
+  plate 2 renders the cave, but plate 2 does not take part in the demand sweep (S4 plan §2's
+  union is not built), so those 28 texels are demanded only if their layer-1 copy is uncovered
+  somewhere. Expected: a slit up to 28 texels wide at the notch, not the 154-texel hole.
 
 Offline on the same buffers after the change: (380, 340) far 0.061 kind 2 (the cave, by the
 column); (388, 340) far 0.051 kind 4 (the cave first, the head's left half second); (360, 340)
