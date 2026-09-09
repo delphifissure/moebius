@@ -380,3 +380,11 @@ the photograph's shots with `_plugMargin=1` added to the flags, read the left st
 bottom-right wedge at 0.5, and add the flag to the recipe if the strips fill them without artefacts
 (the edge colour replicated outward is a wash of the border, not a clone of the foreground — the
 strips carry the plate's edge, which on a carrier is its far side).
+
+Photograph v10 (seam bridge + interpolated quad depth + a126 off): undrawn 91 / 15 / 395 / 71
+(v8: 95 / 15 / 413 / 73; rim arm 74 / 15 / 442 / 9). Band 260 803 (30.0 %); carriers 504 795
+(58.0 %) — up from 51 %, the interpolated quad depth re-sorts who wins and who loses a cell, and
+losers of the same sheet are carriers; plate 2: 16 938 texels demanded, 57 111 carriers, 120 621
+triangles (twice v9's — the bridges). Wash check 2 at colour time, 0 on the final plate (a126 was
+the source of the final-plate clones). The notch's comb at 0.5 is down to a few one-texel lines
+along the notch column and the ramp. Sheet `photo_ab_face_v10.png` sent.
