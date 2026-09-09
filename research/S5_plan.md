@@ -1,165 +1,212 @@
-# Plan: fill everything on the plane arm, then the remaining items
+# Decision brief after Sprint 5 — advantages and disadvantages, then the plan that follows
 
-## Context — what the "band" is, and why "filled vs band size" only looked like a trade
+Everything below is on `main` behind the plane arm's flags; nothing is a default yet. Numbers are
+from `research/S5_photograph_note.md` (§5–§7). Each decision lists the options, what the
+evidence says, and my recommendation; the plan at the end is written for the recommended choices
+and changes with yours.
 
-The plane arm (`window._farRule='plane'`) gives every rest texel a **far side**: the depth of the
-surface that continues behind it, read off the neighbouring runs along its row and column. The
-**plate** is a second full-frame mesh drawn behind the picture; a texel of the plate sits at its far
-depth, so when the head moves and the foreground slides off, the plate texel slides with the far
-layer and lands in the hole. The plate is a full-frame sheet already (the island mask that could
-discard fragments is off: `matQ.uniforms.u_useBgIslands = false`, moebius.js:15372); its triangles
-are dropped only where neighbouring plate depths are not joined (moebius.js:15797).
+## Decision A — the placeholder colour in the reveal: flat wash or mirrored far side
 
-The **band** (`disocc`) is the set of rest texels that actually get a far depth and a synthesised
-colour on the plate. Every other texel's plate depth is its own source depth (moebius.js:14166,
-14289), i.e. a copy of the foreground that never separates from it. Tonight the band went from
-10 % to 54 % of the picture because two things are tied to one mask:
+The plate texel behind a foreground texel needs a colour until the texture stage paints it.
 
-1. **Coverage.** Between two band texels, a non-band texel keeps its own depth, so the plate's
-   triangles around it are torn; the plate becomes a comb of patches and holes appear. To close
-   the comb every "loser" copy (one that lands where a neighbour's copy already landed) had to be
-   put in the band too. That is what took the photograph from 31 % to 54 %.
-2. **Synthesis.** The band is also what the later texture stage would have to paint (today a wash
-   from the rim colours through a membrane; later, if wanted, inpainting). Its cost and its
-   plausibility both scale with area. The kit's precision metric scores exactly this set against
-   the truth's hidden scope.
+**Option A1 — rim wash (current default).** The mean colour of the rim window on the far side,
+blended across the reveal by a membrane (a smooth gradient between the rim colours).
+- Advantages: never a foreground clone; no structure invented, so nothing false to unlearn when
+  the SD stage paints over it; smooth, reads as "something is there" without drawing the eye;
+  cheap (2–4 s on the photograph).
+- Disadvantages: a flat grey-brown patch where the cave has texture — it reads as a patch at
+  the larger poses; on the kit its colour error against the truth is 65 /255 mean (S15), worse
+  than a clone would be on the crown's leaves (93 vs 20 on leaf sides).
 
-These are different needs and need not share a mask. **Carriers** (texels whose plate vertex sits
-at far depth so the sheet is continuous) can be the large set; the **texture band** (texels whose
-colour is synthesised) can stay the small winner set. Carriers outside the texture band are hidden
-behind winners on the pose grid by construction (they lost their cell), so their colour is almost
-never seen and the wash suffices. With that split the picture is filled *and* the band for
-synthesis is the small one. There is no trade to make; there was a bookkeeping conflation.
+**Option A2 — mirrored far side (`_selfSample=1`).** Each carrier takes the source colour of the
+texel the same distance beyond the rim, inside the far run (mirror padding of the visible far
+surface), fixed as a boundary value for the membrane.
+- Advantages: the reveal shows the far surface's own texture, so it reads as continuation rather
+  than a patch; on the kit the colour error halves (65 → 32 mean, 57 → 18 median), and on plain
+  backgrounds it quarters (33 → 13); still never a foreground clone (it samples the far run).
+- Disadvantages: mirrored one row at a time, so the fill is horizontally streaked (the sheet you
+  have); a reflection is a guess that is right for repeating textures (grass, brick, cave) and
+  wrong for anything with structure (a doorway would appear twice); where the far side is the sky
+  or a different object it is still no better than the wash; and a textured placeholder can make
+  the SD stage's job look done when it is not.
 
-Nothing below changes a default; all of it stays behind `window._farRule='plane'` on the rim-law arm.
+**What I do not know:** how each looks in motion on your screen; the kit says A2, the risk is
+visual (streaks and doubled structure).
 
-## Item 1 — Decouple carriers from the texture band
+**Recommendation:** A2 as the default placeholder, with the streaks smoothed (mirror a small
+window along the rim rather than one texel — the plane law's own rim window, no new constant),
+and A1 kept as the fallback where the mirror leaves the far run. If the streaks still read as
+artefacts on your screen, A1.
 
-**Where.** `_plugCpuSweep` (moebius.js ~8098–8420), `_plugGeoBand` (~8840–8880), quick bake
-(`plateF` at 14152/14166/14289; S3 PLANE COLOUR domain at 14879; S4 PLATE 2 membership at 16166;
-`_qbDisocc` at 14164).
+## Decision B — the picture's margins: plug margin 1, 2, or off
 
-**Change.**
-- The sweep returns two masks: `revealTex` = winners only (the per-cell nearest lander, as before
-  tonight's fourth change) and `landedTex` = every lander behind its own sheet (tonight's `landed`,
-  with the same-sheet join test). Drop the merge of `landed` into `revealTex`.
-- `_plugGeoBand` builds `band` (texture: winners ∪ pinholes ∪ 4-neighbour dilation, as now) and
-  `carrier` = `band ∪ landedTex`, exported as `window._bandReplace` and a new
-  `window._carrierReplace` / `_qbCarrier`.
-- Quick bake: `plateF` takes the far field on **carriers** (14152, 14289 loop over `carrier` instead
-  of `disocc`); `_qbDisocc` stays the texture band; the S3 plane colour domain becomes the carriers
-  (the ring/membrane machinery is unchanged, the domain array changes); plate 2 membership uses
-  carriers. The A253 lip floor and the plate-tear test already run on the whole plate.
-- Probe (`harness/a257_probe.js`) dumps `carrier.u8`; `check_app_band.py` keeps scoring `disocc`.
+At off-axis poses the picture vacates a strip on one side (nothing follows the far content in).
 
-**Verify.** Photograph: texture band back near 31 % (v4's number), undrawn pixels at 0.5 ≤ 412 (v7)
-and ideally ≤ v5's 401; face and full-frame sheets; per-layer shots. Kit: rerun the eight scenes;
-expect precision back toward the S3 report's values (S2 0.90, S31 0.97) with recall kept, and S26's
-73 k re-read: if its ceiling texels are landed losers they leave the texture band by themselves.
+**Option B0 — off.** Empty strips (the magenta in the sheets).
+- Advantages: honest; nothing drawn where the picture never was.
+- Disadvantages: a hard hole at the frame edge at every pose; the rim arm never had it.
 
-## Item 2 — Plate 2 takes part in the demand
+**Option B1 — `_plugMargin=1` (strips across the whole window).** Four strips replicate the border
+texels' depth and colour outward, drawn wherever the window is.
+- Advantages: fills every margin and corner (bottom-right 1 244 → 31 undrawn); also stands behind
+  interior holes as a backdrop (395 → 28 at 0.5).
+- Disadvantages: a portrait picture in a landscape window gets streaked bands of border colour
+  across the whole window (M = 570 texels), which is most of what you see beside the picture;
+  the backdrop hides real holes from measurement and from you.
 
-**Where.** `_plugCpuSweep` plate pass (8383–8387, `sPL`/`pFs` from `opts.farField` at 8154), the
-rim-law demand block (~8388), `_plugGeoBand` call sites (8748/8842/8877), S4 PLATE 2 block (16156).
+**Option B2 — `_plugMargin=2` (strips clipped to the picture's rest rectangle).**
+- Advantages: fills the vacated strip and the interior holes inside the picture's own rectangle
+  (left strip 1 643 → 368; interior 395 → 17 with step faces), draws nothing outside it.
+- Disadvantages: the part of a vacated corner that lies outside the rest rectangle stays empty
+  (bottom-right 1 244 → 632); still a backdrop behind interior holes.
 
-**Change.** `opts.farField2` (the S4 second layer, −1 where none). After the plate-1 pass, a
-plate-2 pass splats texels with a second layer at that depth (same quad fill). A cell won by a
-layer-2 copy demands its texel into a `revealTex2`; `band2 = revealTex2 ∪ landed2`. Plate 2 is
-built on `carrier2` (drop the `disocc &&` in the `has2` test at 16166), coloured as now. The
-texture band for synthesis becomes `band ∪ band2`.
+**Recommendation:** B2. The window outside the picture is the app's frame, not the picture; a
+wash there is more distracting than nothing. If you want the corners closed too, B1 with the
+window area beside the picture masked is a small change.
 
-**Verify.** The notch's comb right of the troll's head at pose 0.5 closes (the right half's cave is
-its second layer). S15 sign shots at 0.1/0.25/0.5 read hill then sky. Kit `layer2` block: `app_px`
-grows, `best_of_two_vs_first_median` on S15 ≤ 0.103 m.
+## Decision C — how big the texture band should be (what the SD stage will paint)
 
-## Item 3 — The estimator's fringe (soft depth edges)
+At ±45° on a 0.06 m volume the honest band on the photograph is 47 % of the picture; carriers
+55 %. Nothing in the demand is padding any more (the torn quads that used to hide it are gone).
 
-**Evidence so far** (note §4a): soft edges σ 1–2 px cost S2 9–11 points of precision with depth
-intact and cost S15 0.6 m of depth; on the photograph the head's silhouette is a 20-texel ramp.
+**Option C1 — keep the envelope and volume; accept 47 %.**
+- Advantages: the experience you designed (the full head range, the depth you chose) with every
+  reveal covered; the band is exact to the sweep grid.
+- Disadvantages: the SD stage paints half the picture; large inpaints hallucinate more and cost
+  more; the atlas is big.
 
-**Change.** An optional pre-pass on the source depth, `window._depthPre='shih'`, applied in
-`_plugGeoBand` before the rim law reads `dQ`: Shih et al. CVPR 2020's discontinuity-aware weighted
-median (five passes, windows 7,7,5,5,5, range kernel zeroed across the discontinuity mask; R1 §2.3
-and §4). Two window conventions are tested, not chosen: the paper's pixels at its 960-px long side,
-and the same scaled by `longSide/960` (the invariance question). The discontinuity mask is the rim
-law's own not-joined pairs, so no new threshold enters.
+**Option C2 — shrink the envelope (e.g. ±30° horizontal).** Band scales roughly with the
+relative slide, i.e. with tan of the half-angle: 45° → 30° is ×0.58 on the slide, so a band in
+the high 20s of percent (to be measured, not assumed).
+- Advantages: smaller atlas and fewer hallucinations; the poses most heads spend their time in are
+  inside 30°; the fade already softens the rim.
+- Disadvantages: less parallax at the extremes; the envelope was a design decision (Sprint 2a).
 
-**Verify.** `rung_chain.sh` on S2, S15, S31 at σ 1, 2, 4 (`degrade.py` builds the rungs; S31 still
-to build) for: untreated, fixed window, scaled window. Read precision, recall, depth median. Adopt
-only if the rungs say so at all three σ; then the photograph's shots. If neither convention holds
-across σ, record and leave the fringe as a surface (the current behaviour).
+**Option C3 — shrink the volume (outer + inner).** The reveal width is proportional to the depth
+difference across a rim; halving the volume roughly halves every reveal.
+- Advantages: the biggest lever on band size; also reduces stretch on grazing surfaces.
+- Disadvantages: flatter picture; the volume is the depth impression you tuned.
 
-## Item 4 — Carriers far from the rim (S26's ceiling), conditional on Item 1
+**Option C4 — paint less than the band: SD only the *visible* part at the working poses (e.g.
+inside 25°), wash beyond.** The sweep already knows per texel at which pose it is first
+uncovered (f0), so the band can be tiered.
+- Advantages: the SD budget goes where the head is; the rim keeps the wash; no geometry changes.
+- Disadvantages: a visible change of texture quality past the working range; needs the tiering
+  built (small: it is the arrival pose the plane law already computes).
 
-If S26's 40 k ceiling texels remain in the texture band after Item 1, they are winners: the
-beam's own stretched quads (its 16 carriers at the ceiling line) lose the gap cells to the wall-depth
-copies because a quad "takes its farthest corner" (moebius.js:8380) and ties go to the first
-lander. Then: give a plate quad the depth of the corner nearest the cell (or interpolate), so a
-stretched near-line quad beats a far copy where both land. Measure on S26 only, then the eight.
+**Recommendation:** C1 for geometry (do not change the experience for the atlas) and C4 for the
+texture stage when it comes: tier the band by first-uncover pose so SD paints the inner tier and
+the wash covers the rest. Measure C2 once (one photograph bake at ±30°) so the trade is a number.
 
-## Item 5 — S16's edge-on faces (your call: a step face when both rims are one object)
+## Decision D — 16-bit depth for photographs
 
-Ledge and return faces have no rest texels; the plane law offers nothing there (S16 precision
-0.15). Rule chosen (R1 §2.3's prior): where the two rims of a jump belong to one object (the A257
-object ids, `_geoObjId`), the jump is a step and its face is synthesised as a quad spanning the
-step at the nearer rim's plane continued; a jump between different objects stays an open jump to
-the far side. Built as a third small mesh (or plate-2 texels where the texel has no second layer),
-coloured from the nearer rim's window. Kit: S16 and S2 (boxes have sides) before/after; the
-photograph's boxes-like edges (the sword, the arm) on screen.
+**Option D1 — re-export the estimator's output at 16 bits (`harness/depth16.py`).**
+- Advantages: on the kit's 8.6 m scene the 8-bit quantum wrecked the far depth (median 3.4 m vs
+  0.18 m); the app already ingests 16-bit PNG; the script exists and is tested; nothing in the
+  bake changes.
+- Disadvantages: needs the estimator's float output (a change in your export step, not in this
+  code); the troll's depth has no float source, so it stays as it is until re-run.
 
-Decisions taken with you before this plan: both a small texture band and full coverage are wanted
-(Item 1 as written), and S16's jumps inside one object are step faces.
+**Option D2 — stay 8-bit.**
+- Advantages: nothing to do.
+- Disadvantages: far-field depth on every photograph is bounded by the source, and the plane
+  law's rims fire on 8-bit terraces (the S1 finding, still true).
 
-## Item 6 — The picture's own margins
+**Recommendation:** D1, as soon as the estimator can be re-run. Tell me the estimator and its
+output format and I will make the script's defaults match it.
 
-At off-axis poses the picture vacates a strip on one side (the far content slides in from the other
-and nothing follows). The rim arm covers it with its membrane wash; the plane arm leaves it empty
-(note §5). Fill: continue the border row/column at its own depth beyond the frame (clamp-to-edge,
-as Kopf 2020 pads), as an outpaint ring of the plate with the wash colour. Small; after Items 1–2.
+## Decision E — step faces on, and their look
 
-## Standing rule for every item: wash, never a foreground clone as background
+**Option E1 — `_stepFaces=1` (built).** A quad across every rim between parallel lines.
+- Advantages: closes box sides and return faces (S2, S16 sheets), the geometry the kit could
+  not score and you named as a step; no constant.
+- Disadvantages: each face is the mean of its two rim texels, so a checkerboard gives horizontal
+  stripes; on the photograph most "steps" are estimator notches and the faces change little; a
+  false positive (two parallel surfaces that are really separate) would draw a face between them.
 
-The atlases the SD stage will inpaint must be accurate about *where* new content is needed (the
-texture band) and must never present foreground pixels as background. Concretely, enforced and
-measured, not assumed:
+**Option E2 — off.** Open jumps everywhere.
+- Advantages: nothing invented. Disadvantages: the sides stay holes.
 
-- A plate texel whose depth is behind its own source depth never carries its own source colour; it
-  carries the rim wash (Item 1 extends the wash to all carriers). A probe check is added:
-  `count(plateColor == sourceColor && plateF < dQ − q)` must be 0 on every bake, printed in the
-  `[S3] plane colour` log line and asserted by `check_app_band.py`.
-- Plate 2 and the step faces of Item 5 follow the same rule (rim window means, never the texel's
-  own colour).
-- The texture band exported for SD is the small winner set of Item 1 (plus pinholes and the
-  1-texel dilation), so the inpainter is asked only where a reveal is real.
+**Recommendation:** E1 with the face coloured by the rim window mean (smooth) instead of the two
+texels; the same change as the A2 streak fix.
 
-**Self-occlusion (Item 7, after 1–3).** Where the far side behind a texel is the *same object*
-(the A257 object ids: the notch through the troll's head, the back of a limb), a wash of the rim
-colours is a placeholder and the object's own texture is a better one. Experiment: for kind-4/
-notch texels whose two rims share an object id, colour the carrier by sampling the object's own
-texels mirrored across the rim (the other side of the face), falling back to the wash where the
-mirrored sample leaves the object. Judged on screen (the troll's head at 0.25/0.5) and on the
-kit's S15 crown colour error; adopted only if it beats the wash on both.
+## Decision F — the Shih pre-filter for soft edges
 
-## 16-bit depth: prep (Item 0, first, small)
+- Rooms: it helps (S2 σ 1 precision 0.824 → 0.885, depth exact; S31 recall back to 1.000).
+- Open scenes with curved far surfaces: it hurts (S15 0.184 → 0.696 m even with the corrected
+  mask), because the rim law's join spares planes but not curvature.
+- Options: F1 never (current); F2 a per-picture switch you set; F3 make it safe by a join that
+  spares smooth curvature (a rim-law change: a second-difference rescue over a longer window,
+  tested on S15's hills and the photograph's ramps).
+- Recommendation: F1 now, F3 as the next rim-law item if fringes bother you on screen; F2 is a
+  knob you would have to guess.
 
-The app already decodes 16-bit greyscale PNG depth directly (`bgDecodeDepth16`, moebius.js:775;
-quantum 1/65535; 8-bit and interlaced files fall back to the 8-bit path). The kit's 8-bit rung
-shows why it matters (S15 far depth median 3.4 m at 8 bits, 0.18 m at 16). Prep:
+## Your decisions (recorded)
 
-- `harness/depth16.py`: converts an estimator's float output (`.npy`, `.pfm`, `.exr`, 16-bit
-  `.tiff`, or an 8-bit PNG to be re-exported at source precision) to the app's convention — one
-  channel, 16-bit, non-interlaced, bright = near, normalised to [0, 1] with the normalisation the
-  app assumes for its depth law (documented in the script header from the loader's code path).
-  Prints the source's effective quantum and warns when the input is already 8-bit (nothing to
-  gain).
-- A check in the app's load path that logs which decoder served the depth (`[A99] … 16-bit` vs the
-  8-bit path) so a silently-8-bit file is visible; `_qbSrcQuantum` already follows it.
-- The default troll image has no float source in the repo; it stays 8-bit until you re-export it
-  from your estimator with the script. The kit scenes are already 16-bit.
+- A: build both; the placeholder (wash / mirrored far side) is an option at bake time.
+- B: build both; the margin (off / picture / window) is an option at bake time.
+- C: tier the band by first-uncover pose, and offer "paint it all" as the option.
+- D: deferred, not forgotten — 16-bit export is important; it stays as a standing item in the
+  note (§7) and in this plan until done.
+- E (step faces) and F (Shih) not asked: step faces become a bake option too (on by default in
+  the plane recipe, smoothed); the Shih pre-filter stays in the kit, off.
 
-## Order and checkpoints
+## The plan that follows your decisions
 
-0 → 1 → 2 (small, same code paths; one kit rerun after each) → 3 (a measurement with a decision
-rule) → 4 and 6 (conditional/small) → 5 (step faces) → 7 (self-sampling experiment). After each
-item: photograph sheets sent, the wash-not-clone count printed, kit table appended to
-`research/S5_photograph_note.md`, commits on both repos.
+**Where options live.** The app has no settings loader; bake choices are `<select>`/`<input>`
+elements in the Debug View row of `moebius.html` (L276–306: `bgModeSel`, `bgGapRuleSel`,
+`bgLayerBuildBtn`, `bgSeedModeSel`…) read either in `_wireDebugSheetControls`
+(moebius.js ~L19601–19691, which sets `window._*` before calling
+`window._plugGeoBand({flush, observed, gateAPriori})`) or straight from the DOM at bake time
+(`bgSeedModeSel` at ~L16598). No dat.GUI, no persistence beyond two localStorage keys. The
+harness host `harness/scratch_moebius.html` mirrors the page and `harness/moebius.js` is a copy
+of the app file, so the HTML change is mirrored there.
+
+1. **A "Plate" option group in the Debug View row** (`moebius.html` next to `bgGapRuleSel`; the
+   handler in `_wireDebugSheetControls`), one `<select>` each, applied by setting the existing
+   `window._*` flags before the recipe's `_plugGeoBand` call and stamped on the HUD like
+   `bgRelaxModeSel`:
+   - Far side: `membrane` (S2b.4) / `plane` → `_farRule`.
+   - Placeholder: `wash` / `mirrored far side` → `_selfSample`.
+   - Margin: `off` / `picture` / `window` → `_plugMargin` 0 / 2 / 1.
+   - Step faces: `off` / `on` → `_stepFaces`.
+   - Texture band: `paint all` / `inner tier` with a degrees field (default the fade-start angle
+     already in the app, so no new constant) → `_bandTierDeg`.
+   - Sky at infinity: `auto` (on when the map has sky-class texels) / `off` → `_skyInf`.
+   Defaults keep today's behaviour until you choose; the choices are remembered in
+   `localStorage` under one key (`bgPlateOptions`), the same pattern as `bgDeviceFov`.
+2. **Smoothing for A2 and E** (moebius.js): the mirrored sample and each step face take the
+   mean over the rim window (`farRimW` along the rim) instead of one texel — removes the row
+   streaks and the checkerboard stripes. Verify: S15 colour error table, troll and S2 sheets.
+3. **Band tiering (C)**: `_plugCpuSweep` records per texel the smallest pose fraction at which its
+   copy is demanded (`bandPose`, from the pose grid; poses run rim-inward so the first hit is the
+   minimum); `_plugGeoBand` exports `_qbBandPose`; the texture-stage band = texels with
+   `bandPose ≤ tan(tierDeg)/tan(envelopeDeg)` when a tier is chosen, else all. The probe dumps it;
+   `check_app_band.py` reports band size per tier. Verify: histogram of the photograph's band by
+   first-uncover angle (how much opens inside the fade-start angle).
+4. **One measurement for the envelope** (informational, no change): the photograph at ±30°
+   horizontal, band and undrawn pixels, appended to the note.
+5. **Sheets and kit**: photograph at the four poses for each option value that changes pixels
+   (wash/mirror, margin off/picture/window, steps on/off); the eight kit scenes once with the
+   recipe defaults; both repos committed and pushed; `research/S5_photograph_note.md` §8.
+6. **Standing item (D)**: 16-bit re-export of the photograph's depth with `harness/depth16.py`
+   once the estimator's output format is known — carried in the note until done.
+
+1. **Rim-window colour for faces and mirror** (small): step faces take the rim window mean; the
+   mirrored far side samples a window along the rim (the plane law's `farRimW`) instead of one
+   texel. Files: the `S5 STEP FACES` block and the self-sample block in the S3 colour code
+   (moebius.js). Verify: S15 colour error (kit), the troll sheet at 0.25/0.5 without streaks.
+2. **Defaults for the plane arm's recipe** — still behind `_farRule='plane'`, but the recipe sets
+   `_plugMargin=2`, `_stepFaces=1`, `_selfSample=1` unless you say otherwise after the sheets.
+3. **Band tiering by first-uncover pose** (C4): the sweep records per band texel the smallest pose
+   fraction at which it is demanded; exported with the band (`_qbBandPose`); the texture stage
+   later takes a threshold you choose. Verify: a histogram on the photograph (how much of the
+   band opens inside 25°).
+4. **One measurement for C2**: the photograph baked at ±30° horizontal envelope (the S2a flag),
+   band and undrawn pixels, so the envelope trade is a number in the note.
+5. **16-bit**: on your estimator's format, set `depth16.py` defaults; re-export the troll if the
+   float output exists.
+6. **Report**: `research/S5_photograph_note.md` §8 with the decisions and their evidence; CODEMAP.
+
+Verification for each step as in Sprint 5: photograph sheets sent, kit table appended, both
+repos committed and pushed.
