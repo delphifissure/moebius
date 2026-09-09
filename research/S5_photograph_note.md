@@ -566,3 +566,25 @@ than the flat grey wash; no foreground colour appears in it. Whether streaked ca
 as the placeholder is the screen call; both stay available (`_selfSample` off = the wash).
 A cheaper cure for the streaks, not built: mirror along the winning axis but average the two
 axes' samples where both exist, or mirror a small window rather than one texel.
+
+### Item 3 — second pass with the corrected mask (rim law's full join): decision
+
+| scene | input | P | R | depth median (m) |
+|---|---|---|---|---|
+| S2 | exact / + Shih | 0.887 / 0.882 | 0.999 / 0.997 | 0.000 / 0.000 |
+| S2 | σ 1 / σ 2 / σ 4 + Shih | 0.885 / 0.873 / 0.852 | 0.995 / 0.990 / 0.935 | 0.000 / 0.000 / 0.004 |
+| S31 | exact / + Shih | 0.946 / 0.926 | 1.000 / 1.000 | 0.000 / 0.000 |
+| S31 | σ 1 / σ 2 / σ 4 + Shih | 0.926 / 0.917 / 0.936 | 1.000 / 1.000 / 1.000 | 0.000 / 0.000 / 0.004 |
+| S15 | exact / + Shih | 0.723 / 0.637 | 0.996 / 0.982 | 0.184 / 0.696 |
+| S15 | σ 1 / σ 2 / σ 4 + Shih | 0.564 / 0.456 / 0.468 | 0.982 / 0.971 / 0.941 | 1.953 / 3.123 / 0.668 |
+
+The rooms are as in the first pass (the corrected mask changed almost nothing there); the open
+scene is still damaged, less than before (exact map 0.754 → 0.696 m) but far from its untreated
+0.184 m. The 13 509 discontinuity pixels left on S15's exact map are the far hills' curvature
+against a two-quantum window — the affine rescue joins planes, not curved surfaces — and the median
+across them smears real geometry. **Decision: the Shih pre-filter is not adopted** as a pass on the
+plane arm. Where it helps (soft edges in rooms: S2 σ 1 precision 0.824 → 0.885 with depth exact,
+S31 recall back to 1.000) it is a real gain, and `prefilter_shih.py` stays in the kit for a
+per-picture choice; the thing that would make it safe everywhere is a join that also spares
+smoothly curved surfaces (a second-difference rescue over a longer window), which is a rim-law
+change, not a filter change. The photograph keeps its fringes for now.
