@@ -470,3 +470,36 @@ Reading, against the S3 report's plane arm:
   sweep's.
 - **Band on the photograph 47 %**: the honest demand for a ±45° envelope on a 0.06 m volume
   (§6, v11).
+
+### Item 3 — the fringe on the rungs, first pass (v11 code; Shih pre-filter with the ratio-test mask)
+
+| scene | input | band | P | R | depth median (m) |
+|---|---|---|---|---|---|
+| S2 | exact 16-bit | 18 531 | 0.887 | 0.999 | 0.000 |
+| S2 | σ 1 / σ 1 + Shih | 19 913 / 18 489 | 0.824 / 0.885 | 0.997 / 0.995 | 0.002 / 0.000 |
+| S2 | σ 2 / σ 2 + Shih | 18 903 / 18 653 | 0.854 / 0.873 | 0.981 / 0.990 | 0.003 / 0.000 |
+| S2 | σ 4 / σ 4 + Shih | 17 084 / 18 062 | 0.869 / 0.851 | 0.902 / 0.935 | 0.004 / 0.004 |
+| S2 | exact + Shih | 18 597 | 0.882 | 0.997 | 0.000 |
+| S2 | 8-bit | 22 828 | 0.720 | 0.999 | 0.000 |
+| S31 | exact 16-bit | 74 398 | 0.946 | 1.000 | 0.000 |
+| S31 | σ 1 / σ 1 + Shih | 73 592 / 75 998 | 0.891 / 0.926 | 0.932 / 1.000 | 0.000 / 0.000 |
+| S31 | σ 2 / σ 2 + Shih | 75 946 / 76 798 | 0.897 / 0.917 | 0.968 / 1.000 | 0.002 / 0.000 |
+| S31 | σ 4 / σ 4 + Shih | 69 662 / 75 198 | 0.960 / 0.936 | 0.950 / 1.000 | 0.004 / 0.004 |
+| S31 | exact + Shih | 75 998 | 0.926 | 1.000 | 0.000 |
+| S15 | exact 16-bit | 48 020 | 0.723 | 0.996 | 0.184 |
+| S15 | σ 1 / σ 1 + Shih | 63 384 / 70 925 | 0.547 / 0.483 | 0.995 / 0.982 | 1.237 / 1.994 |
+| S15 | σ 2 / σ 2 + Shih | 75 065 / 77 384 | 0.458 / 0.437 | 0.986 / 0.971 | 0.787 / 3.126 |
+| S15 | σ 4 / σ 4 + Shih | 81 862 / 67 788 | 0.412 / 0.483 | 0.968 / 0.939 | 0.807 / 0.815 |
+| S15 | exact + Shih | 60 323 | 0.568 | 0.982 | 0.754 |
+| S15 | 8-bit | 50 740 | 0.678 | 0.987 | 3.392 |
+
+Reading: on the rooms the pre-filter does what the paper says — soft edges snap back to plateaus
+(S2 σ 1: precision 0.824 → 0.885 and depth exact; S31: recall back to 1.000 at every σ) at a
+small cost on an exact map (S2 0.887 → 0.882, S31 0.946 → 0.926). On the open scene it is harmful
+at every σ and on the exact map (0.184 → 0.754 m): the mask it filtered around was the rim law's
+*ratio test alone*, which marks the smoothly receding hills as discontinuities (35 652 px on the
+exact map), and the median then smears real geometry. By the decision rule (all σ, all three
+scenes) it is **not adopted**. The mask was the fault, not the median: `prefilter_shih.py` now
+uses the rim law's full join (ratio test and affine rescue; S15 exact: 35 652 → 13 509
+discontinuity px, the remainder the hills' curvature against a two-quantum window), and the
+Shih rows are rerun with it (queued after Items 5–7).
