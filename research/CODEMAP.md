@@ -831,3 +831,18 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - **16-bit depth.** `harness/depth16.py` writes an estimator's float output as the 16-bit greyscale
   PNG `bgDecodeDepth16` (§ A99, ~L775) ingests: bright = near, min–max of (inverse) depth, percentile
   clipping optional; warns on 8-bit sources. The bake logs which quantum it found (`a89` / `a99`).
+- **v11 (same day).** In `_plugCpuSweep` a plate quad (plate 1 or 2) is splatted only where its four
+  corners pass the rim law's ratio test on the far field (`quadJoined(zeF, i)`), with the bilinear
+  corner depth (`d4`); a torn quad's texel is a point at its own far depth. The interpolated depth on
+  every quad (one commit, `de65cba`) is withdrawn: torn quads became skirt quads in the sweep. A244f
+  returns every non-carrier texel to its own source depth. a126's chamfer is skipped under the rim law
+  (`_rimA126`). Plate 2's vertices without a second layer sit on plate 1 (`pS2`, its colour canvas
+  starts from plate 1's wash) and a plate-2 triangle needs one corner with a second layer.
+- **Step faces (behind `window._stepFaces === true`).** `bgFarSidePlane` returns `stepRims` (pairs
+  near, far) for rims between consecutive runs on a line whose fitted slopes agree within
+  `tol/(2(n−1))` each (parallel lines: a step inside one surface); `_plugGeoBand` exports
+  `window._geoStepRims`. The quick bake (block `S5 STEP FACES`, after plate 2) builds one quad per
+  pair between the two texel centres, UVs at the texel centres, displaced by a DataTexture of the
+  source depth (`matQ.clone()`), coloured with the two rim texels' mean; `bgLayerMesh.userData.steps`,
+  added/disposed/synced beside plate 2; `HIDE=steps` in the shot harness; `stepPairs` in the probe's
+  meta.

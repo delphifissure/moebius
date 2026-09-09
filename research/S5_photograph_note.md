@@ -441,3 +441,32 @@ the rim). The honest texture band for this picture at this envelope and this dep
 about half of it. The lever that remains is not in the demand but in what is asked of it: the
 envelope (±45° horizontal) and the volume (0.06 m for a cave), which set how wide every reveal
 is — your call, not the geometry's.
+
+### Kit under v11 (joined quads only; non-carriers at own depth; a126 off; plate 2 bridging) — the current state of `main`
+
+| scene | truth px | band S3 → v11 | P S3 → v11 | R S3 → v11 | depth median (m) | carriers | plate-2 carriers | clones (final) |
+|---|---|---|---|---|---|---|---|---|
+| S2 | 16 454 | 18 190 → 18 531 | 0.901 → 0.887 | 0.996 → 0.999 | 0.000 | 18 560 | 1 108 | 0 |
+| S27 | 4 894 | 5 623 → 5 695 | 0.870 → 0.859 | 1.000 | 0.000 | 5 696 | 60 | 0 |
+| S12 | 16 975 | 18 011 → 18 209 | 0.935 → 0.927 | 0.992 → 0.994 | 0.000 | 18 883 | 30 | 0 |
+| S26 | 25 631 | 29 782 → 52 608 | 0.858 → 0.457 | 0.998 → 0.937 | 0.000 | 73 425 | 24 145 | 0 |
+| S16 | 4 513 | 12 164 → 23 078 | 0.360 → 0.190 | 0.972 → 0.972 | 0.000 | 28 301 | 593 | 0 |
+| S31 | 70 400 | 72 798 → 74 398 | 0.967 → 0.946 | 1.000 | 0.000 | 74 398 | 0 | 0 |
+| S15 | 34 867 | 39 260 → 48 020 | 0.830 → 0.723 | 0.935 → 0.996 | 0.062 → 0.184 (best of two 0.104) | 50 354 | 11 378 | 0 |
+| S32 | 42 400 | 47 995 → 47 202 | 0.717 → 0.729 | 0.811 | 0.000 | 48 002 | 0 | 0 |
+
+Reading, against the S3 report's plane arm:
+- **The rooms hold** (S2, S27, S12, S31): precision within 1–2 points of S3, recall up, depth
+  exact, no clones on the final plate anywhere (the colour-time count still shows S15 151 and
+  S27 23 — texels within two quanta of their own depth, joined; the final-plate count is the one
+  that matters and it is 0 on all eight).
+- **S15**: recall 0.935 → 0.996 with precision 0.830 → 0.723; the depth median 0.062 → 0.184 is
+  layer 1 alone, best-of-two 0.104 — the crown and the sign now carry a second layer.
+- **S26 and S16 are the two open geometries**, unchanged in kind: the beam's gap (the plane law
+  right at the rim, wrong 64 rows away, §5a) and the edge-on faces (Item 5's step faces, measured
+  next by shots — the band metric cannot see a face with no rest texels). S26's recall fell to
+  0.937 because the beam's stretched quad is no longer splatted (it is torn), so the beam's own
+  texels are no longer demanded by it; the fill of that gap is the plane law's limit, not the
+  sweep's.
+- **Band on the photograph 47 %**: the honest demand for a ±45° envelope on a 0.06 m volume
+  (§6, v11).
