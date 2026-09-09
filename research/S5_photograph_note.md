@@ -183,9 +183,13 @@ undrawn count is back at the rim arm's level, not below it.
 | S26 | 25 631 | 29 782 → 73 325 | 0.858 → 0.349 | 0.998 → 1.000 | 0.000 → 0.000 | 56 234 |
 | S16 | 4 513 | 12 164 → 29 320 | 0.360 → 0.150 | 0.972 → 0.973 | 0.000 → 0.000 | 260 |
 | S15 | 34 867 | 39 260 → 58 326 | 0.830 → 0.593 | 0.935 → 0.993 | 0.062 → 0.183 | 22 429 |
+| S27 | 4 894 | 5 623 → 5 725 | 0.870 → 0.855 | 1.000 → 1.000 | 0.000 → 0.000 | 60 |
+| S12 | 16 975 | 18 011 → 19 540 | 0.935 → 0.865 | 0.992 → 0.996 | 0.000 → 0.000 | 30 |
+| S31 | 70 400 | 72 798 → 74 400 | 0.967 → 0.946 | 1.000 → 1.000 | 0.000 → 0.000 | 0 |
+| S32 | 42 400 | 47 995 → 50 398 | 0.717 → 0.730 | 0.811 → 0.868 | 0.000 → 0.000 | 0 |
 
-(S27, S12, S31, S32 below when their rerun lands; under v5 they were 5 623 → 5 725, 18 011 →
-19 714, 72 798 → 74 400 and 47 995 → 50 398 with recall up on S32, 0.811 → 0.868.)
+Depth p90 unchanged on every scene (S2 0.043, S12 0.076, S26 0.055, S15 8.57 m — the crown; the
+rest 0.000). S32, the open hedge, is the one scene that gained on both counts.
 
 Reading: recall rose on every scene and depth stayed exact where it was exact; precision fell
 where the band grew, and the band grew for three different reasons, none of them the photograph's:
