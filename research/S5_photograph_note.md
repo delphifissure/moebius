@@ -132,6 +132,12 @@ the 572 × 322 shot; the rim arm's fill is a translucent wash, counted as drawn)
 - The holes right of the head are filled from v4 on; what remains at 0.5 are slits along the
   ramp of the head's right silhouette and a jagged left edge of the wash, and at (0, 0.4) a row of
   slits along the top of the shoulders (not yet read from the buffers).
+- Whole frame at 0.5 (`sheet_photo_ab.png`): both plane arms leave the picture's own margins
+  undrawn where the rim arm fills them — the left strip the far content vacates as it slides
+  right, and a wedge at the bottom right the near water vacates as it slides left. These are
+  frame-edge reveals (content beside the frame, the sweep's "outpaint" class), not occluder
+  reveals; the rim arm's membrane covers them with its wash, the plane law has no rim to continue
+  from there. Open item, not touched tonight.
 - The fill is the plane colour (rim window means through the membrane): a flat grey-brown wash
   where the rim arm's membrane gave a translucent one — the plausible-wash stage, as intended.
 - **The band is now 58 % of the plate**, against 15 % on the rim arm. The band is what the later
