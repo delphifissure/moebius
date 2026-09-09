@@ -503,3 +503,10 @@ scenes) it is **not adopted**. The mask was the fault, not the median: `prefilte
 uses the rim law's full join (ratio test and affine rescue; S15 exact: 35 652 → 13 509
 discontinuity px, the remainder the hills' curvature against a two-quantum window), and the
 Shih rows are rerun with it (queued after Items 5–7).
+
+Item 5, first shots: identical undrawn counts with and without the flag, and no `[S5] step faces`
+line in the bake log — the mesh was never built. The harness passes flags as numbers
+(`_stepFaces=1`) and the block tested `=== true`. Fixed (truthy), same for the self-sample flag
+before its run; the step shots are queued again after the Shih rerun. The untouched numbers are
+worth keeping: S2 has 23 875 undrawn pixels at pose 0.5 and S16 7 868 at −0.25 — the sides and the
+return face are where the plane arm still leaves holes on the kit, and where the faces must show.
