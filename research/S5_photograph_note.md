@@ -588,3 +588,18 @@ S31 recall back to 1.000) it is a real gain, and `prefilter_shih.py` stays in th
 per-picture choice; the thing that would make it safe everywhere is a join that also spares
 smoothly curved surfaces (a second-difference rescue over a longer window), which is a rim-law
 change, not a filter change. The photograph keeps its fringes for now.
+
+### Item 5 — step faces: result (second shots, flag truthy)
+
+Built: S16 217 quads, S2 248, the photograph 977 (23–43 ms). Screen (`steps_sheet.png`, sent):
+on S2 the boxes' right sides appear as slabs where the plane arm left the wall showing through
+(0.25 and 0.5); on S16 the pilaster's return face closes the slit along the jump row. The slabs
+are striped: each quad takes the mean of *its* two rim texels, and a checkerboard's rows differ,
+so the face reads as horizontal stripes of box-and-wall means rather than one flat wash — a
+window mean along the rim (the plane law's own rim window) would smooth it; not done. The
+undrawn-pixel counts did not move (S16 −0.25: 5 498, S2: 3 616, interior x 150–520) because at
+those poses the count is the vacated frame margin, which the faces have nothing to do with — the
+measure for the faces is the sheet, or a count with the plug margin on so only geometry holes
+remain. On the photograph the faces change little (91 → 80 at 0.25, 65 → 31 at 0, 0.4): its
+steps are estimator notches, not architecture. Kept behind `_stepFaces`; with `_plugMargin` it is
+part of the recipe to see on screen.
