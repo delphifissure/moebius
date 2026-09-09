@@ -801,3 +801,33 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   disparity) as the value, `mixL` = 1 if it is the −1 side's; the S4 block takes the other side (the
   farther line) as layer 2. The farther-first version lasted one kit run (S15 sign: sky first below
   the horizon).
+
+## 22. Sprint 5 code (2026-09-09; flag arm only; `S5_plan.md`, `S5_photograph_note.md` §6)
+
+- **Two masks.** `_plugGeoBand` exports `window._bandReplace` (the texture band: the sweep's winners
+  `revealTex`, pinholes, one texel of rounding — what the texture stage synthesises) and
+  `window._carrierReplace` (band ∪ the sweep's `landedTex`: landers that lost their cell to a copy of
+  the same sheet; their plate vertex sits at far depth for continuity). The quick bake reads the
+  carriers for `plateQ`/`plateF` (the `carQ1`/`carQ2` locals beside the old `disocc` loops), for the
+  S3 plane-colour domain (`carQ3`) and for plate 2 (`carQ4`); `_qbDisocc` stays the band. Probe:
+  `carrier.u8`, `carrier2.u8`; scorer: `carrier_px`, `carrier2_px`. Log `[S5] carriers: …`.
+- **Sweep, second layer.** `_plugCpuSweep` takes `opts.farField2` (S4's per-texel second layer, −1 =
+  none): after the plate-1 pass a plate-2 pass splats its copies with ids `N + i` (quads only where
+  all four corners have a second layer); the depth test keeps the nearer copy per cell. A cell won by
+  a layer-2 copy demands the texel's second layer (`revealTex2`); losers behind their own sheet are
+  `landedTex2`. `seen[]` maps ids back to texels. `_plugGeoBand` passes `farField2` to all three
+  sweeps, unions the second sweep's masks, adds `revealTex2` to the band and builds
+  `window._carrier2Replace` (`_qbCarrier2`); plate 2 membership in the bake is
+  `ff2 >= 0 && ff2 < dQ − q && (carrier || carrier2)`. Log `[S5] plate 2 in the demand: …`.
+- **Same-sheet test in the sweep** = the rim law's ratio test on cached eye distances (`zeF`, `zeF2`,
+  `sameSheet(idA, idB)`, `rimL.t`); sky is its own sheet. Calling `rimL.joined` per cell had tripled
+  the sweep's time.
+- **Wash, never a clone.** In the S3 colour block: `[S5] wash check` counts plate texels whose plate
+  depth is torn from their own by the rim law's join (`bgRimLawFor(pw,ph).joined(dQ, plateQ)` false)
+  and that got no synthesised colour → `window._qbCloneCount`. After the last plate depth pass (beside
+  `window._qbPlateF = plateF`): `[S5] wash check (final plate)` counts non-carrier texels torn from
+  their own depth → `window._qbCloneCountFinal`. Both in the probe's `meta.json` (`cloneCount`,
+  `cloneCountFinal`) and the scorer (`clone_count`, `clone_count_final`). Must be 0.
+- **16-bit depth.** `harness/depth16.py` writes an estimator's float output as the 16-bit greyscale
+  PNG `bgDecodeDepth16` (§ A99, ~L775) ingests: bright = near, min–max of (inverse) depth, percentile
+  clipping optional; warns on 8-bit sources. The bake logs which quantum it found (`a89` / `a99`).
