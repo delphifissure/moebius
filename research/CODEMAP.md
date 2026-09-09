@@ -764,3 +764,18 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   largest part of the envelope (each run's pose interval `[g/(kΔ), (g+len)/(kΔ)]`, nearer runs
   occluding farther ones, sky runs never passing). A far side whose clamped value is within `tol`
   of the texel's own depth is none (kind 0).
+- **Ground validity (photograph, 2026-09-08/09).** `groundCol[x]` marks the columns whose lowest
+  horizontal run is an inlier of the fitted plane; the ground bound in `cand` applies only where
+  `groundCol[xi]` (the kit has a ground run in every column). The plane counts as the ground only
+  if `nGroundIn·2 ≥ nGroundPicks` — a majority of the columns that offered a pick; otherwise
+  `ground = null` and the log says `no ground (… of … columns)`. On the default photograph a
+  12-column plane at the water's edge had cut nine million candidates.
+- **Candidates lie beyond a rim (2026-09-09, `S5_photograph_note.md`).** In `cand`, runs along the
+  line are skipped until a not-joined pair (`rl.joinedIdx` on the source depth, the reach walk's
+  and the mesh tear's test) has been crossed; only runs beyond it enter `list`. Inside one joined
+  stretch the mesh is continuous, so nothing there is a far side (the troll's 8-bit head fragmented
+  into micro-runs; an adjacent one a hair behind arrived first and stopped the reach).
+- **Kind 4 = two layers (same day).** `combine`'s last branch (two surfaces whose lines do not meet
+  inside the gap) returns the farther line as the value (`mixL` = 1 if it is the −1 side's); the
+  main loop's S4 block then takes the *other side's candidate* as the second layer (`farDisp2`,
+  `farSide2`) instead of that side's next arrival. The midpoint hedge is gone from this arm.
