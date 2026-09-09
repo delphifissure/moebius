@@ -559,3 +559,10 @@ the reveal" is a better placeholder than the wash on the kit and costs nothing; 
 the flag for your screen (the photograph's sheet below); (2) true self-occlusion needs the object
 in the A253 sense (texels in front of the far field, `_plugObjectRule`), where the mirror should
 stay inside the *near* object across the notch — not built.
+
+Screen (`self_sheet.png`, sent): the reveal behind the troll's head fills with the cave's texture
+reflected across the rim, one row at a time, so it reads as a horizontally streaked cave rather
+than the flat grey wash; no foreground colour appears in it. Whether streaked cave beats flat wash
+as the placeholder is the screen call; both stay available (`_selfSample` off = the wash).
+A cheaper cure for the streaks, not built: mirror along the winning axis but average the two
+axes' samples where both exist, or mirror a small window rather than one texel.
