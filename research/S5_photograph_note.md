@@ -351,3 +351,20 @@ went the same way. Layer 2's best-of-two against the truth's first layer: S15 0.
   tie with the ceiling copies at wall depth; ties go to the first lander, and rows 0–64 splat
   before rows 72–88. Item 4 as planned: a quad's cells take the depth interpolated from its
   corners, so a stretched near-line quad beats a far copy where both land.
+
+**Caveat on the table above (a run-hygiene failure, recorded).** A queue script waited for an
+"ALL DONE" marker in a log that still held the previous night's marker, so it started at once: it
+applied the plate-2 seam patch to `moebius.js` while the kit chain was on S26, shot the photograph
+on the shared port, and later two rung queues overlapped. The harnesses copy each run's images to
+one shared pair of files, so runs that overlap can bake another run's picture. S26 (started before
+the overlap) is clean; S15 through S32 in that table ran alongside another harness and are marked
+for rerun; the rung results of that hour are discarded (`rung_chain_overlapped_15h.log`). From
+here one sequential driver runs everything (`s5_driver.sh`), and the v10 table below replaces this
+one.
+
+### Item 4 + a126 (commit `de65cba`), v10 running
+
+Plate 2 bridges plate 1's layer seams; a plate quad's cells take the depth interpolated across
+the quad in the sweep (the farthest corner stays for the foreground's quads); a126's chamfer is
+skipped under the rim law. Photograph v10 and the eight scenes below, then the rungs
+(untreated, 8-bit, Shih-filtered at σ 1/2/4 and on the exact map; S2, S15, S31).
