@@ -175,6 +175,41 @@ comb of slits up to 28 texels wide right of the head (the right half's texels ca
 left half first; the cave is their second layer, and plate 2 is not in the demand sweep), and the
 undrawn count is back at the rim arm's level, not below it.
 
+### 5a. The kit under v7 (16-bit, rim law, shipped envelope; "before" = the S3 report's plane arm)
+
+| scene | truth px | band before → after | P before → after | R before → after | depth median (m) | layer-2 texels |
+|---|---|---|---|---|---|---|
+| S2 | 16 454 | 18 190 → 18 644 | 0.901 → 0.882 | 0.996 → 0.999 | 0.000 → 0.000 | 1 108 |
+| S26 | 25 631 | 29 782 → 73 325 | 0.858 → 0.349 | 0.998 → 1.000 | 0.000 → 0.000 | 56 234 |
+| S16 | 4 513 | 12 164 → 29 320 | 0.360 → 0.150 | 0.972 → 0.973 | 0.000 → 0.000 | 260 |
+| S15 | 34 867 | 39 260 → 58 326 | 0.830 → 0.593 | 0.935 → 0.993 | 0.062 → 0.183 | 22 429 |
+
+(S27, S12, S31, S32 below when their rerun lands; under v5 they were 5 623 → 5 725, 18 011 →
+19 714, 72 798 → 74 400 and 47 995 → 50 398 with recall up on S32, 0.811 → 0.868.)
+
+Reading: recall rose on every scene and depth stayed exact where it was exact; precision fell
+where the band grew, and the band grew for three different reasons, none of them the photograph's:
+
+- **S26 (+43 500):** the ceiling. Column 400 of the probe: rows 0–64 are ceiling at d 0.48 → 0.27
+  (the portal plane), rows 72–88 drop 0.12 → 0.02 → 0.00, then the wall at d = 0 (the far end).
+  That step is a beam at the ceiling–wall junction, a real rim. Every ceiling texel's column
+  candidate beyond it is the wall's plane, and at a downward pose the wall slides ~100 texels
+  while the ceiling, at the portal plane, stays; every ceiling copy at wall depth lands in the gap
+  under the beam, so all 40 000 of them are demanded. The truth's hidden scope there is the
+  ceiling's far part behind the beam (16 rows), not the wall behind the ceiling, which nothing can
+  ever see. The plane law's answer is right at the rim (the beam's own texels get the ceiling line
+  then the wall, kind 3) and wrong 64 rows away, and the sweep's demand pulls its carriers from
+  exactly that far because a carrier must sit one slide upstream of the cell it fills. This is the
+  limit of "a texel's far side is what its own line neighbours say", made visible by demanding
+  from the whole field instead of a reach from the rim.
+- **S16 (+17 000):** the edge-on ledge and return face, whose texels have no rest surface behind
+  them at all (S3 report §5, the user's taxonomy call); more of them now carry a far side.
+- **S15 (+19 000, depth median 0.062 → 0.183):** the sky-as-first-layer texels are gone with the
+  nearer-first order (the farther-first run read 2.7 m); what remains is the crown and the sign,
+  where a first layer at the hill's depth and a second at the sky's are both offered and the kit's
+  first hidden layer is one or the other. Best of the two layers against the truth's first:
+  median 0.103 m over the band (layer 1 alone 0.183); recall of sky reveals 0.99.
+
 - The holes right of the head are filled from v4 on; what remains at 0.5 are slits along the
   ramp of the head's right silhouette and a jagged left edge of the wash, and at (0, 0.4) a row of
   slits along the top of the shoulders (not yet read from the buffers).
