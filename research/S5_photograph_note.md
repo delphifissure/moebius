@@ -388,3 +388,18 @@ losers of the same sheet are carriers; plate 2: 16 938 texels demanded, 57 111 c
 triangles (twice v9's — the bridges). Wash check 2 at colour time, 0 on the final plate (a126 was
 the source of the final-plate clones). The notch's comb at 0.5 is down to a few one-texel lines
 along the notch column and the ramp. Sheet `photo_ab_face_v10.png` sent.
+
+### Item 5 — step faces (built, behind `window._stepFaces`; runs queued after the rungs)
+
+Rule: a rim between two runs whose fitted lines are parallel within their fit uncertainty (equal
+slopes; `|m1 − m2| ≤ tol/(2(n1−1)) + tol/(2(n2−1))`, no constant) is a step inside one surface;
+its face has no rest texels and cannot be a carrier, so it is synthesised as a quad between the two
+rim texels (one texel wide at rest, displaced by the source depth at each end, so it opens with the
+parallax exactly as the return face would), coloured with the mean of the two rim texels' colours —
+a wash of the two edges. Rims whose lines are not parallel stay open jumps. Offline counts on the
+existing probes: S16 217 pairs, all on the jump row (224|225) across the pilaster's columns
+454–670; S2 248 (the boxes' sides: a box top's row run, slope 0, against the wall, slope 0);
+S26 1 172 (table and shelf edges against the wall); the photograph 883. Two scan bugs were caught
+offline before any bake (the run's first texel tested at the rim instead of its last; every other
+run pair skipped). Measured next by undrawn pixels in the shots of S16, S2 and the photograph with
+and without the faces.
