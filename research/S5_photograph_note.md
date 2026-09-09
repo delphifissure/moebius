@@ -427,3 +427,17 @@ ratio test on the far field, and a torn quad's texel as a point at its own far d
 (commit `c49b95e`). The clones: S27's 23 texels had no far side and sat 0.016 below their own
 depth, left there by pass 1; A244f now returns every non-carrier to its own source depth. S15's
 183 (rows 149–276, 42 % with no far side) are expected to fall with that too; measured in v11.
+
+Photograph v11 (joined quads only, non-carriers at own depth): undrawn 91 / 15 / 395 / 65 —
+the same picture at the four poses — but the texture band is 412 329 (47.4 %; v10 260 803),
+carriers 476 941 (54.8 %), plate 2 demanded 30 678. Read from the buffer: the 168 282 new band
+texels are not isolated on the plate (11 of them are; 321 762 of the band's texels are joined to
+all four neighbours) and they sit in the lower half of the picture, where the water and the
+woman's reveals are widest. They are cells that a torn quad used to "cover" in the sweep — a
+stretched quad between a carrier and a non-carrier, which the render never draws — and that now
+need a copy of their own. So v10's 30 % was an undercount against the full ±45° envelope, and
+the holes the torn quads hid were at poses the four shots do not sample (the sweep grid reaches
+the rim). The honest texture band for this picture at this envelope and this depth volume is
+about half of it. The lever that remains is not in the demand but in what is asked of it: the
+envelope (±45° horizontal) and the volume (0.06 m for a cave), which set how wide every reveal
+is — your call, not the geometry's.
