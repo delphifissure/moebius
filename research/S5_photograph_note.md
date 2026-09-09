@@ -530,3 +530,32 @@ the foreground; the border texel's own colour continued), but it also hides hole
 undrawn-pixel measure, so hole counts stay on the arm without the margin. The recipe for the live
 pass is now `window._tearLaw='rim'; window._skyInf=1 (open scenes); window._farRule='plane';
 window._plugMargin=1; window._plugGeoBand({flush:true, observed:true, gateAPriori:true})`.
+
+### Item 7 — self-sampling (experiment, `window._selfSample`): what it turned out to be, and the numbers
+
+As built: objects = 4-connected components of texels that have a far side; a texel whose first
+layer's rim texel is in its own component takes the source colour of the texel mirrored across
+that rim — the same distance *into the far run* — as a Dirichlet value for the membrane. Read
+honestly, that is not "the other side of the face": the mirror point lies in the far run, so the
+fill is the **far surface's own texture reflected into the reveal** (mirror padding of the visible
+far side), and with this object definition nearly every texel qualifies (photograph: 292 451 of
+the carriers; S15: 22 945). It is not a foreground clone — it samples the far side — but it is a
+different placeholder from the wash, and the kit prefers it strongly on S15, colour error against
+the truth's first hidden layer (mean |Δ| /255 on 26 087 true-positive band texels):
+
+| class | rim wash | mirrored far side | clone (source as fill) |
+|---|---|---|---|
+| all | 65.4 (median 56.7) | 32.4 (median 17.7) | 38.3 |
+| background (ground, hills) | 33.5 | 13.2 | 60.3 |
+| side of a leaf | 93.0 | 51.0 | 19.8 |
+| interior (leaf behind leaf) | 96.7 | 49.0 | 16.5 |
+
+The background halves its error (repeating textures: grass, hills — reflection is a fair guess);
+the sides and interiors of the crown are still far from the truth (the truth there is a leaf, the
+fill a mirrored hill or sky) and there the clone would have been nearer — which is exactly the
+self-occlusion case the item was meant for, and which this construction does not reach (a leaf's
+far side is the hill, not the leaf's other side). Two conclusions: (1) "mirror the far run into
+the reveal" is a better placeholder than the wash on the kit and costs nothing; it is left behind
+the flag for your screen (the photograph's sheet below); (2) true self-occlusion needs the object
+in the A253 sense (texels in front of the far field, `_plugObjectRule`), where the mirror should
+stay inside the *near* object across the notch — not built.
