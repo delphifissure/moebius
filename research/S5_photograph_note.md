@@ -297,3 +297,16 @@ that later depth passes (the a126 slope limit, the A253 floor) pushed 1–2 quan
 depth, and 58 carriers whose far side is within two quanta of their own. Both sets are joined to
 their own foreground texel by the rim law (they cannot separate from it), so the criterion is now
 the rim law's join, and a second count runs on the final plate after every depth pass.
+
+### Item 2 — plate 2 in the demand sweep (built; commit `c0828f3`)
+
+The sweep now splats the second layer's copies after plate 1's (ids `N + i`; the depth test keeps
+the nearer copy per cell); a cell won by a layer-2 copy demands that texel's second layer, and its
+losers behind their own sheet are plate 2's carriers. Plate 2 is built on its own carriers, no
+longer only where plate 1 is behind the source. Photograph (v9): 22 355 texels demanded for their
+second layer, 51 419 carriers of it; the notch's right half (x 381–410 on rows 330–350) now carries
+the cave as its second layer across the whole half. Band 264 382 (30.4 %), carriers 445 990
+(51.2 %). Wash check: 2 texels at colour time (two quanta behind, their rims empty), 0 on the final
+plate. The same-sheet test between a lander and a cell's winner is now the rim law's ratio test on
+cached eye distances; calling `joined()` per cell had tripled the sweep's time (the photograph's
+probe took 10 min at v7; 7 min now, the plate-2 pass included). Shots and the kit below.
