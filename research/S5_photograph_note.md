@@ -166,7 +166,14 @@ the 572 × 322 shot; the rim arm's fill is a translucent wash, counted as drawn)
 | + beyond-rim candidates, kind 4 = two layers (v2) | 111 162 | — | — | — | — |
 | + walk through rims (v3) | 138 580 | — | — | — | — |
 | + no walk, winner-only demand (v4) | 269 307 (30.9 %) | 117 | 17 | 619 | 136 |
-| + every lander demanded (v5, current) | 502 270 (57.7 %) | 97 | 16 | 401 | 79 |
+| + every lander demanded (v5) | 502 270 (57.7 %) | 97 | 16 | 401 | 79 |
+| + kind 4 nearer first, losers only behind their own sheet (v7, current) | 470 209 (54.0 %) | 95 | 15 | 412 | 73 |
+
+v7 is the state on `main` (commit `68d4be7`). The same-sheet condition on losers took 6 % off the
+band: the losers are the cave's own copies overtaking one another. At 0.5 the notch shows as a
+comb of slits up to 28 texels wide right of the head (the right half's texels carry the head's
+left half first; the cave is their second layer, and plate 2 is not in the demand sweep), and the
+undrawn count is back at the rim arm's level, not below it.
 
 - The holes right of the head are filled from v4 on; what remains at 0.5 are slits along the
   ramp of the head's right silhouette and a jagged left edge of the wash, and at (0, 0.4) a row of
