@@ -603,3 +603,36 @@ measure for the faces is the sheet, or a count with the plug margin on so only g
 remain. On the photograph the faces change little (91 → 80 at 0.25, 65 → 31 at 0, 0.4): its
 steps are estimator notches, not architecture. Kept behind `_stepFaces`; with `_plugMargin` it is
 part of the recipe to see on screen.
+
+Item 6, second reading — `_plugMargin=2` (strips clipped to the picture's rest footprint) against
+`=1` (whole window), photograph, undrawn pixels (interior | left strip | bottom-right corner |
+outside the picture):
+
+| | 0.5, 0 | −0.25, 0 | 0, 0.4 |
+|---|---|---|---|
+| plane v11 | 395 \| 1 \| 1 244 \| 38 488 | 15 \| 1 643 \| 505 \| 44 931 | 65 \| 39 \| 720 \| 45 080 |
+| + margin = 1 | 28 \| 1 \| 31 \| 0 | 0 \| 368 \| 0 \| 5 | 65 \| 0 \| 0 \| 0 |
+| + margin = 2 (+ step faces) | 17 \| 1 \| 632 \| 38 488 | 0 \| 368 \| 468 \| 45 080 | 31 \| 0 \| 720 \| 45 080 |
+
+`=1` paints the whole window with the border's replicated colour (the streaked bands beside a
+portrait picture in a landscape window); `=2` stays inside the picture's own rectangle, fills the
+left strip and the interior holes it can reach, and leaves the part of the bottom-right wedge that
+lies outside the rectangle empty (632 of 1 244). Recommendation for the recipe: `_plugMargin=2`
+(nothing drawn where the picture never was); `=1` if you would rather see wash than window.
+
+## 7. Where Sprint 5 leaves things (all on `main`, all behind the plane arm's flags)
+
+- Live-pass recipe: `_tearLaw='rim'; _skyInf=1` (open scenes); `_farRule='plane'; _plugMargin=2;
+  _stepFaces=1;` optionally `_selfSample=1` (mirrored far side instead of the wash); then
+  `_plugGeoBand({flush:true, observed:true, gateAPriori:true})`.
+- Photograph: undrawn 91 / 15 / 395 / 65 → with the margin 17 at 0.5; texture band 47 % of the
+  picture (the honest demand at ±45° on a 0.06 m volume), carriers 55 %, no clones on the final
+  plate.
+- Kit (v11): rooms within 1–2 points of Sprint 3's precision with recall up and depth exact; S15
+  recall 0.996; S26 and S16 the two open geometries (the beam's gap: the plane law's reach;
+  the edge-on faces: now synthesised, measured only on screen).
+- Not adopted: the Shih pre-filter (hurts curved far surfaces; kept in the kit); interpolated
+  depth on every quad (withdrawn); the far-lip margin gate (withdrawn).
+- Yours to call: wash vs mirrored far side as the placeholder; `_plugMargin` 1 vs 2; whether the
+  envelope or the volume should shrink for a smaller texture band; the 16-bit re-export of the
+  photograph's depth (`harness/depth16.py`).
