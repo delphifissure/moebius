@@ -403,3 +403,27 @@ S26 1 172 (table and shelf edges against the wall); the photograph 883. Two scan
 offline before any bake (the run's first texel tested at the rim instead of its last; every other
 run pair skipped). Measured next by undrawn pixels in the shots of S16, S2 and the photograph with
 and without the faces.
+
+### Kit under v10 — Item 4 as first built is falsified (rule 7), corrected in v11
+
+| scene | P v9 → v10 | R v9 → v10 | band v9 → v10 | clones (final) |
+|---|---|---|---|---|
+| S2 | 0.887 → 0.853 | 0.999 → 0.999 | 18 529 → 19 282 | 0 |
+| S27 | 0.858 → 0.808 | 1.000 | 5 703 → 6 054 | 23 |
+| S12 | 0.905 → 0.867 | 0.994 → 0.994 | 18 642 → 19 470 | 0 |
+| S26 | 0.496 → 0.515 | 0.983 → 0.968 | 50 833 → 48 225 | 0 |
+| S16 | 0.198 → 0.225 | 0.973 → 0.970 | 22 216 → 19 491 | 1 |
+| S31 | 0.946 → 0.946 | 1.000 | 74 398 → 74 398 | 0 |
+| S15 | 0.749 → 0.586 | 0.934 → 0.878 | 43 466 → 52 220 | 183 |
+| S32 | 0.717 → 0.729 | 0.811 | 47 995 → 47 201 | 0 |
+
+(v9 rows are the overlapped run, S26 apart; the direction is unambiguous.) Interpolating the depth
+of *every* quad turned the torn quads — a carrier beside a non-carrier, one corner at the far
+depth and one at the source — into skirt quads that won cells between the two surfaces: texels
+demanded that are not reveals (precision down on every scene) and cells covered that should have
+been holes (S15 recall 0.934 → 0.878). The rendered plate is torn there, so the sweep must not
+splat those quads: v11 splats a quad only where its four corners are one sheet by the rim law's
+ratio test on the far field, and a torn quad's texel as a point at its own far depth
+(commit `c49b95e`). The clones: S27's 23 texels had no far side and sat 0.016 below their own
+depth, left there by pass 1; A244f now returns every non-carrier to its own source depth. S15's
+183 (rows 149–276, 42 % with no far side) are expected to fall with that too; measured in v11.
