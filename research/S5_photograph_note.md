@@ -70,16 +70,31 @@ plates hidden, on magenta = nothing drawn):
   them and no depth is invented between the two. The side's own next arrival (S4's second layer)
   is dropped for kind 4 texels — a third layer would be needed; recorded, not built.
 
-- **The reach walk no longer stops at a rim inside the occluder** (third change, after the first
-  rerun). With the two rules above the band grew from 87 628 to 111 162 texels but rows 320–360
-  through the face still ended at the notch: `walkP` broke at every not-joined pair, so the internal
-  tear at x 381 stopped it, although the cave's reveal at half the envelope is 154 texels wide and
-  the head's right half only 28 — the head's left half must carry the cave too. The reveal is
-  geometric: every rest texel within the edge's slide against *its own* far side is uncovered,
-  whatever tears lie between it and the edge. The walk now stops only where a texel has no far
-  side of its own (nothing behind it to carry: `farField[i] == dQ[i]`) or where the span test
-  fails (its far side is not behind the edge by more than the distance walked), which bounds
-  every walk by the largest relative slide in the frame. The rim arm's walk (`walk`) is untouched.
+- **The plane arm's reach walk is removed** (third change, in two steps). With the two rules above
+  the band grew from 87 628 to 111 162 texels, but rows 320–360 through the face still ended at
+  the notch: `walkP` broke at every not-joined pair, so the internal tear at x 381 stopped it,
+  although the cave's reveal at half the envelope is 154 texels wide and the head's right half
+  only 28 — the head's left half must carry the cave too. A first repair (walk through rims, stop
+  only where a texel has no far side or its span fails) gave 138 580 band texels and still ended
+  the face rows at the notch texel itself (no far side of its own → stop), and exposed a second
+  flaw: the walk measures the slide from the *edge texel's* depth, and at this silhouette the edge
+  is the end of a 20-texel ramp (d 0.42) while the head's body is at 0.6 — 48 texels short. The
+  walk was a pre-filter inherited from the membrane arm (it decided which texels got a field value
+  at all). Under the plane law every texel has its own far side, and the sweep's rim-law demand
+  (the far-field plate splatted forward per pose; a cell the foreground leaves uncovered names the
+  texel that landed there; a texel whose far field is its own is a pinhole) is already the exact
+  screen-space test of which offers are taken. So: every texel with a far side of its own is free,
+  and the sweep decides. `walkP` is deleted (rule 7); the rim arm's `walk` is untouched.
+- **The sweep demands every texel that lands on an uncovered cell** (fourth change). Without the
+  walk the band was 269 307 texels, but still a comb through the face (row 340: 273–280, 284–286,
+  …, 341–364, 371–410): the sweep's demand named, per cell, only the far-field texel that *won*
+  the cell. Where the far field varies texel to texel (0, 13, 18 /255 along that row) neighbouring
+  copies overtake one another by a few texels; the losers were never demanded, kept their own
+  depth, and the plate — torn wherever a band texel meets a non-band one — was a set of patches.
+  A `landed[]` mark per texel in the sweep's `splat`/`quad` (a landing on any cell the foreground
+  does not cover) now joins the demand, still excluding pinholes (far field within a quantum of
+  own). On the kit's exact planes neighbouring copies land side by side without overtaking, so no
+  change is expected there; measured below.
 
 Offline on the same buffers after the change: (380, 340) far 0.061 kind 2 (the cave, by the
 column); (388, 340) far 0.051 kind 4 (the cave first, the head's left half second); (360, 340)
@@ -100,7 +115,35 @@ exactly this; the plane arm has not been scored on them yet (rungs now built for
 7, 7, 5, 5, 5 at a 960-px long side) is the published treatment; its window is in pixels, i.e. not
 invariant to the image size, so it is not adopted without a measurement on the rungs.
 
-## 5. Results after the change
+## 5. Results on the photograph (shots `harness/shots/s2c_skyshot/sheet_photo_ab.png`, face crop sent)
 
-(filled in below from the rerun: photograph band and shots; the eight kit scenes rerun to confirm
-nothing moved.)
+Band (texels demanded of 870 573) and undrawn pixels inside the picture (alpha 0 in x 190–400 of
+the 572 × 322 shot; the rim arm's fill is a translucent wash, counted as drawn):
+
+| arm | band | 0.25, 0 | −0.25, 0 | 0.5, 0 | 0, 0.4 |
+|---|---|---|---|---|---|
+| S2b.4 rim arm | 127 830 (14.7 %) | 74 | 15 | 442 | 9 |
+| plane, before (v1) | 87 628 (10.1 %) | 320 | 58 | 1 288 | 311 |
+| + beyond-rim candidates, kind 4 = two layers (v2) | 111 162 | — | — | — | — |
+| + walk through rims (v3) | 138 580 | — | — | — | — |
+| + no walk, winner-only demand (v4) | 269 307 (30.9 %) | 117 | 17 | 619 | 136 |
+| + every lander demanded (v5, current) | 502 270 (57.7 %) | 97 | 16 | 401 | 79 |
+
+- The holes right of the head are filled from v4 on; what remains at 0.5 are slits along the
+  ramp of the head's right silhouette and a jagged left edge of the wash, and at (0, 0.4) a row of
+  slits along the top of the shoulders (not yet read from the buffers).
+- The fill is the plane colour (rim window means through the membrane): a flat grey-brown wash
+  where the rim arm's membrane gave a translucent one — the plausible-wash stage, as intended.
+- **The band is now 58 % of the plate**, against 15 % on the rim arm. The band is what the later
+  texture stage would inpaint, so this is a real trade: v4 (winner-only demand) at 31 % left the
+  plate a comb through the face (619 undrawn at 0.5); v5 closes the comb by demanding the copies
+  that lose their cell to a neighbour's copy of the same sheet. The losers exist because the far
+  field varies texel to texel (0, 13, 18 /255 for the one cave) — the plane law's output on an
+  8-bit estimator map is not smooth at the texel level, and copies six texels apart in slide
+  overtake one another. A demand that admits losers only when the winner is the *same sheet*
+  (joined on the far field) would not reduce it here (the cave is one sheet). Two routes, not
+  taken tonight: (i) the plate keeps far depths on every texel with a far side while the texture
+  band stays the winner set — needs the plate's torn-footprint machinery (`islandF`) to draw
+  fragments outside the band; (ii) a far field that is one value per sheet along a line (the
+  candidate runs already are planes; the per-texel variation comes from axis and kind switching
+  between neighbours). This is the user's trade to see on screen before either is built.

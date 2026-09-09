@@ -779,3 +779,16 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   inside the gap) returns the farther line as the value (`mixL` = 1 if it is the −1 side's); the
   main loop's S4 block then takes the *other side's candidate* as the second layer (`farDisp2`,
   `farSide2`) instead of that side's next arrival. The midpoint hedge is gone from this arm.
+- **No reach walk on the plane arm (same day).** In `_plugGeoBand`, when `planeFS` exists every texel
+  with `farField[i] < dQ[i]` is `free` (its field value is its far side); the edge loop still counts
+  unjoined edges but calls the rim arm's `walk` only when `!planeFS`. `walkP` is deleted: it broke at
+  rims inside an occluder and measured the slide from the edge texel's depth. The band is then the
+  sweep's rim-law demand alone (`_plugCpuSweep`, `S2b RIM-LAW DEMAND`: the far-field plate splatted
+  per pose, `own[c]` names the texel landing on each cell the foreground leaves uncovered; a texel
+  whose far field is its own is a pinhole). Log `[S2b] reach: … texels within the far side's slide`
+  now counts texels with a far side, not walked texels.
+- **Sweep demand names every lander (same day).** `_plugCpuSweep`: `landed` (Uint8Array N, exists
+  when `revealTex && rimFF`) is set in `splat`/`quad` for any plate texel (`id >= 0`) landing on a
+  cell not covered by the foreground (`own[c] !== -2`), before the depth test; the `S2b RIM-LAW
+  DEMAND` block then also marks `revealTex[i]` for every landed texel whose far field is more than
+  a quantum behind its own depth. Cumulative over the pose grid.
