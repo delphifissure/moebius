@@ -368,3 +368,15 @@ Plate 2 bridges plate 1's layer seams; a plate quad's cells take the depth inter
 the quad in the sweep (the farthest corner stays for the foreground's quads); a126's chamfer is
 skipped under the rim law. Photograph v10 and the eight scenes below, then the rungs
 (untreated, 8-bit, Shih-filtered at σ 1/2/4 and on the exact map; S2, S15, S31).
+
+### Item 6 — the picture's margins: the A245 plug margin already exists (to run, not to build)
+
+`window._plugMargin` (A245, quick bake ~L16124) extends the plate by four strips of M texels
+beyond the frame, M the largest rim shift of a foreground or plate texel on the border (from the
+shift LUT, not chosen); the strips sample the same textures with UVs past [0, 1], so ClampToEdge
+replicates the edge depth and the edge colour outward — a Neumann continuation, drawn only inside
+the frame's rest footprint. The plane arm's recipe never set it. Item 6 is therefore a run:
+the photograph's shots with `_plugMargin=1` added to the flags, read the left strip and the
+bottom-right wedge at 0.5, and add the flag to the recipe if the strips fill them without artefacts
+(the edge colour replicated outward is a wash of the border, not a clone of the foreground — the
+strips carry the plate's edge, which on a carrier is its far side).
