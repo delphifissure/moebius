@@ -265,3 +265,35 @@ where the band grew, and the band grew for three different reasons, none of them
   fragments outside the band; (ii) a far field that is one value per sheet along a line (the
   candidate runs already are planes; the per-texel variation comes from axis and kind switching
   between neighbours). This is the user's trade to see on screen before either is built.
+
+## 6. Sprint 5 log (plan: `S5_plan.md`)
+
+### Item 0 — 16-bit prep (done)
+
+The app already ingests 16-bit greyscale PNG depth at 1/65535 (`bgDecodeDepth16`, moebius.js
+~L775; 8-bit or interlaced files fall through to the 8-bit path and the bake logs which quantum it
+found: `a89: source depth quantum = 1/255 (8-bit)` vs `a99: depth read at 16-bit precision`).
+`harness/depth16.py` writes an estimator's float output (`.npy/.npz/.pfm/.exr`, 16-bit tiff/png) as
+that PNG: one channel, 16-bit, non-interlaced, bright = near, linear min–max of the (inverse) depth
+with optional percentile clipping; it warns when the source is already 8-bit. Self-test: a float
+ramp round-trips with 60 000 distinct levels. The troll's depth has no float source in the repo; it
+stays 8-bit until re-exported from the estimator.
+
+### Item 1 — carriers split from the texture band (done; commit `166a20d`)
+
+Two masks now: the **band** (`_qbDisocc`: the sweep's winners, pinholes, one texel of rounding) is
+what the texture stage synthesises; the **carriers** (`_qbCarrier`: the band plus every lander that
+lost its cell to a copy of the same sheet) get their far depth on the plate and the rim wash through
+the same membrane. Photograph (v8):
+
+| | band | carriers | undrawn 0.25 / −0.25 / 0.5 / 0,0.4 |
+|---|---|---|---|
+| v7 (one mask) | 470 209 (54.0 %) | — | 95 / 15 / 412 / 73 |
+| v8 (split) | 266 691 (30.6 %) | 445 904 (51.2 %) | 95 / 15 / 413 / 73 |
+
+Same coverage, the band for synthesis halved. The wash check (plate texels behind their own depth
+with no synthesised colour) read 701 on v8 with a one-quantum criterion: 688 non-carrier texels
+that later depth passes (the a126 slope limit, the A253 floor) pushed 1–2 quanta behind their own
+depth, and 58 carriers whose far side is within two quanta of their own. Both sets are joined to
+their own foreground texel by the rim law (they cannot separate from it), so the criterion is now
+the rim law's join, and a second count runs on the final plate after every depth pass.
