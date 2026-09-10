@@ -830,22 +830,21 @@ Reading:
   are sub-pixel at small angles and open in proportion to the pose. Plate 2 bridges the ones
   that carry a second layer; the rest open.
 
-### 9d. What the slits are (probe `photo_torn`, `plate_torn_overlay.png`)
+### 9d. What the slits are (probe `photo_torn`, `plate_torn_overlay.png`; corrected by the Sprint 7 audit)
 
 The plate-tear pass drops 136 191 of 1 737 400 plate triangles (7.8 %) on the photograph, touching
-113 997 plate texels, 84 234 of them inside the carriers and 73 010 inside the band. Of the
-neighbouring pairs whose plate depths jump across a torn edge, **91 094 are carrier next to
-carrier of the same kind 1** (a single far candidate on each side), 7 869 kind 2 next to kind 2,
-and only 818 carrier next to an own-depth texel (the rim). Row and column edges in equal measure
-(53 551 / 62 201). The jumps: median 0.023 of the normalised depth (six 8-bit quanta), 90th
-percentile 0.35 (a third of the volume). The overlay (`plate_torn_overlay.png`, yellow = torn
-inside the carriers) is a lattice of long straight horizontal and vertical seams across the whole
-band: **the far field is computed one line at a time, and neighbouring lines extrapolate
-different planes** (row candidates against column candidates, one row's terrace fit against the
-next row's), so the plate behind an occluder is a patchwork of ribbons at slightly different
-depths, torn along every ribbon boundary. Each seam is sub-pixel at rest and at small angles,
-and opens in proportion to the pose. That is the whole residual: not the band's extent (§9c),
-not the fill.
+113 997 plate texels, 84 234 of them inside the carriers and 73 010 inside the band. The overlay
+(yellow = torn inside the carriers) is a lattice of long straight horizontal and vertical seams
+across the whole band: the far field is computed one line at a time and neighbouring lines
+disagree, so the plate behind an occluder is a patchwork of ribbons torn along every boundary.
+Each seam is sub-pixel at rest and opens in proportion to the pose. That is the whole residual:
+not the band's extent (§9c), not the fill.
+
+**Correction (2026-09-10, Sprint 7 step 1).** The first version of this section quoted "91 094
+carrier-next-to-carrier pairs of the same kind, median jump six quanta, p90 a third of the
+volume". Those jump statistics were computed with the plate-depth dump unflipped (plate rows are
+stored bottom-up) against source-row masks, i.e. at the wrong texels; the torn-texel counts above
+were right, the pair statistics were not. The audit below (§10a) replaces them.
 
 ### 9e. Where this leaves the "comprehensive" question
 
@@ -901,3 +900,40 @@ therefore: far side plane, fill wash (or mirror to compare), margin picture, fac
 tier 35°, sky off, **seams stretched**; the Angle fade is your choice. B (one sheet per reveal)
 remains the honest next item; with it the skins disappear on their own.
 
+## 10. Sprint 7 — one far-field sheet per reveal (plan approved 2026-09-10; `quiet-snacking-brook` plan)
+
+### 10a. Step 1 — the seam audit (probe `photo_audit`; `scratchpad/seam_audit.py`)
+
+Every 4-neighbour edge between two carriers whose plate depths the app's own join
+(`joinedIdx`: eye-distance ratio ≤ t = 1.0125, or the affine rescue along the line) rejects, with
+the plate rows flipped correctly, classified by the two texels' far axis, far kind, rim texel and
+the rim texels' source sheet (4-connected component of the source under the same join):
+
+| class | edges | share |
+|---|---|---|
+| same axis, same kind, **across lines** (adjacent lines chose different rim texels / runs on one surface) | 23 785 | 41.2 % |
+| **axis flip**, same kind (row candidate next to column candidate) | 13 454 | 23.3 % |
+| axis flip + kind flip, same sheet | 7 283 | 12.6 % |
+| axis flip + kind flip, other sheet | 5 320 | 9.2 % |
+| same axis, kind flip, across lines | 5 245 | 9.1 % |
+| along the line (any class) | 1 492 | 2.6 % |
+| the rest (other sheet, same axis) | 1 198 | 2.1 % |
+| **total unjoined carrier–carrier edges** | **57 777** | (row 26 k / column 31 k) |
+
+Jump across a torn edge: median 19 × tol (eye-distance ratio 1.046 against t 1.0125), p25 10,
+p90 82 × tol. Along a line the plane law is continuous (2.6 % of the seams, as the design says
+it must be); **the seams are cross-line disagreements (41 %) and row-versus-column arbitration
+(45 %)**, with jumps far above fit noise: different runs or different axes chosen on neighbouring
+texels, not least-squares scatter. Two consequences for the plan:
+
+- **Step 5 (one continuous rule replacing the row/column arbitration) is not optional**: 45 % of
+  the seams are axis flips, which pooling within an axis cannot touch.
+- **The source "sheet" is useless as a grouping key on 8-bit data**: the join with its affine
+  rescue leaves 24 sheets on the whole photograph, so "same sheet" holds for 89 % of the seams.
+  Groups must be formed by local structure (adjacent lines' far runs overlapping in position and
+  agreeing within tol at the shared position), not by the global component. The plan's risk
+  note said as much; the audit makes it a design change for step 3.
+
+Also recorded: the observed-depth merge is not a seam source (along-line jumps > tol: a-priori
+1.4 % of same-rim pairs, after the merge 0.6 %), and the rendered plate depth equals the far
+field within a quantum on 475 964 of 476 941 carriers (the 977 others are the A252 push-back).
