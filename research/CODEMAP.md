@@ -903,3 +903,24 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `scratchpad/ui_holes.py` counts alpha-0 inside the picture rectangle.
 - **Units**: `[VIEW] manual offset: x y` is metres of eye offset; the envelope rim is D·tan 45° = 0.2 m; the
   Angle fade (`viewFadeToggle`, `bgViewFadeEnabled`) is a black DOM overlay from 35° to 45°.
+
+## 25. Sprint 7 code (2026-09-10; `S5_photograph_note.md` §10, plan `quiet-snacking-brook`)
+
+- **`bgFarSidePlane` passes** (~L610–745): pass 1 stores the chosen candidate per texel and side by its rim texel
+  (`cJ[s4]`, `cN[s4]` for the second layer; sides row−, row+, col−, col+); `rebuild(ax, l, x, dir, i, j)` recomputes
+  the candidate from the rim texel (window, fit, thin, ground cut); pass 3 = the former single loop (`combine`, the
+  axis pick, exports). Bit-identical to the single loop on S2 and the photograph. (Pooled planes across lines were
+  built here and removed; the comment above pass 3 records why.)
+- **The join across lines** (`_plugGeoBand`, after the reach loop, block `S7 THE FAR FIELD OBEYS THE RIM LAW ACROSS
+  LINES`, ~L8644–8700; `window._farJoin` off with 0): `dom` = free, non-sky texels; `lg` = log disparity of the far
+  field; `envHi`/`envLo` = chessboard distance transforms (two 8-neighbour raster passes, `chess()`) of `lg` and `-lg`
+  with slope `c = log t · (1 − 1e-4)`; the field = exp of the midpoint, capped at the texel's own disparity, one more
+  upper-envelope pass; back to depth by the 24-step bisection on `rlJ.dispAt`, clamped ≤ `dQ`. Log
+  `[S7] far field joined across lines (t-Lipschitz envelope midpoint): …`. Runs before `valFF` is built, so every
+  consumer (sweep, carriers, `plateF`, plate tear, plate 2) sees the joined field.
+- **Audit exports** (`_plugGeoBand`, next to `_geoStepRims`): `_geoFarRimJ`, `_geoFarMix`, `_geoFarDisp`, `_geoFarRimW`,
+  `_geoZeLut` (1025-entry eye-distance table), `_geoRimT`; probe dumps `farRimJ.i32`, `farMix.f32`, `farDisp.f32`,
+  `farRimW.i32`, `zeLut.f32`, meta `rimT`. `scratchpad/seam_audit.py` classifies unjoined carrier–carrier plate edges
+  (plate rows must be flipped: `plateF` is stored bottom-up).
+- **Removed after measurement**: pooled planes (nodes/links/groups/pieces/per-g planes), the iterative second-difference
+  projections (ungated and uncertainty-gated worklists). `_plateStretchInner` / the `seams` select: see §10c.
