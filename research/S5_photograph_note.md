@@ -937,3 +937,167 @@ texels, not least-squares scatter. Two consequences for the plan:
 Also recorded: the observed-depth merge is not a seam source (along-line jumps > tol: a-priori
 1.4 % of same-rim pairs, after the merge 0.6 %), and the rendered plate depth equals the far
 field within a quantum on 475 964 of 476 941 carriers (the 977 others are the A252 push-back).
+
+### 10b. Step 3 — pooled planes, tried and falsified; the join law across lines instead
+
+**Pooled planes (built, measured, removed).** As planned: nodes = (axis, side, run) used by a
+texel; links between adjacent lines whose runs overlap and are joined at the overlap; groups by
+union-find; pieces by greedy growth while one plane fits every member line's window with RMS
+≤ tol; one plane per (piece, rim distance). On S2 (exact planes) it reproduces v11 exactly
+(97 pieces, 90 ms; band 18 531, P .887, R .999). On the photograph it does nothing: 8 609 nodes,
+7 827 links, 782 groups but **5 977 pieces** — the piece test rejects 5 195 of 7 827 merge
+attempts, and the diagnostic says why: the worst RMS/tol on an attempt is 1.53 at the median,
+3.4 at the 75th percentile, 9.1 at the 90th. Adjacent lines' far runs on this cave do **not** lie
+on one plane within the tolerance; only a quarter of the attempts fit under 0.8. Plate tears
+139 206 against 136 191. The premise ("piecewise planar across lines within tol") is falsified on
+8-bit curved data; the code is removed (rule 7), the pass 1 / pass 3 structure stays.
+
+**The join law across lines (built; `window._farJoin`, on).** The runs are defined by the rim
+law along a line (second differences within tol, the ratio test for a first pair), and the plate
+is torn by the same law. So the far field is made to satisfy that law across lines as well: for
+every triple of free texels along either axis the second difference is clipped to tol at the
+middle texel (the minimum-norm correction, (1, −2, 1)/6 of the excess); for an isolated pair the
+ratio bound linearised at the pair. Projections are applied from a worklist of violated
+constraints until none remains; the total is bounded by the line length times the domain. A plane
+has zero second differences and is untouched. A jump of J·tol between lines becomes a ramp of
+curvature tol over roughly √(2J) texels: 19 tol → 6 texels, 82 tol → 13. Every edge inside the
+free set then passes the plate's tear test by construction; the rim (free against not free) and
+the sky stay as they are. Falsified premises removed with it: none yet; `_plateStretchInner`
+and the seams select are candidates once the kit and the holes table are in.
+
+First measurement (sweep form, before the worklist): 713 765 free texels, 315 531 violations at
+the start, 441 425 texels moved (mean 0.046 of the normalised depth = 2.8 mm on the 0.06 m
+volume, max 0.51); carrier–carrier unjoined edges **57 777 → 4 124**; torn plate texels inside
+the carriers **84 234 → 19 576**, outside 29 763 → 9 599; plate triangles dropped
+**136 191 → 32 224**. Cost 24 s and not converged at the sweep bound (the isolated-pair rule was
+in log space); the worklist form (all constraints in disparity, work proportional to violations) still ran to its
+budget: 730 M projections, excess 0.0135, 36 s, tears 32 375.
+
+**Gated by the extrapolation uncertainty (tried, removed).** Only seams within the two texels'
+extrapolation uncertainties (tol/2 plus the slope uncertainty tol/(2(w−1)) times the distance;
+a one-sample window: half a quantum per texel) were projected, the correction weighted toward
+the less certain texel. Offline, only 33–41 % of the seams pass that gate; in the app the tears
+stayed at 112 734 / 114 099 and the loop again ran to its budget (19–37 s). Two lessons: the
+formal uncertainty of a flat 8-bit terrace extrapolation is far too small (a six-sample flat
+window is "confident" and 10 tol wrong at g = 60), so the gate keeps the ribbons; and iterative
+projection onto curvature constraints is diffusion, hopeless at this scale.
+
+**The closed form (kept; `window._farJoin`).** The plate's tear test is the rim law's join: an
+edge holds when the eye-distance ratio across it is within t. So the far field is made
+t-Lipschitz across the free set in log disparity — no step larger than log t per texel along
+either axis — with the smallest sup-norm change to the per-line estimates: the midpoint of the
+upper and lower Lipschitz envelopes (McShane–Whitney), each an L1 distance transform in two
+raster passes. O(N), deterministic, no iteration, no constant beyond t. A plane's slope is far
+below the bound and is untouched; a ribbon seam of ratio r becomes a ramp of log r / log t texels
+(r = 1.046 → 4 texels); a genuine step between two far surfaces becomes a longer ramp, a skin
+between backgrounds where plate 2 carries the second surface when it is known. Three details mattered on the way: the transform must be the chessboard metric, not L1, because
+the plate's tear test checks a triangle's diagonal too (L1 allowed t² across a diagonal and left
+87 849 torn triangles at the ramps' kinks); the bound is taken a hair inside (1e-4) because the
+tear test runs on float32 depths (56 200 → 34 726 triangles); and the midpoint is capped at the
+texel's own disparity (the reach) with one more upper-envelope pass, which only lowers and stays
+Lipschitz (226 texels).
+
+Measured (photograph, `photo_v19`): 713 765 free texels, 56 731 axis edges beyond the ratio t
+before, **0 after**, 189 047 texels moved (mean 0.097 of the normalised depth, 5.8 mm on the
+0.06 m volume; max 0.39), **0.3 s**. Carrier–carrier unjoined edges 57 777 → 4 551, of which
+3 867 are the band's own rim ring (own-depth texels against the far plate, which must tear) and
+**684 are interior** (the sweep's 816 push-back texels): −98.8 %. Torn plate texels inside the
+carriers 84 234 → 20 858; plate triangles dropped 136 191 → 34 726, the remainder the rim, the
+band's outer boundary (carriers against free texels the sweep never demanded, at their own
+depth, hidden behind the foreground inside the envelope) and the push-back. S2: 4 edges beyond t,
+14 texels moved, band 18 529 (18 531), P .887, R .999 — unchanged.
+
+**Kit under the unconditional join** (every scene, the same truth; v11 → joined):
+
+| scene | band v11 → v12 | P v11 → v12 | R v11 → v12 | depth median (m) | depth p90 (m) | layer-2 px |
+|---|---|---|---|---|---|---|
+| S2 | 18531 → 18529 | 0.887 | 0.999 | 0.000 | 0.043 | 1108 |
+| S27 | 5695 | 0.859 | 1.000 | 0.000 | 0.000 | 60 |
+| S12 | 18209 → 18255 | 0.927 → 0.924 | 0.994 | 0.000 | 0.076 | 30 |
+| S26 | 52608 → 62619 | 0.457 → 0.396 | 0.937 → 0.968 | 0.000 → 0.002 | 0.056 → 0.055 | 35396 → 45405 |
+| S16 | 23078 → 23120 | 0.190 → 0.189 | 0.972 → 0.969 | 0.000 | 0.000 → 0.004 | 565 → 505 |
+| S31 | 74398 | 0.946 | 1.000 | 0.000 | 0.000 | 0 |
+| S15 | 48020 → 57181 | 0.723 → 0.594 | 0.996 → 0.975 | 0.184 → 1.475 | 8.566 | 18781 → 25083 |
+| S32 | 47202 → 55995 | 0.729 → 0.314 | 0.811 → 0.415 | 0.000 → 1.604 | 0.000 → 1.985 | 0 |
+
+Rooms hold (S2, S27, S12, S16, S31 within noise); S26's beam gap widens the band (+19 %, P .457 →
+.396, R .937 → .968); **S15 and S32 break** (S15 depth median 0.18 → 1.48 m, P .723 → .594;
+S32 P .729 → .314, R .811 → .415, depth 0 → 1.6 m): an open scene's far side is genuinely layered
+— crown, hill, sign, sky — with eye-distance ratios of 2 to 10 between the layers, and ramping
+those at t per texel drags whole surfaces toward their neighbours. On the photograph no seam has a
+ratio above 2; on S15 the 2 247 that do are the layers.
+
+Holes on the user's path with the unconditional join and the seams torn (no skin): 1 / 1 / 0 / 0 /
+1 / 3 / 8 px at 14 / 27 / 35 / 45 / 50 / 52 / 56°, the same coverage the stretched skin gave
+(3 / 4 / 3 / 7 / 3 / 0 / 0) with the plate genuinely continuous. The band shrank to 36.9 % of
+the picture (47.4 %): ramps put plate nearer than the far runs did and some reveals close earlier.
+
+### 10c. The gate: a seam is one surface only if its ramp fits inside the reveal
+
+A disagreement between two neighbouring far estimates can be reconciled as one surface only within
+the reveal that produced them: if the ramp closing it, log r / log t texels, is longer than the
+larger of the two texels' distances to their rims, the two estimates cannot both be continuations
+of what is visible on either side of that rim, and the seam is a layering (plate 2 carries the
+second surface where the law found one). Texels against texels, no constant. Offline it keeps
+100 % of the photograph's, S26's and S2's seams and excludes 91 % of S15's seams of ratio > 2
+(2 247 → 192). Implemented as cut edges the distance transform does not cross (the raster passes
+then repeat until nothing changes; a path of L steps needs at most L passes). Measured: the photograph keeps 61 of 56 731 seams as layerings and is otherwise as above; S15
+improves from 1.48 to 0.89 m median depth but stays far from 0.18 (the envelope leaks around gaps
+in a layering boundary); S32 has no seam the gate excludes (its reveal is 180 rows deep) and stays
+broken.
+
+### 10d. Two more forms, and the honest state
+
+- **Second-layer texels left out.** Where the law found two far surfaces at a texel, layer 1 is
+  one of two sheets and its neighbour may hold the other; such texels are excluded from the join
+  (plate 2 carries the other sheet there). S26 returns exactly to v11 (52 608 / .457 / .937; its
+  beam gap has a second layer throughout). S15: 33 494 of 56 354 free texels excluded, still
+  P .583, depth median 0.74 m. S32 has no second layer and is unchanged.
+- **The plane law's own slope as the step bound.** S32's ground recedes to 43 m; near the horizon a
+  legitimate plane changes eye distance by more than t per texel, which the source joins by the
+  affine rescue, not the ratio — so the allowed step across an edge became the larger of log t and
+  the slope the winning candidate extrapolates along that axis. S32's seam count did not move
+  (28 800): its seams are not along the grazing direction but **between neighbouring columns the
+  plane law treats differently** (ground-plane continuation where a column has a ground run, flat
+  continuation where it has not); a join averages a right column with a wrong one, and the truth
+  says the average is worse (depth median 0 → 1.6 m). That inconsistency is upstream of any join.
+
+Kit under the final form (second-layer texels out, ramp gate, slope bound):
+
+| scene | band v11 → v12 | P v11 → v12 | R v11 → v12 | depth median (m) | depth p90 (m) | layer-2 px |
+|---|---|---|---|---|---|---|
+| S2 | 18531 → 18529 | 0.887 | 0.999 | 0.000 | 0.043 | 1108 |
+| S27 | 5695 | 0.859 | 1.000 | 0.000 | 0.000 | 60 |
+| S12 | 18209 → 18255 | 0.927 → 0.924 | 0.994 | 0.000 | 0.076 | 30 |
+| S26 | 52608 | 0.457 | 0.937 | 0.000 | 0.056 → 0.055 | 35396 |
+| S16 | 23078 → 23120 | 0.190 → 0.189 | 0.972 → 0.969 | 0.000 | 0.000 → 0.004 | 565 → 505 |
+| S31 | 74398 | 0.946 | 1.000 | 0.000 | 0.000 | 0 |
+| S15 | 48020 → 58450 | 0.723 → 0.583 | 0.996 → 0.977 | 0.184 → 0.735 | 8.566 | 18781 → 24318 |
+| S32 | 47202 → 55995 | 0.729 → 0.314 | 0.811 → 0.415 | 0.000 → 1.604 | 0.000 → 1.985 | 0 |
+
+Photograph under the final form: 58 786 texels with a second layer left out; carrier–carrier
+seams 57 777 → 21 060, plate triangles 136 191 → 65 908 (the unconditional form: 4 551 and
+34 726). Half the photograph's gain goes with the exclusion.
+
+**State on `main`.** The join is a bake option (plate → *far field: per line | joined*), **off by
+default**: right on closed scenes (rooms unchanged, the photograph's seams gone or halved), wrong
+on open layered scenes with grazing ground, and no constant-free rule found today separates the
+two from the depth alone. The recipe for holes stays *seams stretched* (§9f: 3 / 4 / 3 / 7 / 3 / 0
+/ 0 px), which touches no depth and no kit number; the joined field with the seams torn gives
+1 / 1 / 0 / 0 / 1 / 3 / 8 on the photograph if you prefer a plate with no skins.
+
+### 10e. What the sprint established, and what remains
+
+1. The seams are choice flips of the per-line plane law (which run, which axis), not fit noise;
+   along a line the law is continuous (§10a).
+2. Pooling across lines cannot fix them on 8-bit curved data (no plane within tol); a
+   Lipschitz join can, in closed form, at 0.3–0.6 s (§10b).
+3. The join is wrong where the far side is genuinely layered or grazing (S15, S32): the plane
+   law's per-column treatment flips (ground continuation vs flat) and its layer-1/layer-2
+   patchwork are the real defects, and they sit upstream, in the candidate choice (§10d).
+4. The plan's steps 4–5 (kind-2 pair planes; one continuous layered rule replacing the axis
+   arbitration) were designed for the pooling that was removed; their aim — a candidate choice that
+   is consistent across lines and columns — is exactly what item 3 asks for and is the next honest
+   step. Step 6 (removals): `_plateStretchInner` stays as the hole fix; the join stays as an option;
+   the pooling and the iterative projections are already out.
+

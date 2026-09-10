@@ -912,9 +912,9 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   axis pick, exports). Bit-identical to the single loop on S2 and the photograph. (Pooled planes across lines were
   built here and removed; the comment above pass 3 records why.)
 - **The join across lines** (`_plugGeoBand`, after the reach loop, block `S7 THE FAR FIELD OBEYS THE RIM LAW ACROSS
-  LINES`, ~L8644–8700; `window._farJoin` off with 0): `dom` = free, non-sky texels; `lg` = log disparity of the far
+  LINES`, ~L8644–8720; `window._farJoin`, OFF unless the panel's 'far field' select is 'joined' — `bgPlateJoinSel`, option key `join`): `dom` = free, non-sky, single-layer texels (those with `farField2 >= 0` left out); `lg` = log disparity of the far
   field; `envHi`/`envLo` = chessboard distance transforms (two 8-neighbour raster passes, `chess()`) of `lg` and `-lg`
-  with slope `c = log t · (1 − 1e-4)`; the field = exp of the midpoint, capped at the texel's own disparity, one more
+  with per-edge step `stepOf` = max(log t · (1 − 1e-4), the winning candidate's along-axis slope `farM`/u) and cut edges where the ramp log r / log t exceeds the larger distance to the rim (`gR`, from `farRimJ`); the raster passes repeat until nothing changes; the field = exp of the midpoint, capped at the texel's own disparity, one more
   upper-envelope pass; back to depth by the 24-step bisection on `rlJ.dispAt`, clamped ≤ `dQ`. Log
   `[S7] far field joined across lines (t-Lipschitz envelope midpoint): …`. Runs before `valFF` is built, so every
   consumer (sweep, carriers, `plateF`, plate tear, plate 2) sees the joined field.
