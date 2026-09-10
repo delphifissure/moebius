@@ -1211,3 +1211,53 @@ is recorded above it.
 
 Standing item unchanged: the photograph's 16-bit depth re-export (the app's float path is ready;
 the source model run is not in this environment).
+
+## 11. The 16-bit test — what the first export was, and what the next one needs (2026-09-10 late; `tmph88azwsl.png`, `moebiusv2` commit `eb37cd9`)
+
+The file is a 16-bit PNG container (I;16, 851×1023, the photograph's size) holding about eight
+bits of content:
+
+| property | `tmph88azwsl.png` | a 16-bit export |
+|---|---|---|
+| value range | 27 … 329 | 0 … ~65535 |
+| distinct values | 303, every gap exactly 1 | tens of thousands |
+| relation to the 8-bit map | 1.18·d8 + 27, residual σ ≈ 1.8 eight-bit quanta, corr .9995, same near/far sign | sub-quantum detail |
+| as the app loads it (`bgDecodeDepth16`: value/65535, no normalisation) | depth 0.0004 … 0.0050 — the scene in 0.46 % of the range | the full range |
+
+The model's output was rounded to integer units (303 levels) and cast to uint16, rather than
+scaled to 0…65535 from the float tensor. It is not the 8-bit map rescaled (residual 1.8 quanta),
+so it is a second quantisation of the same estimate, not more precision.
+
+**Run 1, the file as pushed (probe `photo_16raw`).** The 16-bit ingest path ran (max depth in the
+dump = 329/65535 exactly). The bake is flat: 26 972 row runs, texels with a far side 0, reach
+0 %, plate torn 0. The whole photograph sits at one depth as far as the parallax law is
+concerned. Valid as the ingest test; nothing else.
+
+**Run 2, the same 303 levels stretched to 0…65535 (probe `photo_16str`; a scratchpad copy, never
+the photograph's depth).** Worse than the 8-bit map, not equal to it:
+
+| | 8-bit map (`photo_s7b0`) | 303 levels stretched to 16 bits |
+|---|---|---|
+| runs per row / column (median length) | 9.3 (6) / 7.9 (8) | 9.6 (2) / 7.5 (3) |
+| texels with a far side | 715 878 (82.2 % of the plate) | 676 889 (77.8 %) |
+| carrier–carrier seams | 57 777 | 81 133 |
+| plate triangles torn | 136 191 | 189 130 |
+
+The reason is the app's own rule, and it matters for the real export too: the source quantum is
+*detected* as the smallest grid the samples land on (a89/`bgSourceQuantum`: 255, 4095, 65535),
+and the bake overwrites `_qbSrcQuantum` with it. The stretched samples land on the 65535 grid,
+so every tolerance was set to 1/65535 while the map's real step is 217/65535 — each level change
+read as a jump, the runs fragmented to 2–3 texels, and the seams rose 40 %. There is no honest
+control on this file: 303 levels cannot be put on the 255 grid, and a 16-bit PNG cannot land on
+the 4095 grid exactly.
+
+**What the next export needs.** From the model's float output `d`, before any 8-bit step:
+`uint16(round((d − d.min()) / (d.max() − d.min()) · 65535))`, same near/far sign as today's map
+(this file already has the right sign), saved as 16-bit greyscale PNG; `len(np.unique(img))`
+should be in the tens of thousands. And one thing to decide *before* reading its numbers: with
+a genuinely continuous map the detected quantum will be 1/65535, and the rim law's tolerance
+(the quantisation step) will then be far below the estimator's own noise. The 8-bit runs never
+met this because the quantum was above the noise. The first 16-bit bake should therefore be read
+with the tolerance question open, and if the runs fragment as they did here, the tolerance needs
+a noise term measured from the data (the residual of the affine fit along runs is one candidate),
+not a constant.
