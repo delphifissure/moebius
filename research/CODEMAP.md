@@ -924,3 +924,23 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   (plate rows must be flipped: `plateF` is stored bottom-up).
 - **Removed after measurement**: pooled planes (nodes/links/groups/pieces/per-g planes), the iterative second-difference
   projections (ungated and uncertainty-gated worklists). `_plateStretchInner` / the `seams` select: see §10c.
+
+## 26. Sprint 7b code (2026-09-10 evening; `S5_photograph_note.md` §10f)
+
+- **`evalRun(ax, l, x, dir, i, j, p, xi, gB)`** (`bgFarSidePlane`, just before `cand`): the one arithmetic of a
+  candidate — window `w = min(len, g+1)`, `fit`, the thin rule (ground continuation for a ground run in a column, else
+  flat), the ground cut (`cut`), and `mv` (the slope the VALUE follows: the ground's slope under a cut, else `m`).
+  `cand` calls it inside the beyond-a-rim walk and counts `nGroundCut` from `e.cut`; `rebuild` is now three lines
+  around it. Bit-identical to the two copies it replaced (S2 `farDisp.f32` byte-equal to v12; the photograph byte-equal
+  to `photo_s7b0`).
+- **D4 in pass 3**: `farM[i]` = the interpolation's slope for a kind-2 pair, else the winning side's `mv`; `farCut[i]`;
+  the per-axis audit values `farAxV` (2N: row, column candidate values) and uncertainties `farAxS`
+  (σ = tol_i/2 + g·tol_j/(2·max(1, w−1))). Exported as `_geoFarM`, `_geoFarCut`, `_geoFarAxV`, `_geoFarAxS`, plus the
+  second layer (`_geoFarDisp2`, `_geoFarRimJ2`, `_geoFarSide2`); probe dumps `farM.f32`, `farCut.u8`, `farAxV.f32`,
+  `farAxS.f32`, `farDisp2.f32`, `farRimJ2.i32`, `farSide2.i8`. `scratchpad/s7b_checks.py` reads them (edges beyond the
+  slope bound; the D1 gate count); `scratchpad/cmp_dumps.py` byte-compares dumps (`farDisp.f32` is the witness;
+  `farField.f32`/`plateF.f32` differ by ~14 texels between identical runs — the solve is not bit-deterministic).
+- **Built and removed** (each records its numbers in a comment at the place it stood): D2, the first arrival resolved
+  among indistinguishable arrivals toward the larger window (comment at the strict argmin in `cand`); D3, the thin run's
+  borrowed slope from the joined neighbouring line (comment above `evalRun`). D1 (inverse-variance axis blend) was
+  not built: its gate fires on 2 676 of 22 068 axis-flip seam edges.

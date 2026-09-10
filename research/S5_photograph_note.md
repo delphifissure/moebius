@@ -1057,10 +1057,12 @@ broken.
   legitimate plane changes eye distance by more than t per texel, which the source joins by the
   affine rescue, not the ratio — so the allowed step across an edge became the larger of log t and
   the slope the winning candidate extrapolates along that axis. S32's seam count did not move
-  (28 800): its seams are not along the grazing direction but **between neighbouring columns the
-  plane law treats differently** (ground-plane continuation where a column has a ground run, flat
-  continuation where it has not); a join averages a right column with a wrong one, and the truth
-  says the average is worse (depth median 0 → 1.6 m). That inconsistency is upstream of any join.
+  (28 800) and this paragraph first blamed neighbouring columns the plane law treats differently.
+  **Corrected by Sprint 7b (§10f):** the slope bound had simply never taken effect on S32 — the
+  ground cut records the candidate's slope as 0 while its value follows the ground plane, so the
+  bound fell back to log t on every one of S32's 144 800 free texels (all ground-cut). With the
+  slope the value actually has (`mv`, D4), S32 under the join is identical to v11 (47 202 / .729 /
+  .811 / 0.0 m). S15's regression under the join stands (§10f).
 
 Kit under the final form (second-layer texels out, ramp gate, slope bound):
 
@@ -1101,3 +1103,111 @@ two from the depth alone. The recipe for holes stays *seams stretched* (§9f: 3 
    step. Step 6 (removals): `_plateStretchInner` stays as the hole fix; the join stays as an option;
    the pooling and the iterative projections are already out.
 
+## 10f. Sprint 7b — a consistent per-texel choice (plan approved 2026-09-10; four designs, measured one by one)
+
+The four designs from the §10e item 3, each built behind the measurement and kept only if the
+seams, the tears and the kit eight agree. Baselines: photograph carrier–carrier seams 57 777
+(45 % axis flips, 41 % same axis across lines, 2.6 % along a line), plate tears 136 191; kit as in
+the §10d table's v11 column.
+
+### 10f.1 Step 0 — the exports, and what the pre-measurements said (probe `photo_s7b0`, `S32/S15_…_s7b0`)
+
+New audit exports from the plane law: `farM` (the winning slope along its axis), `farCut` (the
+value came from the ground cut), `farAxV`/`farAxS` (each axis's candidate value and its
+uncertainty σ = tol_i/2 + g·tol_j/(2·max(1, w−1))), the second layer's arrays.
+`scratchpad/s7b_checks.py` reads them.
+
+- **D4's premise held.** S32: all 144 800 free texels are ground-cut; 29 600 column edges step
+  beyond log t and every one of them is also beyond the recorded slope bound, because the
+  recorded slope was 0. S15: 2 936 column edges beyond the bound, 1 970 of them with `farM` = 0 at
+  both ends (thin runs continued flat — D3's target), 709 kind flips.
+- **D1's gate is immaterial.** Photograph: 22 068 axis-flip seam edges; only 2 676 have both
+  endpoints whose row and column candidates agree within σ_r + σ_c (median |row − col| is 2.2 σ).
+  An inverse-variance blend would touch 12 % of the axis flips and none of the rest. D1 was not
+  built.
+
+### 10f.2 D4 — `farM` is the slope the value has (kept; commit `69ef0fb`)
+
+The candidate carries `mv`: the ground's slope where the value was cut to the ground plane, the
+interpolation's slope for a same-plane pair, the fitted slope otherwise; the far field itself is
+untouched (`m`/`v0` unchanged). Under the join (option on):
+
+| scene | v11 | join on, before D4 | join on, after D4 |
+|---|---|---|---|
+| S32 | 47 202 / .729 / .811 / 0.000 m | 55 995 / .314 / .415 / 1.604 m | **47 202 / .729 / .811 / 0.000 m** |
+| S15 | 48 020 / .723 / .996 / 0.184 m | 58 450 / .583 / .977 / 0.735 m | 58 041 / .587 / .977 / 0.716 m |
+
+S32's regression under the join was the missing bound, not the columns' treatment (§10d
+corrected). S15's is not: its seams are thin runs continued flat next to sloped runs and layer
+flips, which no bound repairs.
+
+### 10f.3 D2 — first arrival resolved toward the better-fitted run (built, falsified, removed)
+
+As planned: candidates whose arrival poses cannot be told apart within their uncertainties
+(|f0_a − f0_b| ≤ df0_a + df0_b, df0 = f0·σ/dlt) count as one arrival, and the run fitted over the
+larger window wins, then the longer run. Kit-safe as predicted (S12's far field byte-identical;
+S2 moved 4 of 360 000 texels, 11 ties, P .887 unchanged). On the photograph it made the choice
+**less** consistent:
+
+| photograph | before (D4) | D2 |
+|---|---|---|
+| ties resolved | — | 227 585 of 1 183 755 arrivals |
+| carrier–carrier seams | 57 777 | 65 448 |
+| same axis, same kind, across lines | 23 785 | 29 406 |
+| plate triangles torn | 136 191 | 148 151 |
+| free texels whose slope is 0 (flat thin runs) | 437 861 | 397 251 |
+
+The window is min(len, g+1) and a run's *length* is the quantity that 8-bit curvature fragments
+from one line to the next (median run 6–8 texels on the photograph): preferring the wider window
+prefers the attribute that changes most between neighbouring lines. Removed (the strict first
+arrival stands); the reason is recorded at the pick.
+
+### 10f.4 D3 — a thin run borrows the slope of the joined, longer run on the neighbouring line (built, falsified, removed)
+
+First the refactor: the candidate arithmetic of the walk and of the rebuild became one helper
+(`evalRun`), byte-identical on S2 and the photograph. Then the borrow, as planned: a thin run
+(shorter than the gap it must cross) that is neither sky nor a ground run takes the fitted slope of
+the run on line l±1 that overlaps it, is joined to it by the rim law at both ends of the overlap,
+and is longer beyond the rim; own rim value and own colour window kept; ground branch first.
+
+| | v11 | D3 |
+|---|---|---|
+| S2 | 18 531 / .887 / .999 | unchanged (5 far-field texels moved) |
+| S32 | 47 202 / .729 / .811 / 0.000 m | unchanged (0 borrows: every column is ground-cut) |
+| S15 | 48 020 / .723 / .996 / 0.184 m | 47 831 / .726 / .996 / 0.159 m (12 698 borrows) |
+| S26 | 52 608 / .457 / .937 | 53 705 / .448 / .938 (984 borrows) |
+| S16 | 23 078 / .190 / .972 | 23 068 / .190 / .972 (861 borrows) |
+| photograph seams | 57 777 | **136 040** (304 847 borrows) |
+| photograph plate tears | 136 191 | **298 038** |
+| photograph "same axis, same kind, across lines" | 23 785 | 80 038 |
+
+S26 shows the mechanism at kit scale: 84 far-field texels changed, all on the beams' edges, and
+the flat rule had every one of them exactly right (error 0.000 m against the truth); the borrowed
+slope put them 0.037 m off, and the sweep then grew the band by 1 397 texels of which 40 are
+truly hidden. The two lines *are* joined by the rim law, at a **fold**: the beam's side face meets
+the background continuously, so "joined at both ends of the overlap" does not mean "one plane" —
+and a fold across lines is exactly where the neighbour's slope is not the thin run's. On the
+photograph the neighbouring line's run is no steadier than the thin run's own (8-bit curvature
+fragments both), and the borrowed slope doubled the seams. Removed; the helper stays; the reason
+is recorded above it.
+
+### 10f.5 What Sprint 7b established
+
+1. **The join's S32 failure was a missing bound, not a per-column inconsistency** (D4). With the
+   slope the value has, S32 under the join is v11 exactly. D4 is kept; it changes nothing unless
+   the *far field: joined* option is on.
+2. **Both attempts to make the per-line choice steadier by leaning on run attributes made it
+   less steady** — D2 on the run's length, D3 on the neighbouring run's slope. On 8-bit curved
+   data the run structure itself is what varies from line to line (median run 6–8 texels on the
+   photograph); any rule that reads more of it inherits more of that variation. The strict first
+   arrival with flat thin continuation — the v11 law — is the steadiest of the forms measured.
+3. **D1 is immaterial** (12 % of the axis flips pass its gate; not built).
+4. **State on `main`.** Defaults unchanged from §10d: the join is an option (now right on S32,
+   still wrong on S15 by 0.5 m of depth median), *seams stretched* is the hole fix, the strict
+   per-line law stands. What the seams need is not a steadier per-line choice but a rule that
+   does not choose per line at all — a far field solved on the reveal region with the rims as
+   boundary and the layering (plate 2) as a constraint. That is the join's problem statement with
+   S15's layered reveals handled inside it, and it is the next design, not this sprint's.
+
+Standing item unchanged: the photograph's 16-bit depth re-export (the app's float path is ready;
+the source model run is not in this environment).
