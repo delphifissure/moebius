@@ -771,3 +771,133 @@ instead of the checkerboard's stripes.
   output format.
 - Open geometries unchanged: S26 beam gap (plane law far from the rim), rim-law join sparing
   curvature (would make the Shih pre-filter safe).
+
+## 9. The live pass (2026-09-10): what your screen showed, what was wrong, what the holes are
+
+You baked from the panel, dragged to 0.30 m / 0.07 m (56° / 19°, past the ±45° envelope, with the
+Angle fade off) and saw holes with both fills, the mirror worse. Three separate things were true.
+
+### 9a. The recipe's fill never reached the screen (bug, fixed; commit `2c0f269`)
+
+Every rim-law bake since Sprint 2b threw at the last line of the band-fill block: the A215 log
+line read `NREL` outside the block that declared it, the `catch` dropped the recipe's colour
+texture (`plateColorTex = null`), and the plate rendered from the quick bake's one-sided colour
+target instead. Wash and mirror alike. The harness never saw it because its console filters
+passed only tagged lines; the raw browser log from yesterday's crash run has it. Consequences,
+stated: the kit colour numbers (§6 Item 7, §8c) were computed on the pre-throw plate colour and
+stand; **no screenshot or shot sheet before today showed the recipe's fill**, and the "mirror"
+column of the Sprint 6 face sheet was the same fallback as the wash column plus faces. With the
+fix in, wash and mirror render differently (`colourfix_check.png`). `NREL` is hoisted; the failure
+now logs as an error and sets `window._qbBandFillFailed`; both harness filters pass any
+`FAILED`/error line.
+
+### 9b. The Build button and the blank select (fixed; commit `2c0f269`)
+
+The Build button applied a *cached* copy of the plate options, so selects set without a change
+event (the console command I gave you) built the membrane path with the plane flags. Your second
+screenshot is that: the far-side select blank, the quick bake's a126 chamfer in the log (the plane
+recipe skips it), the mirror flag applied to the wrong pipeline. The button applies the selects
+first now; every plate bake logs `[S6] plate bake: far=… fill=…`; a select with no value resets to
+its default with a warning. A re-bake by changing a select reproduces the first bake's holes
+within ten pixels at every offset (measured, `ui_plane` first vs after change).
+
+### 9c. Holes by angle, on your path (real Build button, eye offsets in metres as a drag sets them)
+
+`harness/ui_path.js`; undrawn pixels inside the picture's rectangle; the membrane row is the
+shipped quick bake for reference.
+
+| eye offset (m) | head angle | membrane (shipped) | plane arm, 45° bake | plane arm, 60° bake |
+|---|---|---|---|---|
+| 0.05, 0 | 14° | 0 | 19 | 17 |
+| 0.10, 0 | 27° | 0 | 28 | 27 |
+| 0.14, 0 | 35° | 0 | 55 | 48 |
+| 0.20, 0 | 45° (the rim) | 0 | 283 | 254 |
+| 0.24, 0 | 50° | 0 | 459 | 420 |
+| 0.26, 0.088 | 52° / 24° (your drag) | 0 | 307 | 265 |
+| 0.301, 0.068 | 56° / 19° (your drag) | 0 | 441 | 371 |
+
+Reading:
+- The membrane has no holes at any angle because it never tears: it stretches the plate across
+  every jump (the smear the plane arm was built to remove). That is the trade, not a bug.
+- The plane arm's holes grow with the angle from ~50 px at 35° to ~300 at the rim and ~450 past
+  it. My Sprint 5/6 shots were all at ≤ 27° (pose fractions 0.25 and 0.5), which is why they
+  read 18–28 px: I never shot the rim. That was a gap in the measurement, now closed.
+- **Baking the geometry to 60° instead of 45° barely helps** (283 → 254 at the rim, 441 → 371 at
+  56°) although it costs almost nothing (band 47.4 % → 50.4 %). So the holes are *not* the
+  carrier band running out, which was my first explanation. The buffer says what they are:
+  slits in the *middle* of the reveal (`holes50_zoom.png`) — the plate torn at its own far-field
+  discontinuities (S2b.4: a plate quad across an unjoined plate edge is not drawn). Those cliffs
+  are sub-pixel at small angles and open in proportion to the pose. Plate 2 bridges the ones
+  that carry a second layer; the rest open.
+
+### 9d. What the slits are (probe `photo_torn`, `plate_torn_overlay.png`)
+
+The plate-tear pass drops 136 191 of 1 737 400 plate triangles (7.8 %) on the photograph, touching
+113 997 plate texels, 84 234 of them inside the carriers and 73 010 inside the band. Of the
+neighbouring pairs whose plate depths jump across a torn edge, **91 094 are carrier next to
+carrier of the same kind 1** (a single far candidate on each side), 7 869 kind 2 next to kind 2,
+and only 818 carrier next to an own-depth texel (the rim). Row and column edges in equal measure
+(53 551 / 62 201). The jumps: median 0.023 of the normalised depth (six 8-bit quanta), 90th
+percentile 0.35 (a third of the volume). The overlay (`plate_torn_overlay.png`, yellow = torn
+inside the carriers) is a lattice of long straight horizontal and vertical seams across the whole
+band: **the far field is computed one line at a time, and neighbouring lines extrapolate
+different planes** (row candidates against column candidates, one row's terrace fit against the
+next row's), so the plate behind an occluder is a patchwork of ribbons at slightly different
+depths, torn along every ribbon boundary. Each seam is sub-pixel at rest and at small angles,
+and opens in proportion to the pose. That is the whole residual: not the band's extent (§9c),
+not the fill.
+
+### 9e. Where this leaves the "comprehensive" question
+
+Your intuition is right for the part of the plate that exists: a carrier moves with the far
+surface and covers its reveal at every pose, including past the envelope (60° bake: the band grows
+3 %, nothing new opens at its edge). What opens are the seams between the plate's own ribbons, and
+the choice is the same one the plane arm made at the foreground: tear (a hole, honest) or stretch
+(a skin, covered). Options, with the numbers above:
+
+- **A. Stretch the plate's internal seams, tear only its rim** (`window._plateStretchInner`,
+  built today: an unjoined plate edge between two *carriers* is drawn; an edge touching an
+  own-depth texel, the foreground rim or the occluder's interior, stays torn). Both sides of an
+  internal seam are far surfaces, so the skin is between two backgrounds, never a foreground
+  clone, and the reveal's outline stays the rim law's tear. Advantages: no new constant, the
+  membrane's coverage with the plane arm's silhouettes, hours not days. Disadvantages: where the
+  far field really is two surfaces (p90 jump 0.35) the skin is a visible smear at large angles;
+  it hides the seams rather than removing them. Measured below (§9f).
+- **B. One sheet per reveal**: reconcile the per-line far candidates in 2-D, one least-squares
+  plane (or one smooth surface) per connected reveal region with the same fit uncertainty, split
+  only where the samples disagree beyond it (the crossing rule in 2-D). Advantages: the honest
+  fix, the seams vanish instead of being skinned, and it would make the Shih pre-filter safe (the
+  same join-across-lines question). Disadvantages: a rim-law change with the kit re-scored on all
+  eight scenes; days; and 8-bit terraces will still produce ribbons where the source has them.
+- **C. Enforce the design boundary**: the Angle fade (35° → black at 45°) is the contract the
+  bake was built to; with it on, the worst you see is the 35° row. Advantages: nothing to build.
+  Disadvantages: 50 px at 35° and ~280 at the rim remain, and you turned the fade off to look,
+  which is a legitimate use.
+
+Recommendation: A now as the plane recipe's default (once you have seen it), B as the next rim-law
+item; A does not preclude B, and when the far field is one sheet the skins vanish on their own.
+
+### 9f. Option A measured
+
+`window._plateStretchInner`, now the panel's seventh option (**seams: torn | stretched**); the
+bake keeps 96 701 of the 136 191 triangles it used to drop (the 39 490 still dropped touch an
+own-depth texel: the rim, the occluder's interior).
+
+| eye offset (m) | head angle | membrane (shipped) | plane, seams torn | plane, 60° bake | plane, seams stretched |
+|---|---|---|---|---|---|
+| 0.05, 0 | 14° | 0 | 19 | 17 | 3 |
+| 0.10, 0 | 27° | 0 | 28 | 27 | 4 |
+| 0.14, 0 | 35° | 0 | 55 | 48 | 3 |
+| 0.20, 0 | 45° (the rim) | 0 | 283 | 254 | 7 |
+| 0.24, 0 | 50° | 0 | 459 | 420 | 3 |
+| 0.26, 0.088 | 52° / 24° (your drag) | 0 | 307 | 265 | 0 |
+| 0.301, 0.068 | 56° / 19° (your drag) | 0 | 441 | 371 | 0 |
+
+The stretched plate reads as one continuous far surface behind the arm at every angle
+(`stretch_sheet.png`); the skins are wash-coloured and mostly a few quanta deep, with faint
+striping where the ribbons differ more. Kit precision/recall are untouched by construction (the
+band and carriers are the same; only the plate's index changes). The recipe for the live pass is
+therefore: far side plane, fill wash (or mirror to compare), margin picture, faces off, band
+tier 35°, sky off, **seams stretched**; the Angle fade is your choice. B (one sheet per reveal)
+remains the honest next item; with it the skins disappear on their own.
+
