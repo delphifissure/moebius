@@ -881,3 +881,25 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   15/25/35°). Console filters pass `[S6]`.
 - **Sprint 6 results**: note §8 (band by first-uncover angle per scene, ±30° measurement, fill colour errors,
   step-face history, the 8-bit terrace limit on step faces).
+
+## 24. The live pass, 2026-09-10 (flag arm; `S5_photograph_note.md` §9)
+
+- **Band-fill fallback bug (fixed)**: in the quick bake's band-fill `try` (~L15130–15440) the A215 log line read
+  `NREL` out of its block's scope under the rim law; the `catch` set `plateColorTex = null` and the plate took
+  `bgColorTarget.texture` (the one-sided quick-bake colour). Every rim-law bake since S2b rendered that, not the
+  recipe's fill. `NREL` is hoisted to the top of the `try`; the failure logs `console.error` and sets
+  `window._qbBandFillFailed`.
+- **Plate options**: the Build button calls `_applyPlateOptions()` before choosing the recipe (a select set from
+  the console fires no change event); `bakePlate` logs `[S6] plate bake: far=… fill=…` and resets a select whose
+  value is `''` to its default with a warning.
+- **`window._plateStretchInner`** (S2b.4 plate tear, ~L15960): an unjoined plate triangle whose three texels are
+  all carriers (`window._carrierReplace`, flipped to grid rows) is kept, stretched; logged as
+  `[S6] plate internal cliffs stretched: N`. Audit mask `window._qbPlateTorn` (texels of dropped triangles,
+  source rows) → probe dump `plateTorn.u8`; `scratchpad/plate_torn.py` classifies the jumping pairs.
+- **Harness `harness/ui_path.js`**: the user's route — sets the six selects, clicks `#bgLayerBuildBtn`, waits for
+  a `_plugGeoBand` call (wrapped counter), shoots at eye offsets in METRES (`camera.position.x` = a drag's
+  `manualCamDX`; 0.2 m = 45° at D 0.2), optional `THEN=fill=mirror` (change event → re-bake), `ENV=60` (bake
+  envelope), `FLAGS=…`. Shots under `harness/shots/ui_path/<TAG>/off_<dx>_<dy>[_then].png`;
+  `scratchpad/ui_holes.py` counts alpha-0 inside the picture rectangle.
+- **Units**: `[VIEW] manual offset: x y` is metres of eye offset; the envelope rim is D·tan 45° = 0.2 m; the
+  Angle fade (`viewFadeToggle`, `bgViewFadeEnabled`) is a black DOM overlay from 35° to 45°.
