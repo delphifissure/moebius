@@ -1239,7 +1239,7 @@ the photograph's depth).** Worse than the 8-bit map, not equal to it:
 | | 8-bit map (`photo_s7b0`) | 303 levels stretched to 16 bits |
 |---|---|---|
 | runs per row / column (median length) | 9.3 (6) / 7.9 (8) | 9.6 (2) / 7.5 (3) |
-| texels with a far side | 715 878 (82.2 % of the plate) | 676 889 (77.8 %) |
+| texels with a far side | 713 765 (82.0 % of the plate) | 676 889 (77.8 %) |
 | carrier–carrier seams | 57 777 | 81 133 |
 | plate triangles torn | 136 191 | 189 130 |
 
@@ -1261,3 +1261,62 @@ met this because the quantum was above the noise. The first 16-bit bake should t
 with the tolerance question open, and if the runs fragment as they did here, the tolerance needs
 a noise term measured from the data (the residual of the affine fit along runs is one candidate),
 not a constant.
+
+### 11b. The real 16-bit map (`depth16.png`, `moebiusv2` commit `0c00443`; probes `photo_16bit`, `photo_16q8`)
+
+The second export is a true 16-bit map: 0…65535, 58 177 distinct levels, Depth Anything V2
+**Large** through `transformers`, scaled from the float output. It is a different estimate from the
+old map (correlation 0.92; new − old mean +38, σ 22 of 255 levels; the Space that made the 8-bit
+map ran a smaller model — see `s16_maps_sheet.png`). So the comparison is three-way: the old map,
+the new map requantised to 8 bits (`round(v/257)`, 248 levels), and the new map at 16 bits. The
+middle column isolates the model; the right column isolates precision.
+
+| | old 8-bit (Space model) | new model, 8-bit | new model, 16-bit |
+|---|---|---|---|
+| source sheets under the join law | 24 | 128 | **1 346** |
+| runs per row (median length) | 9.3 (6) | 8.6 (4) | 10.3 (**2**) |
+| runs per column (median length) | 7.9 (8) | 7.3 (5) | 7.5 (**2**) |
+| texels with a far side | 713 765 | 732 118 | 697 270 |
+|   same-plane pairs | 56 100 | 65 187 | 55 602 |
+|   crossings | 15 172 | 7 343 | 9 241 |
+| thin candidates / all | 738 939 / 1 183 755 | 786 782 / 1 149 532 | 643 970 / 1 046 574 |
+| second-layer texels | 58 786 | 85 601 | 78 564 |
+| reach, % of plate | 82.0 | 84.1 | 80.1 |
+| band at 15° / 25° / 35° / 45° | 100 130 / 223 167 / 349 546 / 412 329 | 142 726 / 307 773 / 487 015 / 598 571 | 137 290 / 296 687 / 479 051 / 581 727 |
+| carrier–carrier seams | 57 777 | 64 354 | **89 355** |
+|   same axis, same kind, across lines | 23 785 | 26 907 | 29 583 |
+|   jump median, in tol | 19.0 | 14.4 | 3 290 |
+| plate triangles torn | 136 191 | 155 874 | **199 962** |
+| holes on the user's path, seams stretched (px at 14/27/35/45/50/52/56°) | 3 / 4 / 3 / 7 / 3 / 0 / 0 (old map) | 7 / 14 / 3 / 0 / 0 / 0 / 0 | 30 / 33 / 29 / 19 / 9 / 11 / 2 |
+
+**The model changed more than the precision did.** At 8 bits the new estimate has 45 % more band
+at 45° (598 571 vs 412 329 texels), more second-layer texels and fewer crossings: it separates the
+figure from the cave more strongly and carries the corner vignette as depth. Seams and tears rise
+with it (+11 %, +14 %), at the same jump size in tol. That is the estimate, not the pipeline.
+
+**Sixteen bits made the per-line law worse, and the reason is measured.** The extra eight bits of
+this map are mostly noise: the part of each value below one 8-bit step has σ 0.29 of a step and a
+lag-1 autocorrelation along rows of 0.16 (smooth ramps would give ≈ 1, white noise 0). The rim law's
+tolerance is the quantisation step, so at 16 bits it is 257× smaller while the estimator's jitter
+is unchanged: along rows the second difference exceeds tol on **79 %** of texel triples (8-bit:
+1.4 %), the runs fragment to two texels, the source falls into 1 346 sheets, and every candidate is
+thin. A 5-texel affine fit along rows leaves a residual of median 1.8 tol at 16 bits (p90 6.8),
+against 0.01 tol at 8 bits — the same physical residual (7e-5 vs 1e-4 in disparity), read against
+two different tolerances. This is the §11 question answered: **the tolerance has to carry a noise
+term measured from the data, not only the quantum.** The natural form is the one this measurement
+used — the residual of the along-line affine fit, which is exactly the quantity the rim law's
+affine rescue already computes — with the quantum as its floor. Until it exists the 16-bit map
+is not a better input to this pipeline than its own 8-bit requantisation; with it, the 16-bit map
+removes the 8-bit quantisation as a cause without adding one. Not built here; it is the next design
+step and it precedes any further seam work on the photograph, because it changes the run structure
+every measurement in §10 was made on.
+
+Holes (`ui_path.js`, now taking the seams/join selects as OPTS 7–8): single digits on the 8-bit
+requantisation, tens on the 16-bit map — the fragmented runs reach the plate as more torn
+triangles (149 873 stretched vs 119 215) and a few land as holes. `s16_angles_sheet.png` shows
+the two side by side at 27°, 45°, 52°/24° and 56°/19°.
+
+**State.** `harness/defaultImgDepth.png` is unchanged (the old map); `depth16.png` sits at the
+root of `moebiusv2` where the user put it. Nothing in the app changed. The standing 16-bit item is
+closed as delivered and measured; the noise-term tolerance is the new open item, ahead of the
+reveal-region far field of §10f.5.
