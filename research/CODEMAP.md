@@ -990,3 +990,7 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - **Not built (S11, 2026-09-11)**: the persistent-departure segmentation (a break counts only if an adjacent line breaks
   within one position). Step 0 on DA3-16 under the floor: 99.6 % of raw row breaks are already supported; the surplus
   over 8 bits is coherent creases of 1–2 8-bit steps, not isolated triples (`S5_photograph_note.md` §15).
+- **S12 (2026-09-11)**: `bgFarSidePlane` returns `groundTex`/`groundCol`; `_plugGeoBand` exports `_geoGround {a,b,c}`,
+  `_geoGroundTex`, `_geoGroundCol`; the probe dumps `groundTex.u8`, `groundCol.u8` and `meta.ground`. Used by the offline
+  reproduction of the law (`research/bakeoff/sheetfield2.py`, 98–99.6 % within tol). The per-sheet field was not built
+  (`S5_photograph_note.md` §16).

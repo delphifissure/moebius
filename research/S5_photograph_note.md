@@ -1626,3 +1626,43 @@ widened without a constant. The two honest inputs for the photograph remain DA3 
 16 bits under the floor (§14b), and the choice between them is the user's live pass. The tolerance and
 segmentation line of work (§11–§15) stops here; the seam work, if it continues, returns to the plate
 itself — a far field solved on the reveal region (§10f.5) — not to the per-line law's thresholds.
+
+## 16. Sprint 12 — the far field solved per sheet on the reveal region: prototyped against truth, falsified, not built
+
+The design (§10f.5): per reveal component and per source sheet (a connected component of the source under the
+join law), one minimum-bending surface — the thin-plate spline of disparity through the sheet's rim samples (each
+rim texel and its run outward along its axis) — in place of the per-line extrapolations, so that same-sheet seams
+(85 % of the photograph's seams on DA3-8) vanish by construction; the per-texel arrival and layering rules kept.
+Built offline in Python (`bakeoff/sheetfield2.py`) on the probe dumps, with the app's law reproduced first as the
+control: the app's run segmentation, windows, fits, thin rule, ground continuation and cut (the ground plane is now
+exported by the probe), the sky at infinity, the nearer-line rule across sides. The reproduction agrees with the
+app's far field within tol on 98.6 % of S15's free texels and 99.6 % of S32's, and its truth error matches the
+app's (S15 0.237 vs 0.184 m median; S32, S26, S2, S16 identical). Only then were the surface variants scored.
+
+| scene | truth |err| median, app law | thin-plate per sheet | seams app → thin-plate (same-sheet) |
+|---|---|---|---|---|
+| S15 (sign, hill, ground, sky) | 0.184 m | **1.227 m** | 11 478 → **19 400** (2 413 → 9 190) |
+| S32 (hedge, open ground) | 0.000 | 0.000 (all ground-cut; no candidate replaced) | 800 → 800 |
+| S26 (beams) | 0.000 | 0.006 | 3 461 → **2 534** (3 461 → 2 519) |
+| S2 (box, room) | 0.000 | 0.000 | 4 → 42 |
+| S16 (steps) | 0.000 | 0.009 | 1 847 → 2 358 |
+| photograph, DA3 8-bit (no truth) | — | — | 33 239 → **58 031** (30 542 → 26 721) |
+
+A local variant (a plane through the sheet's rim samples within the texel's gap radius, with the thin rule per
+direction — the per-line law made two-dimensional) was also scored: S15 0.290 m and seams 16 326; it is not one
+surface per sheet (each rim texel has its own neighbourhood) and removes nothing.
+
+Why it fails, in the numbers: (1) a join-law sheet is not a surface — S15's ground and hill are one sheet across
+their fold, and one smooth surface through both is neither, 1.2 m off under the sign where the per-line law's
+locality (the nearest run along the axis) is exact; (2) the thin-plate extension of Cauchy data from a rim arc is a
+poor extrapolator over a wide reveal, where the per-line law's flat continuation of thin runs is the safe one;
+(3) replacing only the candidates that may carry slope leaves thin and ground candidates on the per-line values, and
+the mixture adds seams rather than removing them — on the photograph seams rise by 75 %. S26 is the one scene where
+the premise holds (planar beams, seams −27 %), and it is the room case the S7 join already solved.
+
+**Closed.** Together with §10b (pooled planes), §10d (the Lipschitz join) and §15, this exhausts the family
+"replace the per-line choice by a consistent field": on layered or folded scenes the field is wrong, on curved
+photographs the pieces are too many or the surface too wrong, and only planar rooms benefit. The per-line law with
+its locality is the right far-side estimator for this input; its seams are the price of that locality, and the
+place to pay it is the plate (the stretched-seams option that already closes the holes), not the field. Nothing
+built in the app beyond the ground-plane audit export. `s12_s15_fields.png` shows the two fields on S15.
