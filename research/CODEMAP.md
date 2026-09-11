@@ -994,3 +994,28 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `_geoGroundTex`, `_geoGroundCol`; the probe dumps `groundTex.u8`, `groundCol.u8` and `meta.ground`. Used by the offline
   reproduction of the law (`research/bakeoff/sheetfield2.py`, 98–99.6 % within tol). The per-sheet field was not built
   (`S5_photograph_note.md` §16).
+
+## 29. C — the SD hand-off (2026-09-11; `S17_sd_handoff_audit.md`)
+- **Placeholder class** per plate texel, built in the plane-colour block right after `hasC` (search `[C] placeholder classes`):
+  `window._qbPlatePaint` (source rows, Uint8): 1 synthesised inside the tier / no tier (paint), 2 synthesised, band outside
+  the tier, 3 synthesised, carrier-only, 0 source. Bound as a float `DataTexture` `u_sdPaint` (flipped rows) on plate 1 (the
+  A245 ring shares the material), plate 2 gets `has2 → 4`, step faces set `u_sdPaintAll`. `u_sdMask` (the band) unchanged
+  (A84 stretch gate, fragment tear). Uniform table next to `u_sdMask`; shader head next to `u_sdHighlight`.
+- **`sdHighlightLogicGLSL`** tints by class (cyan 1, blue 2, teal 3, magenta 4, white rim edge, orange beyond the frame, FG
+  ×0.35); `u_sdPaintOnly` = the check view (white placeholder / black / FG black; backdrop `u_paintOnly` white).
+  `window._applySdPaintOnly(on)` next to the Build button handler. The `sdRegionsChk` handler walks
+  `bgLayerMesh.userData.{plate2, steps, sky, back}`. Sky layer: `ShaderMaterial` (map + `u_sdPaint` 1 = not source sky +
+  frame test on UV); dispose reads `uniforms.map.value`.
+- **Captures for the bundle** (reset in `_plugGeoBand`): `_qbPlatePaint`, `_qbPlate2Has`, `_qbSkyColor` (the sky canvas,
+  source rows), `_qbMargin {M, Mx, My, clip}` (A245 block).
+- **`exportSDBundle`**: after `meta`, the `plane_*` block gated on `bgFarRuleOn() && _bgQuickBaked && _qbPlateF`; files and
+  `meta.plane` as listed in S17 §2; `_png16Gray(u16, w, h)` (16-bit grey PNG, stored deflate + Adler-32, CRC via the
+  module-level `_crc32` shared with `_makeZip`); `src_*` omitted when the plane set is emitted (`meta.legacy_omitted`);
+  `meta.poseDependent` names the screen-space five. `bgDirectionalExport`/`bgExtendExport` remain v1-only (assigned after
+  the quick bake's return) — the reason the old bundle carried no plane bake.
+- **Harness**: `harness/c_audit.js` (IMG, TAG, SKY, TIER, DEPTH_*, POSES, PAINT=1, DUMP=1): panel-exact plane bake, bundle
+  captured to `bundle.zip`, frames `plain_/sd_/paint_<fx>_<fy>.png`, `views.json`, dumped arrays + `dump.json`.
+  `research/s17/c_bundle_check.py <dir>` (bundle vs the bake's arrays), `c_views_check.py <dir>` (tint vs check view,
+  writes `agree_*.png`), `c_sheet.py`, `c_bundle_table.py`. `a257_probe.js` dumps `platePaint.u8`, `plate2Has.u8`.
+  `sdbundle.js`/`sdregions.js` use `__dirname` paths.
+- **Open**: no reimport of the plane set (S17 §4).
