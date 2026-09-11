@@ -1592,3 +1592,37 @@ Reading, column by column:
    not a tolerance but the segmentation: a run that breaks on a *persistent* departure rather than a
    single triple would let the join tolerance stay at the precision while surviving the jitter's tail.
    That is the next design if the photograph's seams are still the priority after your live pass.
+
+## 15. The persistent-departure segmentation — falsified at step 0, not built
+
+§14 ended with a hypothesis: the 16-bit map's surplus run breaks under the visible-step floor (10.3 runs
+per row against 7.8 at 8 bits) are single jittery triples, so a run should break only on a *persistent*
+departure — one supported by a break in the neighbouring line within one position (the smallest 2-D
+structure with an orientation; an isolated triple is a point, has no far side and no visible tear).
+The design was complete: the support rule inside `joinedIdx` for adjacent pairs (along-line neighbours
+excluded, since a spike's two edges would support each other), the same rule on the plane law's run
+breaks, a flag, the kit and the photograph measured. Step 0 measured the premise first.
+
+| map | raw row breaks | share of triples | supported by an adjacent row | isolated (what the rule would remove) |
+|---|---|---|---|---|
+| DA3-16 at the visible-step floor | 13 194 | 1.52 % | **99.6 %** | 57 |
+| DA3 8-bit | 9 631 | 1.11 % | 96.7 % | 314 |
+| old photograph 8-bit | 12 434 | 1.43 % | 94.8 % | 646 |
+| kit S2 (grid) | 2 685 | 0.75 % | 99.6 % | 11 |
+| kit S15 (grid) | 16 150 | 4.50 % | 97.5 % | 410 |
+
+The 3 868 row breaks that DA3-16 has and DA3-8 does not are coherent, not isolated: 63 % continue
+into the next row within one column; their per-column density is autocorrelated out to twenty
+columns with no 14-texel patch period; only 10 % lie in the corner vignette; their second differences
+are 1.35 8-bit steps at the median (p90 2.3) — above the floor's bound (2 × 1/k = 0.9 step) and
+below the 8-bit regime's (2 steps). They are creases and fringes of the estimator's surfaces at the
+one-to-two-step scale, which 8-bit quantisation plus the a86 dequantiser flatten and which the floor
+admits. A persistence rule keeps them because they are supported; it would change 0.4 % of DA3-16's
+breaks, and 5 % of the default 8-bit path's for no measured reason. **Not built.**
+
+What the numbers say instead: the 8-bit regime's advantage on DA3 is a second-difference bound of two
+steps that absorbs one-to-two-step creases; the floor's bound is 0.9 step by derivation and cannot be
+widened without a constant. The two honest inputs for the photograph remain DA3 at 8 bits and DA3 at
+16 bits under the floor (§14b), and the choice between them is the user's live pass. The tolerance and
+segmentation line of work (§11–§15) stops here; the seam work, if it continues, returns to the plate
+itself — a far field solved on the reveal region (§10f.5) — not to the per-line law's thresholds.

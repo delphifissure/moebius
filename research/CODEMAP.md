@@ -987,3 +987,6 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - **`bgSkyQ()` reads the grid** (`window._qbSrcGrid`): "source depth below half a step" is the estimator's zero.
 - **Removed after measurement**: a86 at the visible step (`_deq16`; DA3-16 seams 27 267 → 29 939, tears 84 289 → 88 727).
 - Harness filters pass `[S10]` and `a89:`. Scripts: `scratchpad/s10_table.py`, `s10_sheets.py`, `kit_s10d_table.py`.
+- **Not built (S11, 2026-09-11)**: the persistent-departure segmentation (a break counts only if an adjacent line breaks
+  within one position). Step 0 on DA3-16 under the floor: 99.6 % of raw row breaks are already supported; the surplus
+  over 8 bits is coherent creases of 1–2 8-bit steps, not isolated triples (`S5_photograph_note.md` §15).
