@@ -1320,3 +1320,91 @@ the two side by side at 27°, 45°, 52°/24° and 56°/19°.
 root of `moebiusv2` where the user put it. Nothing in the app changed. The standing 16-bit item is
 closed as delivered and measured; the noise-term tolerance is the new open item, ahead of the
 reveal-region far field of §10f.5.
+
+## 12. The depth bake-off (2026-09-11; plan `S8_depth_bakeoff_plan.md`; outputs and scripts in `research/bakeoff/`)
+
+Run in this session on CPU after the environment's network access was set to Custom (the user's
+change took effect on the running session). Four models on the photograph, each once, at their
+own resolution handling; each output kept as the raw float and as a 16-bit inverse-depth PNG
+(bright = near); every app number from the 8-bit requantisation of that PNG, as the plan fixed.
+Baselines: the old Space map and the DA2-Large map at 8 bits (§11b).
+
+| model | how it ran | seconds (4 CPU cores) | what came out |
+|---|---|---|---|
+| Depth Pro (Apple) | `apple/ml-depth-pro`, `depth_pro.pt`, `model.infer` | 50 | metres 4.4 … 6.0: **a flat picture** with a top-to-bottom gradient; no figure, no cave (`check_depthpro.png`) |
+| MoGe-2 ViT-L | `Ruicheng/moge-2-vitl`, `model.infer`, resolution level 9 | 11 | metres 4.85 … 5.13: **a picture with 28 cm of relief**; right sign, faint figure |
+| Depth Anything 3 Mono-Large | `depth-anything/DA3MONO-LARGE`, `process_res=1008` (default 504) | 14 | scale-invariant depth 0.32 … 1.41, full scene |
+| Pixel-Perfect Depth | `gangweix/pixel-perfect-depth`, 4 steps, DA2 semantics, float32 | 838 | affine-invariant depth in 0 … 1 with a **19-row floor band at the bottom** (value 0.02, a border artifact) |
+
+**Two metric models read the painting as a painting.** The photograph is a reproduction of a
+painting, and both metric models answered the metric question honestly: a flat object about five
+metres away. For a portal that wants the scene *inside* the picture, a metric model is the wrong
+tool for illustrations, and this will hold for any drawn, painted or rendered input. Both fall out
+on criterion 2 (Depth Pro reaches 0.7 % of the plate, MoGe-2 35 %).
+
+**Pixel-Perfect Depth needed two corrections, both recorded in `log.json`.** Its output is
+affine-invariant depth, which cannot be inverted to disparity without a shift; it was anchored to
+DA3's depth by a least-squares scale and shift fitted on the data (1.0298, 0.2346; residual 0.125,
+correlation 0.86). Its bottom 19 rows had collapsed to a floor and were marked invalid. Even so,
+at 8 bits its runs fragment to 2–3 texels (its texel-scale roughness is the highest of the five,
+below) and the plane law finds a far side on 1.9 % of the plate: its published edge quality does
+not survive this pipeline's requantisation and per-line law.
+
+### Criterion 1 — noise at the texel scale (from the float outputs, inverse depth, own full range)
+
+| model | kind | s (CPU) | corr with DA2 map | sub-8-bit sigma (steps) | lag-1 autocorr | affine residual median / p90 (8-bit steps) | triples > 1 step |
+|---|---|---|---|---|---|---|---|
+| da2large | inverse | ? | 1.000 | 0.290 | 0.156 | 0.014 / 0.037 | 0.0186 |
+| depthpro | depth | 50.3 | -0.364 | 0.289 | 0.425 | 0.048 / 0.097 | 0.0028 |
+| moge2 | depth | 10.8 | 0.684 | 0.289 | 0.102 | 0.065 / 0.143 | 0.0013 |
+| da3mono | depth | 14.2 | 0.884 | 0.289 | 0.272 | 0.005 / 0.028 | 0.0145 |
+| ppd | depth | 838.1 | 0.666 | 0.290 | 0.316 | 0.059 / 0.185 | 0.0314 |
+
+Reading: the "affine residual" is the 5-texel along-row fit residual in units of the map's own
+8-bit step; the "lag-1 autocorrelation" says whether the sub-8-bit part is structure (≈ 1) or noise
+(≈ 0). DA3-Mono has a quarter of DA2's residual and twice its autocorrelation: its extra bits carry
+more signal and less jitter. (Depth Pro and MoGe-2 are flat maps; their rows are not comparable.)
+
+### Criteria 2 and 3 — the app at 8 bits (probes `photo_bo_*`, shots `ui_bo_*`)
+
+| | old map (Space model), 8-bit | DA2-Large, 8-bit | depthpro, 8-bit | moge2, 8-bit | da3mono, 8-bit | ppd, 8-bit |
+|---|---|---|---|---|---|---|
+| source sheets under the join law | 24 | 128 | 6 | 26 | 42 | 287 |
+| runs per row (median length) | 9.3 (6) | 8.6 (4) | 1.5 (851) | 4.2 (7) | 7.8 (23) | 5.9 (3) |
+| runs per column (median length) | 7.9 (8) | 7.3 (5) | 1.3 (1023) | 4.7 (6) | 7.2 (13) | 9.3 (2) |
+| texels with a far side | 713765 | 732118 | 5981 | 306793 | 665153 | 16380 |
+|   same-plane pairs | 56100 | 65187 | 307 | 7764 | 67679 | 8150 |
+|   crossings | 15172 | 7343 | 0 | 4915 | 26800 | 51 |
+| thin candidates / all | 738939 / 1183755 | 786782 / 1149532 | 6286 / 6308 | 238523 / 364308 | 696453 / 1138676 | 37763 / 42320 |
+| second-layer texels | 58786 | 85601 | 11 | 18335 | 58301 | 6538 |
+| reach % of plate | 81.99 | 84.10 | 0.69 | 35.24 | 76.40 | 1.88 |
+| band at 15° / 25° / 35° / 45° | 100130 / 223167 / 349546 / 412329 | 142726 / 307773 / 487015 / 598571 | 266 / 5729 / 6384 / 6484 | 20523 / 66208 / 100650 / 113625 | 56054 / 127637 / 225981 / 278355 | 11630 / 13512 / 14201 / 14270 |
+| carrier–carrier seams | 57777 | 64354 | 2140 | 20453 | 22433 | 18473 |
+|   same axis, same kind, across lines | 23785 | 26907 | 1 | 5787 | 10549 | 1829 |
+|   jump median (tol) | 19.0 | 14.4 | 9.9 | 17.4 | 11.0 | 14.9 |
+| plate triangles torn | 136191 | 155874 | 5968 | 83570 | 77006 | 9867 |
+| holes on the path (px, seams stretched) | ? | 7 / 3 / 14 / 0 / 0 / 0 / 0 | 135 / 1568 / 865 / 3432 / 622 / 2675 / 1195 | 5 / 6 / 6 / 17 / 17 / 7 / 42 | 0 / 15 / 6 / 5 / 60 / 7 / 55 | 0 / 0 / 1 / 1 / 0 / 0 / 1 |
+
+### Decision
+
+By the rule fixed in the plan — rank by criterion 1 among models not worse than DA2 on seams and
+tears, with single-digit holes — **no model passes cleanly**, and the reading is:
+
+1. **Depth Anything 3 Mono-Large is the input to take forward.** Lowest texel-scale noise of any
+   structured map (residual 0.005 steps against DA2's 0.014); seams 22 433 against DA2's 64 354
+   and the old map's 57 777; plate tears 77 006 against 155 874 and 136 191; the same 60 %-range
+   of thin candidates as the others. It misses the single-digit-hole bar at two poses past the
+   45° envelope (60 px at 50°, 55 px at 56°) and one inside it (15 px at 27°); DA2-Large misses it
+   at 27° too (14 px). The angle sheet is the decisive evidence: DA2-Large smears the cave into
+   horizontal streaks at every pose; DA3 renders cave, figure and troll intact with specks.
+2. Its band is smaller than DA2-Large's (278 355 vs 598 571 texels at 45°) — it separates the
+   troll from the cave wall less strongly and does not turn the corner vignette into depth. Whether
+   that is truer is the user's eye's call; it is not a criterion.
+3. The metric models are out for illustrated input; PPD is out for this pipeline as it stands
+   (affine ambiguity plus roughness at 8 bits).
+4. Not built, not tuned: no ensembles, no second runs, no app change. The default depth is
+   unchanged pending the user's live pass; `depth_da3mono16.png` is committed to `moebiusv2` next
+   to `depth16.png` for that pass, and DA3's float output is the input to the noise-term tolerance.
+
+Sheets: `bakeoff/bo_maps_sheet.png` (five maps at 8 bits and differences to DA2),
+`bakeoff/bo_angles_sheet.png` (each map at 27°, 45°, 52°/24°, 56°/19°, seams stretched).

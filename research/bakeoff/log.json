@@ -1,0 +1,54 @@
+{
+ "depthpro": {
+  "kind": "depth",
+  "native_shape": [
+   1023,
+   851
+  ],
+  "seconds": 50.3,
+  "valid_frac": 1.0,
+  "min": 4.445317268371582,
+  "max": 5.966736316680908,
+  "distinct16": 63232,
+  "note": "metres; focal_px=1308.0; f_px from EXIF=None"
+ },
+ "moge2": {
+  "kind": "depth",
+  "native_shape": [
+   1023,
+   851
+  ],
+  "seconds": 10.8,
+  "valid_frac": 1.0,
+  "min": 4.846222400665283,
+  "max": 5.131957054138184,
+  "distinct16": 62661,
+  "note": "metres; valid=1.000; fx_norm=1.564 (hfov 35.5 deg)"
+ },
+ "ppd": {
+  "kind": "depth",
+  "native_shape": [
+   1023,
+   851
+  ],
+  "seconds": 838.1,
+  "valid_frac": 0.9814271749755621,
+  "min": 0.26909248713066924,
+  "max": 1.263837583831147,
+  "distinct16": 49111,
+  "note": "PPD affine-invariant depth anchored to DA3-Mono depth (scale 1.0298, shift 0.2346, fitted); bottom floor band rows 1004-1022 (model artifact, value ~0.016) marked invalid; raw kept as ppd_raw.npy"
+ },
+ "da3mono": {
+  "kind": "depth",
+  "native_shape": [
+   1008,
+   840
+  ],
+  "seconds": 14.2,
+  "valid_frac": 1.0,
+  "min": 0.3187536299228668,
+  "max": 1.4117085933685303,
+  "distinct16": 59525,
+  "note": "relative depth; process_res=1008 (default 504); processed [1, 1008, 840, 3]"
+ }
+}
