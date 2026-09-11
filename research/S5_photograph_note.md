@@ -1476,3 +1476,119 @@ grid (that is the 1/65535 case, worse than the noise term); and the a86 dequanti
 8-bit path gets and the 16-bit path does not. Both are designs for the run structure on
 continuous data — the "persistent departure" segmentation of the S9 plan — not tolerance
 scalars. Nothing further built here.
+
+## 14. Sprint 10 — the float32-aware grid test, the visible step, and where a tolerance floor may and may not go
+
+Built as planned (§13d): (1) the three grid detectors accept float32 (`g·2^-22` instead of `1e-3`), so 16-bit
+photographs are detected — `a89: source depth quantum = 1/65535`; (2) the visible step 1/k (k = the a102
+envelope's screen displacement in source texels across the depth range at the cone rim; 568 px on the
+photograph, 1/k = 1.76e-3 depth = 0.45 of an 8-bit step) as the floor of the effective quantum;
+(3) a86 run at that step on sources finer than it. Every arm below is a probe log; the 8-bit photograph
+and S2 are byte-identical to their baselines at the end (`photo_s10d_8bit` vs `photo_s7b0`,
+`S2_16plane_s10d` vs v12).
+
+### 14a. The floor everywhere breaks the exact kit; a precision/join split is not enough; the gate is σ
+
+First run, floor on every consumer: S32 band 47 202 → 799 (recall 0.81 → 0.02), S31 P 0.946 → 0.822,
+S2 P 0.887 → 0.850, S27 0.859 → 0.840, S15 0.723 → 0.704; S16 improved (0.190 → 0.265). S32's log
+named the mechanism: the ground-plane fit took 238 400 texels instead of 34 400 — with the tolerance
+66× looser, every hedge texel was a ground inlier and the plane was wrong. So the tolerances were split
+by meaning: `tolAt` (join: run segmentation, ground cut, admission, same-plane, layer 2) at the
+effective quantum, `tolAtG` (precision: the ground detection and inlier tests, the slope-uncertainty
+forms) at the grid; and the sky threshold (the estimator's zero) at the grid. S32 then read P 0.08,
+depth median 43 m — worse in a different way: with the join tolerance at 1/k the far ground's slope was
+within tolerance over long runs and the far side went to the far plane. **A single step of 1/k is
+invisible, but the affine-continuity tests are not visibility tests: small slopes integrate over long
+runs into large depths.** On exact data the grid is the precision and the tolerance both.
+
+What separates the exact kit from an estimator's map is measurable and already measured: the S9 σ
+(median second difference along lines) is exactly 0 on quantised and exact data and > 0 on every
+estimator output. **The floor applies only when σ > 0** — the source is noisier than its grid, so its
+grid is not its precision. No constant. Under the gate the kit eight are v11 exactly:
+
+| scene | band v11 → S10 | P v11 → S10 | R v11 → S10 | depth median (m) | depth p90 (m) | layer-2 px |
+|---|---|---|---|---|---|---|
+| S2 | 18531 | 0.887 | 0.999 | 0.000 | 0.043 | 1108 |
+| S27 | 5695 | 0.859 | 1.000 | 0.000 | 0.000 | 60 |
+| S12 | 18209 | 0.927 | 0.994 | 0.000 | 0.076 | 30 |
+| S26 | 52608 | 0.457 | 0.937 | 0.000 | 0.056 | 35396 |
+| S16 | 23078 | 0.190 | 0.972 | 0.000 | 0.000 | 565 |
+| S31 | 74398 | 0.946 | 1.000 | 0.000 | 0.000 | 0 |
+| S15 | 48020 | 0.723 | 0.996 | 0.184 | 8.566 | 18781 |
+| S32 | 47202 | 0.729 | 0.811 | 0.000 | 0.000 | 0 |
+
+### 14b. The photograph: DA3 16-bit under the pure grid, the floor, and the old fallback
+
+| | old map (Space model), 8-bit | DA2-Large, 8-bit |
+|---|---|---|
+| source sheets under the join law | 24 | 128 |
+| runs per row (median length) | 9.3 (6) | 8.6 (4) |
+| runs per column (median length) | 7.9 (8) | 7.3 (5) |
+| texels with a far side | 713765 | 732118 |
+|   same-plane pairs | 56100 | 65187 |
+|   crossings | 15172 | 7343 |
+| thin candidates / all | 738939 / 1183755 | 786782 / 1149532 |
+| second-layer texels | 58786 | 85601 |
+| reach % of plate | 81.99 | 84.10 |
+| band at 15° / 25° / 35° / 45° | 100130 / 223167 / 349546 / 412329 | 142726 / 307773 / 487015 / 598571 |
+| carrier–carrier seams | 57777 | 64354 |
+|   same axis, same kind, across lines | 23785 | 26907 |
+|   jump median (tol) | 19.0 | 14.4 |
+| plate triangles torn | 136191 | 155874 |
+| holes on the path (px, seams stretched) | ? | 7 / 3 / 14 / 0 / 0 / 0 / 0 |
+| | DA3 8-bit | DA3 16-bit, 1/255 fallback (§13) | DA3 16-bit, grid only (1/65535; floor off) | DA3 16-bit, visible-step floor (final) | DA3 16-bit, floor + a86 at step (removed) | DA2 8-bit | DA2 16-bit, 1/255 fallback | DA2 16-bit, visible step, a86 at grid |
+|---|---|---|---|---|---|---|---|---|
+| [S10] line | (before S10) | (before S10) | 1/k 1.760e-3 (k 568 px); q_eff 1.526e-5 | 1/k 1.760e-3 (k 568 px); q_eff 1.760e-3 | 1/k 1.760e-3 (k 568 px); q_eff 1.760e-3 | (before S10) | (before S10) | 1/k 1.760e-3 (k 568 px); q_eff 1.760e-3 |
+| source sheets under the join law | 42 | 263 | 340 | 306 | 310 | 128 | 862 | 1075 |
+| runs per row (median length) | 7.8 (23) | 8.4 (3) | 270.6 (2) | 10.3 (2) | 10.8 (2) | 8.6 (4) | 10.3 (2) | 13.0 (2) |
+| runs per column (median length) | 7.2 (13) | 6.4 (8) | 329.5 (2) | 9.6 (2) | 10.2 (2) | 7.3 (5) | 7.5 (2) | 9.2 (2) |
+| texels with a far side | 665153 | 654930 | 612139 | 661632 | 660137 | 732118 | 697270 | 706977 |
+|   same-plane pairs | 67679 | 53819 | 4066 | 53360 | 53356 | 65187 | 55602 | 61016 |
+|   crossings | 26800 | 28006 | 636 | 30214 | 29121 | 7343 | 9241 | 6905 |
+| thin candidates / all | 696453 / 1138676 | 663052 / 1080465 | 1032986 / 1036081 | 705252 / 1096835 | 713598 / 1096212 | 786782 / 1149532 | 643970 / 1046574 | 726018 / 1070400 |
+| second-layer texels | 58301 | 62951 | 150500 | 79045 | 79665 | 85601 | 78564 | 100712 |
+| reach % of plate | 76.40 | 75.23 | 70.31 | 76.00 | 75.83 | 84.10 | 80.09 | 81.21 |
+| band at 15° / 25° / 35° / 45° | 56054 / 127637 / 225981 / 278355 | 55133 / 128493 / 224249 / 272968 | 53731 / 118545 / 202449 / 249565 | 54011 / 124629 / 217530 / 265899 | 53113 / 123696 / 215083 / 264880 | 142726 / 307773 / 487015 / 598571 | 137290 / 296687 / 479051 / 581727 | 136771 / 294264 / 474557 / 576940 |
+| carrier–carrier seams | 22433 | 30508 | 25776 | 27267 | 29939 | 64354 | 88514 | 73419 |
+|   same axis, same kind, across lines | 10549 | 6485 | 6129 | 6518 | 7549 | 26907 | 33552 | 24906 |
+|   jump median (tol) | 11.0 | 10.9 | 2295.2 | 23.4 | 23.0 | 14.4 | 12.9 | 26.0 |
+| plate triangles torn | 77006 | 92351 | 79425 | 84289 | 88727 | 155874 | 199962 | 172970 |
+| holes on the path (px, seams stretched) | 0 / 15 / 6 / 5 / 60 / 7 / 55 | 1 / 2 / 2 / 6 / 5 / 7 / 5 | 1 / 6 / 7 / 4 / 31 / 11 / 31 | 5 / 10 / 11 / 5 / 13 / 10 / 12 | 5 / 11 / 13 / 2 / 16 / 8 / 13 | 7 / 3 / 14 / 0 / 0 / 0 / 0 | 30 / 29 / 33 / 9 / 11 / 19 / 2 | 432 / 467 / 918 / 6 / 14 / 22 / 1 |
+
+Reading, column by column:
+
+- **Grid only (1/65535)**, which is what the fixed detector alone would have delivered: 270 runs per
+  row, 99.7 % thin candidates, same-plane pairs 67 679 → 4 066, second layer 150 500. The plate is
+  shredded into slivers that the stretched seams bridge, so seams and tears *look* fine (25 776, 79 425)
+  while the far field has lost its structure; holes 1/6/7/4/31/11/31.
+- **Visible-step floor (final)**: the run structure of the old 1/255 fallback is back (10.3 runs per
+  row, same-plane 53 360, second layer 79 045); seams 27 267 and tears 84 289 are 11 % and 9 % below
+  the fallback; holes 5/10/11/5/13/10/12 are above it (1/2/2/6/5/7/5) and above 8-bit inside the
+  envelope (0/15/6/5 at 14–45°), below it outside (60/55 → 13/12).
+- **a86 at the step** (removed): seams 29 939, tears 88 727, holes the same — the ramps reconstructed
+  from a coarser quantisation are not better than the fine values.
+- **DA2** under the floor: seams and tears improve on the fallback (88 514 → 73 419, 199 962 → 172 970)
+  and the near poses open hundreds of pixels of holes (432/467/918): a crack along the cave in the
+  noisier map. DA2 remains the worse input at every setting.
+
+### 14c. State and the honest reading
+
+1. The detector is fixed; 16-bit maps are detected; the accidental 1/255 regime no longer exists.
+2. The visible step is the floor for sources noisier than their grid, and it restores the structure
+   the pure grid destroys; the kit and every 8-bit input are untouched by construction and by byte
+   comparison. The split (precision at the grid, join at the effective quantum) and the sky threshold
+   at the grid stay: they are the right semantics and are inert on quantised input.
+3. It is not a free lunch on the photograph: against the old fallback it trades holes (5–13 px inside
+   the envelope instead of 1–7) for fewer seams and tears. The fallback was 2.2 × (1/k) by accident;
+   that factor is not derivable and was not built.
+4. For the photograph's depth the choice is now between DA3 at 8 bits (holes 0/15/6/5 inside the
+   envelope, 60/55 outside; specks by the troll's arm) and DA3 at 16 bits under the floor
+   (5/10/11/5 inside, 13/12 outside; streak texture in the cave). `s10_angles_sheet.png` shows both,
+   with the pure-grid and fallback arms for reference. Your eye decides; the default is unchanged.
+5. Three sprints of tolerance work end here. What they established: a scalar tolerance cannot serve
+   exact data and estimator output at once; the 8-bit quantum was an accidental denoiser; the noise's
+   Gaussian core is too small a floor and its tail is an 8-bit step wide; the visible step is the
+   principled floor for noisy sources and it works, at a measured cost in holes. What remains open is
+   not a tolerance but the segmentation: a run that breaks on a *persistent* departure rather than a
+   single triple would let the join tolerance stay at the precision while surviving the jitter's tail.
+   That is the next design if the photograph's seams are still the priority after your live pass.

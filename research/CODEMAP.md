@@ -966,3 +966,24 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   depth map with a different quantum did not rebuild it unless `_skyInf` was on (a latent bug, independent of S9).
 - Harness console filters pass `[S9]` (`a257_probe.js`, `ui_path.js`, `s2c_skyshot.js`). Tables/sheets:
   `scratchpad/s9_table.py`, `s9_sheets.py`.
+
+## 28. Sprint 10 code (2026-09-11; `S5_photograph_note.md` §14) — the grid test, the visible step, the split
+
+- **Float32-aware grid test**: the three detectors (a89 inline ~L13740, `bgSourceQuantum` ~L944, `_v2StretchLayer`
+  ~L10497) accept `|v·g − round(v·g)| ≤ g·2^-22` (two float32 ulps at magnitude 1) instead of `1e-3`. 16-bit photographs
+  are now detected (`a89: source depth quantum = 1/65535`); 8-bit maps and the kit unchanged.
+- **The visible step** (a89 block, after the σ diagnostic): `_tauVis = 1/k`, k = `max(|m0|, |m1|)` of `bgShiftLUTFor(pw, ph)`
+  (the a102 envelope's screen displacement in source texels across the depth range at the cone rim; a127b prints it).
+  `window._qbVisStep = _tauVis`. **Effective quantum** `window._qbSrcQuantum = max(grid, 1/k)` **only when the source is
+  noisier than its grid (σ > 0 from the S9 diagnostic)**; otherwise (8-bit maps, the exact kit) the grid. `window._visStep = 0`
+  disables the floor. Log `[S10] visible step 1/k = … depth (k = … px at cone …) = … × the grid …; effective quantum …
+  (the visible step | the grid) [floor not applied: σ = 0 …]`. The floor everywhere broke the kit (S32 recall 0.81 → 0.02,
+  S31 P 0.946 → 0.815, S2 P 0.887 → 0.850); the gate restores v11 exactly (σ = 0 there).
+- **Two tolerances in the rim law**: `tolAt` (join, at the effective quantum) and `tolAtG` (precision, at the grid
+  `window._qbSrcGrid`); both in the cache key. `bgFarSidePlane` builds `tol[]` from `tolAt` for the run segmentation,
+  ground cut, candidate admission, same-plane test, clamp-back and layer-2 test, and `tolG[]` from `tolAtG` for the
+  ground-plane detection and inlier tests (L~573–610) and the slope-uncertainty forms (L~786, 817, 821, 832). Inert on
+  quantised/exact input (grid = effective quantum). Tried on S32 with the floor ungated: not sufficient (P 0.73 → 0.08).
+- **`bgSkyQ()` reads the grid** (`window._qbSrcGrid`): "source depth below half a step" is the estimator's zero.
+- **Removed after measurement**: a86 at the visible step (`_deq16`; DA3-16 seams 27 267 → 29 939, tears 84 289 → 88 727).
+- Harness filters pass `[S10]` and `a89:`. Scripts: `scratchpad/s10_table.py`, `s10_sheets.py`, `kit_s10d_table.py`.
