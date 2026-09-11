@@ -72,7 +72,14 @@ proceeds without it.
 
 ## Steps
 
-1. (me, now) Write the Colab notebook cells to `research/bakeoff_colab.md` in the review repo
+**Preferred path (2026-09-11 evening): the user sets the environment's Network access to Custom with
+`huggingface.co, *.huggingface.co, hf.co, *.hf.co, ml-site.cdn-apple.com, download.pytorch.org,
+github.com, *.githubusercontent.com` plus the default package-manager list, and starts a new session
+on this branch. That session installs CPU PyTorch, runs the four models itself (the same commands as
+the Colab cells in `research/bakeoff_colab.md`, `device="cpu"`, each model ≤ ~30 min wall or recorded
+as not run), and continues at step 3. The Colab path below is the fallback if Custom is unavailable.**
+
+1. (fallback; me) Write the Colab notebook cells to `research/bakeoff_colab.md` in the review repo
    and hand them to the user: cell 0 (upload the photograph as `photo.png`, common helpers that
    save `<model>.npy` + `<model>_disp16.png` with bright = near, sky/invalid at the far end),
    cells 1–4 (one model each, independent, each wrapped so a failure prints and moves on), cell 5
