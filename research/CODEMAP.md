@@ -944,3 +944,25 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   among indistinguishable arrivals toward the larger window (comment at the strict argmin in `cand`); D3, the thin run's
   borrowed slope from the joined neighbouring line (comment above `evalRun`). D1 (inverse-variance axis blend) was
   not built: its gate fires on 2 676 of 22 068 axis-flip seam edges.
+
+## 27. Sprint 9 code (2026-09-11; `S5_photograph_note.md` §13) — the noise term (falsified; diagnostic only)
+
+- **Where**: the a89 quantum block in the quick bake (`moebius.js` ~L13735–13775), on the RAW `dQ` before the a86
+  dequantiser and the despeckle touch it. After the grid `_qStep` is detected, the block samples second differences of
+  `dQ` along rows and columns (~40 000 triples, stride √(N/40000)), takes the median, and sets
+  `σ = median|Δ²| / (0.6745·√6)` (MAD → Gaussian σ; Var(Δ²) = 6σ² for independent noise). Built as the effective quantum
+  `max(_qStep, 3σ)` feeding every downstream tolerance (the rim law's `tolAt` L433, the plane law's `tol[]`, the tear
+  floors L~14891/16753/16698, the band's one-quantum margins, `bgSkyQ()`); **falsified** on DA3 and DA2 (ten-fold run
+  fragmentation, §13b) and reverted: `window._qbSrcQuantum = _qStep` as before. Kept: `window._qbSrcGrid`,
+  `window._qbSrcNoise` (σ) and the log `[S9] source noise (diagnostic): σ = … × the grid; 3σ would be … | NO GRID
+  DETECTED: the tolerances fall back to 1/255 and the tear floors to 0 …; sampled triples beyond 2× the grid …%`.
+- **The a89 detector misses 16-bit photographs** (§13a): float32 n/65535 lands within ±0.002 of the 65535 grid, the test
+  allows 1e-3, so values above ~0.5 fail; `_qStep = 0`, every consumer falls back to 1/255 (`> 0 ? q : 1/255`), the tear
+  floors (`|| 0`) to 0, and the a86 dequantiser is skipped. The kit's 16-bit scenes pass (values < 0.5). Not changed
+  in S9 — making it detect would put 16-bit maps at a 1/65535 tolerance, which is worse (§13d).
+- **Identity**: with the term reverted the code path equals the pre-S9 one for every input (and was already byte-identical
+  on S2 and the 8-bit photograph with the term present, since σ = 0 there).
+- **Rim-law cache key** (`bgRimLawFor`, L406) now carries `q`: before, the law kept the `q` it was built with and a new
+  depth map with a different quantum did not rebuild it unless `_skyInf` was on (a latent bug, independent of S9).
+- Harness console filters pass `[S9]` (`a257_probe.js`, `ui_path.js`, `s2c_skyshot.js`). Tables/sheets:
+  `scratchpad/s9_table.py`, `s9_sheets.py`.

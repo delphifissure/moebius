@@ -1408,3 +1408,71 @@ tears, with single-digit holes — **no model passes cleanly**, and the reading 
 
 Sheets: `bakeoff/bo_maps_sheet.png` (five maps at 8 bits and differences to DA2),
 `bakeoff/bo_angles_sheet.png` (each map at 27°, 45°, 52°/24°, 56°/19°, seams stretched).
+
+## 13. Sprint 9 — the noise-term tolerance, built, measured, falsified; and what the 16-bit runs had actually been using
+
+Plan: replace the tolerance's quantum `q` by an effective quantum `max(q, 3σ)` with σ the MAD of
+the raw depth's second differences along lines (σ = median|Δ²|/(0.6745·√6); identity on every
+quantised input because their median |Δ²| is 0 — verified byte-identical on S2 and the 8-bit
+photograph). Step 0 had already ruled out the tail estimators (not identity on the kit) and the
+"8-bit parity" form (needs a reference bit depth).
+
+### 13a. The premise was wrong, and the log said so on the first run
+
+`[S9] source noise: σ = 1.85e-5 (no grid)`. The a89 grid detector tests |v·65535 − round| ≤ 1e-3,
+but the A99 decoder stores n/65535 in float32, whose rounding reaches ±0.002 on that grid for
+values above about 0.5 (measured: DA3 map max 0.0020, 3.9 % of samples over the test; DA2 27 %;
+the kit's S2 stays below 0.483 and passes). **Every 16-bit photograph has therefore run as
+"continuous": `_qbSrcQuantum = 0`, every consumer falls back to 1/255, and the tear floors fall
+back to 0; the a86 dequantiser is skipped.** The 16-bit runs of §11b and §12 were not at a 1/65535
+tolerance; they were at the 8-bit one, on unsmoothed 16-bit values, with no tear floor. §11b's
+sentence "every tolerance was 257× too tight" is corrected here: the fragmentation it measured
+came from the raw estimator jitter meeting the 8-bit tolerance without the dequantiser's
+smoothing, not from a finer tolerance. (The §11b/§12 seam counts stand: the audit's tolerance
+level barely moves them — 30 852 → 30 508 at 255 levels — because the seams are ratio-test
+jumps, median 11 tol.)
+
+### 13b. The noise term, applied anyway (as the plan said: measure), is falsified
+
+| | DA3 8-bit | DA3 16-bit, 1/255 fallback | DA3 16-bit, 3σ = 5.5e-5 | DA2 8-bit | DA2 16-bit, 1/255 fallback | DA2 16-bit, 3σ = 1.9e-4 |
+|---|---|---|---|---|---|---|
+| runs per row (median length) | 7.8 (23) | 8.4 (3) | **84.9 (2)** | 8.6 (4) | 10.3 (2) | **90.8 (3)** |
+| same-plane pairs | 67 679 | 53 819 | 12 056 | 65 187 | 55 602 | 9 458 |
+| second-layer texels | 58 301 | 62 951 | 141 849 | 85 601 | 78 564 | 162 274 |
+| thin candidates | 61 % | 61 % | 91 % | 68 % | 62 % | 92 % |
+| carrier–carrier seams | 22 433 | 30 508 | 24 315 | 64 354 | 88 514 | 60 279 |
+| plate triangles torn | 77 006 | 92 351 | 77 505 | 155 874 | 199 962 | 140 824 |
+| holes on the path (px) | 0/15/6/5/60/7/55 | **1/2/2/6/5/7/5** | 1/0/7/6/20/10/19 | 7/3/14/0/0/0/0 | 30/29/33/9/11/19/2 | **417/438/868/39/10/47/5** |
+
+The 3σ term is 70× tighter than the fallback the maps had been running at. It fragments the run
+structure ten-fold, empties the same-plane class, doubles the layered patchwork, and on DA2 opens
+hundreds of pixels of holes. Seams and tears look no worse only because the fragmented plate is
+torn into many small pieces that the stretched-seams option then bridges. The estimator's
+texel-scale jitter has a heavy tail of about one 8-bit step (§13 step 0: the 1 % tail of |Δ²| is
+0.93 of an 8-bit step on DA3); the Gaussian core that the MAD measures is not the tolerance.
+**Removed** as a tolerance; the σ measurement and its log line stay as a diagnostic
+(`window._qbSrcNoise`, `_qbSrcGrid`), and the rim-law cache key now carries `q` (a latent bug:
+the law kept the first map's quantum).
+
+### 13c. What the equal-tolerance comparison says about 16 bits
+
+With the same 1/255 tolerance, DA3 at 16 bits against its own 8-bit requantisation: holes
+1/2/2/6/5/7/5 against 0/15/6/5/60/7/55 — the only arm so far that is single-digit at every pose,
+including the three beyond the 45° envelope — at the price of 36 % more seams and 20 % more
+tears (the unsmoothed jitter fragments the short runs: median run 3 against 23) and a band
+within 2 %. By eye (`s9_angles_sheet.png`): the 8-bit arm's dark hole specks by the troll's arm
+are gone at 16 bits; some horizontal streak texture appears in the cave where the stretched
+seams bridge more, smaller tears. The user's screen decides between those two.
+
+### 13d. State and the honest next step
+
+The photograph's default depth is unchanged. `depth_da3mono16.png` is in `moebiusv2` for the live
+pass. If 16-bit DA3 is preferred, two things follow from §13a rather than from any new tolerance:
+the a89 test should be made float32-aware (compare on the 65535 grid with a tolerance of one
+float32 ulp of 1.0 times 65535, ≈ 0.004, or test the decoded integers directly), which would
+make 16-bit maps *detected* — and then the tolerance for a detected 16-bit map must NOT be its
+grid (that is the 1/65535 case, worse than the noise term); and the a86 dequantiser's premise
+(runs one quantum apart are one slope) needs a 16-bit statement, since it is the smoothing the
+8-bit path gets and the 16-bit path does not. Both are designs for the run structure on
+continuous data — the "persistent departure" segmentation of the S9 plan — not tolerance
+scalars. Nothing further built here.
