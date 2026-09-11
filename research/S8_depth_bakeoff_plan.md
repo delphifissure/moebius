@@ -18,10 +18,19 @@ FOV, boundary F1 comparable to Depth Pro with better relative geometry; MoGe-3 e
 (predicts depth not disparity; claims over DA2 without published boundary numbers; the natural
 in-family upgrade). The baseline is the DA2-Large map already in hand.
 
-This container cannot fetch weights today (huggingface.co, hf-mirror and Apple's CDN are blocked;
-PyPI and raw.githubusercontent are open; no GPU, 4 cores, 15 GB RAM, 25 GB disk). The user will
-widen the environment's network policy to full internet and start a new session; that session
-executes this plan on CPU.
+This container cannot fetch weights (huggingface.co, hf-mirror and Apple's CDN are blocked by the
+organisation's egress policy — 403 class, not retryable; PyPI and raw.githubusercontent are open;
+no GPU). The user cannot change the policy from their settings. So the split is: **the user runs
+one Colab notebook (five cells, ~20 minutes, T4 GPU) that writes every model's float `.npy` and
+16-bit inverse-depth PNG into one zip; pushes the zip to `moebiusv2`; everything after that runs
+here autonomously.** The cells are written from the repos' own READMEs / `run.py` (fetched
+2026-09-11): Depth Pro (`apple/ml-depth-pro`, checkpoint from Apple's CDN, `model.infer(image,
+f_px)` → metres), MoGe-2 (`Ruicheng/moge-2-vitl`, `model.infer(tensor)` → `depth` metres +
+`mask`), Pixel-Perfect Depth (`gangweix/pixel-perfect-depth`, `run.py --img_path … --save_npy`,
+4 sampling steps, DA2 semantics, needs `ppd.pth` + `depth_anything_v2_vitl.pth` in `checkpoints/`),
+DA3-Mono-Large (`depth_anything_3.api.DepthAnything3.from_pretrained("depth-anything/DA3MONO-LARGE")`,
+`model.inference([path]).depth[0]`). A model whose Colab cell fails is recorded as "not run" with
+the error and the bake-off proceeds without it.
 
 ## What is fixed before running
 
@@ -61,13 +70,16 @@ per model, no new instruments, no change to the app's law. If a model cannot be 
 on CPU within ~30 minutes of wall time, it is recorded as "not run: reason" and the bake-off
 proceeds without it.
 
-## Steps in the new session (≈ 2–3 h wall, mostly CPU inference and serial probes)
+## Steps
 
-1. `pip install torch torchvision transformers pillow numpy` (CPU wheels); verify
-   `huggingface.co` is reachable; scratchpad for weights.
-2. Run the four models on `/home/user/moebiusv2/defaultImgColor.png`; write
-   `research/bakeoff/<model>.npy` and `<model>_disp16.png`; log resolution, seconds, memory.
-3. Criterion 1 offline on each `.npy` (the §11b script pattern).
+1. (me, now) Write the Colab notebook cells to `research/bakeoff_colab.md` in the review repo
+   and hand them to the user: cell 0 (upload the photograph as `photo.png`, common helpers that
+   save `<model>.npy` + `<model>_disp16.png` with bright = near, sky/invalid at the far end),
+   cells 1–4 (one model each, independent, each wrapped so a failure prints and moves on), cell 5
+   (zip `bakeoff_outputs.zip` for one download).
+2. (user) Run the notebook on a T4, download the zip, push it to `moebiusv2` main.
+3. (me) Unzip to `research/bakeoff/`; criterion 1 offline on each `.npy` (the §11b script
+   pattern); confirm each PNG is 16-bit, full range, the photograph's size.
 4. For each model: 8-bit requantisation → `a257_probe.js` (TAG `photo_bo_<model>`) →
    `seam_audit.py` → `s16_table.py` extended to five columns; then `ui_path.js` (TAG
    `ui_bo_<model>`, OPTS `plane,wash,picture,off,35,off,stretched,off`) → `ui_holes.py`. Serial
