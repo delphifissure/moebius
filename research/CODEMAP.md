@@ -1051,3 +1051,16 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - `research/s22/sheetfield3.py` (from Sprint 12's `sheetfield2.py`): MODE=slope | cmed | both — the candidate's slope / value /
   slope+intercept replaced by the median over the w neighbouring lines each side of the same sheet. All three fail the §16 bar
   (photograph same-sheet seams −18 % at best, S15 seams +46–60 %, truth not better). Nothing in the app changed.
+
+## 34. Sprint 16 (2026-09-12; `S23_segmentation_and_porous.md`) — porous scenes and the ceiling cut
+- Truth kit: `scenes.py` P1 sparse canopy, P2 dense, P3 fine leaves, P4 two crowns layered, P5 picket fence, P6 grille
+  (S7's room and framing; one variable per scene). Per-region error breakdown `research/s23/p_classes.py` (above the
+  occluder / inside its bbox / below / elsewhere, from the truth's rest label).
+- **Ceiling cut** `window._ceilCut` (`bgFarSidePlane`, block after the ground detection, search `[S16] ceiling`): falling
+  column runs (disparity decreasing downward, slope beyond its own uncertainty) whose zero-disparity row is the ground's
+  horizon (`ground.rowZeroAt`, or the falling runs' own stabbing consensus when there is no ground); per column the
+  smallest |slope|; robust plane + inlier least squares; accepted when c < 0 and a majority of the picked columns are
+  inliers. `evalRun(…, gB, gC)`: a candidate below the ceiling's disparity on the texel's rest ray by more than tol is
+  cut to it (`cutC`, `nCeilCut` in the [S3] log). Exports `_geoCeil {a,b,c,nRuns,nPicks}`, `_geoCeilTex`, `_geoCeilCol`;
+  the probe dumps `ceilTex.u8`/`ceilCol.u8` and `meta.ceil`. Default off (live pass).
+- Along-line persistent-departure test (`s23/sheetfield3.py SEG=persist`) falsified offline; not in the app.
