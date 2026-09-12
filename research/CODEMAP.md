@@ -1019,3 +1019,12 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   writes `agree_*.png`), `c_sheet.py`, `c_bundle_table.py`. `a257_probe.js` dumps `platePaint.u8`, `plate2Has.u8`.
   `sdbundle.js`/`sdregions.js` use `__dirname` paths.
 - **Open**: no reimport of the plane set (S17 §4).
+
+## 30. B — the generality batch (2026-09-12; `S19_generality_batch.md`)
+- `window._visStep = 1` **forces** the S10 visible-step floor (`const qEff = …` in the a89 block, search `B: window._visStep = 1`);
+  `0` disables it; unset = the σ gate. Harness A/B only; defaults unchanged.
+- Inputs `harness/batchB/<pic>_{color,da3_16,repo8}.png` at DA3's processed size (`research/s19/b_prepare.py`); chains
+  `b_chain*.sh`; table `b_table.py` (+ `b_holes.py`: interior alpha-0 holes not touching the picture edge); sheets `b_sheets.py`.
+- Findings for the live pass: the σ gate reads 0 on sky-heavy DA3 maps (median second difference of a flat sky); forcing the
+  floor is not clearly better; bristlecone's repo map is far = bright; the sky option leaves the frame edge uncovered from
+  0.2 m in the UI-path shots (13–19 k px).
