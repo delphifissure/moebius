@@ -15,7 +15,7 @@ truth built now with `scope.py --nx 800`, the grid the other scenes use). Buffer
 | S10 crossing limbs | E2 interior self-occlusion, E4 sides | 52 680 | 200 027 → 56 140 | 0.26 → **0.937** | 1.00 → 0.999 | 0.000 / 0.050 |
 | S11 rounded bodies | E4 object sides, E1 | 36 512 | 173 436 → 38 540 | 0.21 → **0.947** | 1.00 → 1.000 | 0.000 / 0.054 |
 | S5 thin poles | E7 thin features | 1 608 | (§1 table: 200 552 plate; band n/a) → 1 691 | — → **0.489** | — → **0.514** | 0.000 / 0.056 |
-| S7 canopy | E6 porous | *pending (truth build running)* | | | | |
+| S7 canopy | E6 porous silhouette | 36 559 | (not in S1's env45 table) → 56 367 | — → **0.648** | — → 0.998 | 0.010 / 0.139 |
 
 Sprint 1's depth p90 on these three was 0.043–0.055 m with the band 3–5× too wide; the band is now the size of the truth
 (1.04–1.07×) at the same recall, with the depth error where the two agree unchanged in kind (median 0, p90 ≈ 0.05 m — the
@@ -44,6 +44,20 @@ changed here: it is a default-path constant on every bake, and whether a 1-texel
 decided from the 5×5 alone — an along-line coherence test (a 1-wide run of ≥ N agreeing texels along one axis is a line,
 not a fleck) would keep the poles and still remove isolated flecks; that is a candidate for the live pass, with the
 troll's combs as the regression to watch.
+
+## 2b. S7 — the porous canopy
+
+Recall 0.998 (5 truth-only pixels), precision 0.648: the band is 1.54× the truth (19 808 app-only texels). Where they
+sit (`s18_S7_canopy.png`, orange): **57 %** in one blob on the ceiling *above* the crown's top edge (11 371 px) — the
+plane far side continues the ceiling's slope behind the crown's upper rim into a region the envelope never uncovers; **3 %**
+a one-texel column on the floor under the trunk to the frame's bottom (the column-ground continuation of the thin rule);
+the remaining **40 %** are specks inside and around the crown, holes between leaves the app demands and the truth does
+not. The band tier tells the same story: at 15° the app's band is 38 434 px at precision 0.881, at 35° 52 898 at 0.688 —
+the over-claim is demanded only at the large angles. Depth where they agree: median 0.010 m, p90 0.139 m (the layered
+far field behind the leaves: wall, then the room's corners); layer 2 on 28 191 texels. S1's env45 table did not score S7,
+so there is no Sprint 1 P/R to set against this; the atlas table of S1 §6 gave its band as 19 918 / 200 584 plate px under
+the membrane bake. The ceiling blob is the one item here worth a look on the user's screen before any rule is touched:
+whether a downward glance under the canopy shows a wash on the ceiling that the geometry says should never be seen.
 
 ## 3. Method notes
 
