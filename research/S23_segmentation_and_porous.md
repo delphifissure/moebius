@@ -80,3 +80,26 @@ the ceiling cut the default beside the ground cut; it is inert wherever no ceili
 ### 2.3 The canopy variables (P1–P4)
 
 *(truth rendering; results follow)*
+
+### 2.4 What the over-claim inside the occluder's box is: the one-texel ring
+
+After the ceiling cut, what remains of the porous scenes' over-claim lies inside the occluder's bounding box (P6 94 %, P5
+98 %, S7 78 %). Its distance to the nearest occluder texel (chessboard) says what it is:
+
+| scene | over-claim inside the box | at distance 1 (the ring around every silhouette) | at distance ≥ 2 (between the leaves) | occluder perimeter ring, texels | band's share of the ring | ring ÷ occluder area |
+|---|---:|---:|---:|---:|---:|---:|
+| P6 grille (ceiling cut) | 11 238 | 11 038 | 200 | 11 844 | 99 % | 0.45 |
+| P5 fence | 6 126 | 6 061 | 65 | 6 416 | 96 % | 0.26 |
+| S7 canopy (ceiling cut) | 4 648 | 3 601 | 1 047 (842 at ≥ 3) | 4 524 | 80 % | 0.12 |
+| S2 contact | 2 092 total | 681 | 45 | 964 | 71 % | — |
+| S9 cards | 2 736 total | 795 | 8 | 1 056 | 75 % | — |
+| S11 bodies | 2 028 total | 1 398 | 630 | 1 650 | 85 % | — |
+
+The truth's hidden texels lie on the occluder's own texels (every scene: 100 %); the band adds the **one-texel ring** around
+each silhouette on 71–99 % of its perimeter, the same on the compact scenes as on the porous ones. On a compact silhouette
+the ring is a few per cent of the area and the precision reads 0.94–0.96; the porous scenes have perimeter of a quarter to
+half of their area (the grille's 0.45), and the same ring costs P 0.31 on the grille and 0.20 on the fence. So the porous
+set's residual is **not a between-leaf demand**: S7's 842 texels at distance ≥ 3 are the only between-leaf over-claim
+measured, 2 % of its band. Which rule puts the ring texel in the band was not traced in this sprint (the sweep's cell size
+at the rim and the far lip's carrier texel are the two candidates); it is one texel wide at the silhouette, where an
+inpainter paints anyway, and its price scales with perimeter ÷ area, which is what "porous" means. Recorded, nothing changed.
