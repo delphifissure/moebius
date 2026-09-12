@@ -1,0 +1,73 @@
+=== photo16 none 18:15:54
+photo_da3_s10d [own]: 851x1023, q 1/568, sheets 306, free 661632, components 4, ground no (0 ground texels)
+runs segmented as the app does (2.6s)
+runs: 10.3 per row, 9.6 per column
+choice done in 29.7s; free 661632; values within tol of the app's farDisp: 68.7 %
+SEAMS free-free unjoined: app per-line 38078 (same sheet 24766) -> own 41079 (same sheet 27782)
+=== photo16 persist 18:16:29
+photo_da3_s10d [own]: 851x1023, q 1/568, sheets 306, free 661632, components 4, ground no (0 ground texels)
+runs segmented as the app does (2.6s); SEG=persist skipped 394 single-sample departures
+runs: 10.2 per row, 9.4 per column
+choice done in 36.9s; free 661632; values within tol of the app's farDisp: 67.9 %
+SEAMS free-free unjoined: app per-line 38078 (same sheet 24766) -> own 44158 (same sheet 29983)
+=== photo8 none 18:17:10
+photo_bo_da3mono [own]: 851x1023, q 1/255, sheets 42, free 665153, components 15, ground no (0 ground texels)
+runs segmented as the app does (2.7s)
+runs: 7.7 per row, 7.2 per column
+choice done in 31.7s; free 665153; values within tol of the app's farDisp: 65.5 %
+SEAMS free-free unjoined: app per-line 33239 (same sheet 30542) -> own 43960 (same sheet 38114)
+=== photo8 persist 18:17:47
+photo_bo_da3mono [own]: 851x1023, q 1/255, sheets 42, free 665153, components 15, ground no (0 ground texels)
+runs segmented as the app does (2.8s); SEG=persist skipped 1275 single-sample departures
+runs: 7.5 per row, 6.8 per column
+choice done in 38.8s; free 665153; values within tol of the app's farDisp: 65.1 %
+SEAMS free-free unjoined: app per-line 33239 (same sheet 30542) -> own 44246 (same sheet 38397)
+=== S15 none 18:18:30
+S15_16planesky_s12 [own]: 800x450, q 1/65535, sheets 171, free 105576, components 10, ground yes (150610 ground texels)
+runs segmented as the app does (1.1s)
+runs: 20.8 per row, 16.2 per column
+choice done in 4.3s; free 105576; values within tol of the app's farDisp: 98.6 %
+SEAMS free-free unjoined: app per-line 11478 (same sheet 2413) -> own 11474 (same sheet 2465)
+TRUTH band |err| m: app per-line   median 0.184  p90 8.566  mean 2.731  (n 26086)
+TRUTH band |err| m: own            median 0.237  p90 8.566  mean 2.735  (n 26086)
+=== S15 persist 18:18:36
+S15_16planesky_s12 [own]: 800x450, q 1/65535, sheets 171, free 105576, components 10, ground yes (150610 ground texels)
+runs segmented as the app does (1.1s); SEG=persist skipped 218 single-sample departures
+runs: 20.7 per row, 16.1 per column
+choice done in 4.9s; free 105576; values within tol of the app's farDisp: 98.6 %
+SEAMS free-free unjoined: app per-line 11478 (same sheet 2413) -> own 11465 (same sheet 2468)
+TRUTH band |err| m: app per-line   median 0.184  p90 8.566  mean 2.731  (n 26086)
+TRUTH band |err| m: own            median 0.238  p90 8.566  mean 2.736  (n 26086)
+=== S2 none 18:18:43
+S2_16plane_s12 [own]: 800x450, q 1/65535, sheets 1, free 38701, components 6, ground yes (60756 ground texels)
+runs segmented as the app does (1.0s)
+runs: 2.7 per row, 3.6 per column
+choice done in 2.4s; free 38701; values within tol of the app's farDisp: 50.2 %
+SEAMS free-free unjoined: app per-line 4 (same sheet 4) -> own 5 (same sheet 5)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.043  mean 0.008  (n 16439)
+TRUTH band |err| m: own            median 0.000  p90 0.043  mean 0.008  (n 16439)
+=== S2 persist 18:18:48
+S2_16plane_s12 [own]: 800x450, q 1/65535, sheets 1, free 38701, components 6, ground yes (60756 ground texels)
+runs segmented as the app does (1.0s); SEG=persist skipped 0 single-sample departures
+runs: 2.7 per row, 3.6 per column
+choice done in 2.8s; free 38701; values within tol of the app's farDisp: 50.2 %
+SEAMS free-free unjoined: app per-line 4 (same sheet 4) -> own 5 (same sheet 5)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.043  mean 0.008  (n 16439)
+TRUTH band |err| m: own            median 0.000  p90 0.043  mean 0.008  (n 16439)
+=== S26 none 18:18:53
+S26_16plane_s12 [own]: 800x450, q 1/65535, sheets 5, free 76470, components 6, ground yes (62894 ground texels)
+runs segmented as the app does (1.1s)
+runs: 5.6 per row, 8.2 per column
+choice done in 3.9s; free 76470; values within tol of the app's farDisp: 47.3 %
+SEAMS free-free unjoined: app per-line 3461 (same sheet 3461) -> own 3466 (same sheet 3466)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.056  mean 0.013  (n 24016)
+TRUTH band |err| m: own            median 0.000  p90 0.056  mean 0.013  (n 24016)
+=== S26 persist 18:18:59
+S26_16plane_s12 [own]: 800x450, q 1/65535, sheets 5, free 76470, components 6, ground yes (62894 ground texels)
+runs segmented as the app does (1.1s); SEG=persist skipped 0 single-sample departures
+runs: 5.6 per row, 8.2 per column
+choice done in 4.6s; free 76470; values within tol of the app's farDisp: 47.3 %
+SEAMS free-free unjoined: app per-line 3461 (same sheet 3461) -> own 3466 (same sheet 3466)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.056  mean 0.013  (n 24016)
+TRUTH band |err| m: own            median 0.000  p90 0.056  mean 0.013  (n 24016)
+=== SEG DONE 18:19:05
