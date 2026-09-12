@@ -34,5 +34,15 @@ screen is the aesthetic authority; defaults change only in the live pass.
 3. **Reimport** of the plane bundle (plate 1 colour, plate 2, sky, margin) onto the live plate; round-trip test with the
    bundle checker.
 4. **SD integration test**: one real inpaint of the bundle (any model), reimported, viewed; the first end-to-end picture.
-5. **Parked, with their evidence:** per-region noise estimate for the σ gate (S19 §3.4), consistent far field across lines
-   (§16 closed), persistent-departure segmentation (§15 closed), S7-class porous silhouettes (needs its own scene set).
+5. **After Sprint 13, in this order (user's instruction, 2026-09-12):**
+   - **Per-region noise estimate for the σ gate** (S19 §3.4): σ per region rather than one global median, so a flat sky
+     cannot declare a noisy foreground exact; gate the floor where the region is noisy. Measure: the four sky-heavy DA3 maps,
+     the troll (must be unchanged: σ > 0 everywhere that matters), the kit (must stay byte-identical: σ = 0 on planes).
+   - **Consistent far field across lines** (§16 closed the per-sheet thin-plate and local variants against truth and by
+     seams; reopening means a different construction — the closure's numbers are the bar: S15 band depth 0.18 m, the
+     photograph's same-sheet seams must fall, not rise).
+   - **Persistent-departure segmentation** (§15 closed at step 0: 99.6 % of DA3-16's breaks are already supported by an
+     adjacent line; reopening means either a different criterion or a different source where unsupported breaks exist).
+   - **S7-class porous silhouettes**: a scene set of its own (canopy density, leaf size, single vs layered crowns, a fence, a
+     grille) with env45 truth, then the ceiling over-claim and the between-leaf demand scored per class.
+6. **Live pass (A) and reimport / SD test** follow, as in items 2–4.
