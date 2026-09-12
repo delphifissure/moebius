@@ -57,4 +57,42 @@ breaks along the per-line far field (the vermeer's alternating red/green rows be
 Step 3 tests the first with the plate options that address it — step faces (rim step gaps) and margin = window (the A245
 strips over the whole window instead of the picture's rest footprint) — on the same shots.
 
-*(step 3 results follow when the chain finishes)*
+**Step 3 — option A/B on the same shots** (`s20/s13b_table.py`; interior holes, px, base → option; offsets 0.1 / 0.2 /
+(0.26, 0.088) / (0.301, 0.068) m = 27° / 45° / 52°·24° / 56°·19°):
+
+| picture | step faces on | margin = window | plate drawn with NO tear (`_plateKeepAll`) |
+|---|---|---|---|
+| silverwarrior | 217 / 488 / 1 796 / 1 635 → identical (2 step quads exist) | → 0 / 474 / 1 334 / 1 685 | → 217 / **14** / 482 / **2** |
+| vermeer | 12 / 6 / 1 336 / 334 → identical | → 12 / 6 / **229** / **140** | → 0 / 0 / 1 107 / 194 |
+| room | 710 / 194 / 756 / 326 → identical | → 382 / 186 / 598 / 253 | → identical |
+
+Margin = window also zeroes the edge-connected alpha-0 on all three, as it is meant to.
+
+**Three pictures, three classes.**
+
+- **Silverwarrior: plate rim tears.** With the plate drawn untorn the 45° and 56° holes vanish (488 → 14, 1 635 → 2); the
+  diagonal pose keeps 482. These are the edges the stretched-seams option leaves torn on purpose — between a carrier at
+  far depth and its own-depth neighbour inside the occluder ("that is the disocclusion"). At these poses the foreground has
+  moved further than the band's carriers reach, and the tear opens onto nothing; the sweep did not predict it because it
+  draws plate quads stretched. Sheet `s20/s13_silverwarrior_tear_ablation.png`.
+- **Vermeer: the picture-clipped margin.** Margin = window closes most of it (1 336 → 229, 334 → 140): the milkmaid stands
+  against the right edge and the content behind her lies beyond the frame. The untorn plate helps less here (→ 1 107 / 194).
+- **Room: neither.** Its holes (710 at 27°, the largest at the nearest pose) move only with the margin (→ 382) and are
+  otherwise untouched — a different class again, not diagnosed in this sprint; the sunflower field has 539 source sheets
+  and 149 k layer-2 texels, and the place to look is the class map at 27°.
+
+**What was built.** `window._plateKeepAll` (the plate without its rim tear) is now the panel's third seams value,
+**"seams + rim stretched"** (`bgPlateSeamSel = all`, which also sets `_plateStretchInner`). Default unchanged. For the
+live pass, the trade as measured: it closes rim-tear holes at the far poses; its price is a skin between every silhouette
+and its background wherever the band's carriers stop short — coloured with the wash on the carrier side and the source on
+the other, never a foreground clone as background, but a stretch the eye may read. The picture margin option already
+exists for the vermeer class. An offline reproduction of the sweep for per-hole attribution (`s20/s13_attrib.py`) did not
+match the app's cell counts (890 vs 9 277 interior cells at 45°) and was superseded by the ablation; kept as a record.
+
+## 3. Summary
+
+1. The line-aware despeckle recovers one-texel structures (S5 recall 0.51 → 0.98) and is inert on the troll, S9, S11 and the
+   six pictures; recommended as the default at the live pass.
+2. The far-pose holes are not a band or far-field failure. They are plate rim tears (silverwarrior), the picture-clipped
+   margin (vermeer), and one unclassified case (room). Two panel options now cover the first two; both are the user's call
+   on screen.
