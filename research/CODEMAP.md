@@ -1046,3 +1046,8 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `bgFarSidePlane`'s `tol[]`. **Removed** (rule 7) after measurement: on the sky pictures equal to the forced floor in every
   number, rule 1 fragments the troll's DA3 runs, rule 2 costs S15. A comment at the a89 block records it; the offline tile
   instrument is `research/s21/s14_tiles.py` (table, sheet). Consumers of `_qbSrcQuantum` unchanged.
+
+## 33. Sprint 15 (2026-09-12; `S22_far_field_across_lines.md`) — cross-line regularisation of the per-line law, offline only
+- `research/s22/sheetfield3.py` (from Sprint 12's `sheetfield2.py`): MODE=slope | cmed | both — the candidate's slope / value /
+  slope+intercept replaced by the median over the w neighbouring lines each side of the same sheet. All three fail the §16 bar
+  (photograph same-sheet seams −18 % at best, S15 seams +46–60 %, truth not better). Nothing in the app changed.

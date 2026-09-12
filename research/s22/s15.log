@@ -1,0 +1,187 @@
+=== S15 own 17:34:15
+S15_16planesky_s12 [own]: 800x450, q 1/65535, sheets 171, free 105576, components 10, ground yes (150610 ground texels)
+runs segmented as the app does (1.1s)
+choice done in 4.0s; free 105576; values within tol of the app's farDisp: 98.6 %
+SEAMS free-free unjoined: app per-line 11478 (same sheet 2413) -> own 11474 (same sheet 2465)
+TRUTH band |err| m: app per-line   median 0.184  p90 8.566  mean 2.731  (n 26086)
+TRUTH band |err| m: own            median 0.237  p90 8.566  mean 2.735  (n 26086)
+=== S15 slope 17:34:25
+S15_16planesky_s12 [slope]: 800x450, q 1/65535, sheets 171, free 105576, components 10, ground yes (150610 ground texels)
+runs segmented as the app does (1.0s)
+candidates collected (3.5s)
+choice done in 8.5s; free 105576; values within tol of the app's farDisp: 94.5 %; candidates replaced by a surface: 45906
+SEAMS free-free unjoined: app per-line 11478 (same sheet 2413) -> slope 11732 (same sheet 3527)
+TRUTH band |err| m: app per-line   median 0.184  p90 8.566  mean 2.731  (n 26086)
+TRUTH band |err| m: slope          median 0.242  p90 8.566  mean 2.735  (n 26086)
+=== S15 cmed 17:34:40
+S15_16planesky_s12 [cmed]: 800x450, q 1/65535, sheets 171, free 105576, components 10, ground yes (150610 ground texels)
+runs segmented as the app does (1.1s)
+candidates collected (3.7s)
+choice done in 8.7s; free 105576; values within tol of the app's farDisp: 92.2 %; candidates replaced by a surface: 45906
+SEAMS free-free unjoined: app per-line 11478 (same sheet 2413) -> cmed 12242 (same sheet 3880)
+TRUTH band |err| m: app per-line   median 0.184  p90 8.566  mean 2.731  (n 26086)
+TRUTH band |err| m: cmed           median 0.287  p90 8.566  mean 2.744  (n 26086)
+=== S32 own 17:34:54
+S32_16planesky_s12 [own]: 800x450, q 1/65535, sheets 2, free 203200, components 1, ground yes (34400 ground texels)
+runs segmented as the app does (1.1s)
+choice done in 1.4s; free 203200; values within tol of the app's farDisp: 99.6 %
+SEAMS free-free unjoined: app per-line 800 (same sheet 800) -> own 800 (same sheet 800)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.001  mean 0.000  (n 34400)
+TRUTH band |err| m: own            median 0.000  p90 0.001  mean 0.000  (n 34400)
+=== S32 slope 17:34:58
+S32_16planesky_s12 [slope]: 800x450, q 1/65535, sheets 2, free 203200, components 1, ground yes (34400 ground texels)
+runs segmented as the app does (1.0s)
+candidates collected (0.1s)
+choice done in 1.4s; free 203200; values within tol of the app's farDisp: 99.6 %; candidates replaced by a surface: 0
+SEAMS free-free unjoined: app per-line 800 (same sheet 800) -> slope 800 (same sheet 800)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.001  mean 0.000  (n 34400)
+TRUTH band |err| m: slope          median 0.000  p90 0.001  mean 0.000  (n 34400)
+=== S32 cmed 17:35:02
+S32_16planesky_s12 [cmed]: 800x450, q 1/65535, sheets 2, free 203200, components 1, ground yes (34400 ground texels)
+runs segmented as the app does (1.0s)
+candidates collected (0.1s)
+choice done in 1.4s; free 203200; values within tol of the app's farDisp: 99.6 %; candidates replaced by a surface: 0
+SEAMS free-free unjoined: app per-line 800 (same sheet 800) -> cmed 800 (same sheet 800)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.001  mean 0.000  (n 34400)
+TRUTH band |err| m: cmed           median 0.000  p90 0.001  mean 0.000  (n 34400)
+=== S2 own 17:35:06
+S2_16plane_s12 [own]: 800x450, q 1/65535, sheets 1, free 38701, components 6, ground yes (60756 ground texels)
+runs segmented as the app does (1.0s)
+choice done in 2.4s; free 38701; values within tol of the app's farDisp: 50.2 %
+SEAMS free-free unjoined: app per-line 4 (same sheet 4) -> own 5 (same sheet 5)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.043  mean 0.008  (n 16439)
+TRUTH band |err| m: own            median 0.000  p90 0.043  mean 0.008  (n 16439)
+=== S2 slope 17:35:10
+S2_16plane_s12 [slope]: 800x450, q 1/65535, sheets 1, free 38701, components 6, ground yes (60756 ground texels)
+runs segmented as the app does (1.0s)
+candidates collected (2.6s)
+choice done in 7.6s; free 38701; values within tol of the app's farDisp: 50.2 %; candidates replaced by a surface: 35051
+SEAMS free-free unjoined: app per-line 4 (same sheet 4) -> slope 0 (same sheet 0)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.043  mean 0.008  (n 16439)
+TRUTH band |err| m: slope          median 0.000  p90 0.043  mean 0.008  (n 16439)
+=== S2 cmed 17:35:23
+S2_16plane_s12 [cmed]: 800x450, q 1/65535, sheets 1, free 38701, components 6, ground yes (60756 ground texels)
+runs segmented as the app does (1.1s)
+candidates collected (2.5s)
+choice done in 7.4s; free 38701; values within tol of the app's farDisp: 38.9 %; candidates replaced by a surface: 35051
+SEAMS free-free unjoined: app per-line 4 (same sheet 4) -> cmed 116 (same sheet 115)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.043  mean 0.008  (n 16439)
+TRUTH band |err| m: cmed           median 0.000  p90 0.043  mean 0.010  (n 16439)
+=== S26 own 17:35:35
+S26_16plane_s12 [own]: 800x450, q 1/65535, sheets 5, free 76470, components 6, ground yes (62894 ground texels)
+runs segmented as the app does (1.1s)
+choice done in 3.9s; free 76470; values within tol of the app's farDisp: 47.3 %
+SEAMS free-free unjoined: app per-line 3461 (same sheet 3461) -> own 3466 (same sheet 3466)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.056  mean 0.013  (n 24016)
+TRUTH band |err| m: own            median 0.000  p90 0.056  mean 0.013  (n 24016)
+=== S26 slope 17:35:42
+S26_16plane_s12 [slope]: 800x450, q 1/65535, sheets 5, free 76470, components 6, ground yes (62894 ground texels)
+runs segmented as the app does (1.1s)
+candidates collected (4.1s)
+choice done in 7.3s; free 76470; values within tol of the app's farDisp: 47.3 %; candidates replaced by a surface: 37759
+SEAMS free-free unjoined: app per-line 3461 (same sheet 3461) -> slope 3460 (same sheet 3460)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.056  mean 0.013  (n 24016)
+TRUTH band |err| m: slope          median 0.000  p90 0.056  mean 0.013  (n 24016)
+=== S26 cmed 17:35:55
+S26_16plane_s12 [cmed]: 800x450, q 1/65535, sheets 5, free 76470, components 6, ground yes (62894 ground texels)
+runs segmented as the app does (1.1s)
+candidates collected (4.2s)
+choice done in 7.0s; free 76470; values within tol of the app's farDisp: 46.8 %; candidates replaced by a surface: 37759
+SEAMS free-free unjoined: app per-line 3461 (same sheet 3461) -> cmed 3450 (same sheet 3450)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.056  mean 0.013  (n 24016)
+TRUTH band |err| m: cmed           median 0.000  p90 0.055  mean 0.013  (n 24016)
+=== S16 own 17:36:09
+S16_16plane_s12 [own]: 800x450, q 1/65535, sheets 1, free 207323, components 2, ground yes (47833 ground texels)
+runs segmented as the app does (1.1s)
+choice done in 9.7s; free 207323; values within tol of the app's farDisp: 88.7 %
+SEAMS free-free unjoined: app per-line 1847 (same sheet 1847) -> own 1755 (same sheet 1755)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.000  mean 0.001  (n 4386)
+TRUTH band |err| m: own            median 0.000  p90 0.000  mean 0.001  (n 4386)
+=== S16 slope 17:36:21
+S16_16plane_s12 [slope]: 800x450, q 1/65535, sheets 1, free 207323, components 2, ground yes (47833 ground texels)
+runs segmented as the app does (1.0s)
+candidates collected (10.3s)
+choice done in 27.6s; free 207323; values within tol of the app's farDisp: 88.6 %; candidates replaced by a surface: 75786
+SEAMS free-free unjoined: app per-line 1847 (same sheet 1847) -> slope 1900 (same sheet 1900)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.000  mean 0.001  (n 4386)
+TRUTH band |err| m: slope          median 0.000  p90 0.000  mean 0.001  (n 4386)
+=== S16 cmed 17:37:01
+S16_16plane_s12 [cmed]: 800x450, q 1/65535, sheets 1, free 207323, components 2, ground yes (47833 ground texels)
+runs segmented as the app does (1.1s)
+candidates collected (10.6s)
+choice done in 27.4s; free 207323; values within tol of the app's farDisp: 88.0 %; candidates replaced by a surface: 75786
+SEAMS free-free unjoined: app per-line 1847 (same sheet 1847) -> cmed 1791 (same sheet 1791)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.000  mean 0.001  (n 4386)
+TRUTH band |err| m: cmed           median 0.000  p90 0.001  mean 0.001  (n 4386)
+=== photo8 own 17:37:41
+photo_bo_da3mono [own]: 851x1023, q 1/255, sheets 42, free 665153, components 15, ground no (0 ground texels)
+runs segmented as the app does (2.6s)
+choice done in 30.6s; free 665153; values within tol of the app's farDisp: 65.5 %
+SEAMS free-free unjoined: app per-line 33239 (same sheet 30542) -> own 43960 (same sheet 38114)
+=== photo8 slope 17:38:18
+photo_bo_da3mono [slope]: 851x1023, q 1/255, sheets 42, free 665153, components 15, ground no (0 ground texels)
+runs segmented as the app does (2.6s)
+candidates collected (29.2s)
+choice done in 122.3s; free 665153; values within tol of the app's farDisp: 60.1 %; candidates replaced by a surface: 332996
+SEAMS free-free unjoined: app per-line 33239 (same sheet 30542) -> slope 43455 (same sheet 31139)
+=== photo8 cmed 17:40:54
+photo_bo_da3mono [cmed]: 851x1023, q 1/255, sheets 42, free 665153, components 15, ground no (0 ground texels)
+runs segmented as the app does (2.5s)
+candidates collected (28.7s)
+choice done in 122.6s; free 665153; values within tol of the app's farDisp: 59.6 %; candidates replaced by a surface: 332996
+SEAMS free-free unjoined: app per-line 33239 (same sheet 30542) -> cmed 42336 (same sheet 32233)
+=== photo16 own 17:43:29
+photo_da3_s10d [own]: 851x1023, q 1/568, sheets 306, free 661632, components 4, ground no (0 ground texels)
+runs segmented as the app does (2.6s)
+choice done in 29.5s; free 661632; values within tol of the app's farDisp: 68.7 %
+SEAMS free-free unjoined: app per-line 38078 (same sheet 24766) -> own 41079 (same sheet 27782)
+=== photo16 slope 17:44:03
+photo_da3_s10d [slope]: 851x1023, q 1/568, sheets 306, free 661632, components 4, ground no (0 ground texels)
+runs segmented as the app does (2.6s)
+candidates collected (28.1s)
+choice done in 118.5s; free 661632; values within tol of the app's farDisp: 62.3 %; candidates replaced by a surface: 303066
+SEAMS free-free unjoined: app per-line 38078 (same sheet 24766) -> slope 41019 (same sheet 26572)
+=== photo16 cmed 17:46:33
+photo_da3_s10d [cmed]: 851x1023, q 1/568, sheets 306, free 661632, components 4, ground no (0 ground texels)
+runs segmented as the app does (2.5s)
+candidates collected (27.2s)
+choice done in 120.4s; free 661632; values within tol of the app's farDisp: 61.2 %; candidates replaced by a surface: 303066
+SEAMS free-free unjoined: app per-line 38078 (same sheet 24766) -> cmed 42645 (same sheet 27368)
+=== S15 DONE 17:49:05
+=== S15 both 17:49:09
+S15_16planesky_s12 [both]: 800x450, q 1/65535, sheets 171, free 105576, components 10, ground yes (150610 ground texels)
+runs segmented as the app does (1.1s)
+candidates collected (3.5s)
+choice done in 10.6s; free 105576; values within tol of the app's farDisp: 92.3 %; candidates replaced by a surface: 45906
+SEAMS free-free unjoined: app per-line 11478 (same sheet 2413) -> both 12199 (same sheet 3850)
+TRUTH band |err| m: app per-line   median 0.184  p90 8.566  mean 2.731  (n 26086)
+TRUTH band |err| m: both           median 0.287  p90 8.566  mean 2.744  (n 26086)
+=== S2 both 17:49:26
+S2_16plane_s12 [both]: 800x450, q 1/65535, sheets 1, free 38701, components 6, ground yes (60756 ground texels)
+runs segmented as the app does (1.1s)
+candidates collected (2.7s)
+choice done in 9.7s; free 38701; values within tol of the app's farDisp: 38.9 %; candidates replaced by a surface: 35051
+SEAMS free-free unjoined: app per-line 4 (same sheet 4) -> both 116 (same sheet 115)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.043  mean 0.008  (n 16439)
+TRUTH band |err| m: both           median 0.000  p90 0.043  mean 0.010  (n 16439)
+=== S16 both 17:49:40
+S16_16plane_s12 [both]: 800x450, q 1/65535, sheets 1, free 207323, components 2, ground yes (47833 ground texels)
+runs segmented as the app does (1.1s)
+candidates collected (10.3s)
+choice done in 34.2s; free 207323; values within tol of the app's farDisp: 88.0 %; candidates replaced by a surface: 75786
+SEAMS free-free unjoined: app per-line 1847 (same sheet 1847) -> both 1790 (same sheet 1790)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.000  mean 0.001  (n 4386)
+TRUTH band |err| m: both           median 0.000  p90 0.001  mean 0.001  (n 4386)
+=== photo8 both 17:50:27
+photo_bo_da3mono [both]: 851x1023, q 1/255, sheets 42, free 665153, components 15, ground no (0 ground texels)
+runs segmented as the app does (2.7s)
+candidates collected (29.3s)
+choice done in 160.5s; free 665153; values within tol of the app's farDisp: 58.7 %; candidates replaced by a surface: 332996
+SEAMS free-free unjoined: app per-line 33239 (same sheet 30542) -> both 42664 (same sheet 32083)
+=== photo16 both 17:53:41
+photo_da3_s10d [both]: 851x1023, q 1/568, sheets 306, free 661632, components 4, ground no (0 ground texels)
+runs segmented as the app does (2.5s)
+candidates collected (27.8s)
+choice done in 153.6s; free 661632; values within tol of the app's farDisp: 60.7 %; candidates replaced by a surface: 303066
+SEAMS free-free unjoined: app per-line 38078 (same sheet 24766) -> both 42702 (same sheet 27435)
+=== S15B DONE 17:56:47
