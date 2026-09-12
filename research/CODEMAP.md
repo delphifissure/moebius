@@ -1039,3 +1039,10 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   silverwarrior were rim tears (S20 §2); vermeer's were the picture-clipped margin (`margin = window` closes them).
   UI-path option A/B tabulator `research/s20/s13b_table.py`; offline attribution attempt `s13_attrib.py` (did not reproduce
   the app's sweep; superseded by the ablation).
+
+## 32. Sprint 14 (2026-09-12; `S21_regional_noise.md`) — the regional noise gate, built and removed
+- Built: per-32×32-tile noise test on the raw source in the a89 block (rule 1: MAD-σ of third differences > √(20/12)·grid;
+  rule 2: median |Δ²| > 0 per tile), a per-texel effective quantum map read by `bgRimLawFor.joinedIdx` (the pair's quanta) and
+  `bgFarSidePlane`'s `tol[]`. **Removed** (rule 7) after measurement: on the sky pictures equal to the forced floor in every
+  number, rule 1 fragments the troll's DA3 runs, rule 2 costs S15. A comment at the a89 block records it; the offline tile
+  instrument is `research/s21/s14_tiles.py` (table, sheet). Consumers of `_qbSrcQuantum` unchanged.
