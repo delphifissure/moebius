@@ -1028,3 +1028,9 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - Findings for the live pass: the σ gate reads 0 on sky-heavy DA3 maps (median second difference of a flat sky); forcing the
   floor is not clearly better; bristlecone's repo map is far = bright; the sky option leaves the frame edge uncovered from
   0.2 m in the UI-path shots (13–19 k px).
+
+## 31. Sprint 13 (2026-09-12; `S20_thin_lines_and_far_holes.md`)
+- **Line-aware despeckle** `window._despeckleLines` (quick bake, the a-series despeckle block, search `S13 (window._despeckleLines)`):
+  a minority texel (fewer than 8 of 25 within TOLd) is kept if along any of the four directions of the same 5×5 window all
+  4 neighbours are within TOLd of it (a one-texel line ≥ 5 long — the window's own extent). Log `[S13] N minority texels kept`.
+  Harness filters (`a257_probe.js`, `ui_path.js`) pass `[S13]|despeckle`. Default unchanged (live pass).
