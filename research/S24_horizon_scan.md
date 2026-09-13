@@ -395,3 +395,24 @@ tracking limit plus its measured jitter margin (the a143 quantity), or to a chos
 from the head-motion distribution the recorder measures. Bake wider than you fade — never the reverse — and show the
 cost table at the panel. The 60° bake running now on silverwarrior, vermeer and room gives the first real numbers for
 that trade (band %, bake time, holes at 52°/56°); 70° and 80° arms follow if you want the curve.
+
+**Addendum — the 90° demand measured on plate 1 (2026-09-13).** Because no shift can exceed the window's width, the
+band at 90° on plate 1 is exactly the far-side set: every texel under an occluder that has something behind it, to the
+frame edge. From the existing dumps, against today's 45° band (per cent of the plate):
+
+| picture / scene | band at 45° | far-side set = 90° demand on plate 1 | carriers today |
+|---|---:|---:|---:|
+| troll (DA3 16-bit) | 30.5 | 39.9 | 40.7 |
+| vermeer | 41.2 | 43.1 | 43.3 |
+| room | 21.3 | 27.5 | 27.7 |
+| silverwarrior | 14.9 | 16.4 | 16.8 |
+| bristlecone | 14.9 | 15.7 | 16.4 |
+| octopus | 7.5 | 9.8 | 10.4 |
+| starwatcher | 19.6 | 19.8 | 20.9 |
+| S2, S7, S15 | 5.1 / 11.8 / 13.3 | 5.0 / 11.0 / 13.0 | 5.2 / 12.1 / 14.0 |
+
+Going from 45° to 90° costs one to nine per cent of the plate on plate 1 — and the plane law already computes a far side
+for all of it (the carriers). What 90° adds that is not on plate 1: the object sides (thickness), the deeper layers
+(plate 2 and beyond, thing behind thing), and the box's side walls. The first-uncover angle per texel is closed-form
+(tan θ = distance to the rim ÷ (k₄₅ · Δshift)), so the tier needs no sweep grid at wide angles. Depth precision: 16-bit
+required (a quantum of ~1/W per unit disparity), which the pipeline already carries.
