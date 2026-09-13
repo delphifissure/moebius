@@ -1,0 +1,68 @@
+{
+ "scene": "P5_16plane_ceil",
+ "plate": [
+  800,
+  450
+ ],
+ "truth_hidden_px": 24961,
+ "app_band_px": 31105,
+ "precision": 0.7993248673846648,
+ "recall": 0.9960738752453828,
+ "iou": 0.7968144088709419,
+ "recall_w_disp": 0.9982883334159851,
+ "truth_bg_px": 24961,
+ "recall_bg": 0.9960738752453828,
+ "truth_thing_px": 693,
+ "recall_thing": 1.0,
+ "truth_side_px": 1568,
+ "recall_side": 0.9904336734693877,
+ "truth_interior_px": 0,
+ "recall_interior": 0.0,
+ "truth_sky_reveal_px": 0,
+ "recall_sky_reveal": 0.0,
+ "band_depth_err_m": {
+  "n": 24863,
+  "mean": 0.010977169498801231,
+  "median_abs": 0.0,
+  "p90_abs": 3.941357135772705e-06,
+  "scene_depth_m": 0.192
+ },
+ "plate_depth_err_m": {
+  "n": 24863,
+  "mean": 0.010977169498801231,
+  "median_abs": 0.0,
+  "p90_abs": 3.941357135772705e-06
+ },
+ "layer2": {
+  "app_px": 259,
+  "kit_px": 2239,
+  "both_px": 7,
+  "median_abs_m": 1.043081283569336e-06,
+  "p90_abs_m": 1.043081283569336e-06,
+  "best_of_two_vs_first_median_m": 0.0,
+  "best_of_two_vs_first_p90_m": 3.889203071594238e-06,
+  "layer1_vs_first_p90_m": 3.941357135772705e-06,
+  "app2_matches_kit1_frac": 0.37065637065637064
+ },
+ "carrier_px": 31107,
+ "clone_count": 27,
+ "clone_count_final": 0,
+ "carrier2_px": 259,
+ "tiers": {
+  "15": {
+   "px": 29623,
+   "frac_of_band": 0.9523549268606334,
+   "precision": 0.7951591668635857
+  },
+  "25": {
+   "px": 30962,
+   "frac_of_band": 0.9954026683812892,
+   "precision": 0.7991408823719398
+  },
+  "35": {
+   "px": 31095,
+   "frac_of_band": 0.9996785082784119,
+   "precision": 0.799324650265316
+  }
+ }
+}

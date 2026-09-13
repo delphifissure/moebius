@@ -1,0 +1,31 @@
+| scene | arm | band | truth | P | R | depth median / p90 m | layer 2 app (kit) | over-claim above | inside bbox | below | elsewhere | miss inside bbox |
+|---|---|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---:|
+| S7 canopy (reference) | current | 56,367 | 36,559 | 0.648 | 0.998 | 0.010 / 0.139 | 28,191 (23,199) | 10,231 (51 %) | 9,436 (47 %) | 191 | 9 | 59 of 36,559 |
+| S7 canopy (reference) | ceiling cut | 42,457 | 36,559 | 0.860 | 0.998 | 0.010 / 0.139 | 15,158 (23,198) | 1,116 (19 %) | 4,648 (78 %) | 191 | 7 | 64 of 36,559 |
+| P1 sparse canopy (300 discs) | current | 45,207 | 22,383 | 0.491 | 0.992 | 0.000 / 0.135 | 19,956 (6,349) | 10,541 (46 %) | 12,458 (54 %) | 0 | 5 | 180 of 22,383 |
+| P1 sparse canopy (300 discs) | ceiling cut | 29,017 | 22,383 | 0.765 | 0.992 | 0.000 / 0.135 | 3,451 (6,349) | 1,063 (16 %) | 5,757 (84 %) | 0 | 3 | 189 of 22,383 |
+| P2 dense canopy (1 800) | current | 59,944 | 42,210 | 0.704 | 0.999 | 0.012 / 0.141 | 30,835 (33,971) | 10,758 (61 %) | 6,956 (39 %) | 15 | 42 | 37 of 42,210 |
+| P2 dense canopy (1 800) | ceiling cut | 46,241 | 42,210 | 0.912 | 0.999 | 0.012 / 0.141 | 21,778 (33,971) | 1,608 (40 %) | 2,424 (60 %) | 15 | 21 | 37 of 42,210 |
+| P3 fine leaves (3 600, r/2) | current | 57,835 | 36,878 | 0.636 | 0.997 | 0.010 / 0.138 | 31,174 (23,475) | 10,023 (48 %) | 10,793 (51 %) | 242 | 6 | 107 of 36,878 |
+| P3 fine leaves (3 600, r/2) | ceiling cut | 47,455 | 36,878 | 0.775 | 0.997 | 0.010 / 0.138 | 20,294 (23,475) | 3,363 (31 %) | 7,082 (66 %) | 242 | 4 | 114 of 36,878 |
+| P4 two crowns layered | current | 66,838 | 47,380 | 0.708 | 0.999 | 0.010 / 0.133 | 37,061 (33,280) | 8,807 (45 %) | 10,409 (53 %) | 281 | 11 | 50 of 47,380 |
+| P4 two crowns layered | ceiling cut | 53,958 | 47,380 | 0.877 | 0.999 | 0.009 / 0.133 | 26,600 (33,278) | 1,239 (19 %) | 5,105 (77 %) | 281 | 9 | 56 of 47,380 |
+| P5 picket fence | current | 31,113 | 24,961 | 0.799 | 0.996 | 0.000 / 0.000 | 259 (2,239) | 111 (2 %) | 6,126 (98 %) | 0 | 13 | 98 of 24,961 |
+| P5 picket fence | ceiling cut | 31,105 | 24,961 | 0.799 | 0.996 | 0.000 / 0.000 | 259 (2,239) | 103 (2 %) | 6,126 (98 %) | 0 | 13 | 98 of 24,961 |
+| P6 grille | current | 53,607 | 26,544 | 0.495 | 1.000 | 0.000 / 0.136 | 5,328 (4,260) | 13,342 (49 %) | 13,098 (48 %) | 300 | 323 | 0 of 26,544 |
+| P6 grille | ceiling cut | 38,483 | 26,544 | 0.690 | 1.000 | 0.000 / 0.136 | 424 (4,260) | 80 (1 %) | 11,238 (94 %) | 300 | 321 | 0 of 26,544 |
+
+S7_c: occluder bbox rows 55-401 cols 234-505, occluder px 36,594; tp by region [0, 36500, 0, 0]; fn by region [0, 59, 0, 0]; synthesised colour among over-claim above: 10225; clones 0; carriers 62,106; recall_thing 1.000 recall_side 1.000
+S7_ceil: occluder bbox rows 55-401 cols 234-505, occluder px 36,594; tp by region [0, 36495, 0, 0]; fn by region [0, 64, 0, 0]; synthesised colour among over-claim above: 609; clones 0; carriers 43,444; recall_thing 1.000 recall_side 1.000
+P1_c: occluder bbox rows 56-401 cols 231-499, occluder px 22,418; tp by region [0, 22203, 0, 0]; fn by region [0, 180, 0, 0]; synthesised colour among over-claim above: 10530; clones 0; carriers 50,829; recall_thing 1.000 recall_side 1.000
+P1_ceil: occluder bbox rows 56-401 cols 231-499, occluder px 22,418; tp by region [0, 22194, 0, 0]; fn by region [0, 189, 0, 0]; synthesised colour among over-claim above: 675; clones 0; carriers 30,037; recall_thing 1.000 recall_side 1.000
+P2_c: occluder bbox rows 55-401 cols 231-505, occluder px 42,273; tp by region [0, 42173, 0, 0]; fn by region [0, 37, 0, 0]; synthesised colour among over-claim above: 10745; clones 0; carriers 64,719; recall_thing 1.000 recall_side 0.999
+P2_ceil: occluder bbox rows 55-401 cols 231-505, occluder px 42,273; tp by region [0, 42173, 0, 0]; fn by region [0, 37, 0, 0]; synthesised colour among over-claim above: 820; clones 0; carriers 47,205; recall_thing 1.000 recall_side 0.999
+P3_c: occluder bbox rows 55-401 cols 232-502, occluder px 36,913; tp by region [0, 36771, 0, 0]; fn by region [0, 107, 0, 0]; synthesised colour among over-claim above: 10017; clones 0; carriers 63,265; recall_thing 1.000 recall_side 1.000
+P3_ceil: occluder bbox rows 55-401 cols 232-502, occluder px 36,913; tp by region [0, 36764, 0, 0]; fn by region [0, 114, 0, 0]; synthesised colour among over-claim above: 2275; clones 0; carriers 49,597; recall_thing 1.000 recall_side 1.000
+P4_c: occluder bbox rows 55-401 cols 234-568, occluder px 47,439; tp by region [0, 47330, 0, 0]; fn by region [0, 50, 0, 0]; synthesised colour among over-claim above: 8802; clones 0; carriers 77,975; recall_thing 1.000 recall_side 1.000
+P4_ceil: occluder bbox rows 55-401 cols 234-568, occluder px 47,439; tp by region [0, 47324, 0, 0]; fn by region [0, 56, 0, 0]; synthesised colour among over-claim above: 698; clones 0; carriers 55,749; recall_thing 1.000 recall_side 1.000
+P5_c: occluder bbox rows 172-400 cols 250-562, occluder px 25,055; tp by region [0, 24863, 0, 0]; fn by region [0, 98, 0, 0]; synthesised colour among over-claim above: 6; clones 0; carriers 31,120; recall_thing 1.000 recall_side 0.990
+P5_ceil: occluder bbox rows 172-400 cols 250-562, occluder px 25,055; tp by region [0, 24863, 0, 0]; fn by region [0, 98, 0, 0]; synthesised colour among over-claim above: 0; clones 0; carriers 31,107; recall_thing 1.000 recall_side 0.990
+P6_c: occluder bbox rows 84-365 cols 250-549, occluder px 26,544; tp by region [0, 26544, 0, 0]; fn by region [0, 0, 0, 0]; synthesised colour among over-claim above: 13331; clones 0; carriers 65,593; recall_thing 1.000 recall_side 1.000
+P6_ceil: occluder bbox rows 84-365 cols 250-549, occluder px 26,544; tp by region [0, 26544, 0, 0]; fn by region [0, 0, 0, 0]; synthesised colour among over-claim above: 0; clones 0; carriers 38,495; recall_thing 1.000 recall_side 1.000

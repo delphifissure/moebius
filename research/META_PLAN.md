@@ -46,3 +46,12 @@ screen is the aesthetic authority; defaults change only in the live pass.
    - **S7-class porous silhouettes**: a scene set of its own (canopy density, leaf size, single vs layered crowns, a fence, a
      grille) with env45 truth, then the ceiling over-claim and the between-leaf demand scored per class.
 6. **Live pass (A) and reimport / SD test** follow, as in items 2–4.
+
+## Status after item 5 (2026-09-13)
+
+All four queue items are measured and closed (S20–S23). Built and kept as option arms for the live pass: the line-aware
+despeckle (`_despeckleLines`, S20), the untorn plate seams value (S20), the **ceiling cut** (`_ceilCut`, S23 — S7 P 0.65 → 0.86,
+P6 0.50 → 0.69, S26 0.46 → 0.82, inert elsewhere). Built, measured and removed: the regional noise gate (S21). Closed
+offline without building: cross-line regularisation of the law (S22), persistent departure along the line (S23). The porous
+set P1–P6 has env45 truth; its residual is the one-texel silhouette ring, ordered by perimeter ÷ area. Next: the live pass
+(item 2) with these defaults on the table.

@@ -79,7 +79,36 @@ the ceiling cut the default beside the ground cut; it is inert wherever no ceili
 
 ### 2.3 The canopy variables (P1–P4)
 
-*(truth rendering; results follow)*
+Env45 truth for all four (the dense and fine canopies needed a memory fix in the truth kit's disc intersector — a running
+top-k per disc chunk instead of a rays × discs table; P1's render is byte-identical before and after; renders 2.8 and 3.9
+hours). Current law → with the ceiling cut; sheet `s23/p_canopies_sheet.png`, buffers `s23/checks/`, table `s23/p_table.txt`,
+ring split `s23/p_ring.txt`:
+
+| scene | band → | truth | P → | R | depth median / p90 m | over-claim above the crown → | between the leaves (distance ≥ 2 from any leaf) → | ring (distance 1) | ring ÷ area | layer 2 app → (kit) |
+|---|---|---:|---|---:|---|---|---|---:|---:|---|
+| P1 sparse (300 discs) | 45 207 → 29 017 | 22 383 | 0.491 → **0.765** | 0.992 | 0.000 / 0.135 | 10 541 → 1 063 | 7 209 → **717** | 5 027 | 0.32 | 19 956 → 3 451 (6 349) |
+| P2 dense (1 800) | 59 944 → 46 241 | 42 210 | 0.704 → **0.912** | 0.999 | 0.012 / 0.141 | 10 758 → 1 608 | 5 032 → **565** | 1 851 | 0.06 | 30 835 → 21 778 (33 971) |
+| P3 fine (3 600, r/2) | 57 835 → 47 455 | 36 878 | 0.636 → **0.775** | 0.997 | 0.010 / 0.138 | 10 023 → 3 363 | 5 507 → **1 896** | 5 426 | 0.17 | 31 174 → 20 294 (23 475) |
+| P4 two crowns | 66 838 → 53 958 | 47 380 | 0.708 → **0.877** | 0.999 | 0.010 / 0.133 | 8 807 → 1 239 | 6 722 → **1 593** | 3 776 | 0.10 | 37 061 → 26 600 (33 280) |
+| S7 (reference) | 56 367 → 42 457 | 36 559 | 0.648 → **0.860** | 0.998 | 0.010 / 0.139 | 10 231 → 1 116 | 5 862 → **1 222** | 3 608 | 0.12 | 28 191 → 15 158 (23 199) |
+
+Read across the variables:
+
+1. **The ceiling over-claim does not depend on porosity.** Under the current law it is 8.8–10.8 k texels on every canopy,
+   from 300 to 3 600 discs and for two crowns, because it is the crown's footprint against the ceiling, not its gaps. The
+   ceiling cut finds the same plane on all four (a 4.989, c −0.0222, from 728–774 of 800 columns) and removes 84–90 % of
+   it (P3 66 %: the fine leaves make 6 316 falling runs against P1's 2 487 and leave 72 columns without a ceiling).
+2. **The between-leaf demand was mostly the same wash.** Under the current law 5–7 k texels lie two or more texels from any
+   leaf inside the crown's box on every canopy — again independent of density. With the cut they fall to 0.6–1.9 k
+   (1–4 % of the band): the merged ceiling-and-crown run had been extrapolating the wall into the gaps as well as above the
+   crown. There is no separate between-leaf rule to write.
+3. **What is left orders by perimeter.** After the cut the precision runs 0.912 (dense, ring ÷ area 0.06), 0.877, 0.860,
+   0.775, 0.765 (sparse, 0.32) — the one-texel ring of §2.4, 70–87 % of every silhouette's perimeter. The sparse canopy,
+   with the most silhouette per leaf, pays the most; nothing in it is a wash.
+4. **Recall and depth are not the variable.** R 0.992–0.999 everywhere (37–189 texels missed, all inside the box); depth
+   median ≤ 0.012 m; p90 0.13–0.14 m on every canopy including S7 — the far side of a leaf is often another leaf, which the
+   first plate's plane cannot be, and the kit's layer-2 demand says so (6–34 k). The cut also removes the spurious second
+   layer (the wall "behind" the ceiling): P1 19 956 → 3 451 against a kit demand of 6 349.
 
 ### 2.4 What the over-claim inside the occluder's box is: the one-texel ring
 
@@ -100,6 +129,22 @@ each silhouette on 71–99 % of its perimeter, the same on the compact scenes as
 the ring is a few per cent of the area and the precision reads 0.94–0.96; the porous scenes have perimeter of a quarter to
 half of their area (the grille's 0.45), and the same ring costs P 0.31 on the grille and 0.20 on the fence. So the porous
 set's residual is **not a between-leaf demand**: S7's 842 texels at distance ≥ 3 are the only between-leaf over-claim
-measured, 2 % of its band. Which rule puts the ring texel in the band was not traced in this sprint (the sweep's cell size
+measured, 2 % of its band (the four canopies after the cut: 565–1 896, §2.3). Which rule puts the ring texel in the band was not traced in this sprint (the sweep's cell size
 at the rim and the far lip's carrier texel are the two candidates); it is one texel wide at the silhouette, where an
 inpainter paints anyway, and its price scales with perimeter ÷ area, which is what "porous" means. Recorded, nothing changed.
+
+## 3. Summary
+
+1. Persistent departure along the line: 1–4 % of the breaks on any source; skipping them adds seams. Falsified offline,
+   nothing built. Both readings of "persistent departure" are now closed by measurement.
+2. Six porous scenes with env45 truth. The grille reproduced S7's above-occluder wash exactly and explained it (the ceiling
+   merged into the occluder's column run, the wall extrapolated up); the fence had none. The **ceiling cut** — the ground
+   cut's mirror, no new constant — removes it on S7, P1–P4, P6 and S26 (P +0.17 to +0.36), is inert or byte-identical on
+   every scene and picture without a ceiling plane. Recommended default at the live pass.
+3. The between-leaf demand is not a class of its own: it was the same wash entering the gaps, and it is 1–4 % of the band
+   after the cut, on sparse, dense, fine and layered crowns alike.
+4. What remains on porous scenes is the one-texel ring around every silhouette, 70–99 % of the perimeter, the same as on the
+   compact scenes; the precision after the cut orders by perimeter ÷ area (0.91 dense → 0.77 sparse). One texel at the rim,
+   recorded, not chased.
+5. Harness: the truth kit's canopy intersector keeps a running top-k (the old rays × discs table reached 11 GB and the
+   kernel killed the dense renders); P1's render is byte-identical.
