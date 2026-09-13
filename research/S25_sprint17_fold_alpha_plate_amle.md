@@ -27,11 +27,11 @@ built for. Baked to 60° (band 14.9 → 16.2 % on silverwarrior, 41.2 → 41.8 %
 
 **Falsified for these holes.** Where they are (`p_holewhere.py`): silverwarrior's largest (1 066–1 113 px) sits 41–49 px
 from the picture's right edge, 13–17 px from the bottom (the bear); vermeer's (830 + 236 px) 5–9 px from the right edge
-(the milkmaid); the room's 5–15 px from its right edge and at its bottom-left corner. The far side these need lies
-**beyond the photograph**: a near object at the frame's edge moves inward by more than its distance to the edge, and the
-texel that should land behind it would have to come from outside the picture. No band width creates it. S20's class for
-silverwarrior ("plate rim tears") was the symptom: the rim tears open because the carrier that would close them does not
-exist, and "seams + rim stretched" hid that by stretching — which is the spaghetti of §3.
+(the milkmaid); the room's 5–15 px from its right edge and at its bottom-left corner. For the vermeer and the room the
+far side these need lies **beyond the photograph** (a near object at the frame's edge moves inward by more than its
+distance to the edge; the margin window covers most of them, S20). For silverwarrior the first reading was the same, and
+§5 shows it is wrong: the hole sits inside the bear's own footprint with a complete far side under it. In both cases no
+band width creates the missing cover, and "seams + rim stretched" hid it by stretching — the spaghetti of §3.
 
 What can supply beyond-frame content: the margin strips (A245: the plate clamp-extended outward by the border's largest
 rim shift, at the border texel's own depth) or, in the 90° box model, the box's side walls, with outpainted content. The
