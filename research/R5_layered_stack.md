@@ -4,14 +4,16 @@ Prompted by the user's list (RevealLayer, Referring Layer Decomposition, Amodal 
 MoGe-3, the video NVS models, the 3–4-layer representations) and the proposal: *run the generated layers through a depth
 model and normalise against the full-scene depth map*. **What could be read from here:** GitHub and Hugging Face pages
 (RevealLayer, MoGe, DepthLab, Lift3Dreamer) and search abstracts; **the four PDFs the user attached (Amodal SAM, SAMEO,
-Lift3Dreamer, Referring Layer Decomposition) were read in full** (kept in `research/papers/`; §1b, §1c). **What could not be
-read:** arXiv, OpenReview, alphaXiv and the github.io project pages are blocked by this environment's egress policy, so
-MoGe-3's paper and RevealLayer's paper remain *(abstract only)* — the RevealLayer PDF named as attached did not arrive (only
-its GitHub README was reachable).
+Lift3Dreamer, Referring Layer Decomposition) were read in full** (kept in `research/papers/`; §1b, §1c), and **the RevealLayer
+paper arrived afterwards as text through the user's Google Drive link and was read in full** (§1d; text kept as
+`research/papers/RevealLayer_2026_text.txt`; the figures did not come through, so the visual results are known only from the
+captions). **What could not be read:** arXiv, OpenReview, alphaXiv and the github.io project pages are blocked by this
+environment's egress policy, so MoGe-3's paper remains *(abstract only)*.
 
 ## 1. The papers, one paragraph each, with what matters for us
 
-**RevealLayer (May 2026; code Apache-2.0).** Decomposes one RGB image into *multiple RGBA layers*, recovering occluded content
+**RevealLayer (May 2026; code Apache-2.0).** *(README paragraph; the paper itself is in §1d.)* Decomposes one RGB image into
+*multiple RGBA layers*, recovering occluded content
 and the background behind it; built as LoRA + a layer positional embedding + a refiner on **FLUX.1-dev**, with a transparent
 VAE decoder; trained on RevealLayer-100K, evaluated on RevealLayerBench (200 curated images). The README gives no layer
 count, no resolution, no depth and no ordering statement. **Licence caveat that answers your question:** the RevealLayer
@@ -164,6 +166,70 @@ between layers — is exactly what the plate, the ordering clamp and the arrival
 evaluation triad (preserve the visible, complete plausibly, blend faithfully) is a ready protocol for scoring any filler on
 our atlas without truth.
 
+## 1d. RevealLayer, read in full (360 AI Research; ICML 2026, PMLR 306; arXiv 2605.11818)
+
+**Task as they define it.** Input: one image plus **user-specified bounding boxes**, one per instance to lift (B.3: one to
+three boxes in the examples; the dataset caps at eight instances). Output: a *background layer* with every boxed instance
+removed and its footprint, shadow and reflection completed, plus **one RGBA layer per box** with the instance's hidden parts
+completed. Everything not boxed stays in the background. The text prompt is fixed ("Decompose the image into foreground and
+background"); the boxes are the whole interface. There is no depth, no ordering and no composition step in the paper: the
+layers come back as a set, and B.3 notes the model must be told which regions are foreground.
+
+**Model.** FLUX.1 [dev] MM-DiT with a rank-64 LoRA, Prodigy optimiser (lr 1.0), 50 k iterations, batch 8, long side 1024.
+The background and the N layers are one **variable-length token sequence** (image tokens ‖ background tokens ‖ layer-1 tokens
+‖ … ) with a 3D-RoPE layer index, so N is free at inference. Two additions carry the paper: a **Region-Aware Attention** mask
+(each layer's tokens attend to the whole input image but only to their own box's region of the other layers, so layer k cannot
+copy layer j) and an **Occlusion-Guided Adapter** that injects the box geometry so the model knows *where* to complete. Losses:
+flow matching plus a hard-constraint **alpha loss** (threshold τ 0.95, weight γ 1.5, pushes alpha to 0/1 away from the matte
+edge) and an **orthogonality loss** between layer features (Eq. 15; B.5.1 shows it falling over the denoising steps toward the
+ground truth's value). The transparent VAE is ART's TransVAE with its decoder fine-tuned on natural images ("XVAE"; B.4:
+background PSNR 46.68 → 48.74, the foreground unchanged). B.5.2: giving all foreground layers the *same* initial noise helps
+slightly (fg PSNR +0.18, FID −0.23) — they read it as a low-frequency-background / high-frequency-foreground prior.
+
+**Data (Appendix A).** LAION-2B, GRIT-20M and internal images; Qwen3-VL for captions and instance lists, Florence-2 for boxes,
+InstaOrder for the occlusion order, SAM-H masks refined by Qwen-Image-Edit, ViTMatte for the alpha; three pipelines
+(real backgrounds with generated removals; Z-Image synthetic backgrounds with pasted instances; occlusion augmentation), an
+LPIPS ≤ 0.1 filter against the source, ≤ 8 instances per image. 100 K training tuples; the benchmark is 200 curated images.
+Figure 6: 54 % of the training images are *two-layer* (background + one instance), 20 % three, 15 % four, 5 % five, 5 % more;
+categories human 32 %, indoor items 35 %, animals & plants 21 %, traffic 8 %, other 5 %.
+
+**Numbers.** Object removal on OBER-Test, competitors given *effect masks* (shadow and reflection included) while RevealLayer
+gets only the box: PSNR 30.16 / SSIM 0.9153 / LPIPS 0.0694 / FID 25.62, against ObjectClear 28.27 / 0.8657 / 0.0875 / 32.85
+(Table 7). Layer decomposition on RevealLayerBench (Table 10): background PSNR 25.53 / LPIPS 0.1483 / FID 53.81, foreground
+PSNR 32.13 / LPIPS 0.0217 / FID 18.42, SoftIoU 0.9432; the competitors on the same bench (main-text Table 2): CLD background
+PSNR 19.75 / LPIPS 0.2293 / FID 127.77, foreground 26.42 / 0.0433 / 43.64, SoftIoU 0.8304, 97 s and 62 GB; Qwen-Image-Layered
+background 16.85 / 0.3293 / 142.01, 418 s and 76 GB (no per-layer numbers, its layer count is not controllable). Q-Insight
+scores (B.6, 1–5 by a vision-language judge): consistency 4.09 / fidelity 3.91 / editability 4.14 against CLD's 4.00 / 3.76 /
+4.06. Stylised posters after a 4 k-step fine-tune on
+PrismLayers (Table 8): PSNR 28.36 vs CLD 27.65, but CLD wins FID / IoU / F1. Matting on AIM500: MSE 0.0107. Human study
+(B.7): three professional-evaluator scores, *layer count as requested* 99 %, *background quality* 85, *foreground quality* 90,
+where background quality is scored 2 / 1 / 0 for "fully satisfactory / minor defects / unsatisfactory" on the completion of the
+overlapped region and the fidelity of the visible region. Box robustness: 5–10 % box offsets degrade the result. **Cost: 122 s
+and 60 GB of GPU memory per image** (main text, Table 4's setting) — a single-H100-class figure, not a consumer card.
+
+**Stated limits.** Inaccurate boxes; heavy occlusion; transparent regions; dense repetitive textures. Nothing about thin or
+porous objects, nothing about the completed content's *geometry*.
+
+**How it compares with RLD for our purpose.** RLD returns one layer per prompt and reports pass rates (28 % first draw, 74 %
+at ten); RevealLayer returns the whole set in one 122-s draw and reports 85 / 100 on background quality by a coarser
+three-level human score. The two numbers are not the same scale, but they agree on the picture: the background completion is
+the weak layer in both — RevealLayer's background FID 53.8 against its foreground 18.4, RLD's "background" prompt failing
+most often. **Our band is exactly the background's hidden region**, so the layer stage's weakest output is the one we consume
+most. That is the argument for several draws plus our selector regardless of which model, and for keeping the depth model
+and the plate as the *verifier* of whatever comes back.
+
+**What it means for our stack, concretely.** (1) Boxes from our depth sweep: an occluder's box is the bounding box of the
+texels that own a far-side demand, which we already have per object from the arrival order — no manual input. (2) The
+≤ 8-instance cap and the 54 % two-layer training prior mean pictures like the room scene (many small occluders) should be
+lifted in *groups* of the largest demands, the rest left to the band inpainter. (3) The alpha loss makes hard alphas: fine for
+our layers (we need a silhouette, not a matte) but it means porous canopies come back as solid or as noise — the P1–P6
+scenes rendered as pictures are the test, as §4 already says. (4) Because the output is one texture per layer with no depth,
+stage 4 (DepthLab or the peeled-composite depth + affine alignment) is unavoidable; RevealLayer's own results give no
+opinion on it. (5) Licence: the paper adds nothing beyond the README — code Apache-2.0, base FLUX.1 [dev] non-commercial,
+dataset research-only; the training recipe is public enough that a re-train on a permissive base (Qwen-Image, or SD3.5 under
+its community licence) is a defined job, not a research question. (6) The 60 GB footprint rules out a laptop bake; it is a
+server step or an API.
+
 ## 2. How the MoGe pages get such clean "displacement gaps"
 
 From `moge/scripts/infer.py`: the mesh for visualisation and export is built with
@@ -222,7 +288,7 @@ wash and the arrival-order plate 2*; they do not replace the plate's geometry co
 |---|---|---|---|
 | 1. depth of the photograph | DA3-Mono (today) → bake-off with **MoGe-3** (metric, FOV, thin structures) | MoGe-3 gives the metric frame R1 asked for and cleaner edges at the source | new bake-off (a day); MoGe-3 numbers are abstract-only from here |
 | 2. what must be complete | our band / envelope contract, 90° plate-1 demand = the far-side set (S24) | closed-form, measured on truth | object sides and box walls not yet in the demand |
-| 3. layers | **RevealLayer** for the whole picture; **RLD** per object (text + mask prompts from our own masks) when its code lands, several draws + our selector; amodal masks (Amodal SAM / SAMEO) to decide self-occlusion and to prompt | complete hidden appearance, discrete objects — your "world of objects"; RLD's pass rate 74–79 % at ten draws | FLUX-dev licence (RevealLayer) and "academic research purposes only" (RLD); one-in-four first draws; ordering between layers is ours to do; failure on porous / thin objects likely (the canopy set is the test) |
+| 3. layers | **RevealLayer** for the whole picture, driven by boxes from our own sweep (≤ 8 instances per call; group the largest demands); **RLD** per object (text + mask prompts from our own masks) when its code lands; several draws + our selector; amodal masks (Amodal SAM / SAMEO) to decide self-occlusion and to prompt | complete hidden appearance, discrete objects — your "world of objects"; RevealLayer's background completion 85 / 100 by human score with boxes only, and it removes shadows and reflections with the object; RLD's pass rate 74–79 % at ten draws | FLUX-dev licence (RevealLayer) and "academic research purposes only" (RLD); **122 s and 60 GB per image** (server or API, not a laptop); the background layer is the weakest output of both models and it is the one we consume; hard alphas (τ 0.95) so porous canopies come back solid or as noise; ordering between layers is ours to do; boxes off by 5–10 % already degrade it |
 | 4. depth of each layer | **DepthLab** on (layer RGB, visible depth, hidden mask); alternative: depth model on peeled composites + affine alignment; the plane law as verifier/fallback | scale preserved; the truth kit scores it directly | two more models at bake; DepthLab is SD2-era at 640–768 px, so upsample against the layer's own edges |
 | 5. ordering and cleanup | a135 ordering clamp between layers; fold test on every layer; despeckle line rule | already built | — |
 | 6. colour where no layer model reached | Lift3Dreamer on the atlas with our mask (first), then the same warp-back recipe fine-tuned on *our* envelope's masks on a larger base; coherence-transport wash as the placeholder before it | masks shaped like ours; placeholder with structure; the recipe is reproducible | SD-2 at 512² is a ceiling; prompt discipline ("continue the surface"); a few GPU-hours for the fine-tune |
