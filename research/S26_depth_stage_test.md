@@ -12,7 +12,8 @@ behind the object) the plane law beats every model on 19 of 19 scenes, typically
 fail outright where the hidden depth range lies outside the visible one (the hedge wall S32, the hills behind the crown in
 S15); on the **object's own back faces** (self-occlusion) every model beats the plane law on 16–17 of 17 scenes, by one to
 two orders of magnitude, because the plane law has no notion of an object's far side. DepthLab, run as a completion model
-with our known depth, is the weakest of the three on both sets in this setting (§4).
+with our known depth, is a learned continuation of that depth: between the pure models and the plane law on backgrounds,
+the plane law's equal on self-occlusion (§3.3, §4).
 
 ## 1. Protocol (all offline, CPU; scripts in `research/s26/`)
 
