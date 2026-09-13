@@ -116,16 +116,43 @@ truth-neutral on curved scenes) whose only promised gain — seams — it does n
 within-sheet noise. Nothing built in the app. Together with S22 and §16 this closes the field family on its third,
 best-posed attempt.
 
-## 5. The margin-window arm and the check view
+## 5. The margin-window arm, and where the silverwarrior hole really is
 
-*(results follow — running)*
+Margin = window with the seams stretched (not "all"), recommended rules, 45° bake; the magenta check view beside it
+(`s25/s17a2_margin_sheet.png`):
+
+| picture | arm | holes 14° · 27° · 45° · 52°/24° · 56°/19° | magenta 45° · 52°/24° · 56°/19° |
+|---|---|---|---|
+| silverwarrior | margin window | 6 · 0 · 475 · 1 336 · **1 686** | 1.4 % · 4.4 % · 4.2 % |
+| room | margin window | 149 · 382 · 185 · 598 · 253 | 3.4 % · **11.1 %** · 10.8 % |
+
+**The margin does not close silverwarrior's hole either**, and its position is the same (picture-x 240–296, 78–80 % across,
+90 % down). So §2's beyond-frame reading is wrong for this hole: it lies inside the frame, 41 px from the right edge but
+well inside the bear's own rest footprint. The buffers under it: the region is the bear (dQ 0.35–0.6, close to the window
+plane) beside a 100-texel strip of the far plane (dQ 0.003) and a second near piece to its right; **every bear texel has a
+far side** (4 345 of 4 345 carriers, far side = the far plane, 0.003), so it is not a missing far side; the plate under it
+is at the far plane everywhere. The CPU sweep at 45° already marks these cells "no owner" (`s20/s13_silverwarrior_classmap_45deg.png`,
+the red blobs at the bottom right): in the sweep's own model no source texel, at its own depth or its far depth, lands
+there. What closes it: "seams + rim stretched" (a stretch across it); what reduces it by 60–75 %: the fold-alpha (§3),
+which means part of it was a folded cell occluding valid plate. **Its mechanism is not yet named** — the candidate is
+that a near piece close to the window plane and its far copy at the far plane separate by more than the piece's own
+width at 52–56°, so that the far copy slides out from under it and the strip between is owed to source columns that are
+themselves a different near object — and it is the first item of the next sprint, with the sweep's owner map at 56° as
+the instrument (which texel *would* own each red cell, and whether it exists). Recorded as **hole class X**: inside the
+frame, not band width, not margin, predicted by the sweep, closed only by stretching.
+
+The room's 11 % magenta at 52° is the sunflower field's per-line far field stretched between rows (the smears in the
+sheets); with the fold-alpha they would be holes. The vermeer's 8 % is the same class. Both say the same thing as §4:
+the per-line far field's cross-line disagreement is the largest visible defect at the far poses, and it is a *choice*
+problem.
 
 ## 6. Where the effect stands after Sprint 17
 
 - The **spaghetti** the user named is measured: 4–9 % of the picture at the far poses under the current default, none of
   it envelope-limited; a check view counts it on any picture at any pose.
-- The **far-pose holes** are beyond-frame content (silverwarrior, vermeer, room), not band width; the plug for them is
-  the margin strips / box walls with outpainted content at the far depth.
+- The **far-pose holes** are not band width (60° bake) and, on silverwarrior, not the margin either (§5): vermeer's and the
+  room's sit at the frame edge (the margin window covers most of them, S20), silverwarrior's is hole class X inside the
+  frame, mechanism to be named with the sweep's owner map.
 - **Fold-alpha** is the right mechanism against spaghetti and already a net gain on silverwarrior; it needs a consistent
   far field to be a net gain everywhere.
 - The **far field's cross-line consistency** is the open item under all of this (the streaks behind the milkmaid, the
