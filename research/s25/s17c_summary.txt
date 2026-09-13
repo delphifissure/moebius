@@ -1,0 +1,46 @@
+=== S15 own 12:40:40
+SEAMS free-free unjoined: app per-line 11478 (same sheet 2413) -> own 11474 (same sheet 2465)
+TRUTH band |err| m: app per-line   median 0.184  p90 8.566  mean 2.731  (n 26086)
+TRUTH band |err| m: own            median 0.237  p90 8.566  mean 2.735  (n 26086)
+=== S15 plate 12:40:51
+[plate] run clusters 1212 (used rims 3566), solved 1087 with reach; iterations 0; obstacle texels 663; 9.2s
+SEAMS free-free unjoined: app per-line 11478 (same sheet 2413) -> plate 12264 (same sheet 3709)
+TRUTH band |err| m: app per-line   median 0.184  p90 8.566  mean 2.731  (n 26086)
+TRUTH band |err| m: plate          median 0.188  p90 8.566  mean 2.764  (n 26086)
+=== S15 amle 12:41:10
+[amle] run clusters 1212 (used rims 3566), solved 1087 with reach; iterations 4541295; obstacle texels 0; 2909.6s
+SEAMS free-free unjoined: app per-line 11478 (same sheet 2413) -> amle 12361 (same sheet 3612)
+TRUTH band |err| m: app per-line   median 0.184  p90 8.566  mean 2.731  (n 26086)
+TRUTH band |err| m: amle           median 0.375  p90 8.566  mean 2.765  (n 26086)
+=== S26 plate 13:29:50
+[plate] run clusters 98 (used rims 4302), solved 87 with reach; iterations 0; obstacle texels 3893; 9.2s
+SEAMS free-free unjoined: app per-line 3461 (same sheet 3461) -> plate 3447 (same sheet 3447)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.056  mean 0.013  (n 24016)
+TRUTH band |err| m: plate          median 0.000  p90 0.056  mean 0.013  (n 24016)
+=== S26 amle 13:30:10
+[amle] run clusters 98 (used rims 4302), solved 87 with reach; iterations 90330; obstacle texels 0; 52.3s
+SEAMS free-free unjoined: app per-line 3461 (same sheet 3461) -> amle 3500 (same sheet 3500)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.056  mean 0.013  (n 24016)
+TRUTH band |err| m: amle           median 0.005  p90 0.055  mean 0.016  (n 24016)
+=== S16 plate 13:31:13
+[plate] run clusters 27 (used rims 1004), solved 14 with reach; iterations 0; obstacle texels 22551; 26.7s
+SEAMS free-free unjoined: app per-line 1847 (same sheet 1847) -> plate 1662 (same sheet 1662)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.000  mean 0.001  (n 4386)
+TRUTH band |err| m: plate          median 0.000  p90 0.000  mean 0.001  (n 4386)
+=== S16 amle 13:32:03
+[amle] run clusters 27 (used rims 1004), solved 14 with reach; iterations 140376; obstacle texels 0; 297.4s
+SEAMS free-free unjoined: app per-line 1847 (same sheet 1847) -> amle 2135 (same sheet 2080)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.000  mean 0.001  (n 4386)
+TRUTH band |err| m: amle           median 0.000  p90 0.001  mean 0.001  (n 4386)
+=== S32 plate 13:37:24
+[plate] run clusters 0 (used rims 0), solved 0 with reach; iterations 0; obstacle texels 0; 0.5s
+SEAMS free-free unjoined: app per-line 800 (same sheet 800) -> plate 800 (same sheet 800)
+TRUTH band |err| m: app per-line   median 0.000  p90 0.001  mean 0.000  (n 34400)
+TRUTH band |err| m: plate          median 0.000  p90 0.001  mean 0.000  (n 34400)
+=== photo8 plate 13:37:30
+[plate] run clusters 2271 (used rims 4895), solved 1821 with reach; iterations 0; obstacle texels 0; 100.3s
+SEAMS free-free unjoined: app per-line 33239 (same sheet 30542) -> plate 50928 (same sheet 35503)
+=== photo16 plate 13:40:20
+[plate] run clusters 2745 (used rims 6316), solved 1869 with reach; iterations 0; obstacle texels 0; 97.2s
+SEAMS free-free unjoined: app per-line 38078 (same sheet 24766) -> plate 44984 (same sheet 30295)
+=== photo8 amle 13:43:01

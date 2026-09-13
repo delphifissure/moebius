@@ -14,6 +14,9 @@ Everything below is in the app repo (`moebiusv2`) as pushed. The numbers quoted 
 4. Open the bake panel. Set, left to right: **far side = plane (rim law)**, **fill = wash**, **margin = picture**,
    **faces = off**, **band = tier ≤ 35°**, **sky = off** (on for bristlecone and starwatcher), **seams = stretched**,
    **join = off**, **rules = current**. Click **Build** (1–4 min). The panel remembers its values.
+5. Two console flags for the check views (open the browser console, set before Build): `window._plateFoldAlpha = 2` paints
+   magenta every plate pixel that is stretched past the fold (the spaghetti); `= 1` makes those pixels transparent instead
+   (S25 §3: closes holes on silverwarrior, opens them on vermeer). `window._plateFoldAlpha = 0` returns to the default.
 
 ## 2. What to look at, and where
 
@@ -34,7 +37,7 @@ wash, magenta = plate 2, orange = beyond the frame. Every placeholder colour you
 
 ## 3. The decisions, one select each (change the select; it re-bakes)
 
-**rules = + ceiling cut** (S23). *For:* on rooms with a visible ceiling the wall is no longer continued up into the ceiling
+**rules = + ceiling cut** (S23; the third select from the right, added 2026-09-13). *For:* on rooms with a visible ceiling the wall is no longer continued up into the ceiling
 behind anything that touches it — S7 P 0.65 → 0.86, S26 beams 0.46 → 0.82, grille 0.50 → 0.69; byte-identical on every
 scene and picture without a ceiling plane (troll, vermeer, room, silverwarrior). *Against:* nothing measured; the ceiling is
 found by the same majority test as the ground, so a picture with a false "ceiling" (a horizontal surface above the eye that
