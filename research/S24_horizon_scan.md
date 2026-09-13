@@ -235,3 +235,66 @@ models' alpha and Depth Pro / MoGe-3's thin recall as sources.
    §2 G says the stretch's motion, not the seam, is what the eye flags — which I6 b will measure directly).
 
 The ring: a checker column, not a sprint (§0).
+
+## 5. Implications for the inpainting stage, and the hole contract (added after the user's reply, 2026-09-13)
+
+**Does the atlas survive the new methods?** Yes; each family consumes or produces its parts.
+
+- *2D layer decomposition / amodal completion* (RevealLayer, Referring Layer Decomposition, Amodal SAM) returns RGBA layers
+  and no depth. They map onto plate 2 and onto per-object hidden layers; the depth of what they return is ours to assign
+  (the plane law for background continuation, the arrival order or a learned prior for a hidden object). They need from us
+  the occluder's mask and the picture; they give back a completed background layer that is exactly the band's content.
+- *3D-aware inpainters* (3D-Consistent Inpainting, Geometry-Aware Multiview Inpainting, Lift3Dreamer) consume colour +
+  depth + mask (+ camera): the bundle as written — `plane_plate_color`, `plane_plate_depth16`, `plane_mask_inpaint`, the
+  envelope in `meta.plane`. Lift3Dreamer's training signal is a visibility mask lifted from monocular depth, i.e. the band.
+- *Camera-controlled video models* (GEN3C, Stable Virtual Camera, ViewCrafter) consume renders along a path; the completed
+  frames are back-projected into the atlas's band texels. The atlas stays the store; the model is a filler.
+
+**What the inpainting stage needs from us, whichever filler is used.**
+
+1. **The context image is the background layer with the foreground absent.** The plate is already that: where the
+   foreground stands at rest, the plate texel is the far side. An inpainter that never sees the foreground cannot bleed it
+   into the fill — that is the mechanism against spill, not mask feathering. The foreground layer is exported separately
+   and never enters the fill's context.
+2. **Masks are exact and clean.** Union-of-reveals sets are blobby by construction (they are swept regions), but speckle
+   from the despeckle and one-texel islands must not reach the mask; the ring (§0) is not in it. A mask edge that is a
+   surface's true silhouette lets the fill end where the object ends.
+3. **The fill is depth-conditioned by our plate depth** (ControlNet-depth or the model's own depth input). A flat plate depth
+   conditions a flat continuation; the fill continues the wall or the floor instead of inventing a chair at the wall's
+   depth. A generated object painted on the plate is a billboard that parallaxes as the wall — acceptable far away,
+   wrong close behind. Near hidden objects belong on plate 2 with their own depth (I4, LaRI/DepthLab), not in the plate's
+   texture. Prompting follows: "continuation of the visible surfaces; no new objects" for plate 1.
+4. **Depth stays ours after the paint.** Re-estimating depth on painted texels with a monocular network re-introduces the
+   noise the plane law removed; if a depth model is consulted for the fill, its output is snapped to the plate's planes
+   (or accepted only on plate 2). The atlas's depth is piecewise smooth by construction, which is what "the world is made
+   of discrete objects" asks of it.
+5. **Routing by class** (S17): class 2 (tier) → paint; class 1 (band outside the tier) → paint or keep the wash, the
+   artist's call; class 3 (carrier-only) → never seen, no paint; plate 2 → amodal / hidden-layer models; margin strips →
+   outpainting with the strips' own depth (`plane_out_*`).
+
+**The perception rank, clarified.** "Stretching" in §2 G means content whose screen motion is not the parallax its depth
+predicts — a triangle drawn from a foreground rim to a distant background (spaghetti), a seam that opens and closes, a plate
+parallaxing at the wrong depth. Spaghetti is the worst instance, agreed. The plate's *internal* "seams stretched" option
+spans two background depths (a skin between carriers); the S20 "rim stretched" value spans from a carrier at far depth to
+the plate under the occluder — that is the spaghetti class on the plate, visible only where the foreground has moved away,
+and the hole contract below removes the need for it.
+
+**The hole contract.** The far-pose holes (S20) had two causes with one root: the band was built for the 45° / 30° envelope
+and the shots at 52°/24° and 56°/19° lie outside it, so the foreground moves further than the carriers reach and the rim
+tear opens onto nothing; and content beyond the frame (vermeer's edge). The mathematics is closed-form and already in the
+bake: the reveal behind a rim at the envelope's extreme pose is k · (shift(d_near) − shift(d_far)) texels (the a104 law;
+Thatte & Girod's statistic is the same quantity), and the band is the union of those reveals over the sweep grid. So the
+contract is:
+
+- **the band is built for the envelope the viewer can reach**, not for the fade's rim: every texel inside the extreme
+  reveal of every rim gets a carrier at the far side's depth *before* any pose is rendered; then no tear can open onto
+  nothing inside the envelope, and the fill has an exact region to paint;
+- **the acceptance test is zero interior alpha-0 at every pose up to that envelope** (the b_holes counter, already in the
+  harness), on the kit and the pictures;
+- **the cost is band area ∝ tan θ**: against 45°, a 50° envelope is 1.19× the band width, 55° 1.43×, 60° 1.73×, 70° 2.75×;
+  the tier tells the inpainter which part is seen first, so a wider guarantee costs placeholder area, not correctness.
+
+The harness already bakes to a wider envelope (`ENV=60`); the test running now bakes silverwarrior, vermeer and room to
+60° and counts holes at the same five poses as the live chain — if the contract holds, the 52°/56° holes go to the frame
+edge only (vermeer's margin class), and the "rim stretched" option can be dropped rather than defaulted. The decision
+that is yours: the guaranteed angle (the fade can stay a design choice at 45°; the band can be built wider than the fade).
