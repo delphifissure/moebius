@@ -55,3 +55,16 @@ P6 0.50 → 0.69, S26 0.46 → 0.82, inert elsewhere). Built, measured and remov
 offline without building: cross-line regularisation of the law (S22), persistent departure along the line (S23). The porous
 set P1–P6 has env45 truth; its residual is the one-texel silhouette ring, ordered by perimeter ÷ area. Next: the live pass
 (item 2) with these defaults on the table.
+
+## Status after the horizon scan and the depth-stage test (2026-09-13, later)
+
+S24 (horizon scan), R4 (mathematics of the plug), S25 (Sprint 17: rules select, 60° bake, fold-alpha plate, clamped plate /
+AMLE offline — the field family closed a fourth time), R5 (the layered stack: RevealLayer, RLD, Amodal SAM, SAMEO, Lift3Dreamer,
+DepthLab, MoGe-3 read; the stack proposed with trades) and **S26 (Sprint 18: the depth stage scored on truth)**. S26's
+result fixes the shape of the stack's depth stage: **background layers → the plane law** (beats DA3 / MoGe-3 / DepthLab on
+19 of 19 scenes, exact on continued surfaces, and the models cannot be normalised where the hidden range is outside the
+visible one); **the object's own far side → a depth model on the completed object layer + the ordering clamp** (beats the
+plane law on 17 of 17 scenes by 5–400×; thin objects excepted). DepthLab is a learned continuation of known depth: strong on
+non-planar anchored backgrounds, the plane law's equal on self-occlusion. Queue: the live pass; RevealLayer / RLD on the six
+pictures when a GPU exists (60 GB); the object-layer depth path wired into the bundle with the per-object fit; labelling of
+the far-side choice scored by magenta area (S25 §4); hole class X (S25 §2).
