@@ -355,3 +355,43 @@ needs the Cauchy data supplied as a boundary strip; a candidate for the same one
 Recommendation: keep the plane law as the estimator; run the one-day offline test of the clamped plate per run cluster
 (and AMLE) against the S22 bar only if the live pass shows seams the plate does not hide; solve coverage by the contract
 first, because that is where the holes are.
+
+## 7. "The band should be as wide as possible — if content is always inside the portal, ±90° horizontal and vertical?" (user, 2026-09-13)
+
+**Geometrically yes, and it diverges.** With the content behind the window plane, an eye at angle θ and distance D sees
+behind an occluder a strip whose width is the shift difference between the occluder's depth and the far side's, and
+every shift is proportional to e = D·tan θ (the a104 law). So the band behind every rim, the outpaint margin beyond the
+frame (the far plane's visible footprint shifts by tan θ × box depth) and the plate step all scale with tan θ:
+
+| envelope | 45° | 50° | 55° | 60° | 70° | 80° | 85° | 89° | 90° |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| band width, margin, k (× the 45° value) | 1 | 1.19 | 1.43 | 1.73 | 2.75 | 5.67 | 11.4 | 57 | ∞ |
+
+At 90° the eye lies in the window plane and sees, through it, the far wall infinitely far to the side: there is no finite
+band. "As wide as possible" therefore has to mean *as wide as a viewer can ever be tracked and can see the screen*, which
+is a measured number per installation, not a limit of the geometry.
+
+**Where the physical cap comes from.** (1) *The tracker*: beyond the camera's half field of view there is no head position
+and nothing to render; a143–a145 measured the observed loss boundary of the face tracker on the user's own camera and
+anchored the fade there (onset 24°, black by ~27° on that laptop camera); a gallery with wide or multiple cameras moves
+this to 60–70°, not to 90°. (2) *The display*: at θ the window subtends cos θ of its width (60°: half; 80°: 17 %; 85°: 9 %)
+and its luminance and contrast fall with the panel's viewing-angle curve; past ~75° the screen is a sliver. (3) *Precision*:
+k grows with tan θ, so the visible step 1/k shrinks — at 85° the plate needs 11× the depth precision it needs at 45°; on an
+8-bit map that is already past the fold limit, on 16-bit it holds to ~80°. (4) *Evidence*: at 85° the plane law continues a
+run for eleven times its 45° reach, and the inpainter invents the whole far wall; plausibility falls with distance from
+any pixel that was photographed.
+
+**What changes in the bake at wide angles — not only the width.** At 60° and beyond the dominant reveal behind a person is
+no longer the wall but the *person's own side* (R1 E4: at gallery angles a closed side to the equator is most of what is
+seen); the layers that matter shift from plate 1 to plate 2 and the object's thickness (R1 A8, 0.71 × width in world
+units) — the metric frame of I7 becomes a requirement, not a refinement. The vertical envelope (30° now, `bgViewFadeEndDegV`)
+behaves the same way with the floor and the ceiling: at steep look-down the floor behind every object is the reveal, at
+look-up the ceiling — which is what the ground and ceiling cuts already bound.
+
+**Recommendation.** Three envelopes, decoupled and each a first-class parameter of the bake and the bundle (`meta.plane.envelope`
+already carries the angles): (a) the **bake envelope** — band, carriers, plate 2 and margins — set to the installation's
+tracking limit plus its measured jitter margin (the a143 quantity), or to a chosen gallery figure (60–70°); (b) the
+**fade**, a design choice, at or inside the bake envelope; (c) the **texture tier**, what the inpainter must paint first,
+from the head-motion distribution the recorder measures. Bake wider than you fade — never the reverse — and show the
+cost table at the panel. The 60° bake running now on silverwarrior, vermeer and room gives the first real numbers for
+that trade (band %, bake time, holes at 52°/56°); 70° and 80° arms follow if you want the curve.
