@@ -3,10 +3,11 @@
 Prompted by the user's list (RevealLayer, Referring Layer Decomposition, Amodal SAM, SAMEO, Lift3Dreamer, DepthLab,
 MoGe-3, the video NVS models, the 3–4-layer representations) and the proposal: *run the generated layers through a depth
 model and normalise against the full-scene depth map*. **What could be read from here:** GitHub and Hugging Face pages
-(RevealLayer, MoGe, DepthLab, Lift3Dreamer) and search abstracts; **the three PDFs the user attached (Amodal SAM, SAMEO,
-Lift3Dreamer) were read in full** (kept in `research/papers/`; §1b). **What could not be read:** arXiv, OpenReview, alphaXiv
-and the github.io project pages are blocked by this environment's egress policy, so RLD, MoGe-3's paper and RevealLayer's
-paper remain *(abstract only)*.
+(RevealLayer, MoGe, DepthLab, Lift3Dreamer) and search abstracts; **the four PDFs the user attached (Amodal SAM, SAMEO,
+Lift3Dreamer, Referring Layer Decomposition) were read in full** (kept in `research/papers/`; §1b, §1c). **What could not be
+read:** arXiv, OpenReview, alphaXiv and the github.io project pages are blocked by this environment's egress policy, so
+MoGe-3's paper and RevealLayer's paper remain *(abstract only)* — the RevealLayer PDF named as attached did not arrive (only
+its GitHub README was reachable).
 
 ## 1. The papers, one paragraph each, with what matters for us
 
@@ -112,6 +113,57 @@ be "Lift3Dreamer trained on the portal's occlusions" — a day of data generatio
 and a few GPU-hours. That is the one place in this stack where a small amount of our own training buys something nobody
 else's checkpoint has.
 
+## 1c. Referring Layer Decomposition, read in full (Chen, Shen, Xu, Yuan, Zhang, Niu, Wen; ByteDance; ICLR 2026)
+
+**What the task is, precisely.** *One* complete RGBA layer per prompt — a point, box, mask, text, or combinations — not a full
+decomposition of the picture; their own suggested route to a full decomposition is "an MLLM describes the image and boxes
+each object, RefLayer is applied per box" (Appendix C.1). "Background" is itself a prompt (a blue canvas), and the
+background layer is the picture with the referred foreground removed.
+
+**The model (RefLayer).** Stable Diffusion 3 initialised from **UltraEdit** (an editing model; SD3 or InstructPix2Pix
+initialisations score lower, Table 5); the image and a *colour-coded prompt canvas* (blue = background, green box, red visible
+mask, Gaussian heat-map for a point) are VAE-encoded and channel-concatenated with the noisy latent; a separate **alpha
+decoder** (a VAE-decoder clone with one output channel, trained with L1 on latents of layers blended over a jittered
+checkerboard — a plain black backdrop made it overfit) gives the transparency. Training: 64 × A100, batch 1 024, 7 k steps on
+the 1 M set, then the 100 K curated set.
+
+**The data engine (how the ground-truth hidden appearance is made).** Six stages: pre-filter (RT-DETR, OWL-v2, in-house
+classifiers); scene understanding (detector ensemble + GPT-4o tagging grounded by Grounding-DINO, SAM-2 masks, OpenSeeD
+panoptic, **Depth Anything V2 depth**); layer completion — Gemini-2.0 judges whether the object is occluded (90.3 %
+precision, 56.1 % recall), then an inpainting mask is built **from the depth map: regions nearer than the instance's mean depth
+are the likely occluders and are masked, background stuff excluded by the panoptic map**, and Bria's ControlNet inpainter
+fills them with the class label as prompt; post-completion (SAM-2 refine, ViTMatte alpha); GPT-4o prompts; post-filter
+(visible-region preservation, Gemini quality 1–5, CLIP semantic match). Success rate 70 % (MuLAn: 36 %); ~2 minutes per
+image; audit: 74.7 % of foreground and 70.2 % of background layers "neutral or better"; **65 % of the engine's errors are
+inpainting errors** (masks that include what should not change, identities not preserved — their Fig. 7), 20 % segmentation.
+RefLade: 430 K images, average 1 831 × 1 437, 12 K categories, 872 K instances, occlusion rate 60.8 %, 95 % photographs
+and 5 % stylised (paintings, cartoons included).
+
+**Numbers.** Human-preference-aligned score (min-max-normalised mean of visible-region LPIPS, CLIP-directional completion
+similarity, and FID of the layer blended on the clean background; Pearson 0.96 with human Elo): foreground 0.4813,
+background 0.6682 for the best model; prompts: text alone 0.2403, point 0.4394, box 0.4719, mask 0.4842, **text + mask 0.4833
+with the best occluded-region score 0.4403**. **Pass rate** (a human accepts at least one of K draws): background 28 % at K=1,
+65 % at K=5, 74 % at K=10; foreground 45 / 74 / 79 %. Zero-shot amodal segmentation on COCOA from the alpha channel:
+mIoU_occluded **38.83** (best prior zero-shot, pix2gestalt, 26.79; the in-domain PLUG / Amodal SAM reach 59–63 — different
+regimes, same metric). Amodal completion on their own test set: HPA 0.4833 vs pix2gestalt 0.3397, MuLAn 0.3852. Nano Banana Pro
+(Gemini 3) fails the task (does not preserve the visible pixels, no real alpha).
+
+**Stated limits.** Shadows, reflections and other effects ignored; "mutual occlusion could be a problem when composing a
+scene from multiple decomposed layers — a visibility mask for each layer should be given" (that is, they decompose, they do not
+compose — the ordering is ours); part-level granularity absent; failures under severe occlusion, point-only prompts and
+small objects. **Licence:** the paper's title page says "This work is for academic research purposes only"; code "will be
+released" on the project page (not yet). Same class of hurdle as RevealLayer's FLUX-dev base.
+
+**What it means for our stack.** (1) Our occluder masks are exact and pose-aware (the depth map, the band), so the
+best-scoring prompt — text + mask — is available to us for free, and our sweep is a sharper version of the engine's own
+"nearer than the instance's mean depth" mask. (2) The honest expectation for an automatic background completion is their
+pass rate: about one in four first draws acceptable, three in four with ten draws — so the stage needs *several draws and a
+selector*, and our scorecard (clone count, depth consistency against the plate, the magenta area at the far poses) is the
+selector we already have instruments for. (3) The composition problem they leave open — visibility masks and ordering
+between layers — is exactly what the plate, the ordering clamp and the arrival order do; the two halves fit. (4) Their
+evaluation triad (preserve the visible, complete plausibly, blend faithfully) is a ready protocol for scoring any filler on
+our atlas without truth.
+
 ## 2. How the MoGe pages get such clean "displacement gaps"
 
 From `moge/scripts/infer.py`: the mesh for visualisation and export is built with
@@ -170,7 +222,7 @@ wash and the arrival-order plate 2*; they do not replace the plate's geometry co
 |---|---|---|---|
 | 1. depth of the photograph | DA3-Mono (today) → bake-off with **MoGe-3** (metric, FOV, thin structures) | MoGe-3 gives the metric frame R1 asked for and cleaner edges at the source | new bake-off (a day); MoGe-3 numbers are abstract-only from here |
 | 2. what must be complete | our band / envelope contract, 90° plate-1 demand = the far-side set (S24) | closed-form, measured on truth | object sides and box walls not yet in the demand |
-| 3. layers | **RevealLayer** for the whole picture; **RLD** per object when its code lands; amodal masks (Amodal SAM / SAMEO) to decide self-occlusion and to prompt RLD | complete hidden appearance, discrete objects — your "world of objects" | FLUX-dev licence for RevealLayer; layer count and ordering unknown until run; failure on porous / thin objects likely (the canopy set is the test) |
+| 3. layers | **RevealLayer** for the whole picture; **RLD** per object (text + mask prompts from our own masks) when its code lands, several draws + our selector; amodal masks (Amodal SAM / SAMEO) to decide self-occlusion and to prompt | complete hidden appearance, discrete objects — your "world of objects"; RLD's pass rate 74–79 % at ten draws | FLUX-dev licence (RevealLayer) and "academic research purposes only" (RLD); one-in-four first draws; ordering between layers is ours to do; failure on porous / thin objects likely (the canopy set is the test) |
 | 4. depth of each layer | **DepthLab** on (layer RGB, visible depth, hidden mask); alternative: depth model on peeled composites + affine alignment; the plane law as verifier/fallback | scale preserved; the truth kit scores it directly | two more models at bake; DepthLab is SD2-era at 640–768 px, so upsample against the layer's own edges |
 | 5. ordering and cleanup | a135 ordering clamp between layers; fold test on every layer; despeckle line rule | already built | — |
 | 6. colour where no layer model reached | Lift3Dreamer on the atlas with our mask (first), then the same warp-back recipe fine-tuned on *our* envelope's masks on a larger base; coherence-transport wash as the placeholder before it | masks shaped like ours; placeholder with structure; the recipe is reproducible | SD-2 at 512² is a ceiling; prompt discipline ("continue the surface"); a few GPU-hours for the fine-tune |
