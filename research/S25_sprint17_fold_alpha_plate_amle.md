@@ -97,15 +97,13 @@ non-thin, non-ground candidate's *value* is replaced.
 | S26 beams | truth median / p90; seams | 0.000 / 0.056; 3 461 | 0.000 / 0.056; 3 447 | 0.005 / 0.055; 3 500 |
 | S16 two walls | truth p90; seams | 0.000; 1 847 | 0.000; **1 662** | 0.001; 2 135 |
 | S32 open hedge | (all ground-cut) | 800 | 800 | — |
-| photograph DA3 8-bit | seams total (same sheet) | 43 960 (38 114)* | 50 928 | (running) |
-| photograph DA3 16-bit | seams total (same sheet) | 41 079 (27 782)* | 44 984 | — |
-
-\* the reproduction's own (S22); the plate rows are totals from the same code.
+| photograph DA3 8-bit | seams total (same sheet) | 33 239 (30 542) | 50 928 (**35 503**, +16 %) | timed out (50 min) |
+| photograph DA3 16-bit | seams total (same sheet) | 38 078 (24 766) | 44 984 (**30 295**, +22 %) | — |
 
 **The clamped plate with the right boundary conditions reproduces the per-line law where the law is right** (S2, S26, S16,
 S32: identical truth; seams −25 % on S2, −10 % on S16, −0.4 % on S26) **and passes the depth bar on S15** (0.188 vs 0.184,
 within 0.01 m) — the two things §16's thin-plate could not do. **It fails the seams bar**: S15 same-sheet seams +54 %,
-photograph +16 % (8-bit) / +9 % (16-bit). The reason is structural and the same as S22's: the seams are choice
+photograph +16 % (8-bit) / +22 % (16-bit). The reason is structural and the same as S22's: the seams are choice
 disagreements — adjacent lines served by *different clusters or different sides* — and a field that is smooth inside a
 cluster makes the boundary between clusters sharper, not smoother. **AMLE** is worse everywhere it differs (S15 0.375 m;
 S2 +298 seams): the discrete infinity-Laplacian with value-only data does not carry a sloped plane exactly, and its

@@ -117,3 +117,5 @@ runs segmented as the app does (3.7s)
 runs: 7.7 per row, 7.2 per column
 /tmp/claude-0/-home-user-moebius/989b3965-28fd-58c7-96b5-b4b22c709919/scratchpad/sheetfield4.py:260: RuntimeWarning: All-NaN slice encountered
   P = np.stack(pads); mx = np.nanmax(P, 0); mn = np.nanmin(P, 0)
+--- exit 124 14:33:01
+=== S17C DONE 14:33:01
