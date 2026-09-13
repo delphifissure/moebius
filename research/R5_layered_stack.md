@@ -3,10 +3,10 @@
 Prompted by the user's list (RevealLayer, Referring Layer Decomposition, Amodal SAM, SAMEO, Lift3Dreamer, DepthLab,
 MoGe-3, the video NVS models, the 3–4-layer representations) and the proposal: *run the generated layers through a depth
 model and normalise against the full-scene depth map*. **What could be read from here:** GitHub and Hugging Face pages
-(RevealLayer, MoGe, DepthLab, Lift3Dreamer) and search abstracts. **What could not:** arXiv, OpenReview, alphaXiv and the
-github.io project pages are blocked by this environment's egress policy, and the three PDFs named as attached (Amodal SAM,
-SAMEO, Lift3Dreamer) did not arrive in the container — no file landed under the repos, `/mnt/user-data` or `/tmp`. If you
-push them into `research/papers/` I will read them in full; the paragraphs marked *(abstract only)* are the ones that need it.
+(RevealLayer, MoGe, DepthLab, Lift3Dreamer) and search abstracts; **the three PDFs the user attached (Amodal SAM, SAMEO,
+Lift3Dreamer) were read in full** (kept in `research/papers/`; §1b). **What could not be read:** arXiv, OpenReview, alphaXiv
+and the github.io project pages are blocked by this environment's egress policy, so RLD, MoGe-3's paper and RevealLayer's
+paper remain *(abstract only)*.
 
 ## 1. The papers, one paragraph each, with what matters for us
 
@@ -45,11 +45,16 @@ scale); recommended 640–768 px inference; applications include 3D scene inpain
 did we miss it": R1 predates it by weeks in our reading order, and we were building the depth of the hidden layer from the
 depth map alone by design. Its **input is exactly what we have** (colour, the visible depth, the band mask).
 
-**MoGe-3 (released 18 Aug 2026; code MIT, DINOv2 Apache).** Metric point map + depth + normals + intrinsics (FOV) + validity
-mask from one image; Self-Guided Sparse 3D Refinement moves refinement from the image plane to a sparse voxel space, so thin
-and elongated structures and boundaries come out clean at linear cost in occupied voxels; reported to beat Depth Pro,
-Depth Anything 3 and InfiniDepth on fine-detail metrics at strict thresholds. *(abstract only for the numbers.)* Flexible
-aspect ratios 2:1–1:2; FOV can be given or estimated.
+**MoGe-3 (released 18 Aug 2026; code MIT, weights `Ruicheng/moge-3-vitl` on Hugging Face under MIT, DINOv2 Apache).**
+Metric point map + depth + normals + intrinsics (FOV) + validity mask from one image; Self-Guided Sparse 3D Refinement moves
+refinement from the image plane to a sparse voxel space, so thin and elongated structures and boundaries come out clean at
+linear cost in occupied voxels; reported to beat Depth Pro, Depth Anything 3 and InfiniDepth on fine-detail metrics at strict
+thresholds. *(abstract only for the numbers.)* Flexible aspect ratios 2:1–1:2; FOV can be given or estimated. **Correction to
+S24:** MoGe-2 *was* in the S8 bake-off (S5 §11c): on the troll — a photograph of a painting — both metric models (Depth Pro,
+MoGe-2) answered the metric question honestly and returned a flat object five metres away (MoGe-2: 28 cm of relief), which is
+why the relative DA3-Mono won for a portal that wants the scene *inside* the picture. MoGe-3 must be run in its
+affine-invariant mode (the relative point map, not the metric one) for illustrations, or the same failure returns; the
+weights are fetchable from here, so the bake-off can be repeated on the six pictures and the kit.
 
 **GEN3C, Stable Virtual Camera, ViewCrafter.** Camera-controlled video/NVS diffusion that completes views along a path; SEVA
 under the Stability Community licence; GEN3C under NVIDIA's licence (check); ViewCrafter code Apache (its DynamiCrafter base
@@ -59,6 +64,53 @@ Apache). Heavy; the fill for the envelope's rim, not the representation.
 for the hidden, from one image; WonderWorld: foreground / background / sky layers in < 10 s; Broxton et al. 2020: a small
 fixed number of RGBA + depth layers in texture atlases, browser-rendered. The field converged on 3–4 layers, which is what
 plate 1 + plate 2 + sky already is.
+
+## 1b. The three attached papers, read in full
+
+**Amodal SAM (Zhang, Tian, Tao, Tang, Yu, Pei; arXiv 2604.20748, 22 Apr 2026; IEEE TIP submission).** Input: the image and a
+*box* on the target (two points inside the visible part work as well: KINS 84.74/58.52 vs 85.43/59.27 with boxes). Output: a
+binary **amodal mask** — the object's full silhouette, occluded part included — nothing else (no appearance, no depth). Method:
+SAM's ViT encoder with a gated *Spatial Completion Adapter* (concatenate the ROI prior mask with the features, gated
+convolution, three iterations) at shallow, middle and deep layers; prompt encoder and mask decoder frozen; trained on
+occlusions synthesised on SA-1B (TAOS: paste a random object over the target, blur the seam, a VLM rejects bad composites);
+losses: Dice + 10·BCE, a regional-consistency term (cosine similarity between the visible and occluded regions' pooled
+features) and an adversarial "topological" regulariser (a discriminator on mask + image). Numbers: closed-domain KINS
+mIoU_full 88.79 / mIoU_occluded 63.12, COCOA 84.27 / 59.94, COCOA-cls 87.65 / 54.34 (PLUG: 88.10 / 61.42 on KINS); zero-shot
+COCOA-cls 83.18 and D2SA 91.62 against SAMBA 81.82 / 90.87 and pix2gestalt 79.08 / 81.82; video through SAM-2 (FISHBOWL
+92.74 / 83.36). The occluded-region IoU is the honest number and it is 54–63: half to two thirds of the hidden silhouette is
+recovered on average. No code statement in the text. *For us:* the per-object amodal silhouette on a box prompt — exactly the
+input the elastica completion of R4 §1 would compute by hand, learned instead; the decision "is what is behind this rim the
+same object?" (self-sampling) and the shape of a plate-2 object both come from it.
+
+**SAMEO (Tai, Shih, Sun, Wang, Chen; CVPR 2025).** *EfficientSAM* with only the mask decoder fine-tuned (encoder and prompt
+encoder frozen); prompt = a box from any detector, modal or amodal (training draws both at random — the "random" variant
+scores best, AP 54.2); output = amodal mask + a predicted IoU used to re-rank detections. Data: Amodal-LVIS, 300 K synthetic
+images from LVIS/LVVIS with *paired* occluded and unoccluded versions of each instance (training on occluded-only data
+made the model segment the background object behind the prompted one — their Fig. 6); a cleaned collection of 1 M images /
+2 M instances across ten datasets. Zero-shot: COCOA-cls AP 54.4 (RTMDet front end), D2SA 75.0 (CO-DETR), against AISFormer
+40.6 / 66.3 trained in-domain. Stated failures: incomplete amodal masks, rough edges, a modal mask returned when objects
+overlap heavily (points beside the box help). *For us:* the lighter of the two amodal-mask models, needs a detector for
+the boxes; same role as Amodal SAM, lower ceiling, faster.
+
+**Lift3Dreamer (Liang, Fu, Liu, Zhang; *Fundamental Research* 2026, CC BY-NC-ND; weights on Hugging Face).** The
+architecture is *Stable Diffusion 2.0 inpainting*, 512 × 512, InstructPix2Pix-style extra input channels for the mask and
+the masked latent. The training trick is the one that matters to us: **warp-back masks**. Estimate depth (ZoeDepth, metric),
+lift, forward-warp to a random camera, then backward-warp the visible pixels to the source view; the pixels that do not
+survive the round trip are the structured holes H₀, and the model is trained to reconstruct the source image from
+(I₀ with holes, H₀, prompt). Data-free: 2 000 GPT-4 prompts → 200 000 SDXL images at 1024² → ZoeDepth; 8 × V100 for 100 k
+steps. For continuous trajectories they add a **depth completion network** Ω(D′, H, I) for the inpainted pixels and build a
+mesh that *discards long edges by thresholding depth discontinuities "following AdaMPI"* — the same gap rule as MoGe's
+`depth_map_edge` (§2). Numbers on RealEstate10K (same depth and cameras for all): LPIPS 0.129 / PSNR 24.41 / SSIM 0.840
+against PowerPaint 0.131 / 24.19 / 0.826, RePaint 0.132 / 24.02 / 0.820, SD-2 inpainting 0.160 / 22.01 / 0.775, AdaMPI
+0.145 / 23.76 / 0.802; dropped into RealmDreamer: CLIP 32.02, depth-Pearson 0.93 vs 31.69 / 0.89. *For us:* (1) its holes
+are ours — forward-warp reveals — so it is the first inpainter to try on the atlas; (2) its Ω is DepthLab's job; (3) the
+gains over generic inpainters are real but modest (LPIPS 0.131 → 0.129), so the *mask shape* is worth a few per cent, not a
+transformation; (4) 512² on SD-2 is a resolution ceiling for a 1 008-px atlas (tile, or reproduce the recipe on a larger base);
+(5) **the recipe is reproducible on our own statistics**: our sweep produces the exact hole masks of *our* envelope (wide,
+one-sided, up to 90°), so a FLUX-Fill- or SD-XL-inpainting LoRA fine-tuned with warp-back masks from our band generator would
+be "Lift3Dreamer trained on the portal's occlusions" — a day of data generation from the six pictures plus any photo set,
+and a few GPU-hours. That is the one place in this stack where a small amount of our own training buys something nobody
+else's checkpoint has.
 
 ## 2. How the MoGe pages get such clean "displacement gaps"
 
@@ -121,7 +173,7 @@ wash and the arrival-order plate 2*; they do not replace the plate's geometry co
 | 3. layers | **RevealLayer** for the whole picture; **RLD** per object when its code lands; amodal masks (Amodal SAM / SAMEO) to decide self-occlusion and to prompt RLD | complete hidden appearance, discrete objects — your "world of objects" | FLUX-dev licence for RevealLayer; layer count and ordering unknown until run; failure on porous / thin objects likely (the canopy set is the test) |
 | 4. depth of each layer | **DepthLab** on (layer RGB, visible depth, hidden mask); alternative: depth model on peeled composites + affine alignment; the plane law as verifier/fallback | scale preserved; the truth kit scores it directly | two more models at bake; DepthLab is SD2-era at 640–768 px, so upsample against the layer's own edges |
 | 5. ordering and cleanup | a135 ordering clamp between layers; fold test on every layer; despeckle line rule | already built | — |
-| 6. colour where no layer model reached | Lift3Dreamer-class inpainter on the atlas with our mask, depth-conditioned; coherence-transport wash as the placeholder before it | masks shaped like ours; placeholder with structure | SD-inpaint resolution; prompt discipline ("continue the surface") |
+| 6. colour where no layer model reached | Lift3Dreamer on the atlas with our mask (first), then the same warp-back recipe fine-tuned on *our* envelope's masks on a larger base; coherence-transport wash as the placeholder before it | masks shaped like ours; placeholder with structure; the recipe is reproducible | SD-2 at 512² is a ceiling; prompt discipline ("continue the surface"); a few GPU-hours for the fine-tune |
 | 7. the frame | outpainting of the margin strips / box walls at the far depth | the beyond-frame holes (vermeer, room) | a second inpaint job |
 | 8. delivery | Broxton-shaped RGBA + depth layers = our bundle with plate 2 promoted to real layers; reimport | industry-standard shape; browser-rendered | reimport not built |
 
