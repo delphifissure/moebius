@@ -203,6 +203,42 @@ Median |error| in metres on each set; the plane law next to each model's *global
    hidden depth p95 for that reason. (f) S15 and S32 are the only scenes whose hidden background is not inside the
    visible depth range; the porous set P1–P6 has open backgrounds and reads as "planar".
 
+## 3b. The control that was missing — and what it takes away from §3.2 (added the same evening)
+
+Before wiring an object-layer depth path, the own-face win was checked against the trivial rule **"the object's far side
+is at its own front depth"** (zero thickness: at an own-face texel, predict `d_vis`). That rule needs no model.
+
+| scene | n own | front = far | plane law | DA3 + clamp | texels where DA3 predicted deeper than the front | DA3 error on those | front rule on those | truth thickness p50 / p95 |
+|---|---|---|---|---|---|---|---|---|
+| P1 | 6187 | 0.0083 | 0.1309 | 0.0107 | 44 % | 0.0134 | 0.0080 | 0.0083 / 0.0221 |
+| P2 | 33945 | 0.0048 | 0.0182 | 0.0049 | 4 % | 0.0164 | 0.0040 | 0.0048 / 0.0162 |
+| P3 | 23207 | 0.0059 | 0.0752 | 0.0066 | 17 % | 0.0165 | 0.0060 | 0.0059 / 0.0206 |
+| P4 | 28727 | 0.0064 | 0.0378 | 0.0071 | 17 % | 0.0112 | 0.0054 | 0.0064 / 0.0201 |
+| P5 | 1559 | 0.0004 | 0.1360 | 0.0568 | 100 % | 0.0568 | 0.0004 | 0.0004 / 0.0006 |
+| P6 | 2241 | 0.0005 | 0.1355 | 0.0943 | 100 % | 0.0943 | 0.0005 | 0.0005 / 0.0010 |
+| S10 | 10815 | 0.0045 | 0.0482 | 0.0056 | 44 % | 0.0077 | 0.0043 | 0.0045 / 0.0076 |
+| S11 | 7934 | 0.0056 | 0.0541 | 0.0505 | 99 % | 0.0505 | 0.0056 | 0.0056 / 0.0117 |
+| S12 | 3202 | 0.0074 | 0.0762 | 0.0073 | 70 % | 0.0090 | 0.0088 | 0.0074 / 0.0144 |
+| S15 | 13448 | 0.0061 | 3.7916 | 0.0096 | 27 % | 0.5729 | 0.0070 | 0.0061 / 0.0221 |
+| S2 | 2813 | 0.0094 | 0.0468 | 0.0085 | 43 % | 0.0110 | 0.0146 | 0.0094 / 0.0207 |
+| S26 | 4447 | 0.0096 | 0.0571 | 0.0067 | 93 % | 0.0078 | 0.0124 | 0.0096 / 0.0361 |
+| S27 | 337 | 0.0075 | 0.1135 | 0.0089 | 78 % | 0.0072 | 0.0075 | 0.0075 / 0.0185 |
+| S32 | 2400 | 0.0037 | 0.0072 | 0.0034 | 100 % | 0.0034 | 0.0037 | 0.0037 / 0.0073 |
+| S5 | 402 | 0.0002 | 0.0559 | 0.0284 | 99 % | 0.0285 | 0.0002 | 0.0002 / 0.0002 |
+| S7 | 22825 | 0.0066 | 0.1258 | 0.0074 | 17 % | 0.0133 | 0.0066 | 0.0066 / 0.0206 |
+| S9 | 776 | 0.0003 | 0.0320 | 0.0320 | 100 % | 0.0320 | 0.0003 | 0.0003 / 0.0006 |
+
+**Reading.** The zero-thickness rule ties or beats DA3 + clamp on 15 of 17 scenes (S26 and S2 are the exceptions, by
+1–3 mm), and its error *is* the truth's thickness (the two columns agree to the digit): in the kit an object's ever-visible
+own far side lies within a few millimetres of its front. Where the model actually contributed — the texels it placed
+deeper than the front — it was worse than the front rule on 12 of 17 scenes, catastrophically so on S15 (0.57 m). **So the
+"models win on own faces" of §3.2 belongs to the ordering clamp, not to the depth models; the model's own contribution is
+nil to negative on this kit.** §3.2 and §3.4 stand corrected: the object's far side should carry the object's own depth
+rather than the background's, and the instrument for that is the front depth continued under the clamp, not a depth
+model. What a depth model on a completed object layer might still add is the depth of the layer's *amodal* part (the part
+hidden behind another object, class 3 territory), which this kit did not isolate; that is untested, not disproven. This
+is the premise the object-layer wiring is built on (S27), and the depth-model input there is optional and unproven.
+
 ## 4. DepthLab at strength 1.0
 
 Strength 1.0 removes DepthLab's interpolated prior: the hole is denoised from pure noise, with the known region still
