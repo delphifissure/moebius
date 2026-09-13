@@ -298,3 +298,60 @@ The harness already bakes to a wider envelope (`ENV=60`); the test running now b
 60° and counts holes at the same five poses as the live chain — if the contract holds, the 52°/56° holes go to the frame
 edge only (vermeer's margin class), and the "rim stretched" option can be dropped rather than defaulted. The decision
 that is yours: the guaranteed angle (the fade can stay a design choice at 45°; the band can be built wider than the fade).
+
+## 6. "Is there not some complex math membrane for the perfect plug?" (user, 2026-09-13)
+
+**What a membrane bought before, and why it was dropped — measured.** The shipped quick bake's far side *was* a membrane:
+a harmonic (Laplace) surface between fixed values (Sprint 2 A244f, then "the reach" chose which texels are free). It
+never has holes because it never tears — it stretches the plate from the near rim to the far rim (S5 §7: "no holes at any
+angle because it never tears"), which in depth is the spaghetti of §5, and it sags under every rim-less surface (open floor
+−0.25 median, precision 0.32, Sprint 2). The plane law replaced it in Sprint 3 because it was exact on every planar far
+side and the only arm that put the ground behind a full-width occluder up to the horizon (S15: 0.009 m against the
+membrane's 0.031 / 1.1 m). A second membrane, the thin-plate spline per join-law sheet (Sprint 12, §16), scored 1.23 m on
+S15 against the law's 0.18 m: a sheet joined the ground and the hill across their fold and one smooth surface through both
+is neither; and a thin plate extended from a rim arc over a wide reveal is a poor extrapolator.
+
+**Why a membrane is the wrong object, not just a losing one.** A membrane is one continuous height field over the hole,
+determined by the values *around* it. The hidden far side is not that: it is the **continuation of one surface** — the
+far one — past the occluder, with a **jump** at the occluder's rim (the occluder is in front; nothing connects them), bounded
+below and above by the surfaces it must not pass through (ground, ceiling, walls). The correct mathematical object is
+therefore *layered, one-sided and piecewise-smooth with a free discontinuity*: Nitzberg–Mumford–Shiota's 2.1D sketch
+(1993; layers with occlusion ordering, occluded contours continued by Euler's elastica), Mumford–Shah with the rim as the
+discontinuity set, and each layer continued as a clamped plate — Cauchy data (value **and slope**) on the far rim, a *free*
+edge under the occluder, and the other planes as **obstacles**. The per-line plane law with its ground and ceiling cuts is
+exactly the one-dimensional finite-difference form of this: Cauchy data from the run, linear (zero-bending) continuation,
+free end, obstacle cuts. That is why it beat every membrane: it has the right boundary conditions.
+
+**What the two-dimensional version could add, and what it costs.** Its only promised gain is cross-line consistency — the
+seams — because a plate solved over a region continues its Cauchy data as one surface, where the per-line law continues
+each line on its own. §16 tested it on the wrong domain (the join-law sheet, which crosses folds); the untested form is
+the plate solved per **run cluster** (the same fold segmentation the runs already use, so ground and hill are separate
+plates), with a free edge, obstacles, and no constants (the clamped biharmonic energy has none and is invariant to depth
+scaling). *For:* seams vanish by construction within a cluster; the arrival order and layering are untouched; the offline
+reproduction with truth (`sheetfield3.py`) exists, so it is a one-day test against the S22 bar. *Against:* the family
+"replace the per-line choice by a field" has been closed three times (§10b, §16, S22); an affine continuation is already
+what a clamped plate returns on planar data, so the only scenes that can move are curved ones, where §16's extrapolation
+weakness applies; and the perception result (§2 G) says the seams themselves are cheap once the plate hides them — what
+is expensive is content that slides, which the hole contract (§5) addresses without a field.
+
+**The plug itself is three problems, each with its own right tool, and only one of them is a surface.**
+
+1. *Coverage* (no hole at any pose): closed-form geometry — the reveal of every rim at the envelope's extreme pose, carriers
+   to that reach (§5, the contract). No membrane needed; a membrane's hole-freeness was stretching.
+2. *Depth of the plug*: one-sided extrapolation of the far surface with obstacles — the plane law now; the clamped plate per
+   run cluster is the one two-dimensional refinement not yet tested.
+3. *Colour of the plug*: the inpainting stage, depth-conditioned (§5).
+
+**Where "complex math" does earn its place beyond the plate equation.** (a) *Hidden contours*: the silhouette of an occluded
+object continued behind the occluder — Euler's elastica / Euler-spiral completion is the classical amodal-completion core
+(Kanizsa; Nitzberg–Mumford–Shiota; Chan–Kang–Shen elastica inpainting) and is what plate 2's hidden shapes and the amodal
+models' outputs should be checked against. (b) *The obstacle problem*: a surface continued under an occluder cannot pass
+through the ground, the ceiling or a wall — the variational form handles several intersecting planes in one solve, where
+the cuts handle them one at a time (this is the plane cut I2 stated as a constraint rather than a rule). (c) *AMLE* (the
+infinity-Laplacian; Caselles–Morel–Sbert 1998, the only interpolant satisfying their axioms): extends "as linearly as
+possible" and creates no spurious extrema — the property the truth liked in §16 — but takes values only, not slopes, so it
+needs the Cauchy data supplied as a boundary strip; a candidate for the same one-day test as the plate.
+
+Recommendation: keep the plane law as the estimator; run the one-day offline test of the clamped plate per run cluster
+(and AMLE) against the S22 bar only if the live pass shows seams the plate does not hide; solve coverage by the contract
+first, because that is where the holes are.
