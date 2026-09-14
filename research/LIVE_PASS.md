@@ -70,3 +70,45 @@ so "paint all" costs only inpaint area, not correctness.
 
 Per picture: which selects, a screenshot at 27° and at 45° (and 56° if it matters), and one line: keep / drop / undecided.
 That is enough to set the defaults, strip the arms you drop, and re-baseline every instrument.
+
+## 5. Object layers — how to test the import live (S27, 2026-09-14)
+
+What it is: after a plane Build the SD Bundle now carries `plane_object_ids.png` + `meta.plane_objects` (each occluder's
+footprint and box), and the button **📤 Import object layers (S27)** reads completed object layers back: `obj_<k>_color.png`
+(RGBA at the plate grid, alpha = the whole object including its hidden part), `obj_<k>_visible.png` (its visible footprint,
+white; recommended), optionally `obj_<k>_depth16.png` (any depth or disparity; aligned on the visible front). Visible texels
+keep the source depth; hidden texels sit at the object's own front depth (or the aligned depth), behind whatever is visible
+there. A new Build drops the layers. The only case where a layer changes what you see is an object hidden behind another
+object (S27 §3): an object's own sides cannot live in a layer.
+
+**A. The demo that shows the mechanism (S9, three cards behind each other) — ten minutes.**
+1. `harness/objlayers_demo/S9/`: copy `S9_color.png` → `defaultImgColor.png` and `S9_depth16.png` → `defaultImgDepth.png`
+   in the app folder (keep your originals), reload.
+2. The kit's depth law, in the browser console before the Build (the sliders cannot reach the kit's values):
+   `outerVolumeDepth = 0.112; innerVolumeDepth = 0.0001; currentNormPortalPlane = 0.5; window._rayReproject = true;`
+3. Bake panel as in §1 step 4 (far side = plane, fill = wash, margin = picture, faces = off, band ≤ 35°, sky = off,
+   seams = stretched, join = off, rules = current), **Build**. The console prints `[S27] objects (A253 rule …): 4 components …`.
+4. Move 10–20 cm right: the wall wash sits behind the red card where the green and blue cards should continue. That is
+   the "before".
+5. Click **Import object layers (S27)**, multi-select the nine `obj_*.png` files in `harness/objlayers_demo/S9/` (or only
+   the six `_color` + `_visible` files: the cards are flat, the depth file adds nothing and the console says so). The
+   console prints one `[S27] object layer {…}` line per card: `visiblePx`, `hiddenPx` (10 094 and 16 786 for the green and
+   blue cards), `depth.rule`. The first frame after the import takes a moment on a slow GPU (shader compile).
+6. Same 10–20 cm right: the hidden card parts are there, at the card's depth, with the card's texture. **SD regions** ticked:
+   the layer content is untinted (it is content, not a placeholder); the wash it replaced was blue/cyan.
+7. **Build** again drops the layers (console: `[S27] rebuild dropped 3 imported object layer(s)`).
+
+**B. On a photograph — what the files are and where they come from.**
+1. Build, then **Export SD Bundle**. In the zip: `plane_object_ids.png` (0 = none, 1..254 objects, largest band demand
+   first), `meta.json → plane_objects` (rule, boxes in plate and source pixels, footprint / band-demand counts, the reimport
+   contract), `plane_source_color.png`.
+2. `python3 harness/objl_starters.py <bundle.zip> <dir> [N]` writes, for the N most demanding objects, `obj_<k>_color.png`
+   (the visible part cut out, transparent elsewhere), `obj_<k>_visible.png` and `obj_<k>_box.txt`. Paint or generate the
+   hidden part into the transparent area (an editor, or a layer model given the box / mask), keep the names, import.
+3. What to expect: only objects that hide *another* object gain anything; the plane law already carries the background
+   behind every object and S26 says nothing beats it there. Where a layer is wrong (a painted part that does not match the
+   scene) it shows exactly as painted — the import does not blend.
+
+**C. What to send back:** the console's `[S27] objects` line and the per-layer lines, a screenshot at 10–20 cm right before
+and after the import, and, if a layer misbehaves, the `obj_<k>_*.png` set so the harness can replay it
+(`harness/objl_filetest.js` is the headless version of the button; `harness/objlayers.js S=S9` the full kit run).

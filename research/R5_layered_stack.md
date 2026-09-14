@@ -32,8 +32,8 @@ topological losses; state of the art with generalisation to unseen categories. M
 code status unknown.)*
 
 **SAMEO — Segment Anything, Even Occluded (CVPR 2025).** SAM as a mask decoder behind any detector, predicting amodal masks;
-Amodal-LVIS (300 K synthetic images) for training; zero-shot state of the art on COCOA-cls and D2SA. *(abstract only; code
-status unknown from here.)*
+Amodal-LVIS (300 K synthetic images) for training; zero-shot state of the art on COCOA-cls and D2SA. *(Read in full: §1b and
+§1e. No code, weights or dataset release found as of 2026-09-14.)*
 
 **Lift3Dreamer (Mar 2026; weights on Hugging Face, 0.9 B, a Stable-Diffusion-inpainting pipeline).** A 2D inpainter fine-tuned
 with pseudo-3D supervision: depth is estimated for single images, lifted to 3D, novel views simulated by random camera
@@ -229,6 +229,46 @@ opinion on it. (5) Licence: the paper adds nothing beyond the README — code Ap
 dataset research-only; the training recipe is public enough that a re-train on a permissive base (Qwen-Image, or SD3.5 under
 its community licence) is a defined job, not a research question. (6) The 60 GB footprint rules out a laptop bake; it is a
 server step or an API.
+
+## 1e. SAMEO, read again for what we can use (2026-09-14; Tai, Shih, Sun, Wang, Chen; NTHU + NVIDIA; CVPR 2025; arXiv 2503.06261)
+
+**What it is, exactly.** EfficientSAM (Meta's lightweight SAM: ViT encoder distilled from SAM's ViT-H, SAM's prompt encoder and
+mask decoder) with **only the mask decoder fine-tuned** for amodal output. Input: the image and one **box prompt** — either a
+modal box (the visible extent, from any ordinary detector) or an amodal box (from an amodal detector); output: the **amodal
+mask** (visible + hidden) and an IoU estimate. Class-agnostic. Loss: Dice + focal + L1 on the IoU. It is a mask decoder
+only: the detector is whoever you like (RTMDet, ConvNeXt-V2, ViTDet, CO-DETR, DINO, AISFormer were all tried), and the
+paper's point is that any of them plus SAMEO beats the joint amodal models (COCOA-cls AP 40.6 for AISFormer → 54–55 with
+SAMEO on the detectors' boxes; D2SA 66 → 75–81; MUVA 69 → 76–79; zero-shot on COCOA-cls 54.4, D2SA 75.0, trained without
+those sets).
+
+**Data.** A cleaned collection of ~1.27 M images / 2.35 M instances: COCOA, COCOA-cls, KINS, KITTI-360-APS (real);
+D2SA, MUVA, WALT, DYCE, MP3D-amodal, pix2gestalt (synthetic; WALT/DYCE/MP3D refined by the authors — walls, floors,
+ceilings and near-fully-hidden objects removed), and their own **Amodal-LVIS** (300 K images, one instance each, built by
+running an earlier SAMEO on LVIS/LVVIS to find *complete* objects, then pasting a size-normalised occluder over them; every
+occluded example is paired with its unoccluded original — the "dual annotation" that stopped the model over-predicting
+occlusion). Training for the zero-shot model: batch 32, 40 k iterations, Adam 1e-4, a V100/A100. That is a small job.
+
+**Availability — checked today.** The paper has no code or weights statement (none in the text; the project page
+`weient.github.io/sameo.github.io` is the nerfies template with links to the paper and to its own source only); a GitHub
+search for "SAMEO amodal" returns nothing; Hugging Face has no SAMEO model and no Amodal-LVIS dataset; the CVPR supplement
+is blocked from here. Eighteen months after CVPR 2025 there is no release I can find. So: **the paper is a recipe, not a
+tool.** The recipe is cheap: EfficientSAM's weights are public (Apache-2.0), the public amodal sets (COCOA-cls, D2SA,
+KINS, MUVA, pix2gestalt) are enough for a version without Amodal-LVIS, and fine-tuning one mask decoder is hours on one GPU.
+What we cannot reproduce without their data is the Amodal-LVIS generalisation.
+
+**Where it fits our stack — and what we do today instead.** Our object export (S27) segments from the *depth map alone*:
+a texel is an object where it stands in front of the bake's own far field by more than the cliff step, grouped by the rim
+law's depth continuity, ranked by band demand. It gives footprints and boxes with no learned model, and it has the limits
+S27 §4 lists: porous objects fragment into hundreds of components, a hill in front of the sky is an object, the base rows of
+an object standing on the floor belong to the floor. SAMEO would take exactly what we already produce — the modal box of
+each object — and return the amodal mask; the difference of the two is the **occlusion mask**, which is (a) the region a layer
+model (RevealLayer / RLD) has to complete, (b) the hidden set the import places behind what is visible, and (c) a clean
+`obj_<k>_visible.png` / amodal alpha pair for the import instead of our footprint. It does not give colour (a layer model or
+inpainter does) and not depth (the front-continued rule does, S26 §3b). Until a decoder exists, the same split is available
+today from **EfficientSAM / SAM 2 modal masks** on our boxes for the *visible* part (that alone fixes the base-row and
+fragment problems of the depth-only footprint), with the amodal extent left to the layer model's own alpha — RevealLayer and
+RLD both return one. Amodal SAM (Apr 2026) is the other candidate for the amodal half; its code status was also unknown
+when R5 §1 was written.
 
 ## 2. How the MoGe pages get such clean "displacement gaps"
 
