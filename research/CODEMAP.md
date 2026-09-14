@@ -1093,3 +1093,26 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   the > 64 fraction against the truth view). SwiftShader compiles the cloned materials on the first frame after an import
   (≈ 6 min per arm here; a real GPU compiles in a second).
 
+
+## 36. Sprint 20 (2026-09-14; `S28_sam_masks_highlight.md`) — SAM 2.1 masks as the object map; the standpoint highlight
+- **`window._setObjectIds(ids, objects, source)`** (after `_planeObjects`): an external id map at the plate grid (Uint8 source
+  rows) becomes `window._extObj {ids, objects, source}`; per id it recomputes footprint, band demand (far side, sky excluded),
+  bbox, front / background depth on the current bake and ranks by demand. `_planeObjects(force)` returns `_extObj` unless
+  `force === 'depth'`; `window._clearObjectIds()` drops it. `importObjectMasks()` (button `importObjMasksButton`, both HTML
+  files) reads `plane_object_ids*.png` (+ optional json) through `_png16Decode` / `_pngToRgba`.
+- **`window._bandContinuation(ob)`**: per band texel (`_qbDisocc` ∧ `plateF < dQ − q`) the label of the visible surface its
+  plate depth joins — multi-source BFS from visible texels touching the band, edges `bgRimLawFor().joinedIdx(t, j, pS, pw)` on
+  the plate depth in source rows; **seed gate** `!joinedIdx(t, j, dQ, pw)` (a seed may not be the occluder at j); unreached
+  = −1. Cached in `window._qbBandCont {ids, pF, cont, stats}` keyed on the ids and plateF arrays. Console `[S28] band
+  continuation`.
+- **`window._objectHighlight(sel)`**: classes into two `DataTexture`s (R float, Nearest) bound to `u_sdPaint` on the plate
+  (`bgLayerMesh.material`) and the FG (`mediaLayers[0].mesh.material`); plate band: 5 red (continues `sel`, occluder ≠ sel),
+  6 orange (continues `sel`, occluder = sel); FG: sel ≥ 1 → 7 blue on the footprint, 9 (blue + faint orange) where the band
+  behind continues sel under sel, 8 (faint red) on other pixels whose band continues sel; sel = 0 → 5 red on objects, 9 / 7
+  on the background. Saves and restores the C paint textures and the `sdRegionsChk` state (`window._objHL`, `_objHLPrevChk`,
+  `_objHLSel`). Shader: `sdHighlightLogicGLSL` tint table classes 5–7 on the plate; FG branch reads `clsF` (5/6/7 at 0.5,
+  8 red at 0.3, 9 blue 0.5 then orange 0.35). HTML: `objHighlightId` (number) + `objHighlightButton`.
+- **`window._objectView`**: red/orange/grey from `_bandContinuation` (counts `bandOther / bandSelf / bandUnjoined`).
+- **Harness** `harness/segment/sam2_objects.py` (`--n --auto --pps --max-frac --min-band --points --model`), `harness/objl_view.js`
+  (also dumps `objIds.u8`, `objects.json`, `source_plate.png`), `harness/objl_hl.js` (IMG/S, TAG, IDS, SEL, POSES; object view +
+  `hl<sel>_<fx>_<fy>.png`).

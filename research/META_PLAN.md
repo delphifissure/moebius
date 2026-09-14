@@ -74,3 +74,14 @@ front or an aligned depth, clamped behind what is visible). On the kit it does w
 in a texel layer at all. Queue: the live pass; RevealLayer / RLD on the six pictures when a GPU exists (60 GB) — their layers
 now have a place to land; per-leaf (K-hit) layers for porous objects; labelling of the far-side choice scored by magenta area
 (S25 §4); hole class X (S25 §2).
+
+## Status after Sprint 20 (2026-09-14, later)
+
+**S28**: SAM 2.1 visible masks replace the depth-only footprints on photographs (offline script, clicks / boxes / automatic;
+`Import object masks`), and the live **standpoint highlight** reads, per band texel, its occluder and the surface its plate
+depth continues (`_bandContinuation`, seeds gated so the occluder cannot seed its own band): red = hidden by another surface,
+orange = a surface hiding itself at a step inside the picture, blue = visible. On the troll one click is the torso; four
+clicks are the troll (speckled left arm); the woman needs two. What orange cannot mean: sides and back faces beyond a
+silhouette — not in the picture, a 3D prior per object (Amodal3R) is the only source. Queue: SAM 2.1 in the browser for live
+clicks (ONNX Runtime Web); amodal masks (pix2gestalt / a SAMEO reproduction) when a GPU exists; then the live pass.
+

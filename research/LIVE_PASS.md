@@ -112,3 +112,32 @@ object (S27 §3): an object's own sides cannot live in a layer.
 **C. What to send back:** the console's `[S27] objects` line and the per-layer lines, a screenshot at 10–20 cm right before
 and after the import, and, if a layer misbehaves, the `obj_<k>_*.png` set so the harness can replay it
 (`harness/objl_filetest.js` is the headless version of the button; `harness/objlayers.js S=S9` the full kit run).
+
+## 6. Object masks from SAM 2.1 and the standpoint highlight (S28, 2026-09-14)
+
+What it is: the depth-only object rule is exact on the kit but on a photograph its footprints are DA3's steps, not
+silhouettes (on the troll one 480 k-px component). `harness/segment/sam2_objects.py` segments the picture with SAM 2.1
+(CPU, ~3 min with the automatic pass) from clicks / the export's boxes / automatically; **📤 Import object masks (S28)**
+makes that map the app's objects; **🎯 Highlight object** + id shows one surface's standpoint (S28 §1 table): the object blue,
+what it hides of *itself* orange (faint at rest on the occluding part, full in the revealed band), what *another* object hides
+of it faint red at rest / red in the band; id 0 = the background's standpoint (objects red, the background's own steps orange,
+the rest blue); −1 off.
+
+1. Build (panel as §1 step 4), **Export SD Bundle**; unzip somewhere. Or headless: `IMG=<color>,<depth16> TAG=x node
+   harness/objl_view.js` writes `harness/shots/objlayers/view_x/{source_plate.png, objects.json, objIds.u8}`.
+2. `python3 harness/segment/sam2_objects.py harness/shots/objlayers/view_x --auto --points "300,190+300,350+250,650+330,800;470,700+455,500"`
+   — clicks in plate-grid pixels (the plate grid is `objects.json → pw, ph`; open `source_plate.png` to read coordinates),
+   `+` joins several clicks on one object, `;` separates objects. For a bundle: `python3 harness/objl_starters.py` is not
+   needed; point the script at a folder holding `plane_source_color.png` renamed `source_plate.png` and `meta.json`'s
+   `plane_objects` saved as `objects.json` (`{pw, ph, objects}`) — or run `objl_view.js`. Look at `overlay_sam.png`: one
+   colour per object, ids in `objects_sam.json`. If an object came out as a part (one click on the troll = his torso), add
+   clicks and rerun (seconds per prompt; the automatic pass is the slow part — drop `--auto` while iterating).
+3. In the app, after the Build: **Import object masks (S28)**, multi-select `plane_object_ids_sam.png` + `objects_sam.json`.
+   Console: `[S28] object map set from SAM 2.1 …: N objects; first … px, band …` and, on the first highlight,
+   `[S28] band continuation: … joined … (… occluded by another surface, … a surface hiding itself), … joined nothing`.
+4. **Highlight object**: id 1 (the troll), 2 (the woman), 0 (the background), −1 off. Move 10–20 cm right and left: the band
+   colours are what the plate shows there; the faint marks at rest sit on the pixels that hide those band texels.
+   **🧭 Object view (S27)** saves the whole picture's map (blue outlines, red/orange/grey band) as a PNG.
+5. Send back: `overlay_sam.png`, the console lines, and a screenshot per highlight at rest and at 10–20 cm. What to judge:
+   is the troll's outline the troll (SAM), is red where another thing stands in front, is orange only where a surface steps
+   in front of itself. Orange never marks an object's sides beyond its silhouette (not in the picture; S28 §3c).
