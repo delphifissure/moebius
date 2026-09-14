@@ -1,0 +1,48 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/418 [00:00<?, ?it/s]Loading weights: 100%|██████████| 418/418 [00:00<00:00, 7230.87it/s]
+owlv2 loaded 22s
+owlv2 forward 10.6s
+top class-free proposals (box, objectness):
+   {'box': [428, 430, 547, 929], 'objectness': 0.367}
+   {'box': [106, 163, 595, 821], 'objectness': 0.263}
+   {'box': [376, 852, 567, 944], 'objectness': 0.244}
+   {'box': [321, 191, 338, 214], 'objectness': 0.141}
+   {'box': [425, 427, 470, 547], 'objectness': 0.13}
+   {'box': [480, 60, 621, 466], 'objectness': 0.127}
+   {'box': [110, 963, 247, 1010], 'objectness': 0.127}
+   {'box': [430, 429, 525, 680], 'objectness': 0.115}
+   {'box': [15, 212, 293, 934], 'objectness': 0.115}
+   {'box': [616, 327, 819, 896], 'objectness': 0.106}
+   {'box': [424, 427, 470, 467], 'objectness': 0.102}
+   {'box': [462, 574, 527, 661], 'objectness': 0.099}
+   {'box': [646, 700, 768, 890], 'objectness': 0.081}
+   {'box': [271, 147, 336, 218], 'objectness': 0.078}
+   {'box': [498, 856, 569, 940], 'objectness': 0.075}
+   {'box': [530, 232, 619, 469], 'objectness': 0.075}
+   {'box': [205, 573, 316, 727], 'objectness': 0.074}
+   {'box': [450, 524, 493, 628], 'objectness': 0.071}
+   {'box': [206, 558, 451, 873], 'objectness': 0.07}
+   {'box': [508, 36, 829, 878], 'objectness': 0.069}
+SAM masks from the proposals: box / objectness / mask px / SAM iou / IoU troll / IoU woman / frac in depth-object
+/tmp/claude-0/-home-user-moebius/989b3965-28fd-58c7-96b5-b4b22c709919/scratchpad/sam2onnx/owltest.py:44: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  iou, masks, _ = dec.run(None, inp); j = int(np.argmax(iou[0,0])); m = np.asarray(Image.fromarray(masks[0,0,j].astype(np.float32), 'F').resize((pw,ph), Image.BILINEAR)) > 0
+   [428, 430, 547, 929] 0.367 30744 0.93 0.0 0.93 0.99
+   [106, 163, 595, 821] 0.263 104953 0.7 0.75 0.0 0.95
+   [376, 852, 567, 944] 0.244 5058 0.83 0.0 0.07 0.92
+   [321, 191, 338, 214] 0.141 305 0.84 0.0 0.0 0.96
+   [425, 427, 470, 547] 0.13 2167 0.9 0.0 0.07 0.95
+   [480, 60, 621, 466] 0.127 15615 0.83 0.05 0.0 0.21
+   [110, 963, 247, 1010] 0.127 2960 0.84 0.0 0.0 0.93
+   [430, 429, 525, 680] 0.115 12005 0.89 0.0 0.37 0.99
+   [15, 212, 293, 934] 0.115 94941 0.77 0.0 0.0 0.83
+   [616, 327, 819, 896] 0.106 27813 0.46 0.0 0.0 0.65
+   [424, 427, 470, 467] 0.102 893 0.88 0.0 0.02 0.79
+   [462, 574, 527, 661] 0.099 1678 0.81 0.0 0.05 0.99
+   [646, 700, 768, 890] 0.081 10026 0.77 0.0 0.0 0.84
+   [271, 147, 336, 218] 0.078 3551 0.91 0.02 0.0 0.94
+   [498, 856, 569, 940] 0.075 3642 0.9 0.0 0.08 0.96
+   [530, 232, 619, 469] 0.075 10377 0.9 0.04 0.0 0.11
+   [205, 573, 316, 727] 0.074 12441 0.9 0.09 0.0 0.97
+   [450, 524, 493, 628] 0.071 3716 0.85 0.0 0.12 1.0
+   [206, 558, 451, 873] 0.07 44762 0.87 0.28 0.0 0.75
+   [508, 36, 829, 878] 0.069 97311 0.56 0.0 0.0 0.34

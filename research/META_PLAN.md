@@ -93,3 +93,11 @@ Enter to keep — the kept objects are the object map and the S28 highlight come
 clicks reproduces the offline masks (troll IoU 0.993; the woman 0.89 by SAM's own near-tie between two candidates); the
 screen ↔ source mapping is exact at rest (colour check). Queue unchanged otherwise: amodal masks (pix2gestalt / SAMEO
 reproduction) and per-object 3D priors when a GPU exists; the live pass.
+
+**Video (user, 2026-09-14).** The object masks must work for video in time. SAM 2 / 2.1 is that model: the image path wired
+in S29 is its per-frame half; the video half (memory encoder + memory attention + object pointers, propagating a click on
+one frame through the clip) is the same weights family and exists as ONNX exports (onnx-community publishes `Sam2Video`
+configs; a `sam2.1-memory-attention` export is on the Hub). When the app's video layer needs per-frame object maps, the
+plan is: encode frames with the same encoder, run the memory attention graph per frame, and hand each frame's ids to the
+same `_setObjectIds` path — one prompt per object per clip, not per frame. Not started; it needs a video bake first.
+

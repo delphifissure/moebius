@@ -80,10 +80,31 @@ Two boxes dragged through the same handlers (press, eight moves, release), no cl
 
 Decoder 306–423 ms per box on WASM; the guide stays hidden, the manual view offset stays 0. Shot: `after_box_drag.png`.
 
+### 3c. The WebGPU provider, checked on a software GPU
+
+The headless shell has no `navigator.gpu`; the full Chromium build in new headless mode with `--enable-unsafe-webgpu
+--enable-features=WebGPU,Vulkan --use-vulkan=swiftshader` exposes a SwiftShader WebGPU adapter (no `shader-f16`). Slow —
+the encoder took 870 s and a decoder pass 50–107 s — but it runs the provider the user's browser takes. Result: **the encoder
+and decoder behave differently on it.**
+
+| run | encoder | decoder | click 1 (px / iou) | click 2 | click 3 | click 4 (px / iou) |
+|---|---|---|---|---|---|---|
+| WASM reference | wasm | wasm | 2 900 / 0.899 | 36 926 / 0.316 | 122 844 / 0.405 | **134 593 / 0.508** |
+| both WebGPU | webgpu | webgpu | 2 849 / 0.911 | 5 258 / 0.394 | 57 392 / 0.245 | 99 117 / 0.091 |
+| A: decoder alone on WebGPU | wasm | webgpu | 2 849 / 0.911 | 5 258 / 0.394 | 57 392 / 0.245 | 99 118 / 0.091 (IoU vs offline 0.30; the woman 28 886 / 0.83, IoU 0.89) |
+| B: encoder alone on WebGPU | webgpu | wasm | B_RESULTS |
+
+Run A reproduces the "both WebGPU" numbers to the pixel with the WASM encoder's features, so the drift is in the decoder
+graph on that provider (its kernels or the adapter), growing with the number of points. **The decoder therefore runs on
+WASM by default** (`_sam2EPDec` overrides): a pass costs ~300 ms there and nothing is gained on the GPU. The encoder, the
+25-second part, keeps WebGPU when the browser has it; run B says whether its features agree with WASM's. Whether a real
+GPU shows the same decoder drift is not known from here — the user's console prints the provider per model
+(`creating sessions (encoder …, decoder …)`), and `window._sam2EP = 'wasm'` before pressing the button forces both to WASM.
+
 ## 4. What to expect on a real machine (LIVE_PASS §7)
 
-Chrome / Edge with WebGPU: first visit downloads 183 MB (progress in the status line), encode in a few seconds, clicks
-instant. Safari / Firefox without WebGPU: WASM, encode 10–40 s, clicks under half a second. The files are cached per
+Chrome / Edge with WebGPU: first visit downloads 183 MB (progress in the status line), encode in a few seconds on the GPU,
+clicks in ~300 ms (the decoder stays on WASM, §3c). Safari / Firefox without WebGPU: WASM, encode 10–40 s, clicks under half a second. The files are cached per
 origin (open the app from the same address each time). If the CDN or Hugging Face is blocked, put the files next to the app
 and set `window._ortBase = 'vendor/ort/'`, `window._sam2Base = 'vendor/sam2/'` in the console before pressing the button.
 
