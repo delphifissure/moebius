@@ -39,6 +39,12 @@ single-mask path (dynamic stability fallback) chose the same one. CPU ORT encode
   with none pending, the last kept object). **Enter** keeps the object: it becomes the next id, the nearer object wins an
   overlap (mean disparity over the mask, as the offline script), `_setObjectIds` installs the map, and the S28 highlight of
   the new object comes on at once. **Esc** leaves; the kept map stays.
+- **Drag = box.** A press that moves more than 3 CSS px before release is a box (the pointer-slop convention, not a
+  measurement); corners outside the picture are clamped to it. The box goes into the decoder's `input_boxes` (SAMEO's prompt
+  form) together with any points, so a box can be refined by clicks and Alt-clicks; a new box replaces the old one; Backspace
+  removes points first, then the box. In python on the troll (`sam2onnx/boxtest.py`): the tight box [151,148,604,847] alone
+  gives 109 842 px (SAM iou 0.74; IoU 0.79 against the four-click mask — the dark arms are the difference), box + the four
+  clicks 139 044 px (IoU 0.88), the woman's box 33 471 px (iou 0.955) in one gesture.
 - While clicking the foreground is shown as it is (a new paint class 10 = untouched) with the pending mask blue, and the
   plate untinted (the C classes would show magenta / cyan through the silhouette fringes). The app's own canvas handlers
   (the depth-peek click that shows the portal-plane guide, the scale click, dblclick) are stopped at the window's capture
@@ -64,6 +70,16 @@ Start-up in the sandbox: 214 s (183 MB from the local server into the Cache API 
 the files come from the cache. Decoder per click 280–370 ms on WASM. Band continuation on the live map: 258 943 band
 texels, 204 762 joined, 54 181 unjoined (the S28 figures with the offline map: 194 739 / 64 204).
 
+### 3b. Boxes dragged in the browser (`harness/shots/samlive/troll_box/`)
+Two boxes dragged through the same handlers (press, eight moves, release), no clicks:
+
+| object | box (plate px) | candidates (px / SAM iou), best first | kept | IoU vs the offline click masks |
+|---|---|---|---|---|
+| troll | [151,148,604,847] | **109 118 / 0.74**, 196 402 / 0.51, 20 236 / 0.43 | 109 118 px | 0.787 (head, torso, right arm, legs; the dark left arm only in part — a click there refines it) |
+| woman | [428,428,568,936] | **33 486 / 0.955**, 35 479 / 0.93, 16 849 / 0.88 | 33 486 px | 0.938 |
+
+Decoder 306–423 ms per box on WASM; the guide stays hidden, the manual view offset stays 0. Shot: `after_box_drag.png`.
+
 ## 4. What to expect on a real machine (LIVE_PASS §7)
 
 Chrome / Edge with WebGPU: first visit downloads 183 MB (progress in the status line), encode in a few seconds, clicks
@@ -75,6 +91,5 @@ and set `window._ortBase = 'vendor/ort/'`, `window._sam2Base = 'vendor/sam2/'` i
 
 - The amodal outline (the whole troll behind the woman) still needs an amodal decoder (pix2gestalt / a SAMEO reproduction,
   R5 §1e); the browser path gives the visible mask, which is what SAMEO's front end would also start from.
-- Box prompts in the browser (drag a rectangle) would be the SAMEO input form; the export accepts `input_boxes`. Not wired.
 - The single-thread WASM encode could be 3–4× faster with cross-origin isolation (COOP/COEP headers → threads); a static
   file server does not send them, so it is left as is.

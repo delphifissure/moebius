@@ -150,7 +150,9 @@ the rest blue); −1 off.
    mode is on (head tracking resumes on Esc).
 2. Click the troll's chest: the mask shows blue on the picture. It will be the torso — press **Tab** to see SAM's other two
    candidates (the whole figure, a muscle), or add clicks on the belly, thigh and foot: with several clicks the best-rated
-   candidate is the whole troll (S29 §3). **Alt-click** excludes a point (Shift is the app's drag). **Backspace** undoes.
+   candidate is the whole troll (S29 §3). Or **drag a box** around him: one gesture gives most of the figure (the dark arms
+   may need a click each). **Alt-click** excludes a point (Shift is the app's drag). **Backspace** undoes the last point, then
+   the box.
 3. **Enter** keeps the object: it becomes object 1, the S28 highlight comes on (blue, its own steps faint orange, revealed
    band as you move after Esc). Click the woman (two clicks), Enter → object 2. **Esc** when done: the map stays and feeds
    the export (`plane_object_ids.png`, `meta.plane_objects` with `source: "live click …"`), the Object view, the layer import

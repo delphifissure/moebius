@@ -1124,9 +1124,10 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   sam2.1-hiera-small-ONNX, `_sam2Variant` suffix) through `fetchCached` (Cache API `moebius-sam2`, progress in
   `#samLiveStatus`), creates the sessions (`executionProviders` `['webgpu','wasm']` or `_sam2EP`; `externalData` for the
   `_data` files), encodes the source image once (1024², mean/std, `S.feats`), installs window capture listeners
-  (`pointerdown` → `onDown`; `click/mousedown/mouseup/dblclick/contextmenu` → `swallow`; `keydown` → Enter accept, Tab cycle,
-  Backspace undo, Esc stop). `click(x, y, label)` (plate-grid coords) → `decode()` (points scaled to 1024, `input_boxes`
-  1×0×4) → three candidates sorted by `iou_scores`, upsampled by `upsampleMask` (bilinear, threshold 0) → `paintPending()`
+  (`pointerdown/pointermove/pointerup` → `onDown/onMove/onUp`: press = point, > 3 px drag = box with a live rectangle;
+  `click/mousedown/mouseup/dblclick/contextmenu` → `swallow`; `keydown` → Enter accept, Tab cycle, Backspace undo, Esc stop).
+  `click(x, y, label)` / `box(x0, y0, x1, y1)` (plate-grid coords) → `decode(clicks, box)` (points scaled to 1024,
+  `input_boxes` 1×1×4 or 1×0×4) → three candidates sorted by `iou_scores`, upsampled by `upsampleMask` (bilinear, threshold 0) → `paintPending()`
   (FG `u_sdPaint` = class 10 everywhere + 7 on the mask; plate `u_sdPaint` = zero texture; SD regions on). `accept()` →
   `S.objects/S.masks`, `rebuildIds()` (nearer front wins), `_setObjectIds(ids, objects, 'SAM 2.1 live (ep)')`,
   `_objectHighlight(id)`. `undoObject()`, `stop()` (restores listeners, paint textures or the active highlight, `isSweeping`,
