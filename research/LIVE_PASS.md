@@ -141,3 +141,25 @@ the rest blue); −1 off.
 5. Send back: `overlay_sam.png`, the console lines, and a screenshot per highlight at rest and at 10–20 cm. What to judge:
    is the troll's outline the troll (SAM), is red where another thing stands in front, is orange only where a surface steps
    in front of itself. Orange never marks an object's sides beyond its silhouette (not in the picture; S28 §3c).
+
+## 7. SAM 2.1 in the browser — click objects live (S29, 2026-09-14)
+
+1. Build (panel as §1 step 4). Press **🖱️ Click objects (SAM 2.1 live)**. First time: the status line under the button
+   counts the download (183 MB from Hugging Face, cached by the browser afterwards), then "encoding the picture" (seconds
+   on WebGPU in Chrome/Edge; 10–40 s on WASM in Safari/Firefox), then "click an object". The view is held at rest while the
+   mode is on (head tracking resumes on Esc).
+2. Click the troll's chest: the mask shows blue on the picture. It will be the torso — press **Tab** to see SAM's other two
+   candidates (the whole figure, a muscle), or add clicks on the belly, thigh and foot: with several clicks the best-rated
+   candidate is the whole troll (S29 §3). **Alt-click** excludes a point (Shift is the app's drag). **Backspace** undoes.
+3. **Enter** keeps the object: it becomes object 1, the S28 highlight comes on (blue, its own steps faint orange, revealed
+   band as you move after Esc). Click the woman (two clicks), Enter → object 2. **Esc** when done: the map stays and feeds
+   the export (`plane_object_ids.png`, `meta.plane_objects` with `source: "live click …"`), the Object view, the layer import
+   and the Highlight-object field (ids 1, 2, …; 0 = background).
+4. Console lines: `[S29] picture encoded in … s (webgpu|wasm)`, `[S29] N click(s): candidate k/3: … px, SAM iou …`, `[S29]
+   object k kept …`, and the S28 lines on each accept. If it says `SAM 2.1 not available: …`, the CDN or Hugging Face is
+   unreachable from your network: download `onnxruntime-web@1.22.0/dist/*` and the four `onnx/vision_encoder*.onnx*`,
+   `prompt_encoder_mask_decoder*.onnx*` files into `vendor/ort/` and `vendor/sam2/` next to the app and set
+   `window._ortBase = 'vendor/ort/'; window._sam2Base = 'vendor/sam2/'` in the console before pressing the button.
+5. Send back: the encode time and provider from the console, one screenshot with a pending mask, one after Enter, and the
+   ids you ended with. What to judge: does one click give the thing you meant (if not, how many clicks / Tabs did it take),
+   and is the click landing where you pointed (the mask should start under the cursor).

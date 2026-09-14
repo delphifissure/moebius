@@ -1,0 +1,57 @@
+{
+ "mapchk": {
+  "n": 400,
+  "medianErrMapped": 3.3333333333333335,
+  "medianErrShuffled": 20,
+  "roundTrip": {
+   "x": 123.40000000000082,
+   "y": 456.7000000000001,
+   "u": 0.14500587544065902,
+   "v": 0.5535679374389051
+  }
+ },
+ "results": [
+  {
+   "id": 1,
+   "maskPx": 134593,
+   "frontDepthMean": 0.2309118312445471,
+   "iouEstimate": 0.5081493854522705,
+   "candidate": 1,
+   "source": "live click (300,190)+(300,350)+(250,650)+(330,800)"
+  },
+  {
+   "id": 2,
+   "maskPx": 28736,
+   "frontDepthMean": 0.3479790595987032,
+   "iouEstimate": 0.8574777841567993,
+   "candidate": 1,
+   "source": "live click (470,700)+(455,500)"
+  }
+ ],
+ "cmp": {
+  "objects": [
+   {
+    "id": 1,
+    "footprintPx": 134593,
+    "bandPx": 77061
+   },
+   {
+    "id": 2,
+    "footprintPx": 28736,
+    "bandPx": 28716
+   }
+  ],
+  "iouVsOffline": [
+   {
+    "id": 1,
+    "iou": 0.993
+   },
+   {
+    "id": 2,
+    "iou": 0.89
+   }
+  ]
+ },
+ "encMs": 26060.700000000186,
+ "ep": "wasm"
+}

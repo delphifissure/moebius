@@ -1116,3 +1116,24 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - **Harness** `harness/segment/sam2_objects.py` (`--n --auto --pps --max-frac --min-band --points --model`), `harness/objl_view.js`
   (also dumps `objIds.u8`, `objects.json`, `source_plate.png`), `harness/objl_hl.js` (IMG/S, TAG, IDS, SEL, POSES; object view +
   `hl<sel>_<fx>_<fy>.png`).
+
+## 37. Sprint 21 (2026-09-14; `S29_sam_in_browser.md`) — SAM 2.1 in the browser
+- **`window._samLive`** (after `_objectHighlight`): `start()` (requires `_bgQuickBaked`, `_qbSize`, `_qbDQ`) → holds the rest
+  pose (`isSweeping = true`, camera x = y = 0), loads `ort.min.js` from `_ortBase` (default jsdelivr onnxruntime-web@1.22.0,
+  `ort.env.wasm.wasmPaths` = same), fetches the four ONNX files from `_sam2Base` (default HF onnx-community
+  sam2.1-hiera-small-ONNX, `_sam2Variant` suffix) through `fetchCached` (Cache API `moebius-sam2`, progress in
+  `#samLiveStatus`), creates the sessions (`executionProviders` `['webgpu','wasm']` or `_sam2EP`; `externalData` for the
+  `_data` files), encodes the source image once (1024², mean/std, `S.feats`), installs window capture listeners
+  (`pointerdown` → `onDown`; `click/mousedown/mouseup/dblclick/contextmenu` → `swallow`; `keydown` → Enter accept, Tab cycle,
+  Backspace undo, Esc stop). `click(x, y, label)` (plate-grid coords) → `decode()` (points scaled to 1024, `input_boxes`
+  1×0×4) → three candidates sorted by `iou_scores`, upsampled by `upsampleMask` (bilinear, threshold 0) → `paintPending()`
+  (FG `u_sdPaint` = class 10 everywhere + 7 on the mask; plate `u_sdPaint` = zero texture; SD regions on). `accept()` →
+  `S.objects/S.masks`, `rebuildIds()` (nearer front wins), `_setObjectIds(ids, objects, 'SAM 2.1 live (ep)')`,
+  `_objectHighlight(id)`. `undoObject()`, `stop()` (restores listeners, paint textures or the active highlight, `isSweeping`,
+  camera). `screenToSrc` / `srcToScreen`: ray in `mediaLayers[0].mesh` local frame, plane z = 0, uv from `geometry.boundingBox`.
+  Initialises `window._objHL` (C paint textures) if the highlight has not yet. Shader FG class 10 = untouched.
+- HTML: `samLiveButton`, `samLiveStatus` (both files); wiring next to the S28 buttons.
+- Harness `harness/sam_live.js` (IMG, TAG, REF, CLICKS): local `harness/vendor/ort` → node_modules/onnxruntime-web/dist,
+  `harness/vendor/sam2` → the ONNX files (symlinks, gitignored); `scratch_server.js` MIME for `.mjs/.wasm/.onnx/.onnx_data`;
+  mapping check by colour, clicks via `page.mouse.click` at `srcToScreen`, per-object IoU vs `plane_object_ids_sam.png`,
+  guide-visible check, shots, `results.json`. `scratchpad/sam2onnx/validate.py`: ONNX vs torch predictor.

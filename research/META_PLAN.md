@@ -85,3 +85,11 @@ clicks are the troll (speckled left arm); the woman needs two. What orange canno
 silhouette — not in the picture, a 3D prior per object (Amodal3R) is the only source. Queue: SAM 2.1 in the browser for live
 clicks (ONNX Runtime Web); amodal masks (pix2gestalt / a SAMEO reproduction) when a GPU exists; then the live pass.
 
+## Status after Sprint 21 (2026-09-14, later)
+
+**S29**: SAM 2.1 runs in the page (onnxruntime-web, WebGPU or WASM; the onnx-community export of hiera-small fetched once
+from Hugging Face and cached). Click objects at the rest pose, Tab through SAM's three candidates, Alt-click to exclude,
+Enter to keep — the kept objects are the object map and the S28 highlight comes on per object. Headless replay of the S28
+clicks reproduces the offline masks (troll IoU 0.993; the woman 0.89 by SAM's own near-tie between two candidates); the
+screen ↔ source mapping is exact at rest (colour check). Queue unchanged otherwise: amodal masks (pix2gestalt / SAMEO
+reproduction) and per-object 3D priors when a GPU exists; the live pass.
