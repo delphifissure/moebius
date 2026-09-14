@@ -1,0 +1,237 @@
+{
+ "scene": "S2",
+ "meta": {
+  "scene": "S2",
+  "W": 0.16,
+  "H": 0.09,
+  "D": 0.2,
+  "pn": 0.5,
+  "outer": 0.128,
+  "inner": 0.0001,
+  "nx": 800,
+  "ny": 450,
+  "margin": 0.5,
+  "canvas_nx": 1600,
+  "canvas_ny": 900,
+  "K": 6,
+  "element": "E9 contact (floating=False)",
+  "prims": [
+   {
+    "pid": 0,
+    "name": "back_wall",
+    "label": 1
+   },
+   {
+    "pid": 1,
+    "name": "floor",
+    "label": 1
+   },
+   {
+    "pid": 2,
+    "name": "ceiling",
+    "label": 1
+   },
+   {
+    "pid": 3,
+    "name": "wall_left",
+    "label": 1
+   },
+   {
+    "pid": 4,
+    "name": "wall_right",
+    "label": 1
+   },
+   {
+    "pid": 5,
+    "name": "box0",
+    "label": 2
+   },
+   {
+    "pid": 6,
+    "name": "box1",
+    "label": 2
+   },
+   {
+    "pid": 7,
+    "name": "box2",
+    "label": 2
+   }
+  ]
+ },
+ "bake": {
+  "pw": 800,
+  "ph": 450,
+  "objects": [
+   {
+    "id": 1,
+    "footprintPx": 8635,
+    "bandPx": 8483,
+    "bbox": [
+     526,
+     287,
+     620,
+     380
+    ],
+    "frontDepthMean": 0.2328106194285899,
+    "backgroundDepthMean": 0.01965097733984631
+   },
+   {
+    "id": 2,
+    "footprintPx": 5171,
+    "bandPx": 5171,
+    "bbox": [
+     200,
+     326,
+     275,
+     396
+    ],
+    "frontDepthMean": 0.3101427431172039,
+    "backgroundDepthMean": 0.08014567242187864
+   },
+   {
+    "id": 3,
+    "footprintPx": 2440,
+    "bandPx": 2440,
+    "bbox": [
+     410,
+     358,
+     460,
+     407
+    ],
+    "frontDepthMean": 0.3517393170321574,
+    "backgroundDepthMean": 0.17677118125997607
+   },
+   {
+    "id": 4,
+    "footprintPx": 8084,
+    "bandPx": 5,
+    "bbox": [
+     526,
+     0,
+     620,
+     86
+    ],
+    "frontDepthMean": 0.28677149342243063,
+    "backgroundDepthMean": 1.1056661605834961e-05
+   },
+   {
+    "id": 5,
+    "footprintPx": 6450,
+    "bandPx": 5,
+    "bbox": [
+     200,
+     0,
+     275,
+     86
+    ],
+    "frontDepthMean": 0.28677149342243063,
+    "backgroundDepthMean": 1.1056661605834961e-05
+   },
+   {
+    "id": 6,
+    "footprintPx": 4300,
+    "bandPx": 5,
+    "bbox": [
+     410,
+     0,
+     460,
+     86
+    ],
+    "frontDepthMean": 0.28677149342243063,
+    "backgroundDepthMean": 1.1056661605834961e-05
+   }
+  ]
+ },
+ "truthLayers": [
+  {
+   "layerId": 1,
+   "pid": 7,
+   "name": "box2",
+   "appIds": [
+    1
+   ],
+   "purity": [
+    1.0
+   ],
+   "layerPx": 9755,
+   "visPx": 9755,
+   "appFootprintPx": 8635,
+   "hiddenPx": 0,
+   "hiddenDepthMedian_m": null,
+   "visDepthMedian_m": 0.06880000233650208
+  },
+  {
+   "layerId": 2,
+   "pid": 5,
+   "name": "box0",
+   "appIds": [
+    2
+   ],
+   "purity": [
+    1.0
+   ],
+   "layerPx": 6423,
+   "visPx": 6420,
+   "appFootprintPx": 5171,
+   "hiddenPx": 3,
+   "hiddenDepthMedian_m": 0.03999999910593033,
+   "visDepthMedian_m": 0.03999999910593033
+  },
+  {
+   "layerId": 3,
+   "pid": 6,
+   "name": "box1",
+   "appIds": [
+    3
+   ],
+   "purity": [
+    1.0
+   ],
+   "layerPx": 3290,
+   "visPx": 3290,
+   "appFootprintPx": 2440,
+   "hiddenPx": 0,
+   "hiddenDepthMedian_m": null,
+   "visDepthMedian_m": 0.026399999856948853
+  }
+ ],
+ "poses": [
+  [
+   0,
+   0
+  ],
+  [
+   0.6,
+   0
+  ],
+  [
+   1,
+   -0.5
+  ],
+  [
+   -1,
+   0.5
+  ]
+ ],
+ "results": {
+  "none": {
+   "layers": null,
+   "shots": {
+    "0:0": "none_0_0.png",
+    "0.6:0": "none_0.6_0.png",
+    "1:-0.5": "none_1_m0.5.png",
+    "-1:0.5": "none_m1_0.5.png"
+   }
+  },
+  "cont": {
+   "layers": null,
+   "shots": {
+    "0:0": "cont_0_0.png",
+    "0.6:0": "cont_0.6_0.png",
+    "1:-0.5": "cont_1_m0.5.png",
+    "-1:0.5": "cont_m1_0.5.png"
+   }
+  }
+ },
+ "note": "results.json reconstructed: the headless browser crashed during the truth arm (its fronto-parallel boxes give no depth fit, so truth == cont)"
+}

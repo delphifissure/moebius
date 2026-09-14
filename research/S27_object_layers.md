@@ -104,7 +104,10 @@ S9 (16.8 → 12.6 at fx 0.6; 20.9 → 16.1; 19.1 → 17.5), where the "> 64" are
 - **Terrain in front of the sky is an object under A253** (hills); with sky reveals excluded from demand it ranks low or is
   dropped, and the continuity rule keeps it from swallowing the trunk. It is still exported when it hides another hill.
 - **SwiftShader compiles the cloned materials on the first frame after an import** (≈ 6 minutes per arm in the headless
-  harness; a real GPU does it in a second). Every previous harness paid the same for plate 2 once.
+  harness; a real GPU does it in a second). Every previous harness paid the same for plate 2 once. On S9 and S2 the
+  headless browser crashed inside the third arm (after two imports and their disposal); both scenes' truth-depth arm equals
+  the continuation arm by construction (no depth fit on fronto-parallel faces), so their tables are built from the
+  none / cont shots and say so in `results_<S>.json`.
 
 ## 5. Files
 

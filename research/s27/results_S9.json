@@ -1,0 +1,211 @@
+{
+ "scene": "S9",
+ "meta": {
+  "scene": "S9",
+  "W": 0.16,
+  "H": 0.09,
+  "D": 0.2,
+  "pn": 0.5,
+  "outer": 0.11199999999999999,
+  "inner": 0.0001,
+  "nx": 800,
+  "ny": 450,
+  "margin": 0.5,
+  "canvas_nx": 1600,
+  "canvas_ny": 900,
+  "K": 6,
+  "element": "E5 stacked occluders",
+  "prims": [
+   {
+    "pid": 0,
+    "name": "back_wall",
+    "label": 1
+   },
+   {
+    "pid": 1,
+    "name": "floor",
+    "label": 1
+   },
+   {
+    "pid": 2,
+    "name": "ceiling",
+    "label": 1
+   },
+   {
+    "pid": 3,
+    "name": "wall_left",
+    "label": 1
+   },
+   {
+    "pid": 4,
+    "name": "wall_right",
+    "label": 1
+   },
+   {
+    "pid": 5,
+    "name": "card0",
+    "label": 2
+   },
+   {
+    "pid": 6,
+    "name": "card1",
+    "label": 2
+   },
+   {
+    "pid": 7,
+    "name": "card2",
+    "label": 2
+   }
+  ]
+ },
+ "bake": {
+  "pw": 800,
+  "ph": 450,
+  "objects": [
+   {
+    "id": 1,
+    "footprintPx": 26986,
+    "bandPx": 26986,
+    "bbox": [
+     247,
+     122,
+     378,
+     328
+    ],
+    "frontDepthMean": 0.3683680593967438,
+    "backgroundDepthMean": 0.15786551666084836
+   },
+   {
+    "id": 2,
+    "footprintPx": 20862,
+    "bandPx": 20862,
+    "bbox": [
+     329,
+     116,
+     471,
+     334
+    ],
+    "frontDepthMean": 0.2738841772079468,
+    "backgroundDepthMean": 0.12529574310479005
+   },
+   {
+    "id": 3,
+    "footprintPx": 16619,
+    "bandPx": 16506,
+    "bbox": [
+     394,
+     112,
+     543,
+     337
+    ],
+    "frontDepthMean": 0.1764553338289261,
+    "backgroundDepthMean": 1.4334917068481445e-05
+   },
+   {
+    "id": 4,
+    "footprintPx": 23384,
+    "bandPx": 5,
+    "bbox": [
+     247,
+     0,
+     543,
+     79
+    ],
+    "frontDepthMean": 0.2838705394275581,
+    "backgroundDepthMean": 1.4334917068481445e-05
+   }
+  ]
+ },
+ "truthLayers": [
+  {
+   "layerId": 1,
+   "pid": 5,
+   "name": "card0",
+   "appIds": [
+    1
+   ],
+   "purity": [
+    1.0
+   ],
+   "layerPx": 26986,
+   "visPx": 26986,
+   "appFootprintPx": 26986,
+   "hiddenPx": 0,
+   "hiddenDepthMedian_m": null,
+   "visDepthMedian_m": 0.019200000911951065
+  },
+  {
+   "layerId": 2,
+   "pid": 6,
+   "name": "card1",
+   "appIds": [
+    2
+   ],
+   "purity": [
+    1.0
+   ],
+   "layerPx": 30956,
+   "visPx": 20862,
+   "appFootprintPx": 20862,
+   "hiddenPx": 10094,
+   "hiddenDepthMedian_m": 0.04800000041723251,
+   "visDepthMedian_m": 0.04800000041723251
+  },
+  {
+   "layerId": 3,
+   "pid": 7,
+   "name": "card2",
+   "appIds": [
+    3
+   ],
+   "purity": [
+    1.0
+   ],
+   "layerPx": 33406,
+   "visPx": 16620,
+   "appFootprintPx": 16619,
+   "hiddenPx": 16786,
+   "hiddenDepthMedian_m": 0.07999999821186066,
+   "visDepthMedian_m": 0.07999999821186066
+  }
+ ],
+ "poses": [
+  [
+   0,
+   0
+  ],
+  [
+   0.6,
+   0
+  ],
+  [
+   1,
+   -0.5
+  ],
+  [
+   -1,
+   0.5
+  ]
+ ],
+ "results": {
+  "none": {
+   "layers": null,
+   "shots": {
+    "0:0": "none_0_0.png",
+    "0.6:0": "none_0.6_0.png",
+    "1:-0.5": "none_1_m0.5.png",
+    "-1:0.5": "none_m1_0.5.png"
+   }
+  },
+  "cont": {
+   "layers": null,
+   "shots": {
+    "0:0": "cont_0_0.png",
+    "0.6:0": "cont_0.6_0.png",
+    "1:-0.5": "cont_1_m0.5.png",
+    "-1:0.5": "cont_m1_0.5.png"
+   }
+  }
+ },
+ "note": "results.json reconstructed: the browser crashed during the truth arm (identical to cont on S9: fronto-parallel cards give no depth fit)"
+}
