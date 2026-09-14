@@ -1,0 +1,110 @@
+[
+ {
+  "pose": "0:0",
+  "arm": "none",
+  "holes": 0,
+  "meanErr": 6.925360185185186,
+  "badFrac": 0.01205
+ },
+ {
+  "pose": "0:0",
+  "arm": "cont",
+  "holes": 0,
+  "meanErr": 6.926804629629631,
+  "badFrac": 0.012080555555555556,
+  "changedPx": 46,
+  "errNoneOnChanged": 55.927536231884055,
+  "errArmOnChanged": 64.17391304347827
+ },
+ {
+  "pose": "0:0",
+  "arm": "truth",
+  "holes": 0,
+  "meanErr": 6.926796296296297,
+  "badFrac": 0.012080555555555556,
+  "changedPx": 46,
+  "errNoneOnChanged": 55.927536231884055,
+  "errArmOnChanged": 64.17391304347827
+ },
+ {
+  "pose": "0.6:0",
+  "arm": "none",
+  "holes": 0,
+  "meanErr": 14.270270370370369,
+  "badFrac": 0.0642888888888889
+ },
+ {
+  "pose": "0.6:0",
+  "arm": "cont",
+  "holes": 0,
+  "meanErr": 14.269637037037036,
+  "badFrac": 0.06424722222222222,
+  "changedPx": 62,
+  "errNoneOnChanged": 53.86559139784945,
+  "errArmOnChanged": 52.00000000000001
+ },
+ {
+  "pose": "0.6:0",
+  "arm": "truth",
+  "holes": 0,
+  "meanErr": 14.268140740740739,
+  "badFrac": 0.06425277777777778,
+  "changedPx": 87,
+  "errNoneOnChanged": 50.71647509578545,
+  "errArmOnChanged": 43.11877394636016
+ },
+ {
+  "pose": "1:-0.5",
+  "arm": "none",
+  "holes": 0,
+  "meanErr": 19.952968518518517,
+  "badFrac": 0.036066666666666664
+ },
+ {
+  "pose": "1:-0.5",
+  "arm": "cont",
+  "holes": 0,
+  "meanErr": 19.94776388888889,
+  "badFrac": 0.03603611111111111,
+  "changedPx": 95,
+  "errNoneOnChanged": 67.06666666666668,
+  "errArmOnChanged": 49.470175438596485
+ },
+ {
+  "pose": "1:-0.5",
+  "arm": "truth",
+  "holes": 0,
+  "meanErr": 19.944343518518515,
+  "badFrac": 0.03601111111111111,
+  "changedPx": 152,
+  "errNoneOnChanged": 74.88815789473684,
+  "errArmOnChanged": 56.08552631578947
+ },
+ {
+  "pose": "-1:0.5",
+  "arm": "none",
+  "holes": 0,
+  "meanErr": 5.647424999999999,
+  "badFrac": 0.002916666666666667
+ },
+ {
+  "pose": "-1:0.5",
+  "arm": "cont",
+  "holes": 0,
+  "meanErr": 5.645027777777778,
+  "badFrac": 0.002913888888888889,
+  "changedPx": 64,
+  "errNoneOnChanged": 35.02604166666667,
+  "errArmOnChanged": 23.421875
+ },
+ {
+  "pose": "-1:0.5",
+  "arm": "truth",
+  "holes": 0,
+  "meanErr": 5.645497222222223,
+  "badFrac": 0.002913888888888889,
+  "changedPx": 64,
+  "errNoneOnChanged": 26.671875,
+  "errArmOnChanged": 18.171875
+ }
+]

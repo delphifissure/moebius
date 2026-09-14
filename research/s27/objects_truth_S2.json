@@ -1,0 +1,50 @@
+[
+ {
+  "layerId": 1,
+  "pid": 7,
+  "name": "box2",
+  "appIds": [
+   1
+  ],
+  "purity": [
+   1.0
+  ],
+  "layerPx": 9755,
+  "visPx": 8635,
+  "hiddenPx": 1120,
+  "hiddenDepthMedian_m": 0.06880000233650208,
+  "visDepthMedian_m": 0.06880000233650208
+ },
+ {
+  "layerId": 2,
+  "pid": 5,
+  "name": "box0",
+  "appIds": [
+   2
+  ],
+  "purity": [
+   1.0
+  ],
+  "layerPx": 6423,
+  "visPx": 5171,
+  "hiddenPx": 1252,
+  "hiddenDepthMedian_m": 0.03999999910593033,
+  "visDepthMedian_m": 0.03999999910593033
+ },
+ {
+  "layerId": 3,
+  "pid": 6,
+  "name": "box1",
+  "appIds": [
+   3
+  ],
+  "purity": [
+   1.0
+  ],
+  "layerPx": 3290,
+  "visPx": 2440,
+  "hiddenPx": 850,
+  "hiddenDepthMedian_m": 0.026399999856948853,
+  "visDepthMedian_m": 0.026399999856948853
+ }
+]

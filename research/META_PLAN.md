@@ -65,6 +65,12 @@ result fixes the shape of the stack's depth stage: **background layers → the p
 19 of 19 scenes, exact on continued surfaces, and the models cannot be normalised where the hidden range is outside the
 visible one); **the object's own far side → a depth model on the completed object layer + the ordering clamp** (beats the
 plane law on 17 of 17 scenes by 5–400×; thin objects excepted). DepthLab is a learned continuation of known depth: strong on
-non-planar anchored backgrounds, the plane law's equal on self-occlusion. Queue: the live pass; RevealLayer / RLD on the six
-pictures when a GPU exists (60 GB); the object-layer depth path wired into the bundle with the per-object fit; labelling of
-the far-side choice scored by magenta area (S25 §4); hole class X (S25 §2).
+non-planar anchored backgrounds, the plane law's equal on self-occlusion. Then **S26 §3b** removed the depth model from the object path (the zero-thickness rule ties or beats it) and **S27 (Sprint 19)**
+wired the object-layer path into the bundle as objects: `plane_object_ids` + `meta.plane_objects` out (A253 rule + continuity,
+ranked by band demand), `Import object layers` in (visible texels keep the source depth, hidden ones continue the object's
+front or an aligned depth, clamped behind what is visible). On the kit it does what it can: where an object hides another
+(S9's cards) the changed pixels' error against the truth view falls 71–76 → 7–17; where nothing is hidden behind anything
+(S2's boxes, S15's crown, P2's canopy as a first-hit layer) it changes almost nothing, and an object's own sides cannot live
+in a texel layer at all. Queue: the live pass; RevealLayer / RLD on the six pictures when a GPU exists (60 GB) — their layers
+now have a place to land; per-leaf (K-hit) layers for porous objects; labelling of the far-side choice scored by magenta area
+(S25 §4); hole class X (S25 §2).

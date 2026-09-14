@@ -1,0 +1,1640 @@
+[
+ {
+  "id": 1,
+  "footprintPx": 5823,
+  "bandPx": 5576,
+  "bbox": [
+   212,
+   139,
+   338,
+   276
+  ],
+  "frontDepthMean": 0.4739800939419907,
+  "backgroundDepthMean": 0.2660060309547092
+ },
+ {
+  "id": 2,
+  "footprintPx": 5543,
+  "bandPx": 5543,
+  "bbox": [
+   522,
+   116,
+   601,
+   280
+  ],
+  "frontDepthMean": 0.4783324557059985,
+  "backgroundDepthMean": 0.16858689115190686
+ },
+ {
+  "id": 3,
+  "footprintPx": 1632,
+  "bandPx": 1631,
+  "bbox": [
+   335,
+   149,
+   394,
+   232
+  ],
+  "frontDepthMean": 0.47346552271468967,
+  "backgroundDepthMean": 0.2597942128823185
+ },
+ {
+  "id": 4,
+  "footprintPx": 3057,
+  "bandPx": 1585,
+  "bbox": [
+   312,
+   175,
+   449,
+   234
+  ],
+  "frontDepthMean": 0.27539289760012464,
+  "backgroundDepthMean": 0.1661365735606064
+ },
+ {
+  "id": 5,
+  "footprintPx": 5046,
+  "bandPx": 948,
+  "bbox": [
+   211,
+   51,
+   326,
+   166
+  ],
+  "frontDepthMean": 0.47475287048910236,
+  "backgroundDepthMean": 0.22152270257221496
+ },
+ {
+  "id": 6,
+  "footprintPx": 1999,
+  "bandPx": 903,
+  "bbox": [
+   196,
+   201,
+   303,
+   234
+  ],
+  "frontDepthMean": 0.2772328841233027,
+  "backgroundDepthMean": 0.17279086064790702
+ },
+ {
+  "id": 7,
+  "footprintPx": 488,
+  "bandPx": 488,
+  "bbox": [
+   372,
+   164,
+   406,
+   193
+  ],
+  "frontDepthMean": 0.47366381253375384,
+  "backgroundDepthMean": 0.24997822170863387
+ },
+ {
+  "id": 8,
+  "footprintPx": 373,
+  "bandPx": 373,
+  "bbox": [
+   370,
+   188,
+   395,
+   216
+  ],
+  "frontDepthMean": 0.4741246534895961,
+  "backgroundDepthMean": 0.27581329344105143
+ },
+ {
+  "id": 9,
+  "footprintPx": 930,
+  "bandPx": 338,
+  "bbox": [
+   312,
+   241,
+   322,
+   450
+  ],
+  "frontDepthMean": 0.4669729094351492,
+  "backgroundDepthMean": 0.2758212930704715
+ },
+ {
+  "id": 10,
+  "footprintPx": 852,
+  "bandPx": 327,
+  "bbox": [
+   315,
+   109,
+   359,
+   167
+  ],
+  "frontDepthMean": 0.4755971574097732,
+  "backgroundDepthMean": 0.2579040639444229
+ },
+ {
+  "id": 11,
+  "footprintPx": 772,
+  "bandPx": 320,
+  "bbox": [
+   333,
+   121,
+   381,
+   167
+  ],
+  "frontDepthMean": 0.47477145713073604,
+  "backgroundDepthMean": 0.23869845680892468
+ },
+ {
+  "id": 12,
+  "footprintPx": 214,
+  "bandPx": 207,
+  "bbox": [
+   289,
+   167,
+   312,
+   184
+  ],
+  "frontDepthMean": 0.27034209417962585,
+  "backgroundDepthMean": 0.12930810321932254
+ },
+ {
+  "id": 13,
+  "footprintPx": 193,
+  "bandPx": 186,
+  "bbox": [
+   332,
+   161,
+   349,
+   178
+  ],
+  "frontDepthMean": 0.4717136243155583,
+  "backgroundDepthMean": 0.2690449248078049
+ },
+ {
+  "id": 14,
+  "footprintPx": 176,
+  "bandPx": 176,
+  "bbox": [
+   287,
+   179,
+   310,
+   193
+  ],
+  "frontDepthMean": 0.47592785954475403,
+  "backgroundDepthMean": 0.27537553892894223
+ },
+ {
+  "id": 15,
+  "footprintPx": 149,
+  "bandPx": 149,
+  "bbox": [
+   715,
+   227,
+   741,
+   236
+  ],
+  "frontDepthMean": 0.27853869671789594,
+  "backgroundDepthMean": 0.18928170544189094
+ },
+ {
+  "id": 16,
+  "footprintPx": 8166,
+  "bandPx": 143,
+  "bbox": [
+   567,
+   128,
+   728,
+   231
+  ],
+  "frontDepthMean": 0.14908081031158774,
+  "backgroundDepthMean": 0.08464420779601678
+ },
+ {
+  "id": 17,
+  "footprintPx": 143,
+  "bandPx": 136,
+  "bbox": [
+   379,
+   140,
+   390,
+   157
+  ],
+  "frontDepthMean": 0.47575431353562364,
+  "backgroundDepthMean": 0.11616256088018417
+ },
+ {
+  "id": 18,
+  "footprintPx": 2175,
+  "bandPx": 135,
+  "bbox": [
+   295,
+   46,
+   403,
+   113
+  ],
+  "frontDepthMean": 0.4727452985719703,
+  "backgroundDepthMean": 0.2737330540462776
+ },
+ {
+  "id": 19,
+  "footprintPx": 134,
+  "bandPx": 134,
+  "bbox": [
+   270,
+   214,
+   285,
+   227
+  ],
+  "frontDepthMean": 0.47422603751296427,
+  "backgroundDepthMean": 0.28071439310685914
+ },
+ {
+  "id": 20,
+  "footprintPx": 137,
+  "bandPx": 132,
+  "bbox": [
+   360,
+   198,
+   375,
+   215
+  ],
+  "frontDepthMean": 0.2773171297825166,
+  "backgroundDepthMean": 0.16302181825493323
+ },
+ {
+  "id": 21,
+  "footprintPx": 118,
+  "bandPx": 114,
+  "bbox": [
+   292,
+   142,
+   306,
+   158
+  ],
+  "frontDepthMean": 0.47418665532338417,
+  "backgroundDepthMean": 0.26690464898159627
+ },
+ {
+  "id": 22,
+  "footprintPx": 1057,
+  "bandPx": 109,
+  "bbox": [
+   331,
+   237,
+   336,
+   450
+  ],
+  "frontDepthMean": 0.44585889019600716,
+  "backgroundDepthMean": 0.28010869819089906
+ },
+ {
+  "id": 23,
+  "footprintPx": 108,
+  "bandPx": 108,
+  "bbox": [
+   448,
+   230,
+   556,
+   231
+  ],
+  "frontDepthMean": 0.17068327714999518,
+  "backgroundDepthMean": 0.08464532207559657
+ },
+ {
+  "id": 24,
+  "footprintPx": 90,
+  "bandPx": 90,
+  "bbox": [
+   403,
+   153,
+   413,
+   167
+  ],
+  "frontDepthMean": 0.4723277688026428,
+  "backgroundDepthMean": 0.1324204723040263
+ },
+ {
+  "id": 25,
+  "footprintPx": 1051,
+  "bandPx": 85,
+  "bbox": [
+   337,
+   237,
+   342,
+   450
+  ],
+  "frontDepthMean": 0.44657889788316385,
+  "backgroundDepthMean": 0.2795640444054323
+ },
+ {
+  "id": 26,
+  "footprintPx": 85,
+  "bandPx": 85,
+  "bbox": [
+   372,
+   174,
+   381,
+   188
+  ],
+  "frontDepthMean": 0.26940431489663963,
+  "backgroundDepthMean": 0.14310406832134023
+ },
+ {
+  "id": 27,
+  "footprintPx": 131,
+  "bandPx": 81,
+  "bbox": [
+   298,
+   119,
+   314,
+   132
+  ],
+  "frontDepthMean": 0.47227731233334724,
+  "backgroundDepthMean": 0.26914984539703085
+ },
+ {
+  "id": 28,
+  "footprintPx": 79,
+  "bandPx": 79,
+  "bbox": [
+   310,
+   160,
+   322,
+   173
+  ],
+  "frontDepthMean": 0.47071993049186994,
+  "backgroundDepthMean": 0.2635684650910052
+ },
+ {
+  "id": 29,
+  "footprintPx": 77,
+  "bandPx": 77,
+  "bbox": [
+   398,
+   173,
+   412,
+   180
+  ],
+  "frontDepthMean": 0.4724450831289415,
+  "backgroundDepthMean": 0.1419889907558243
+ },
+ {
+  "id": 30,
+  "footprintPx": 75,
+  "bandPx": 75,
+  "bbox": [
+   365,
+   147,
+   377,
+   157
+  ],
+  "frontDepthMean": 0.4705257523059845,
+  "backgroundDepthMean": 0.23035691221555074
+ },
+ {
+  "id": 31,
+  "footprintPx": 2109,
+  "bandPx": 74,
+  "bbox": [
+   352,
+   237,
+   362,
+   450
+  ],
+  "frontDepthMean": 0.4462026835279252,
+  "backgroundDepthMean": 0.27675099308426315
+ },
+ {
+  "id": 32,
+  "footprintPx": 628,
+  "bandPx": 70,
+  "bbox": [
+   278,
+   237,
+   281,
+   450
+  ],
+  "frontDepthMean": 0.4471206618057694,
+  "backgroundDepthMean": 0.28081362673214505
+ },
+ {
+  "id": 33,
+  "footprintPx": 63,
+  "bandPx": 63,
+  "bbox": [
+   255,
+   177,
+   268,
+   189
+  ],
+  "frontDepthMean": 0.26884022922742934,
+  "backgroundDepthMean": 0.14622263255573453
+ },
+ {
+  "id": 34,
+  "footprintPx": 304,
+  "bandPx": 62,
+  "bbox": [
+   269,
+   122,
+   301,
+   140
+  ],
+  "frontDepthMean": 0.4749799094309932,
+  "backgroundDepthMean": 0.2682703377739076
+ },
+ {
+  "id": 35,
+  "footprintPx": 633,
+  "bandPx": 60,
+  "bbox": [
+   294,
+   237,
+   297,
+   450
+  ],
+  "frontDepthMean": 0.44613445986880323,
+  "backgroundDepthMean": 0.2778954605261485
+ },
+ {
+  "id": 36,
+  "footprintPx": 51,
+  "bandPx": 45,
+  "bbox": [
+   302,
+   135,
+   313,
+   145
+  ],
+  "frontDepthMean": 0.4764895883260989,
+  "backgroundDepthMean": 0.269256724913915
+ },
+ {
+  "id": 37,
+  "footprintPx": 44,
+  "bandPx": 44,
+  "bbox": [
+   331,
+   156,
+   345,
+   165
+  ],
+  "frontDepthMean": 0.46984594518488104,
+  "backgroundDepthMean": 0.2392712398008867
+ },
+ {
+  "id": 38,
+  "footprintPx": 42,
+  "bandPx": 42,
+  "bbox": [
+   326,
+   205,
+   334,
+   215
+  ],
+  "frontDepthMean": 0.4718529291096188,
+  "backgroundDepthMean": 0.2803791690440405
+ },
+ {
+  "id": 39,
+  "footprintPx": 615,
+  "bandPx": 41,
+  "bbox": [
+   254,
+   245,
+   257,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.28142367848535865
+ },
+ {
+  "id": 40,
+  "footprintPx": 198,
+  "bandPx": 41,
+  "bbox": [
+   0,
+   230,
+   198,
+   231
+  ],
+  "frontDepthMean": 0.18690837325170787,
+  "backgroundDepthMean": 0.0846472855021314
+ },
+ {
+  "id": 41,
+  "footprintPx": 79,
+  "bandPx": 39,
+  "bbox": [
+   220,
+   119,
+   234,
+   134
+  ],
+  "frontDepthMean": 0.47162892018692404,
+  "backgroundDepthMean": 0.1549952664436438
+ },
+ {
+  "id": 42,
+  "footprintPx": 412,
+  "bandPx": 38,
+  "bbox": [
+   326,
+   244,
+   328,
+   450
+  ],
+  "frontDepthMean": 0.4495413779344374,
+  "backgroundDepthMean": 0.27901764449320343
+ },
+ {
+  "id": 43,
+  "footprintPx": 426,
+  "bandPx": 34,
+  "bbox": [
+   291,
+   237,
+   293,
+   450
+  ],
+  "frontDepthMean": 0.44502027591629206,
+  "backgroundDepthMean": 0.27232371884233814
+ },
+ {
+  "id": 44,
+  "footprintPx": 410,
+  "bandPx": 34,
+  "bbox": [
+   282,
+   245,
+   284,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.2816616805160747
+ },
+ {
+  "id": 45,
+  "footprintPx": 34,
+  "bandPx": 34,
+  "bbox": [
+   279,
+   225,
+   291,
+   232
+  ],
+  "frontDepthMean": 0.4720122630105299,
+  "backgroundDepthMean": 0.2818528694265029
+ },
+ {
+  "id": 46,
+  "footprintPx": 31,
+  "bandPx": 31,
+  "bbox": [
+   382,
+   163,
+   393,
+   169
+  ],
+  "frontDepthMean": 0.47198223010186224,
+  "backgroundDepthMean": 0.2447698818099114
+ },
+ {
+  "id": 47,
+  "footprintPx": 205,
+  "bandPx": 30,
+  "bbox": [
+   274,
+   245,
+   275,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.2798963487148285
+ },
+ {
+  "id": 48,
+  "footprintPx": 29,
+  "bandPx": 29,
+  "bbox": [
+   301,
+   164,
+   308,
+   171
+  ],
+  "frontDepthMean": 0.47143852196890734,
+  "backgroundDepthMean": 0.26803766756222164
+ },
+ {
+  "id": 49,
+  "footprintPx": 25,
+  "bandPx": 25,
+  "bbox": [
+   284,
+   181,
+   291,
+   191
+  ],
+  "frontDepthMean": 0.2744731831550598,
+  "backgroundDepthMean": 0.1580139696598053
+ },
+ {
+  "id": 50,
+  "footprintPx": 24,
+  "bandPx": 24,
+  "bbox": [
+   245,
+   186,
+   253,
+   193
+  ],
+  "frontDepthMean": 0.2697375454008579,
+  "backgroundDepthMean": 0.1548207923769951
+ },
+ {
+  "id": 51,
+  "footprintPx": 213,
+  "bandPx": 23,
+  "bbox": [
+   301,
+   237,
+   302,
+   450
+  ],
+  "frontDepthMean": 0.44502027591629206,
+  "backgroundDepthMean": 0.2725096642971039
+ },
+ {
+  "id": 52,
+  "footprintPx": 213,
+  "bandPx": 22,
+  "bbox": [
+   265,
+   237,
+   266,
+   450
+  ],
+  "frontDepthMean": 0.44502027591629206,
+  "backgroundDepthMean": 0.14018461108207703
+ },
+ {
+  "id": 53,
+  "footprintPx": 22,
+  "bandPx": 22,
+  "bbox": [
+   356,
+   184,
+   361,
+   191
+  ],
+  "frontDepthMean": 0.27401041849093005,
+  "backgroundDepthMean": 0.15850147063081915
+ },
+ {
+  "id": 54,
+  "footprintPx": 22,
+  "bandPx": 22,
+  "bbox": [
+   739,
+   230,
+   761,
+   231
+  ],
+  "frontDepthMean": 0.180807618254965,
+  "backgroundDepthMean": 0.08464407108046791
+ },
+ {
+  "id": 55,
+  "footprintPx": 205,
+  "bandPx": 21,
+  "bbox": [
+   262,
+   245,
+   263,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.281851202249527
+ },
+ {
+  "id": 56,
+  "footprintPx": 21,
+  "bandPx": 21,
+  "bbox": [
+   320,
+   216,
+   328,
+   219
+  ],
+  "frontDepthMean": 0.4714587146327609,
+  "backgroundDepthMean": 0.2806956725461142
+ },
+ {
+  "id": 57,
+  "footprintPx": 100,
+  "bandPx": 20,
+  "bbox": [
+   322,
+   112,
+   333,
+   128
+  ],
+  "frontDepthMean": 0.4709871017932892,
+  "backgroundDepthMean": 0.27369666695594785
+ },
+ {
+  "id": 58,
+  "footprintPx": 1025,
+  "bandPx": 18,
+  "bbox": [
+   363,
+   245,
+   368,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.28172339002291363
+ },
+ {
+  "id": 59,
+  "footprintPx": 16,
+  "bandPx": 16,
+  "bbox": [
+   330,
+   190,
+   335,
+   198
+  ],
+  "frontDepthMean": 0.47199684381484985,
+  "backgroundDepthMean": 0.27684391289949417
+ },
+ {
+  "id": 60,
+  "footprintPx": 15,
+  "bandPx": 15,
+  "bbox": [
+   294,
+   196,
+   299,
+   201
+  ],
+  "frontDepthMean": 0.27765010595321654,
+  "backgroundDepthMean": 0.15920129418373108
+ },
+ {
+  "id": 61,
+  "footprintPx": 1065,
+  "bandPx": 14,
+  "bbox": [
+   345,
+   237,
+   350,
+   450
+  ],
+  "frontDepthMean": 0.44502027591629206,
+  "backgroundDepthMean": 0.27338066697120667
+ },
+ {
+  "id": 62,
+  "footprintPx": 186,
+  "bandPx": 14,
+  "bbox": [
+   353,
+   107,
+   378,
+   131
+  ],
+  "frontDepthMean": 0.4713167288611012,
+  "backgroundDepthMean": 0.27297780769211905
+ },
+ {
+  "id": 63,
+  "footprintPx": 205,
+  "bandPx": 13,
+  "bbox": [
+   252,
+   245,
+   253,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.28122684359550476
+ },
+ {
+  "id": 64,
+  "footprintPx": 12,
+  "bandPx": 11,
+  "bbox": [
+   289,
+   110,
+   294,
+   115
+  ],
+  "frontDepthMean": 0.474249134461085,
+  "backgroundDepthMean": 0.2672187496315349
+ },
+ {
+  "id": 65,
+  "footprintPx": 11,
+  "bandPx": 11,
+  "bbox": [
+   293,
+   166,
+   301,
+   169
+  ],
+  "frontDepthMean": 0.4711514250798659,
+  "backgroundDepthMean": 0.24259419603781265
+ },
+ {
+  "id": 66,
+  "footprintPx": 11,
+  "bandPx": 11,
+  "bbox": [
+   306,
+   175,
+   312,
+   179
+  ],
+  "frontDepthMean": 0.47490237246860156,
+  "backgroundDepthMean": 0.27204641699790955
+ },
+ {
+  "id": 67,
+  "footprintPx": 12,
+  "bandPx": 10,
+  "bbox": [
+   288,
+   135,
+   294,
+   139
+  ],
+  "frontDepthMean": 0.47124309341112774,
+  "backgroundDepthMean": 0.2683268368244171
+ },
+ {
+  "id": 68,
+  "footprintPx": 12,
+  "bandPx": 10,
+  "bbox": [
+   294,
+   138,
+   298,
+   143
+  ],
+  "frontDepthMean": 0.47154276072978973,
+  "backgroundDepthMean": 0.26735790371894835
+ },
+ {
+  "id": 69,
+  "footprintPx": 10,
+  "bandPx": 10,
+  "bbox": [
+   304,
+   155,
+   309,
+   158
+  ],
+  "frontDepthMean": 0.47007096409797666,
+  "backgroundDepthMean": 0.268708324432373
+ },
+ {
+  "id": 70,
+  "footprintPx": 9,
+  "bandPx": 9,
+  "bbox": [
+   311,
+   158,
+   314,
+   162
+  ],
+  "frontDepthMean": 0.4742690556579166,
+  "backgroundDepthMean": 0.19463731514083016
+ },
+ {
+  "id": 71,
+  "footprintPx": 9,
+  "bandPx": 9,
+  "bbox": [
+   348,
+   167,
+   351,
+   173
+  ],
+  "frontDepthMean": 0.4751608471075694,
+  "backgroundDepthMean": 0.26972365710470414
+ },
+ {
+  "id": 72,
+  "footprintPx": 9,
+  "bandPx": 9,
+  "bbox": [
+   345,
+   207,
+   349,
+   211
+  ],
+  "frontDepthMean": 0.47087137235535514,
+  "backgroundDepthMean": 0.2792226837741004
+ },
+ {
+  "id": 73,
+  "footprintPx": 8,
+  "bandPx": 8,
+  "bbox": [
+   280,
+   173,
+   284,
+   176
+  ],
+  "frontDepthMean": 0.47043564915657043,
+  "backgroundDepthMean": 0.27257515490055084
+ },
+ {
+  "id": 74,
+  "footprintPx": 8,
+  "bandPx": 8,
+  "bbox": [
+   283,
+   180,
+   286,
+   184
+  ],
+  "frontDepthMean": 0.4702754318714142,
+  "backgroundDepthMean": 0.2731136232614517
+ },
+ {
+  "id": 75,
+  "footprintPx": 36,
+  "bandPx": 7,
+  "bbox": [
+   378,
+   131,
+   382,
+   144
+  ],
+  "frontDepthMean": 0.4712134235435062,
+  "backgroundDepthMean": 0.11692985892295837
+ },
+ {
+  "id": 76,
+  "footprintPx": 205,
+  "bandPx": 6,
+  "bbox": [
+   250,
+   245,
+   251,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.28108158707618713
+ },
+ {
+  "id": 77,
+  "footprintPx": 22,
+  "bandPx": 6,
+  "bbox": [
+   282,
+   126,
+   292,
+   134
+  ],
+  "frontDepthMean": 0.4766953099857677,
+  "backgroundDepthMean": 0.269520103931427
+ },
+ {
+  "id": 78,
+  "footprintPx": 30,
+  "bandPx": 5,
+  "bbox": [
+   344,
+   137,
+   353,
+   144
+  ],
+  "frontDepthMean": 0.4699972132841746,
+  "backgroundDepthMean": 0.2724879324436188
+ },
+ {
+  "id": 79,
+  "footprintPx": 5,
+  "bandPx": 5,
+  "bbox": [
+   290,
+   119,
+   293,
+   122
+  ],
+  "frontDepthMean": 0.47029832005500793,
+  "backgroundDepthMean": 0.2668833315372467
+ },
+ {
+  "id": 80,
+  "footprintPx": 5,
+  "bandPx": 5,
+  "bbox": [
+   309,
+   158,
+   311,
+   162
+  ],
+  "frontDepthMean": 0.4766247034072876,
+  "backgroundDepthMean": 0.26954453587532046
+ },
+ {
+  "id": 81,
+  "footprintPx": 410,
+  "bandPx": 4,
+  "bbox": [
+   372,
+   245,
+   374,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.28132373094558716
+ },
+ {
+  "id": 82,
+  "footprintPx": 205,
+  "bandPx": 4,
+  "bbox": [
+   241,
+   245,
+   242,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.28025153279304504
+ },
+ {
+  "id": 83,
+  "footprintPx": 205,
+  "bandPx": 3,
+  "bbox": [
+   235,
+   245,
+   236,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.2799358665943146
+ },
+ {
+  "id": 84,
+  "footprintPx": 205,
+  "bandPx": 3,
+  "bbox": [
+   370,
+   245,
+   371,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.28145739436149597
+ },
+ {
+  "id": 85,
+  "footprintPx": 64,
+  "bandPx": 3,
+  "bbox": [
+   310,
+   386,
+   311,
+   450
+  ],
+  "frontDepthMean": 0.48264452908188105,
+  "backgroundDepthMean": 0.2711223065853119
+ },
+ {
+  "id": 86,
+  "footprintPx": 11,
+  "bandPx": 3,
+  "bbox": [
+   379,
+   139,
+   383,
+   144
+  ],
+  "frontDepthMean": 0.47328074953772803,
+  "backgroundDepthMean": 0.11727065841356914
+ },
+ {
+  "id": 87,
+  "footprintPx": 9,
+  "bandPx": 3,
+  "bbox": [
+   320,
+   129,
+   324,
+   132
+  ],
+  "frontDepthMean": 0.46960825390285915,
+  "backgroundDepthMean": 0.27503588795661926
+ },
+ {
+  "id": 88,
+  "footprintPx": 7,
+  "bandPx": 3,
+  "bbox": [
+   294,
+   144,
+   297,
+   148
+  ],
+  "frontDepthMean": 0.47154300127710613,
+  "backgroundDepthMean": 0.26714478929837543
+ },
+ {
+  "id": 89,
+  "footprintPx": 6,
+  "bandPx": 3,
+  "bbox": [
+   312,
+   95,
+   316,
+   97
+  ],
+  "frontDepthMean": 0.47209125260512036,
+  "backgroundDepthMean": 0.27479593952496845
+ },
+ {
+  "id": 90,
+  "footprintPx": 3,
+  "bandPx": 3,
+  "bbox": [
+   289,
+   118,
+   291,
+   120
+  ],
+  "frontDepthMean": 0.47021185358365375,
+  "backgroundDepthMean": 0.2701813280582428
+ },
+ {
+  "id": 91,
+  "footprintPx": 3,
+  "bandPx": 3,
+  "bbox": [
+   308,
+   163,
+   310,
+   165
+  ],
+  "frontDepthMean": 0.4745860993862152,
+  "backgroundDepthMean": 0.2693980435530345
+ },
+ {
+  "id": 92,
+  "footprintPx": 3,
+  "bandPx": 3,
+  "bbox": [
+   282,
+   172,
+   284,
+   174
+  ],
+  "frontDepthMean": 0.268314649661382,
+  "backgroundDepthMean": 0.11992606520652771
+ },
+ {
+  "id": 93,
+  "footprintPx": 128,
+  "bandPx": 2,
+  "bbox": [
+   307,
+   386,
+   309,
+   450
+  ],
+  "frontDepthMean": 0.4826411930844188,
+  "backgroundDepthMean": 0.2715236246585846
+ },
+ {
+  "id": 94,
+  "footprintPx": 14,
+  "bandPx": 2,
+  "bbox": [
+   352,
+   133,
+   358,
+   137
+  ],
+  "frontDepthMean": 0.4723567430462156,
+  "backgroundDepthMean": 0.27422136068344116
+ },
+ {
+  "id": 95,
+  "footprintPx": 2,
+  "bandPx": 2,
+  "bbox": [
+   304,
+   143,
+   306,
+   144
+  ],
+  "frontDepthMean": 0.4717097878456116,
+  "backgroundDepthMean": 0.26791027188301086
+ },
+ {
+  "id": 96,
+  "footprintPx": 2,
+  "bandPx": 2,
+  "bbox": [
+   365,
+   153,
+   366,
+   155
+  ],
+  "frontDepthMean": 0.4707331955432892,
+  "backgroundDepthMean": 0.2763731777667999
+ },
+ {
+  "id": 97,
+  "footprintPx": 2,
+  "bandPx": 2,
+  "bbox": [
+   248,
+   172,
+   250,
+   173
+  ],
+  "frontDepthMean": 0.47650110721588135,
+  "backgroundDepthMean": 0.1480710804462433
+ },
+ {
+  "id": 98,
+  "footprintPx": 2,
+  "bandPx": 2,
+  "bbox": [
+   328,
+   195,
+   330,
+   196
+  ],
+  "frontDepthMean": 0.47054246068000793,
+  "backgroundDepthMean": 0.27727195620536804
+ },
+ {
+  "id": 99,
+  "footprintPx": 205,
+  "bandPx": 1,
+  "bbox": [
+   246,
+   245,
+   247,
+   450
+  ],
+  "frontDepthMean": 0.4500799613754924,
+  "backgroundDepthMean": 0.2807380259037018
+ },
+ {
+  "id": 100,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   288,
+   120,
+   289,
+   121
+  ],
+  "frontDepthMean": 0.47037461400032043,
+  "backgroundDepthMean": 0.2720530927181244
+ },
+ {
+  "id": 101,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   315,
+   128,
+   316,
+   129
+  ],
+  "frontDepthMean": 0.46996262669563293,
+  "backgroundDepthMean": 0.2747977674007416
+ },
+ {
+  "id": 102,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   326,
+   129,
+   327,
+   130
+  ],
+  "frontDepthMean": 0.4729838967323303,
+  "backgroundDepthMean": 0.27387329936027527
+ },
+ {
+  "id": 103,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   358,
+   132,
+   359,
+   133
+  ],
+  "frontDepthMean": 0.4722362160682678,
+  "backgroundDepthMean": 0.27305498719215393
+ },
+ {
+  "id": 104,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   343,
+   140,
+   344,
+   141
+  ],
+  "frontDepthMean": 0.46977952122688293,
+  "backgroundDepthMean": 0.2716868817806244
+ },
+ {
+  "id": 105,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   306,
+   144,
+   307,
+   145
+  ],
+  "frontDepthMean": 0.4717021584510803,
+  "backgroundDepthMean": 0.2685129940509796
+ },
+ {
+  "id": 106,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   322,
+   145,
+   323,
+   146
+  ],
+  "frontDepthMean": 0.4717937111854553,
+  "backgroundDepthMean": 0.27503588795661926
+ },
+ {
+  "id": 107,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   228,
+   146,
+   229,
+   147
+  ],
+  "frontDepthMean": 0.4728923439979553,
+  "backgroundDepthMean": 0.13945218920707703
+ },
+ {
+  "id": 108,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   323,
+   146,
+   324,
+   147
+  ],
+  "frontDepthMean": 0.4727092385292053,
+  "backgroundDepthMean": 0.2747521698474884
+ },
+ {
+  "id": 109,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   216,
+   148,
+   217,
+   149
+  ],
+  "frontDepthMean": 0.4727092385292053,
+  "backgroundDepthMean": 0.13835355639457703
+ },
+ {
+  "id": 110,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   241,
+   148,
+   242,
+   149
+  ],
+  "frontDepthMean": 0.4743724763393402,
+  "backgroundDepthMean": 0.13771268725395203
+ },
+ {
+  "id": 111,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   240,
+   156,
+   241,
+   157
+  ],
+  "frontDepthMean": 0.4729686379432678,
+  "backgroundDepthMean": 0.14031174778938293
+ },
+ {
+  "id": 112,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   291,
+   164,
+   292,
+   165
+  ],
+  "frontDepthMean": 0.47124436497688293,
+  "backgroundDepthMean": 0.2673838436603546
+ },
+ {
+  "id": 113,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   292,
+   165,
+   293,
+   166
+  ],
+  "frontDepthMean": 0.47133591771125793,
+  "backgroundDepthMean": 0.26625463366508484
+ },
+ {
+  "id": 114,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   308,
+   170,
+   309,
+   171
+  ],
+  "frontDepthMean": 0.4743419587612152,
+  "backgroundDepthMean": 0.2687371075153351
+ },
+ {
+  "id": 115,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   279,
+   172,
+   280,
+   173
+  ],
+  "frontDepthMean": 0.47043564915657043,
+  "backgroundDepthMean": 0.2783513367176056
+ },
+ {
+  "id": 116,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   312,
+   173,
+   313,
+   174
+  ],
+  "frontDepthMean": 0.4746623933315277,
+  "backgroundDepthMean": 0.2706798017024994
+ },
+ {
+  "id": 117,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   349,
+   173,
+   350,
+   174
+  ],
+  "frontDepthMean": 0.4754100739955902,
+  "backgroundDepthMean": 0.27081969380378723
+ },
+ {
+  "id": 118,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   371,
+   174,
+   372,
+   175
+  ],
+  "frontDepthMean": 0.4722362160682678,
+  "backgroundDepthMean": 0.2712526023387909
+ },
+ {
+  "id": 119,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   288,
+   179,
+   289,
+   180
+  ],
+  "frontDepthMean": 0.2720530927181244,
+  "backgroundDepthMean": 0.14621195197105408
+ },
+ {
+  "id": 120,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   305,
+   179,
+   306,
+   180
+  ],
+  "frontDepthMean": 0.4749217927455902,
+  "backgroundDepthMean": 0.2730449140071869
+ },
+ {
+  "id": 121,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   263,
+   182,
+   264,
+   183
+  ],
+  "frontDepthMean": 0.4741741120815277,
+  "backgroundDepthMean": 0.2699473798274994
+ },
+ {
+  "id": 122,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   300,
+   188,
+   301,
+   189
+  ],
+  "frontDepthMean": 0.4724650979042053,
+  "backgroundDepthMean": 0.2816402018070221
+ },
+ {
+  "id": 123,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   331,
+   196,
+   332,
+   197
+  ],
+  "frontDepthMean": 0.47054246068000793,
+  "backgroundDepthMean": 0.27742454409599304
+ },
+ {
+  "id": 124,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   360,
+   207,
+   361,
+   208
+  ],
+  "frontDepthMean": 0.4730449318885803,
+  "backgroundDepthMean": 0.27815917134284973
+ },
+ {
+  "id": 125,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   278,
+   214,
+   279,
+   215
+  ],
+  "frontDepthMean": 0.4718242287635803,
+  "backgroundDepthMean": 0.27975794672966003
+ },
+ {
+  "id": 126,
+  "footprintPx": 1,
+  "bandPx": 1,
+  "bbox": [
+   286,
+   217,
+   287,
+   218
+  ],
+  "frontDepthMean": 0.4740062654018402,
+  "backgroundDepthMean": 0.28052160143852234
+ }
+]

@@ -1018,7 +1018,7 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `research/s17/c_bundle_check.py <dir>` (bundle vs the bake's arrays), `c_views_check.py <dir>` (tint vs check view,
   writes `agree_*.png`), `c_sheet.py`, `c_bundle_table.py`. `a257_probe.js` dumps `platePaint.u8`, `plate2Has.u8`.
   `sdbundle.js`/`sdregions.js` use `__dirname` paths.
-- **Open**: no reimport of the plane set (S17 §4).
+- **Open**: no reimport of the plate colour (S17 §4); object layers reimport via §35 (S27).
 
 ## 30. B — the generality batch (2026-09-12; `S19_generality_batch.md`)
 - `window._visStep = 1` **forces** the S10 visible-step floor (`const qEff = …` in the a89 block, search `B: window._visStep = 1`);
@@ -1064,3 +1064,32 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   cut to it (`cutC`, `nCeilCut` in the [S3] log). Exports `_geoCeil {a,b,c,nRuns,nPicks}`, `_geoCeilTex`, `_geoCeilCol`;
   the probe dumps `ceilTex.u8`/`ceilCol.u8` and `meta.ceil`. Default off (live pass).
 - Along-line persistent-departure test (`s23/sheetfield3.py SEG=persist`) falsified offline; not in the app.
+
+## 35. Sprint 19 (2026-09-14; `S27_object_layers.md`) — object layers in the bundle
+- **`_planeObjects(force)`** (before `exportSDBundle`): A253's object rule reused — a texel is an object where
+  `dQ[i] - _geoFarField[i] > fgTearStep`; 4-connected components; ranked by **band demand** (band texels owned), components
+  without band demand not exported; ids 1..254 (255 = beyond the cap). Captures `window._qbObjIds` (Uint8, source rows),
+  `_qbObjInfo` ([{id, footprintPx, bandPx, bbox [x0,y0,x1,y1), frontDepthMean, backgroundDepthMean}]), `_qbObjOverflow`,
+  `_qbObjNoDemand`; reset with the other captures in `_plugGeoBand`. The first draft (a continuity flood from the band's
+  far-side texels) merged S2's boxes into the floor and made the floor's border band an object: measured, replaced.
+- **Export**: `plane_object_ids.png` (8-bit, native) + `meta.plane_objects {rule, count, overflow, withoutDemand, nativeRes,
+  sourceImageSize, bboxConvention, depthConvention, reimport, objects}`; the `meta.plane.notes` reimport line updated.
+- **Import**: `window._importObjectLayersFromData(entries)` — entries `{id, rgba (4N source rows), depth (N, any depth or
+  disparity) | null, depthValid | null, vis | null}`; visible = alpha ∩ (`vis` | `_qbObjIds == id` | fallback: alpha minus
+  band-with-far-side); hidden texels get the nearest visible texel's source depth (BFS over the layer's alpha) or the supplied
+  depth aligned on the visible texels by `_objFitDepth` (robust affine, linear or inverse of the input, the smaller visible
+  residual wins); every hidden texel then clamped to `dQ[i] - q` (behind what is visible at it). Mesh: `bgLayerMesh.material`
+  (matQ) clone with its own displacement `DataTexture` + RGBA `CanvasTexture`, `u_backTear = 1` (A257e alpha discard in both
+  passes), `u_sdPaint = null`, `u_restClip = 0`; geometry = the source grid's index filtered to triangles whose corners carry
+  the layer and are joined under `bgRimLawFor().joinedIdx` on the layer's own depth; `renderOrder = bgLayerMesh.renderOrder`;
+  kept in `bgLayerMesh.userData.objLayers`, synced in the `_syncBG` block, toggled by the SD-regions / paint-only handlers,
+  dropped by the rebuild's disposal block (`window._clearObjectLayers()`). Console `[S27] object layer {…}` per layer.
+  `importObjectLayers()` (button `importObjLayersButton`, both HTML files): `obj_<k>_color.png` + optional
+  `obj_<k>_depth16.png` (`_png16Decode`: 8/16-bit grey PNG through `DecompressionStream('deflate')`; else canvas 8-bit).
+- **Harness** `harness/objlayers.js` (S, POSES, ARMS none|cont|truth, OUT): kit bake as the panel, `objIds.u8` +
+  `objects.json`, `truthkit/obj_layers_from_truth.py` (app id → kit pid by footprint majority; one layer per pid; colour /
+  vis / normalised depth from `rest_layers.npz`), import per arm, shots, `truthkit/truth_view.py` (the kit's own render at
+  the same eye, plate grid), `results.json`; `harness/objl_sheet.py` → `sheet.png`, `table.json` (holes, mean |RGB error| and
+  the > 64 fraction against the truth view). SwiftShader compiles the cloned materials on the first frame after an import
+  (≈ 6 min per arm here; a real GPU compiles in a second).
+

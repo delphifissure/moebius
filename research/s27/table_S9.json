@@ -1,0 +1,68 @@
+[
+ {
+  "pose": "0:0",
+  "arm": "none",
+  "holes": 0,
+  "meanErr": 4.049023148148149,
+  "badFrac": 0.0003111111111111111
+ },
+ {
+  "pose": "0:0",
+  "arm": "cont",
+  "holes": 0,
+  "meanErr": 4.049023148148149,
+  "badFrac": 0.0003111111111111111,
+  "changedPx": 0
+ },
+ {
+  "pose": "0.6:0",
+  "arm": "none",
+  "holes": 0,
+  "meanErr": 16.774925925925928,
+  "badFrac": 0.13639166666666666
+ },
+ {
+  "pose": "0.6:0",
+  "arm": "cont",
+  "holes": 0,
+  "meanErr": 12.604957407407408,
+  "badFrac": 0.09508888888888889,
+  "changedPx": 22588,
+  "errNoneOnChanged": 73.45462192314503,
+  "errArmOnChanged": 6.998863703441356
+ },
+ {
+  "pose": "1:-0.5",
+  "arm": "none",
+  "holes": 0,
+  "meanErr": 20.90625462962963,
+  "badFrac": 0.199425
+ },
+ {
+  "pose": "1:-0.5",
+  "arm": "cont",
+  "holes": 0,
+  "meanErr": 16.142755555555556,
+  "badFrac": 0.1499638888888889,
+  "changedPx": 26907,
+  "errNoneOnChanged": 75.58699718784456,
+  "errArmOnChanged": 11.872387606694664
+ },
+ {
+  "pose": "-1:0.5",
+  "arm": "none",
+  "holes": 0,
+  "meanErr": 19.071575,
+  "badFrac": 0.14866666666666667
+ },
+ {
+  "pose": "-1:0.5",
+  "arm": "cont",
+  "holes": 0,
+  "meanErr": 17.519641666666665,
+  "badFrac": 0.13494444444444445,
+  "changedPx": 10287,
+  "errNoneOnChanged": 71.20673341758207,
+  "errArmOnChanged": 16.935225689381422
+ }
+]
