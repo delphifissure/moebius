@@ -92,12 +92,13 @@ and decoder behave differently on it.**
 | WASM reference | wasm | wasm | 2 900 / 0.899 | 36 926 / 0.316 | 122 844 / 0.405 | **134 593 / 0.508** |
 | both WebGPU | webgpu | webgpu | 2 849 / 0.911 | 5 258 / 0.394 | 57 392 / 0.245 | 99 117 / 0.091 |
 | A: decoder alone on WebGPU | wasm | webgpu | 2 849 / 0.911 | 5 258 / 0.394 | 57 392 / 0.245 | 99 118 / 0.091 (IoU vs offline 0.30; the woman 28 886 / 0.83, IoU 0.89) |
-| B: encoder alone on WebGPU | webgpu | wasm | B_RESULTS |
+| B: encoder alone on WebGPU | webgpu | wasm | 2 915 / 0.901 | (run ended after the first click: the software-GPU page died without an exit line) | | |
 
 Run A reproduces the "both WebGPU" numbers to the pixel with the WASM encoder's features, so the drift is in the decoder
 graph on that provider (its kernels or the adapter), growing with the number of points. **The decoder therefore runs on
 WASM by default** (`_sam2EPDec` overrides): a pass costs ~300 ms there and nothing is gained on the GPU. The encoder, the
-25-second part, keeps WebGPU when the browser has it; run B says whether its features agree with WASM's. Whether a real
+25-second part, keeps WebGPU when the browser has it: run B's first click agrees with WASM's to 0.5 % in area and 0.002 in
+SAM's score (2 915 / 0.901 vs 2 900 / 0.899), so the encoder features are the same to numerical precision. Whether a real
 GPU shows the same decoder drift is not known from here — the user's console prints the provider per model
 (`creating sessions (encoder …, decoder …)`), and `window._sam2EP = 'wasm'` before pressing the button forces both to WASM.
 
