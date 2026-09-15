@@ -101,3 +101,8 @@ configs; a `sam2.1-memory-attention` export is on the Hub). When the app's video
 plan is: encode frames with the same encoder, run the memory attention graph per frame, and hand each frame's ids to the
 same `_setObjectIds` path — one prompt per object per clip, not per frame. Not started; it needs a video bake first.
 
+**Plan review (2026-09-15).** `PLAN_REVIEW.md` restates the goal and ranks the weaknesses: the diffusion loop never closed
+(no inpaint run, no plane-bundle reimport), cardboard objects at wide angles, no real-scene truth, beyond-frame content,
+one-pass and video not designed, the live pass not held, the untested fork to novel-view generation. It reorders the GPU
+work: close the loop first, real truth second, the fork third, objects fourth, video fifth; the live pass alongside.
+
