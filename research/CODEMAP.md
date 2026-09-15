@@ -1167,3 +1167,13 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `disocc.u8`, `plateF.f32`, `dQ.f32`, `size.json`), `harness/plate_compare.py` (two dumps → changed fraction, row-to-row vs
   along-row |d|, anisotropy, vertical edges > visible step), `harness/edge_probe.js` (FG only / plate only / both at 26.5°).
 - Shots: `harness/shots/liverepro/{troll_line,troll_plate_edge,troll_clip,troll_tear,vermeer_line,vermeer_plate2,vermeer_clip}`.
+
+## 40. S33 (2026-09-15; `S33_streak_classes.md`) — the streak-class instrument
+- `harness/streak_class.js` (COLOR, DEPTH, TAG, FLAGS): per-line plane bake, then in-page over `_qbDisocc` / `_geoFarField` /
+  `_qbDQ` / `_geoFarRimJ` / `_geoFarMix` / `_geoFarAxis` / `_geoFarKind` with `bgRimLawFor(pw, ph).joinedIdx`: every adjacent
+  band pair with |Δ far field| > `_qbSrcQuantum` classified 1 same-surface (same axis, rims joined) / 2 real step (same axis,
+  rims not joined) / 3 axis change / 4 no rim; dumps `vclass.u8`, `hclass.u8`, `vjump.f32`, `hjump.f32` (jump in steps),
+  `band.u8`, `dQ.f32`, `ff.f32`, `counts.json`, `color.png`. `harness/streak_class_render.py <dir> [--step X]` → `class_v.png`,
+  `class_h.png`, the table (count share, jump median/p90, summed wall length share); `--step` re-thresholds at the visible step
+  when the run's effective quantum was the grid.
+

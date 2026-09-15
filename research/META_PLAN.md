@@ -114,3 +114,11 @@ together with the strips; the clip is back by default (`_edgeTear = 1` is the fo
 The 2-D clamped plate per run cluster, ported into the app behind the join select, equals the plane law on the kit and adds
 to the row structure on the troll and vermeer (clusters follow the run segmentation; rows are solved apart) — falsified as a
 cure, due for removal by rule 7 after the user's look. Next: the diffusion loop (plane-bundle reimport, one inpaint on a GPU).
+
+**S33 (2026-09-15).** The user asked why the plate streaks at all. Measured on six pictures: 57–77 % of the plate's visible
+bends (42–74 % of the wall length) are the far-side construction disagreeing with itself — rows of one surface given two
+depths (short walls, the hatching) and the row/column arbitration flipping between neighbours (long walls); 26–58 % of the
+wall length are real steps between two background surfaces drawn as rubber where the user's model wants a tear with a sheet
+behind. Options ranked: the axis decided per piece (A), tear + second layer behind internal cliffs (C), the tangent-plane
+carry (B). Nothing built; the user decides.
+
