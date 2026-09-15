@@ -1177,3 +1177,10 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `class_h.png`, the table (count share, jump median/p90, summed wall length share); `--step` re-thresholds at the visible step
   when the run's effective quantum was the grid.
 
+## 41. S34 (2026-09-15; `S34_sheets_A_axis_order.md`)
+- `bgFarSidePlane` pass 3: the S32 plate block is gone (a comment records it); the `_axisOrder` layered-order arbitration
+  was built and removed (comment above the arbitration). `harness/streak_class.js` counts class 3 as `flip` (both axes
+  present at both texels) or `domain` (one axis missing), with summed lengths `flipLen` / `domainLen` in `counts.json`.
+- Kit files `check_app16plane*_ao.json` (the arm) and `_pl2.json` (baseline under the same chain) for S9/S10/S11/S31/S32;
+  `harness/shots/streakclass/*_ao`, `*_sub`, `*_sub_ao`; `harness/shots/liverepro/{troll_ao,vermeer_ao}`.
+

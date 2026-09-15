@@ -122,3 +122,10 @@ wall length are real steps between two background surfaces drawn as rubber where
 behind. Options ranked: the axis decided per piece (A), tear + second layer behind internal cliffs (C), the tangent-plane
 carry (B). Nothing built; the user decides.
 
+**S34 (2026-09-15).** Step A (the layered order between the row and column candidates) built, measured and removed: the
+kit does not rank it and on the six pictures the wall length moved −39…+20 % with the seam count rising — the candidate
+fields themselves jump, so no per-texel arbitration can be seamless. C and B in their S33 form withdrawn for the same
+reason. The design the measurements point at: one continuation sheet per visible surface (rim-contour clusters by the join
+law; plane + harmonic rim-residual extension; nearest sheet shows; ends are tears with the next sheet behind). Next: offline
+prototype on the dumps, scored by the S33 instrument and the kit, before any app change. The S32 plate arm is removed.
+
