@@ -1,0 +1,428 @@
+#!/usr/bin/env python3
+"""S35 — offline prototype: one continuation SHEET per visible surface behind each hole, the nearest sheet shows.
+
+  python3 sheets.py <probe dump dir> [--truth scope_gt.npz] [--step VISIBLE_STEP] [--q QUANTUM] [--out DIR] [--tag NAME]
+
+Input: an a257_probe dump (dQ.f32 source depth, disocc.u8 the app's band, farField.f32 the per-line law's answer, meta.json
+with outer/inner/pn/D/rimT/ground, groundCol.u8). Everything below uses the app's own definitions (moebius.js bgRimLawFor,
+bgFarSidePlane), ported: the depth law z(d), the eye distance ze = D - z, disparity 1/ze, the join tolerance tolAt(d) with
+the effective quantum q, the join test (ratio <= t, or the linear prediction from either side within tol), the fit window
+w = min(run length, gap + 1), the ground plane as a bound where a column has a ground run.
+
+Construction (the user's sheet model, S33/S34):
+  1 far-rim texels: visible (non-band) 4-neighbours of band texels that lie BEHIND the band texel's own depth by > tol
+    (the occluder's own visible interior is joined to the band texel and is not a rim);
+  2 surfaces: far-rim texels clustered along the hole's contour — 8-adjacent rim texels joined by the join law are one surface;
+  3 strip per surface: visible texels reached from its rim texels through joined steps, up to the surface's own reach (the
+    longest gap its lines must cross, +1: the app's window rule, generalised to 2-D);
+  4 sheet per surface: least-squares plane in DISPARITY over the strip (affine in disparity: the plane's homography), residuals
+    trimmed at 3 MAD (the app's fit), plus the harmonic extension of the rim residuals into the domain (Dirichlet at the rim,
+    zero flux elsewhere; the least-squares residuals have zero mean, so the extension relaxes to the plane away from the rim);
+  5 domain: 'stop' = the band texels reached from the surface's rim texels along their lines (rows for side rims, columns for
+    top/bottom rims) until the band ends; 'extend' = the whole hole component;
+  6 the ground plane (meta.ground, disparity = a + b x + c y) is a sheet everywhere a column has a ground run (the app's rule);
+    sky rims (d < skyQ) are a sheet at disparity 0;
+  7 order: per band texel, of the sheets whose domain holds it and whose value lies behind the texel's own depth by > tol, the
+    NEAREST shows (max disparity); the second-nearest is layer 2; none -> the texel's own depth (counted as unreached).
+Scoring: band depth error against the kit's first hidden layer (metres; as check_app_band.py) and the wall instrument (adjacent
+band texels whose depths differ by more than the visible step: count and summed length in steps), for the per-line law
+(farField.f32) and for the sheets, 'stop' and 'extend'. Figures: surfaces, far fields, the wall maps.
+"""
+import sys, os, json, time, argparse
+import numpy as np
+from scipy import ndimage, sparse
+from scipy.sparse.linalg import spsolve, cg
+from PIL import Image
+
+ap = argparse.ArgumentParser()
+ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', type=float); ap.add_argument('--q', type=float, default=1 / 65535)
+ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual')
+A = ap.parse_args()
+P = A.probe; meta = json.load(open(f'{P}/meta.json')); pw, ph = meta['pw'], meta['ph']; N = pw * ph
+dQ = np.fromfile(f'{P}/dQ.f32', np.float32).reshape(ph, pw).astype(np.float64)
+band = np.fromfile(f'{P}/disocc.u8', np.uint8).reshape(ph, pw) > 0
+ffL = np.fromfile(f'{P}/farField.f32', np.float32).reshape(ph, pw).astype(np.float64)
+gcol = np.fromfile(f'{P}/groundCol.u8', np.uint8) if os.path.exists(f'{P}/groundCol.u8') else None
+OUT = A.out or f'{P}/s35'; os.makedirs(OUT, exist_ok=True)
+outer, inner, pn, D, t = meta['outer'], meta['inner'], meta['pn'], meta.get('D', 0.2), meta['rimT']
+q = A.q; skyQ = 0.5 * (1 / 65535)
+
+# ---- the app's depth law and join law (bgRimLawFor) ----
+def z_of_d(d):
+    d = np.clip(d, 0, 1); s1 = d / pn; s2 = (d - pn) / (1 - pn)
+    return np.where(d < pn, -outer + outer * (s1 * s1 * (3 - 2 * s1)), inner * (s2 * s2 * (3 - 2 * s2)))
+def ze(d): return np.maximum(1e-4, D - z_of_d(d))
+def disp(d): return 1.0 / ze(d)
+def tolAt(d): return np.abs(disp(np.minimum(1, d + q)) - disp(np.maximum(0, d - q))) + 1e-9
+DISP = disp(dQ); TOL = tolAt(dQ); ZE = ze(dQ)
+def joined_pair(i, j):   # flat indices; the app's joinedIdx (ratio test, then the linear prediction from either side)
+    dA, dB = dQ.flat[i], dQ.flat[j]
+    if dA < skyQ or dB < skyQ: return (dA < skyQ) and (dB < skyQ)
+    a, b = ZE.flat[i], ZE.flat[j]
+    if (a / b if a > b else b / a) <= t: return True
+    xi, yi = i % pw, i // pw; xj, yj = j % pw, j // pw; dx, dy = xj - xi, yj - yi
+    da, db, tl = DISP.flat[i], DISP.flat[j], max(TOL.flat[i], TOL.flat[j])
+    xp, yp = xi - dx, yi - dy
+    if 0 <= xp < pw and 0 <= yp < ph and abs(db - (2 * da - DISP[yp, xp])) <= tl: return True
+    xn, yn = xj + dx, yj + dy
+    if 0 <= xn < pw and 0 <= yn < ph and abs(da - (2 * db - DISP[yn, xn])) <= tl: return True
+    return False
+
+T0 = time.time()
+# ---- vectorised join test between two arrays of flat indices (the same rule as joined_pair) ----
+def joined_arr(I, J):
+    dA = dQ.ravel()[I]; dB = dQ.ravel()[J]; skyA = dA < skyQ; skyB = dB < skyQ
+    a = ZE.ravel()[I]; b = ZE.ravel()[J]; ratio = np.where(a > b, a / b, b / a) <= t
+    xi = I % pw; yi = I // pw; xj = J % pw; yj = J // pw; dx = xj - xi; dy = yj - yi
+    da = DISP.ravel()[I]; db = DISP.ravel()[J]; tl = np.maximum(TOL.ravel()[I], TOL.ravel()[J])
+    xp = xi - dx; yp = yi - dy; okp = (xp >= 0) & (xp < pw) & (yp >= 0) & (yp < ph)
+    pr = np.zeros_like(da); pr[okp] = 2 * da[okp] - DISP[yp[okp], xp[okp]]; lin1 = okp & (np.abs(db - pr) <= tl)
+    xn = xj + dx; yn = yj + dy; okn = (xn >= 0) & (xn < pw) & (yn >= 0) & (yn < ph)
+    pn_ = np.zeros_like(da); pn_[okn] = 2 * db[okn] - DISP[yn[okn], xn[okn]]; lin2 = okn & (np.abs(da - pn_) <= tl)
+    j = ratio | lin1 | lin2
+    return np.where(skyA | skyB, skyA & skyB, j)
+# ---- runs along rows and columns (the app's rs/re): consecutive texels joined by the join law ----
+idx = np.arange(N).reshape(ph, pw)
+jh = joined_arr(idx[:, :-1].ravel(), idx[:, 1:].ravel()).reshape(ph, pw - 1)   # texel x joined to x+1
+jv = joined_arr(idx[:-1, :].ravel(), idx[1:, :].ravel()).reshape(ph - 1, pw)   # texel y joined to y+1
+def runs_1d(joinedNext, axis):
+    # returns start and end index along the axis for every texel
+    if axis == 0:
+        brk = np.ones((ph, pw), bool); brk[:, 1:] = ~joinedNext; rid = np.cumsum(brk, axis=1)
+        st = np.zeros((ph, pw), int); en = np.zeros((ph, pw), int)
+        for y in range(ph):
+            r = rid[y]; starts = np.flatnonzero(brk[y]); ends = np.append(starts[1:] - 1, pw - 1)
+            st[y] = starts[r - 1]; en[y] = ends[r - 1]
+    else:
+        brk = np.ones((ph, pw), bool); brk[1:, :] = ~joinedNext; rid = np.cumsum(brk, axis=0)
+        st = np.zeros((ph, pw), int); en = np.zeros((ph, pw), int)
+        for x in range(pw):
+            r = rid[:, x]; starts = np.flatnonzero(brk[:, x]); ends = np.append(starts[1:] - 1, ph - 1)
+            st[:, x] = starts[r - 1]; en[:, x] = ends[r - 1]
+    return st, en
+rsX, reX = runs_1d(jh, 0); rsY, reY = runs_1d(jv, 1)
+print(f'runs: rows {int((np.diff(rsX, axis=1) != 0).sum() + ph)}, columns {int((np.diff(rsY, axis=0) != 0).sum() + pw)}  ({time.time() - T0:.1f}s)')
+# ---- 1 far rims (the app's cand(): march along the line beyond the texel's own run; runs that are not behind the texel by more
+# than tol are the occluder's own parts and are skipped; the first run that IS behind (or sky) is the far side, its first texel
+# the rim). A rim may be a band texel (the reveal set holds one texel of the background at the silhouette).
+DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+rimOf = {}; entryOf = {}   # rim -> set of (band texel b, dir); (b, dir) -> rim
+def scan_lines(axis):
+    # axis 0: rows (dirs +x, -x); axis 1: columns (dirs +y, -y)
+    L = pw if axis == 0 else ph; nL = ph if axis == 0 else pw
+    for l in range(nL):
+        if axis == 0: line = idx[l, :]; bnd = band[l, :]; rs_, re_ = rsX[l, :], reX[l, :]
+        else: line = idx[:, l]; bnd = band[:, l]; rs_, re_ = rsY[:, l], reY[:, l]
+        if not bnd.any(): continue
+        starts = np.flatnonzero(np.r_[True, rs_[1:] != rs_[:-1]]); ends = np.r_[starts[1:] - 1, L - 1]
+        dStart = DISP.ravel()[line[starts]]; dEnd = DISP.ravel()[line[ends]]; skyS = dQ.ravel()[line[starts]] < skyQ; skyE = dQ.ravel()[line[ends]] < skyQ
+        bpos = np.flatnonzero(bnd); own = DISP.ravel()[line[bpos]]; tol_ = TOL.ravel()[line[bpos]]
+        # forward (+): EVERY run with start > re[b] that lies behind the texel (or is sky) is a far side of it — the app's cand()
+        # lists them all and lets the arrival order choose; here the layered order chooses among their sheets
+        M = (starts[None, :] > re_[bpos][:, None]) & ((dStart[None, :] < (own - tol_)[:, None]) | skyS[None, :])
+        for bi, ri in zip(*np.nonzero(M)):
+            r = int(line[starts[ri]]); bb = int(line[bpos[bi]]); k = 0 if axis == 0 else 2
+            rimOf.setdefault(r, set()).add((bb, k))
+        # backward (-): runs with end < rs[b]
+        M = (ends[None, :] < rs_[bpos][:, None]) & ((dEnd[None, :] < (own - tol_)[:, None]) | skyE[None, :])
+        for bi, ri in zip(*np.nonzero(M)):
+            r = int(line[ends[ri]]); bb = int(line[bpos[bi]]); k = 1 if axis == 0 else 3
+            rimOf.setdefault(r, set()).add((bb, k))
+scan_lines(0); scan_lines(1)
+rims = np.array(sorted(rimOf.keys()), dtype=np.int64); nR = len(rims)
+print(f'band {int(band.sum())} texels; far-rim texels {nR}  ({time.time() - T0:.1f}s)')
+
+# ---- 2 surfaces: a visible surface is a connected component of the depth map under the join law (4-neighbour pairs joined),
+# through the interior, not only along the hole's contour: two rim texels of one wall stay one surface when noise breaks
+# their contour neighbours, because the wall's interior connects them. (The first version clustered rims along the contour
+# only: the troll's rims fell into 643 pieces, 338 of them single texels, and the boundaries between pieces were the seams.)
+from scipy.sparse.csgraph import connected_components
+I_h = idx[:, :-1].ravel()[jh.ravel()]; J_h = idx[:, 1:].ravel()[jh.ravel()]; I_v = idx[:-1, :].ravel()[jv.ravel()]; J_v = idx[1:, :].ravel()[jv.ravel()]
+adj = sparse.coo_matrix((np.ones(len(I_h) + len(I_v)), (np.r_[I_h, I_v], np.r_[J_h, J_v])), shape=(N, N))
+nComp, comp = connected_components(adj, directed=False)
+compOfRim = comp[rims]; roots = {}; surfOf = {}
+for r, c in zip(rims, compOfRim): surfOf[r] = roots.setdefault(int(c), len(roots))
+nS = len(roots); members = [[] for _ in range(nS)]; compOfSurf = np.zeros(nS, int)
+for r in rims: members[surfOf[r]].append(r); compOfSurf[surfOf[r]] = comp[r]
+sizes = np.array([len(m) for m in members]); print(f'surfaces {nS} of {nComp} visible components (rim texels per surface: median {int(np.median(sizes))}, max {sizes.max()}, singletons {(sizes == 1).sum()})  ({time.time() - T0:.1f}s)')
+# ---- 5 domains: along-line reach from each rim texel into the band ----
+holeLab, nHoles = ndimage.label(band, structure=[[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+def dom_march(b, k):
+    dx, dy = DIRS[k]; x, y = b % pw, b // pw; out = []
+    while 0 <= x < pw and 0 <= y < ph and band[y, x]:
+        out.append(y * pw + x); x -= dx; y -= dy
+    return out
+domStop = [None] * nS; domExt = [None] * nS; reachMax = np.zeros(nS, dtype=np.int64); reachX = np.zeros(nS, dtype=np.int64); reachY = np.zeros(nS, dtype=np.int64)
+gtex = np.fromfile(f'{P}/groundTex.u8', np.uint8) if os.path.exists(f'{P}/groundTex.u8') else None
+for s in range(nS):
+    dom = set(); holes = set()
+    for r in members[s]:
+        for (b, k) in rimOf[r]:
+            dx, dy = DIRS[k]; x, y = b % pw, b // pw; n = 0
+            entryOf[(s, b)] = r
+            while 0 <= x < pw and 0 <= y < ph and band[y, x]:
+                i2 = y * pw + x
+                if i2 != r: dom.add(i2)
+                x -= dx; y -= dy; n += 1   # march away from the rim through the band
+            reachMax[s] = max(reachMax[s], n); holes.add(int(holeLab[b // pw, b % pw]))
+            if dx != 0: reachX[s] = max(reachX[s], n)
+            else: reachY[s] = max(reachY[s], n)
+    domStop[s] = np.fromiter(dom, dtype=np.int64)
+    ext = np.nonzero(np.isin(holeLab.ravel(), list(holes)) & band.ravel())[0]
+    domExt[s] = ext
+print(f'domains: stop median {int(np.median([len(d) for d in domStop]))} texels, extend median {int(np.median([len(d) for d in domExt]))}  ({time.time() - T0:.1f}s)')
+
+# ---- 3 strips + 4 planes ----
+def strip_of(s):
+    W = int(reachMax[s]) + 1; cm = comp.reshape(ph, pw) == compOfSurf[s]
+    seed = np.ones((ph, pw), bool); rr = np.array(members[s]); seed[rr // pw, rr % pw] = False
+    ys_, xs_ = rr // pw, rr % pw; y0_, y1_ = max(0, ys_.min() - W), min(ph, ys_.max() + W + 1); x0_, x1_ = max(0, xs_.min() - W), min(pw, xs_.max() + W + 1)
+    dist = ndimage.distance_transform_edt(seed[y0_:y1_, x0_:x1_])
+    m = (dist <= W) & cm[y0_:y1_, x0_:x1_]
+    yy, xx = np.nonzero(m); return (yy + y0_) * pw + (xx + x0_)
+planes = np.zeros((nS, 3)); isSky = np.zeros(nS, bool); stripN = np.zeros(nS, int); isThin = np.zeros(nS, bool); isGround = np.zeros(nS, bool); isGroundSurf = np.zeros(nS, bool)
+for s in range(nS):
+    if all(dQ.flat[r] < skyQ for r in members[s]): isSky[s] = True; continue
+    st = strip_of(s); stripN[s] = len(st)
+    X = st % pw; Y = st // pw; V = DISP.ravel()[st]
+    # THIN EVIDENCE (the app's rule, evalRun): a surface whose strip is shorter than the gap it must cross has a slope uncertain
+    # by more than a quantum at the far end and is not extrapolated — it continues at constant disparity (the strip's mean).
+    # In 2-D the strip's extent along each axis is measured against the reach along that axis.
+    # a surface whose rim texels are the ground's own texels IS the ground: the ground sheet (meta.ground) carries it (the app's
+    # thin rule sends a thin ground run along the fitted ground plane for the same reason)
+    # a surface whose rim texels are the ground's own texels follows the fitted ground plane (the app sends thin ground runs along
+    # it for the same reason: the plane is exact on the kit and the local strip may be too short along the reach axis)
+    if (not A.no_ground) and meta.get('ground') and gtex is not None and np.mean([gtex[r] for r in members[s]]) > 0.5:
+        g = meta['ground']; planes[s] = (g['a'], g['b'], g['c']); isGroundSurf[s] = True; stripN[s] = len(st); continue
+    # per axis: the strip's extent along the axis against the reach along that axis (the app's w = min(len, g + 1) rule);
+    # a slope the strip cannot support is not extrapolated (constant along that axis)
+    extX = X.max() - X.min() + 1; extY = Y.max() - Y.min() + 1
+    useX = extX >= reachX[s] + 1 and reachX[s] > 0 or (reachX[s] == 0 and extX >= 3); useY = extY >= reachY[s] + 1 and reachY[s] > 0 or (reachY[s] == 0 and extY >= 3)
+    cols = [np.ones_like(X, float)] + ([X] if useX else []) + ([Y] if useY else [])
+    if not (useX or useY):
+        isThin[s] = True
+        if A.drop_thin2: isGround[s] = True; continue   # no extent along either axis: no sheet; the surface behind shows
+    # a rim whose strip holds fewer than three texels cannot support the model (three samples define a plane; two a line): it is a
+    # ramp sample at a silhouette, not a surface — no sheet (the next surface behind shows). Before this rule S26 had 1- and 2-rim
+    # sheets at constant depth winning 1-texel lines against the ground (109 k of 141 k jump length at sheet boundaries).
+    if len(st) < 3: isGround[s] = True; continue
+    Amat = np.stack(cols, 1)
+    keep = np.ones(len(st), bool)
+    for _ in range(2):
+        c, *_ = np.linalg.lstsq(Amat[keep], V[keep], rcond=None); res = V - Amat @ c
+        mad = np.median(np.abs(res[keep] - np.median(res[keep]))) * 1.4826
+        if mad <= 0: break
+        keep = np.abs(res) <= 3 * mad
+    full = [c[0], 0.0, 0.0]; k = 1
+    if useX: full[1] = c[k]; k += 1
+    if useY: full[2] = c[k]
+    planes[s] = full
+print(f'planes fitted: {int((~isSky & ~isThin & ~isGround & ~isGroundSurf).sum())} full, {int(isThin.sum())} thin (constant), {int(isSky.sum())} sky, {int(isGroundSurf.sum())} on the ground plane, {int(isGround.sum())} dropped (strip under three texels); strip texels median {int(np.median(stripN[~isSky & ~isGround])) if (~isSky & ~isGround).any() else 0}  ({time.time() - T0:.1f}s)')
+
+# ---- 4b residual extension per surface over its domain (harmonic, Dirichlet at the surface's rim texels) ----
+def harmonic_ext(dom, rim_vals):
+    """dom: flat indices (band texels); rim_vals: dict rim flat index -> residual. Laplace on dom with the rim texels as
+    Dirichlet neighbours, zero flux elsewhere. Returns values on dom."""
+    if len(dom) == 0: return np.zeros(0)
+    idx = {int(i): k for k, i in enumerate(dom)}; n = len(dom)
+    rows, cols, vals = [], [], []; rhs = np.zeros(n)
+    for k, i in enumerate(dom):
+        x, y = int(i % pw), int(i // pw); deg = 0
+        for dx, dy in DIRS:
+            xn, yn = x + dx, y + dy
+            if not (0 <= xn < pw and 0 <= yn < ph): continue
+            j = yn * pw + xn
+            if j in idx: rows.append(k); cols.append(idx[j]); vals.append(-1.0); deg += 1
+            elif j in rim_vals: rhs[k] += rim_vals[j]; deg += 1
+        rows.append(k); cols.append(k); vals.append(max(deg, 1))
+    Lm = sparse.csr_matrix((vals, (rows, cols)), shape=(n, n))
+    try: h = spsolve(Lm.tocsc(), rhs)
+    except Exception: h, _ = cg(Lm, rhs)
+    return h
+
+# ---- local tangent planes (--local): for every rim texel a plane in disparity over the component texels within its window
+# (w = the longest march its band texels make + 1, the app's min(len, g + 1) in 2-D), trimmed at 3 MAD; a domain texel's sheet
+# value is the Shepard (1/g, p = 1 — the app's band-fill weights) blend of the local planes of the rims whose marches reach it.
+localPlane = {}
+def fit_local(r, W):
+    cm = comp.reshape(ph, pw) == comp[r]; x0_, y0_ = r % pw, r // pw
+    ys0, ys1 = max(0, y0_ - W), min(ph, y0_ + W + 1); xs0, xs1 = max(0, x0_ - W), min(pw, x0_ + W + 1)
+    sub = cm[ys0:ys1, xs0:xs1]; yy, xx = np.nonzero(sub); yy = yy + ys0; xx = xx + xs0
+    d2 = (yy - y0_) ** 2 + (xx - x0_) ** 2; keep = d2 <= W * W; yy = yy[keep]; xx = xx[keep]
+    if len(yy) > 2000: sel = np.linspace(0, len(yy) - 1, 2000).astype(int); yy = yy[sel]; xx = xx[sel]
+    V = DISP[yy, xx]
+    if len(V) < 3: return (float(np.median(V)) if len(V) else float(DISP.flat[r]), 0.0, 0.0)
+    extX = xx.max() - xx.min() + 1; extY = yy.max() - yy.min() + 1
+    cols = [np.ones(len(V))] + ([xx.astype(float)] if extX >= 3 else []) + ([yy.astype(float)] if extY >= 3 else [])
+    Am = np.stack(cols, 1); kp = np.ones(len(V), bool)
+    for _ in range(2):
+        c, *_ = np.linalg.lstsq(Am[kp], V[kp], rcond=None); res = V - Am @ c
+        mad = np.median(np.abs(res[kp] - np.median(res[kp]))) * 1.4826
+        if mad <= 0: break
+        kp = np.abs(res) <= 3 * mad
+    full = [c[0], 0.0, 0.0]; k = 1
+    if extX >= 3: full[1] = c[k]; k += 1
+    if extY >= 3: full[2] = c[k]
+    return tuple(full)
+if A.local:
+    tl0 = time.time()
+    for s_ in range(nS):
+        if isSky[s_]: continue
+        for r in members[s_]:
+            W = 1 + max(0, max((len(dom_march(b, k)) for (b, k) in rimOf[r]), default=0))
+            localPlane[r] = fit_local(r, W)
+    print(f'local planes: {len(localPlane)} fitted  ({time.time() - tl0:.1f}s)')
+def harmonic_ext_fixed(dom, fixed):
+    """Laplace on dom; texels in `fixed` (subset of dom) hold their value; zero flux elsewhere."""
+    if len(dom) == 0: return np.zeros(0)
+    idx_ = {int(i): k for k, i in enumerate(dom)}; n = len(dom)
+    isF = np.zeros(n, bool); fv = np.zeros(n)
+    for i, v in fixed.items():
+        if i in idx_: isF[idx_[i]] = True; fv[idx_[i]] = v
+    if not isF.any(): return np.zeros(n)
+    rows, cols, vals = [], [], []; rhs = np.zeros(n)
+    for k, i in enumerate(dom):
+        if isF[k]: rows.append(k); cols.append(k); vals.append(1.0); rhs[k] = fv[k]; continue
+        x, y = int(i % pw), int(i // pw); deg = 0
+        for dx, dy in DIRS:
+            xn, yn = x + dx, y + dy
+            if not (0 <= xn < pw and 0 <= yn < ph): continue
+            j = yn * pw + xn
+            if j in idx_: rows.append(k); cols.append(idx_[j]); vals.append(-1.0); deg += 1
+        rows.append(k); cols.append(k); vals.append(max(deg, 1))
+    Lm = sparse.csr_matrix((vals, (rows, cols)), shape=(n, n))
+    try: h = spsolve(Lm.tocsc(), rhs)
+    except Exception: h, _ = cg(Lm, rhs)
+    h = np.nan_to_num(h, nan=0.0, posinf=0.0, neginf=0.0)
+    return h
+def build(domains, label):
+    tb = time.time()
+    best = np.full(N, -np.inf); second = np.full(N, -np.inf); who = np.full(N, -1, np.int32)
+    ownD = DISP.ravel(); ownT = TOL.ravel()
+    for s in range(nS):
+        dom = domains[s]
+        if len(dom) == 0 or isGround[s]: continue
+        if isSky[s]: val = np.zeros(len(dom))
+        elif A.local:
+            acc = np.zeros(N); wsum = np.zeros(N)
+            for r in members[s]:
+                pl = localPlane.get(r)
+                if pl is None: continue
+                for (b, k) in rimOf[r]:
+                    m_ = np.array(dom_march(b, k), dtype=np.int64)
+                    if len(m_) == 0: continue
+                    g = np.arange(1, len(m_) + 1, dtype=float) + (abs((b % pw) - (r % pw)) + abs((b // pw) - (r // pw)))   # distance from the rim along the line
+                    v_ = pl[0] + pl[1] * (m_ % pw) + pl[2] * (m_ // pw); wgt = 1.0 / g
+                    np.add.at(acc, m_, wgt * v_); np.add.at(wsum, m_, wgt)
+            val = np.where(wsum[dom] > 0, acc[dom] / np.maximum(wsum[dom], 1e-12), -np.inf)
+        else:
+            X = dom % pw; Y = dom // pw; val = planes[s, 0] + planes[s, 1] * X + planes[s, 2] * Y
+            if not A.no_residual:
+                resid = lambda r: float(DISP.flat[r] - (planes[s, 0] + planes[s, 1] * (r % pw) + planes[s, 2] * (r // pw)))
+                # Dirichlet data sits on the ENTRY texel of each march (the band texel next to the rim's run), valued with its rim's
+                # residual; entry texels are inside the domain, so they are fixed rather than treated as neighbours
+                ev = {}
+                for r in members[s]:
+                    rr = resid(r)
+                    for (bb, k) in rimOf[r]: ev[int(bb)] = rr
+                val = val + harmonic_ext_fixed(dom, ev)
+        # the app's candidate test (dlt > tol): only a sheet BEHIND the texel's own depth by more than the tolerance is a far side of
+        # that texel; a sheet at or in front of it (the occluder's own body continued, a fringe texel's own surface) is not.
+        ok = val < ownD[dom] - ownT[dom]; d = dom[ok]; v = val[ok]
+        # nearest shows: update best / second
+        b = best[d]; upd = v > b
+        second[d[upd]] = np.maximum(second[d[upd]], b[upd]); best[d[upd]] = v[upd]; who[d[upd]] = s
+        second[d[~upd]] = np.maximum(second[d[~upd]], v[~upd])
+    # the ground as a sheet where the app has one
+    if (not A.no_ground) and meta.get('ground') and gcol is not None:
+        g = meta['ground']; dom = np.nonzero(band.ravel())[0]; X = dom % pw; Y = dom // pw
+        val = g['a'] + g['b'] * X + g['c'] * Y; ok = (gcol[X] > 0) & (val > 0) & (val < ownD[dom] - ownT[dom])
+        d = dom[ok]; v = val[ok]; b = best[d]; upd = v > b
+        second[d[upd]] = np.maximum(second[d[upd]], b[upd]); best[d[upd]] = v[upd]; who[d[upd]] = nS
+        second[d[~upd]] = np.maximum(second[d[~upd]], v[~upd])
+    reached = np.isfinite(best) & band.ravel()
+    print(f'[{label}] reached {int(reached.sum())} of {int(band.sum())} band texels ({100 * reached.mean() / max(1e-9, band.mean()):.1f} %); layer 2 on {int((np.isfinite(second) & band.ravel()).sum())}  ({time.time() - tb:.1f}s)')
+    return best, second, who, reached
+
+# disparity -> normalised depth by inverting the table
+dtab = np.linspace(0, 1, 8193); ztab = ze(dtab); disptab = 1 / ztab   # disparity decreases with d? ze grows with depth behind -> disp falls as d falls (d=0 far)
+order = np.argsort(disptab)
+def depth_of_disp(v): return np.interp(v, disptab[order], dtab[order])
+
+results = {}
+for label, doms in ([('stop', domStop)] + ([] if A.no_extend else [('extend', domExt)])):
+    best, second, who, reached = build(doms, label)
+    ff = dQ.ravel().copy(); ff[reached] = np.clip(depth_of_disp(best[reached]), 0, 1); ff = ff.reshape(ph, pw)
+    ff2 = np.full(N, -1.0); m2 = np.isfinite(second) & band.ravel(); ff2[m2] = np.clip(depth_of_disp(second[m2]), 0, 1); ff2 = ff2.reshape(ph, pw)
+    results[label] = dict(ff=ff, ff2=ff2, who=who.reshape(ph, pw), reached=reached.reshape(ph, pw))
+    ff.astype(np.float32).tofile(f'{OUT}/farField_{label}.f32'); ff2.astype(np.float32).tofile(f'{OUT}/farField2_{label}.f32'); who.astype(np.int32).tofile(f'{OUT}/who_{label}.i32')
+results['perline'] = dict(ff=ffL)
+
+# ---- scoring ----
+step = A.step
+rgbp = f'{P}/../../..//truthkit/out/{os.path.basename(P).split("_")[0]}/rest_rgb.png'
+if not os.path.exists(rgbp) and os.path.exists(f'{P}/color.png'): rgbp = f'{P}/color.png'
+base = np.asarray(Image.open(rgbp).convert('RGB').resize((pw, ph))).astype(np.float32) * 0.5 if os.path.exists(rgbp) else np.zeros((ph, pw, 3), np.float32)
+def walls(ff):
+    # jumps: adjacent band texels differing by more than the visible step (includes real slants); kinks: second differences
+    # beyond the visible step (a slant has none; a jump or a fold has one) — the seam measure that does not count a slanted floor
+    m = band; out = {}
+    for key, (a, b, mm) in {'v': (ff[1:, :], ff[:-1, :], m[1:, :] & m[:-1, :]), 'h': (ff[:, 1:], ff[:, :-1], m[:, 1:] & m[:, :-1])}.items():
+        d = np.abs(a - b)[mm]; out[key] = dict(edges=int(mm.sum()), above=int((d > step).sum()), length=float((d[d > step] / step).sum()))
+    mv = m[2:, :] & m[1:-1, :] & m[:-2, :]; sv = np.abs(ff[2:, :] - 2 * ff[1:-1, :] + ff[:-2, :])[mv]
+    mh = m[:, 2:] & m[:, 1:-1] & m[:, :-2]; sh = np.abs(ff[:, 2:] - 2 * ff[:, 1:-1] + ff[:, :-2])[mh]
+    out['kv'] = dict(triples=int(mv.sum()), above=int((sv > step).sum()), length=float((sv[sv > step] / step).sum()))
+    out['kh'] = dict(triples=int(mh.sum()), above=int((sh > step).sum()), length=float((sh[sh > step] / step).sum()))
+    return out
+def truth_err(ff):
+    z = np.load(A.truth); cls = z['cls']; w = z['w_disp'].astype(np.float32); dep = z['depth']; H, W, K = cls.shape; y0 = (H - ph) // 2; x0 = (W - pw) // 2
+    cls_c = cls[y0:y0 + ph, x0:x0 + pw]; w_c = w[y0:y0 + ph, x0:x0 + pw]; dep_c = dep[y0:y0 + ph, x0:x0 + pw]
+    vis = (cls_c >= 2) & (cls_c <= 5) & (w_c > 0); has = vis.any(-1); kk = np.argmax(vis, -1); d_true = np.take_along_axis(dep_c, kk[..., None], -1)[..., 0]
+    d_app = -z_of_d(ff); m = band & has & np.isfinite(d_true); e = (d_app - d_true)[m]
+    return dict(n=int(m.sum()), mean=float(e.mean()), median_abs=float(np.median(np.abs(e))), p90_abs=float(np.percentile(np.abs(e), 90)))
+def kink_breakdown(ff, who):
+    # vertical kinks (|second difference| > step) split by who owns the three texels: all one sheet / a sheet boundary / an own or unreached texel involved
+    m = band; out = {}
+    for key, (a, b, c, mm) in {'v': (ff[2:, :], ff[1:-1, :], ff[:-2, :], m[2:, :] & m[1:-1, :] & m[:-2, :]), 'h': (ff[:, 2:], ff[:, 1:-1], ff[:, :-2], m[:, 2:] & m[:, 1:-1] & m[:, :-2])}.items():
+        sd = np.abs(a - 2 * b + c); k = mm & (sd > step)
+        if key == 'v': w0, w1, w2 = who[2:, :], who[1:-1, :], who[:-2, :]
+        else: w0, w1, w2 = who[:, 2:], who[:, 1:-1], who[:, :-2]
+        own = (w0 < 0) | (w1 < 0) | (w2 < 0); same = (w0 == w1) & (w1 == w2) & ~own; bnd = ~same & ~own
+        L = sd / step
+        out[key] = {'same_sheet': [int((k & same).sum()), float(L[k & same].sum())], 'sheet_boundary': [int((k & bnd).sum()), float(L[k & bnd].sum())], 'own_or_unreached': [int((k & own).sum()), float(L[k & own].sum())]}
+        # map: 1 same, 2 boundary, 3 own
+        cm = np.zeros(ff.shape, np.uint8); pad = (slice(1, -1), slice(None)) if key == 'v' else (slice(None), slice(1, -1))
+        cm[pad] = np.where(k & same, 1, np.where(k & bnd, 2, np.where(k & own, 3, 0)))
+        out[key + '_map'] = cm
+    return out
+summary = {'scene': os.path.basename(P), 'band': int(band.sum()), 'rims': int(nR), 'surfaces': int(nS), 'step': step, 'arms': {}}
+for label in [l for l in ('perline', 'stop', 'extend') if l in results]:
+    r = {}
+    if step: r['walls'] = walls(results[label]['ff'])
+    if A.truth: r['truth'] = truth_err(results[label]['ff'])
+    if label != 'perline':
+        r['reached'] = int(results[label]['reached'].sum())
+        if step:
+            kb = kink_breakdown(results[label]['ff'], results[label]['who']); r['kinks'] = {k: v for k, v in kb.items() if not k.endswith('_map')}
+            for key in ('v', 'h'):
+                img = base.copy() if 'base' in globals() else np.zeros((ph, pw, 3), np.float32)
+                cm = kb[key + '_map']; img[band] = img[band] * 0.5 + 90; img[cm == 1] = (255, 60, 60); img[cm == 2] = (60, 120, 255); img[cm == 3] = (255, 220, 0)
+                Image.fromarray(img.clip(0, 255).astype(np.uint8)).save(f'{OUT}/kinks_{key}_{label}.png')
+            print(f"   kinks by owner ({label}): v same-sheet {kb['v']['same_sheet']}, boundary {kb['v']['sheet_boundary']}, own/unreached {kb['v']['own_or_unreached']}; h same {kb['h']['same_sheet']}, boundary {kb['h']['sheet_boundary']}, own {kb['h']['own_or_unreached']}")
+    summary['arms'][label] = r
+    w = r.get('walls', {}).get('v', {}); tr = r.get('truth', {})
+    W = r.get('walls', {}); kv = W.get('kv', {}); kh = W.get('kh', {})
+    print(f"{label:8} jumps v {w.get('above', '-')} (len {w.get('length', 0):.0f}) h {W.get('h', {}).get('above', '-')} (len {W.get('h', {}).get('length', 0):.0f}) | kinks v {kv.get('above', '-')} (len {kv.get('length', 0):.0f}) h {kh.get('above', '-')} (len {kh.get('length', 0):.0f}) | truth median {tr.get('median_abs', float('nan')):.4f} m p90 {tr.get('p90_abs', float('nan')):.4f} mean {tr.get('mean', float('nan')):+.4f} (n {tr.get('n', '-')})")
+summary['surfaceSizes'] = sizes.tolist(); summary['thin'] = isThin.tolist(); summary['ground'] = isGround.tolist(); summary['sky'] = isSky.tolist(); summary['stripN'] = stripN.tolist(); summary['reachMax'] = reachMax.tolist()
+json.dump(summary, open(f'{OUT}/summary_{A.tag}.json', 'w'), indent=1)
+
+# ---- figures ----
+rng = np.random.default_rng(1); pal = rng.integers(60, 255, (nS + 2, 3))
+img = base.copy(); who = results['stop']['who']; m = who >= 0; img[m] = pal[who[m]]
+for r in rims: img[r // pw, r % pw] = (255, 255, 255)
+Image.fromarray(img.clip(0, 255).astype(np.uint8)).save(f'{OUT}/surfaces_stop.png')
+def depth_img(ff, name):
+    v = np.clip(ff, 0, 1); img = base.copy(); img[band] = (np.stack([v, v, v], -1)[band] * 255)
+    Image.fromarray(img.clip(0, 255).astype(np.uint8)).save(f'{OUT}/{name}.png')
+for label in [l for l in ('perline', 'stop', 'extend') if l in results]: depth_img(results[label]['ff'], f'far_{label}')
+print(f'wrote {OUT}  ({time.time() - T0:.1f}s)')

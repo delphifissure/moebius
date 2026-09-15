@@ -1184,3 +1184,12 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - Kit files `check_app16plane*_ao.json` (the arm) and `_pl2.json` (baseline under the same chain) for S9/S10/S11/S31/S32;
   `harness/shots/streakclass/*_ao`, `*_sub`, `*_sub_ao`; `harness/shots/liverepro/{troll_ao,vermeer_ao}`.
 
+## 42. S35 (2026-09-16; `S35_sheets_prototype.md`) — offline sheet prototype and its dumps
+- `harness/streak_class.js` also writes `meta.json` (pw, ph, rimT, outer, inner, pn, D, ground, quantum, grid), `disocc.u8`,
+  `farField.f32`, `groundCol.u8`, `groundTex.u8` — the a257 dump's shape, so `research/s35/sheets.py` runs on pictures.
+- `research/s35/sheets.py <dump> [--truth npz] --step S --q Q [--no-residual|--local] [--drop-thin2] [--no-extend] [--out DIR]`:
+  ports of `bgRimLawFor` (z(d), ze, disparity, tolAt, joined incl. the linear prediction), runs per line, the `cand()` scan,
+  the thin rule, the ground bound; surfaces via `scipy.sparse.csgraph.connected_components` on the joined-pair graph; strips
+  by distance transform within the component; PCG-free sparse `spsolve` for the harmonic residual; scoring as
+  `check_app_band.py` plus jumps / kinks (first / second differences beyond the visible step) split by sheet ownership.
+

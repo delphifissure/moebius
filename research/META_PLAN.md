@@ -129,3 +129,12 @@ reason. The design the measurements point at: one continuation sheet per visible
 law; plane + harmonic rim-residual extension; nearest sheet shows; ends are tears with the next sheet behind). Next: offline
 prototype on the dumps, scored by the S33 instrument and the kit, before any app change. The S32 plate arm is removed.
 
+**S35 (2026-09-16).** The sheet construction built offline (`s35/sheets.py`): surfaces = joined components of the visible
+depth; one sheet per surface (plane in disparity, per-axis thin rule, ground plane for ground surfaces; optional rim-pinned
+residual or local planes); far sides by the app's run scan; nearest sheet behind the texel shows. Kit: truth kept (S2, S9),
+S26 within 1.5 cm, S15 0.184 → 0.013 m; seams halved on S9/S26. Pictures: the bare plane removes 50–92 % of the wall length
+with zero within-sheet kinks but reaches only 69–84 % of the band; pinning to the rim restores 92–96 % coverage and brings
+DA3's rim noise back (troll +12 %, room +29 %, vermeer −72 %). Next arm proposed: the smoothing thin-plate sheet with λ from
+the discrepancy principle at the strip's own noise. Envelope corrected by the user: the target is ±90° (fishtank), the
+instruments run at 45°/30°.
+
