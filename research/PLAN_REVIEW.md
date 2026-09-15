@@ -63,10 +63,19 @@ representation the player can stream — with camera motion, the layers move. No
 matters early: does the player consume *one baked scene per frame* or *a layered video* (Broxton-shaped)? The bundle's
 shape already leans to the second; the bake does not.
 
-**W7. The live pass has not happened.** Twenty-odd option arms and flags accumulated behind the panel; defaults were never
-chosen on a real screen with head tracking; every instrument is synthetic or headless. Each new floor is built on ground
-you have not stood on. The risk is not that something is wrong but that we do not know *which* of the arms is worth
-keeping, and the dead ones cost every later change.
+**W7. The defaults are measured but not set, and four trades need eyes.** (Corrected 2026-09-15 — the first draft said
+"not chosen", which overstated it.) The arms *were* tested empirically on the seven pictures and the kit — holes, spaghetti
+area, clones, band size, seams, per pose at 14° / 27° / 45° / 52° / 56°, 45° and 60° bakes (S19, S20, S23, S25), and
+LIVE_PASS §1 step 4 is the measured recommendation: plane far side, wash, picture margin, faces off, tier 35°, sky off (on
+for the two sky pictures), seams stretched, join off, rules current. What has not happened: (a) those values are still set
+through the panel, not the app's start-up defaults, by the rule "defaults change only in the live pass"; (b) four selects
+are trades the instruments cannot settle, listed in LIVE_PASS §3: seams stretched (closes silverwarrior's far-pose holes
+488 → 14 px but draws a skin the eye may read), margin window (vermeer 56° 1 336 → 229 px but clamp-extended colour past
+the rim), fold-alpha (silverwarrior 52° 1 308 → 264, vermeer 45° 6 → 840: holes on one picture against skins on the other),
+band tier (paint cost against wash showing past the tier); (c) nothing has been judged in motion with head tracking, which
+is where a skin or a wash reads differently than in a still. The risk is the four trades and the motion, not the absence of
+measurement. The cheap move: make the measured set the start-up defaults now and leave the four trades as the panel's
+choices until they are seen.
 
 **W8. Residual constants** (each labelled where it lives; none load-bearing, all should be listed): `--max-frac 0.6` and
 `iou ≥ 0.5` in the offline segmenter's pick rule (the browser uses SAM's argmax instead); 3 CSS px pointer slop; 3 × MAD
