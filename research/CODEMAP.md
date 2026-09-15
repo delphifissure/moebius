@@ -1138,3 +1138,11 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `harness/vendor/sam2` → the ONNX files (symlinks, gitignored); `scratch_server.js` MIME for `.mjs/.wasm/.onnx/.onnx_data`;
   mapping check by colour, clicks via `page.mouse.click` at `srcToScreen`, per-object IoU vs `plane_object_ids_sam.png`,
   guide-visible check, shots, `results.json`. `scratchpad/sam2onnx/validate.py`: ONNX vs torch predictor.
+
+## 38. Start-up defaults set (2026-09-15)
+- `defaults` in the S6 plate-options block: `{ far: 'plane', fill: 'wash', margin: 'off', faces: 'off', band: '35', sky: 'off',
+  seams: 'stretched', join: 'off', rules: 'cur' }` — the measured set (S19/S20/S23/S25, LIVE_PASS §1) with margin off at the
+  user's instruction; the HTML `selected` attributes in both files match; localStorage key `bgPlateOptions.v2` (the old
+  `bgPlateOptions` is ignored). The Build button already routed `far === 'plane'` to `bakePlate()`; a fresh page therefore
+  takes the plane recipe on the first Build. Harnesses set the selects explicitly and are unaffected.
+

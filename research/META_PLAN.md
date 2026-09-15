@@ -106,3 +106,6 @@ same `_setObjectIds` path — one prompt per object per clip, not per frame. Not
 one-pass and video not designed, the live pass not held, the untested fork to novel-view generation. It reorders the GPU
 work: close the loop first, real truth second, the fork third, objects fourth, video fifth; the live pass alongside.
 
+**Defaults set (2026-09-15).** The measured panel set is now the app's start-up default (CODEMAP §38); margin off at the
+user's word. The four trades (seams, margin, fold-alpha, tier) stay panel choices until seen in motion.
+

@@ -11,9 +11,12 @@ Everything below is in the app repo (`moebiusv2`) as pushed. The numbers quoted 
    + `harness/batchB/<picture>_da3_16.png` for bristlecone, octopus, room, silverwarrior, starwatcher, vermeer; the troll:
    `defaultImgColor.png` + `depth_da3mono16.png`. (The repo's old 8-bit maps lose to DA3 on every picture, S19; the
    bristlecone one is inverted — do not use it.)
-4. Open the bake panel. Set, left to right: **far side = plane (rim law)**, **fill = wash**, **margin = picture**,
-   **faces = off**, **band = tier ≤ 35°**, **sky = off** (on for bristlecone and starwatcher), **seams = stretched**,
-   **join = off**, **rules = current**. Click **Build** (1–4 min). The panel remembers its values.
+4. Open the bake panel. Since 2026-09-15 these are the **start-up defaults** (no setting needed on a fresh browser):
+   **far side = plane (rim law)**, **fill = wash**, **margin = off**, **faces = off**, **band = tier ≤ 35°**, **sky = off**
+   (turn on for bristlecone and starwatcher), **seams = stretched**, **join = off**, **rules = current**. Margin is off at
+   your word (the clamp-extended strips are the outpaint placeholder you did not want); `margin · picture` (clipped to the
+   picture) and `margin · window` are still in the select. Click **Build** (1–4 min). The panel remembers its values under a
+   new key, so a set saved before this date does not shadow the defaults.
 5. Two console flags for the check views (open the browser console, set before Build): `window._plateFoldAlpha = 2` paints
    magenta every plate pixel that is stretched past the fold (the spaghetti); `= 1` makes those pixels transparent instead
    (S25 §3: closes holes on silverwarrior, opens them on vermeer). `window._plateFoldAlpha = 0` returns to the default.
