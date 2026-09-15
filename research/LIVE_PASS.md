@@ -5,8 +5,10 @@ Everything below is in the app repo (`moebiusv2`) as pushed. The numbers quoted 
 ## 1. Set-up (five minutes)
 
 1. Serve the app folder as you normally do and open `moebius.html`.
-2. The app auto-loads `defaultImgColor.png` + `defaultImgDepth.png` from the app folder. To test a picture, copy its colour and
-   depth over those two names (keep your originals) and reload. 16-bit depth PNGs are read natively.
+2. The app auto-loads `defaultImgColor.png` + `defaultImgDepth.png` from the app folder. Since 2026-09-15 the shipped
+   `defaultImgDepth.png` **is the DA3-Mono-Large 16-bit map** (the old 8-bit map is `depth_8bit_repo.png`); pull the repo, or
+   your copy still auto-loads the 8-bit map. To test a picture, copy its colour and depth over those two names (keep your
+   originals) and reload. 16-bit depth PNGs are read natively.
 3. Depth maps ready to use, all DA3-Mono-Large at the working size (colour beside each): `harness/batchB/<picture>_color.png`
    + `harness/batchB/<picture>_da3_16.png` for bristlecone, octopus, room, silverwarrior, starwatcher, vermeer; the troll:
    `defaultImgColor.png` + `depth_da3mono16.png`. (The repo's old 8-bit maps lose to DA3 on every picture, S19; the
