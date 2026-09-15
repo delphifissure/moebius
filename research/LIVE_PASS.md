@@ -170,3 +170,20 @@ the rest blue); −1 off.
 5. Send back: the encode time and provider from the console, one screenshot with a pending mask, one after Enter, and the
    ids you ended with. What to judge: does one click give the thing you meant (if not, how many clicks / Tabs did it take),
    and is the click landing where you pointed (the mask should start under the cursor).
+
+## 8. Frame edge with margin off, and the 2-D plate select (S32, 2026-09-15)
+
+1. Build with the start-up defaults (margin off). The console prints `[S32] margin off: plate clipped to the picture's rest
+   footprint (… NDC half-extents, A245)`. At 26.5° the picture's left edge is a straight line and nothing is drawn in the bar
+   beside it (the streaks of your sheets are gone: `s32/troll_user26_clip.png`). The reveal inside the frame at the far edge is
+   still a hole — that is beyond-frame content, the outpaint class you switched off.
+2. The alternative: in the console before Build, `window._edgeTear = 1`, then Build (`[S32] plate frame-edge tear armed …`).
+   The plate may now cross the frame line; only cells stretched past 2 are torn there. Expect a wavy edge with short dashes
+   (`s32/troll_user26_tear.png`). Which one reads better in motion is yours to say; the clip is the default.
+3. The far-field select **join** has a third value, **far field: 2-D plate** (`window._farPlate2D`): the far side is solved as a
+   bending-energy plate per run cluster instead of a line per row / column (S25 §4's construction). The bake takes about a
+   minute longer; the console prints `[S32] 2-D plate: … clusters, … CG iterations …`. On the instrument it does not reduce the
+   row structure behind the woman (S32 §4) and by rule 7 it is due for removal; look at 45° behind the woman and behind the
+   troll's arm against `join = off` if you want to see it before it goes.
+4. Send back: the two console lines and a screenshot at your 26.5° and 45° poses with the default; the same with `_edgeTear` if
+   you try it.

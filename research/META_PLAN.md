@@ -109,3 +109,8 @@ work: close the loop first, real truth second, the fork third, objects fourth, v
 **Defaults set (2026-09-15).** The measured panel set is now the app's start-up default (CODEMAP §38); margin off at the
 user's word. The four trades (seams, margin, fold-alpha, tier) stay panel choices until seen in motion.
 
+**S32 (2026-09-15).** The user's sheets: the frame-edge streaks with margin off were A245's rest-footprint clip switched off
+together with the strips; the clip is back by default (`_edgeTear = 1` is the fold-law alternative outside the footprint).
+The 2-D clamped plate per run cluster, ported into the app behind the join select, equals the plane law on the kit and adds
+to the row structure on the troll and vermeer (clusters follow the run segmentation; rows are solved apart) — falsified as a
+cure, due for removal by rule 7 after the user's look. Next: the diffusion loop (plane-bundle reimport, one inpaint on a GPU).

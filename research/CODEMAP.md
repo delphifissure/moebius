@@ -1146,3 +1146,24 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   `bgPlateOptions` is ignored). The Build button already routed `far === 'plane'` to `bakePlate()`; a fresh page therefore
   takes the plane recipe on the first Build. Harnesses set the selects explicitly and are unaffected.
 
+## 39. Sprint 22 (2026-09-15; `S32_frame_edge_and_plate.md`) — margin-off frame edge, 2-D plate arm
+- **Margin off → A245 clip kept.** In `buildBackgroundLayer`'s quick bake, after the `if (!!window._plugMargin) { … plugRing … }`
+  block: `else if (matQ.uniforms.u_restClip && !window._edgeTear)` sets `u_restClip` to the picture's rest footprint
+  (`L.mesh.geometry.parameters.width / terrariumWidth`, `height / terrariumHeight`), log `[S32] margin off: plate clipped …`.
+  Colour pass (`u_isBackgroundLayer && u_restClip.x > 0` → discard outside) and depth pre-pass both honour it as before.
+- **`window._edgeTear = 1` (margin off):** `u_plateFold = 3`, `u_fragTear = 1`, `u_fragTearGate = 0`, `u_texelsPerPxRest`,
+  `u_fragTearFactor = 2`, and `u_restFoot` (new `Vector2` uniform, same half-extents). Shaders: after the A241 stretch test,
+  `if (u_isBackgroundLayer && u_plateFold > 2.5 && isGap)` the gap stands only where `abs(vClip.xy / vClip.w)` exceeds
+  `u_restFoot` (colour pass) / the same on `gapB` (pre-pass, which now declares `u_sdMask` and `u_restFoot`). Magenta check view
+  remains `u_plateFold == 2` only. The first build's texel-border test is gone.
+- **2-D plate (`window._farPlate2D`, select `bgPlateJoinSel` value `plate`, `applyPlateOptions`):** in `bgFarSidePlane` after pass 3
+  (`sideV` keeps each side's line value per texel) and before "disparity → normalised depth": union-find clusters over used rims
+  (row-run / column-run ids), per texel and side the rim (`farRimJ`), its strip (the fit window, raw disparity fixed), thin /
+  cut / sky skipped; per cluster the bending rows (x, y, √2 diagonals) over domain ∪ strip, ground obstacle from `ground.at`,
+  PCG (Jacobi) on the normal equations from the per-line field, stop at residual 1e-12 of start or `400 + 40·ceil(√n)`
+  iterations; recombination per texel = the nearer side's plate behind the texel by > tol (sheetfield4 306–326) →
+  `farDisp` / `farAxis`. Log `[S32] 2-D plate: …`; `window._geoPlate2D = {clusters, solved, iterations, capped, obstacle, changed, ms}`.
+- Harness: `harness/live_repro.js` (`JOIN`, `FLAGS` = comma list of `window` numbers, `POSES`, `NOSHEET`; dumps `farField.f32`,
+  `disocc.u8`, `plateF.f32`, `dQ.f32`, `size.json`), `harness/plate_compare.py` (two dumps → changed fraction, row-to-row vs
+  along-row |d|, anisotropy, vertical edges > visible step), `harness/edge_probe.js` (FG only / plate only / both at 26.5°).
+- Shots: `harness/shots/liverepro/{troll_line,troll_plate_edge,troll_clip,troll_tear,vermeer_line,vermeer_plate2,vermeer_clip}`.
