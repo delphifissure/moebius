@@ -138,3 +138,10 @@ DA3's rim noise back (troll +12 %, room +29 %, vermeer −72 %). Next arm propos
 the discrepancy principle at the strip's own noise. Envelope corrected by the user: the target is ±90° (fishtank), the
 instruments run at 45°/30°.
 
+**S35 continued (2026-09-16).** The deformed-plane sheet (smoothing thin plate at the strip's own noise, λ by discrepancy)
+is the best interior on the kit (S26 median 0, S9 p90 halved) and collapsed on the pictures — which exposed the real fault:
+under the join law DA3 fuses the occluder with its background (12–18 % of the "background" strip is the occluder), so every
+sheet is fitted partly to the thing in front. With S28's SAM object mask separating them, the bare-plane sheets reach 97 %
+of the troll's band and cut the wall length by half. The sheet model needs the object segmentation; the interior model is
+second-order. Next: thin plate + mask (running); the mask path for the other pictures; then the app.
+

@@ -36,7 +36,7 @@ from PIL import Image
 
 ap = argparse.ArgumentParser()
 ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', type=float); ap.add_argument('--q', type=float, default=1 / 65535)
-ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual')
+ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
 A = ap.parse_args()
 P = A.probe; meta = json.load(open(f'{P}/meta.json')); pw, ph = meta['pw'], meta['ph']; N = pw * ph
 dQ = np.fromfile(f'{P}/dQ.f32', np.float32).reshape(ph, pw).astype(np.float64)
@@ -85,6 +85,13 @@ def joined_arr(I, J):
 idx = np.arange(N).reshape(ph, pw)
 jh = joined_arr(idx[:, :-1].ravel(), idx[:, 1:].ravel()).reshape(ph, pw - 1)   # texel x joined to x+1
 jv = joined_arr(idx[:-1, :].ravel(), idx[1:, :].ravel()).reshape(ph - 1, pw)   # texel y joined to y+1
+if A.mask:
+    # S35 object-aware surfaces: an object mask (SAM, S28/S29) separates the occluder from its background where the depth map
+    # joins them (contact points, ramps); pairs of different ids are unjoined, so runs, components and strips stop at the mask
+    oid = np.asarray(Image.open(A.mask)); oid = oid[..., 0] if oid.ndim == 3 else oid
+    if oid.shape != (ph, pw): oid = np.asarray(Image.fromarray(oid).resize((pw, ph), Image.NEAREST))
+    jh &= (oid[:, :-1] == oid[:, 1:]); jv &= (oid[:-1, :] == oid[1:, :])
+    print(f'object mask: {len(np.unique(oid)) - 1} objects, {int((oid > 0).sum())} texels')
 def runs_1d(joinedNext, axis):
     # returns start and end index along the axis for every texel
     if axis == 0:
@@ -217,6 +224,12 @@ for s in range(nS):
     if useX: full[1] = c[k]; k += 1
     if useY: full[2] = c[k]
     planes[s] = full
+# diagnostic: does the largest surface's strip contain the occluder? (its rims are far; texels much nearer than the rims are not that surface)
+try:
+    sBig = int(np.argmax(np.where(isSky, -1, stripN))); stB = strip_of(sBig); rr = np.array(members[sBig]); dR = DISP.ravel()[rr]; dS = DISP.ravel()[stB]; tR = np.median(TOL.ravel()[rr])
+    near = dS > np.percentile(dR, 90) + 20 * tR
+    print(f'strip check, largest surface {sBig}: {len(stB)} strip texels, {len(rr)} rims; rim disparity median {np.median(dR):.3f} (p10 {np.percentile(dR,10):.3f}, p90 {np.percentile(dR,90):.3f}); strip texels nearer than the rims by > 20 tol: {int(near.sum())} ({100*near.mean():.1f} %), their disparity median {np.median(dS[near]) if near.any() else 0:.3f}; band texels own disparity median {np.median(DISP[band]):.3f}')
+except Exception as e: print('strip check failed', e)
 print(f'planes fitted: {int((~isSky & ~isThin & ~isGround & ~isGroundSurf).sum())} full, {int(isThin.sum())} thin (constant), {int(isSky.sum())} sky, {int(isGroundSurf.sum())} on the ground plane, {int(isGround.sum())} dropped (strip under three texels); strip texels median {int(np.median(stripN[~isSky & ~isGround])) if (~isSky & ~isGround).any() else 0}  ({time.time() - T0:.1f}s)')
 
 # ---- 4b residual extension per surface over its domain (harmonic, Dirichlet at the surface's rim texels) ----
@@ -272,6 +285,74 @@ if A.local:
             W = 1 + max(0, max((len(dom_march(b, k)) for (b, k) in rimOf[r]), default=0))
             localPlane[r] = fit_local(r, W)
     print(f'local planes: {len(localPlane)} fitted  ({time.time() - tl0:.1f}s)')
+# ---- the smoothing thin-plate sheet (--tps): the deformed plane. Unknown u over strip ∪ domain; energy
+#   Σ_strip (u − disp)² / σ² + λ Σ (u_xx² + 2 u_xy² + u_yy²)
+# σ = the strip's own noise (S21's estimator: third differences, MAD → σ, Var(Δ³) = 20σ²), floored at the grid's quantisation
+# noise grid/√12; λ by the discrepancy principle (Morozov 1966): the strip's RMS residual equals σ. Free boundary elsewhere:
+# the sheet continues the strip's shape into the hole with least bending and relaxes to an affine continuation far from it.
+tpsU = {}
+def tps_sheet(s_, st, dom):
+    om = np.unique(np.concatenate([st, dom])); n = len(om); pos = {int(i): k for k, i in enumerate(om)}
+    inO = np.zeros(N, bool); inO[om] = True; kOf = np.full(N, -1, np.int64); kOf[om] = np.arange(n)
+    X = om % pw; Y = om // pw
+    rows, cols, vals = [], [], []; nr = 0
+    def add(coefs):
+        nonlocal nr
+        for j, c in coefs: rows.append(nr); cols.append(j); vals.append(c)
+        nr += 1
+    # bending rows (vectorised assembly)
+    def stencil(offs, ws):
+        nonlocal nr
+        ok = np.ones(n, bool); ks = []
+        for (dx, dy) in offs:
+            xn = X + dx; yn = Y + dy; inside = (xn >= 0) & (xn < pw) & (yn >= 0) & (yn < ph)
+            kk = np.full(n, -1, np.int64); kk[inside] = kOf[(yn[inside] * pw + xn[inside])]; ok &= kk >= 0; ks.append(kk)
+        idxs = np.flatnonzero(ok); m = len(idxs)
+        for kk, w in zip(ks, ws): rows.append(np.arange(nr, nr + m)); cols.append(kk[idxs]); vals.append(np.full(m, float(w)))
+        nr += m
+    rows = []; cols = []; vals = []
+    stencil([(-1, 0), (0, 0), (1, 0)], [1, -2, 1]); stencil([(0, -1), (0, 0), (0, 1)], [1, -2, 1]); stencil([(0, 0), (1, 0), (0, 1), (1, 1)], [np.sqrt(2), -np.sqrt(2), -np.sqrt(2), np.sqrt(2)])
+    B = sparse.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(nr, n))
+    # data rows
+    kS = kOf[st]; d = DISP.ravel()[st]
+    # noise of the strip: third differences along x within the strip
+    inS = np.zeros(N, bool); inS[st] = True
+    sx = st % pw; sy = st // pw; ok3 = (sx + 3 < pw); t0 = st[ok3]; t1 = t0 + 1; t2 = t0 + 2; t3 = t0 + 3; ok3b = inS[t1] & inS[t2] & inS[t3]
+    d3 = DISP.ravel()[t0[ok3b]] - 3 * DISP.ravel()[t1[ok3b]] + 3 * DISP.ravel()[t2[ok3b]] - DISP.ravel()[t3[ok3b]]
+    sig = (np.median(np.abs(d3 - np.median(d3))) * 1.4826 / np.sqrt(20)) if len(d3) > 20 else 0.0
+    gridSig = abs(float(disp(min(1.0, np.median(dQ.ravel()[st]) + 1 / 65535)) - disp(max(0.0, np.median(dQ.ravel()[st]) - 1 / 65535)))) / 2 / np.sqrt(12)
+    sig = max(sig, gridSig)
+    Dm = sparse.csr_matrix((np.ones(len(st)) / sig, (np.arange(len(st)), kS)), shape=(len(st), n)); b = d / sig
+    BtB = (B.T @ B).tocsr(); DtD = (Dm.T @ Dm).tocsr(); Dtb = Dm.T @ b
+    def solve(lam, x0=None):
+        M_ = (DtD + lam * BtB).tocsr(); Minv = 1.0 / np.maximum(M_.diagonal(), 1e-30)
+        x, info = cg(M_, Dtb, x0=x0, rtol=1e-8, maxiter=4000, M=sparse.diags(Minv))
+        return x
+    def rms(x): return float(np.sqrt(np.mean((x[kS] - d) ** 2)))
+    # discrepancy: RMS(λ) = σ; RMS grows with λ; bracket on a log grid then bisect
+    lo, hi = -8.0, 8.0; x = None; grid_ = np.linspace(lo, hi, 9); r_ = []
+    for g in grid_: x = solve(10 ** g, x); r_.append(rms(x))
+    r_ = np.array(r_); above = np.flatnonzero(r_ > sig)
+    if len(above) == 0: lam = 10 ** hi
+    elif above[0] == 0: lam = 10 ** lo
+    else:
+        a, bb = grid_[above[0] - 1], grid_[above[0]]
+        for _ in range(6):
+            mid = 0.5 * (a + bb); x = solve(10 ** mid, x)
+            if rms(x) > sig: bb = mid
+            else: a = mid
+        lam = 10 ** (0.5 * (a + bb))
+    x = solve(lam, x)
+    return om, x, sig, lam, rms(x)
+if A.tps:
+    tt0 = time.time()
+    for s_ in range(nS):
+        if isSky[s_] or isGround[s_] or isGroundSurf[s_]: continue
+        st = strip_of(s_); dom = domStop[s_]
+        if len(st) < 3 or len(dom) == 0: continue
+        om, x, sig, lam, rr = tps_sheet(s_, st, dom); tpsU[s_] = (om, x)
+        if len(dom) > 5000: print(f'   tps surface {s_}: {len(st)} strip, {len(dom)} domain, sigma {sig:.3e}, lambda {lam:.2e}, rms {rr:.3e}  ({time.time() - tt0:.0f}s)')
+    print(f'thin-plate sheets: {len(tpsU)} solved  ({time.time() - tt0:.1f}s)')
 def harmonic_ext_fixed(dom, fixed):
     """Laplace on dom; texels in `fixed` (subset of dom) hold their value; zero flux elsewhere."""
     if len(dom) == 0: return np.zeros(0)
@@ -303,6 +384,10 @@ def build(domains, label):
         dom = domains[s]
         if len(dom) == 0 or isGround[s]: continue
         if isSky[s]: val = np.zeros(len(dom))
+        elif A.tps:
+            if s not in tpsU: continue
+            om, x = tpsU[s]; look = np.full(N, np.nan); look[om] = x; val = look[dom]
+            if np.isnan(val).any(): val = np.where(np.isnan(val), -np.inf, val)
         elif A.local:
             acc = np.zeros(N); wsum = np.zeros(N)
             for r in members[s]:

@@ -1,4 +1,4 @@
-# S35 — the sheet construction, offline (2026-09-16)
+# S35 — the sheet construction, offline (2026-09-16; §7–§9 added later the same day)
 
 The user's model, built as a measurement before any app change: one continuation sheet per visible surface behind each
 hole, the nearest sheet behind the texel shows, the next one is the second layer. `research/s35/sheets.py` on the app's own
@@ -127,3 +127,73 @@ outputs under each dump's `s35/` (or `s35_base/`, `s35_nores/`): `farField_stop.
 `summary_<tag>.json`, `surfaces_stop.png`, `far_{perline,stop}.png`, `kinks_{v,h}_stop.png`. Picture dumps from
 `harness/streak_class.js` (now writes `meta.json`, `disocc.u8`, `farField.f32`, `groundCol.u8`, `groundTex.u8`). Figures in
 `research/s35/`: `troll_unreached_local.png`, and the far-field pairs added below.
+
+## 7. The deformed plane: the smoothing thin-plate sheet (`--tps`)
+
+The user's correction: a sheet is a deformed plane, not a flat one. Built as the field u over strip ∪ domain minimising
+Σ_strip (u − disp)²/σ² + λ·(u_xx² + 2u_xy² + u_yy²), σ the strip's own noise (third differences, MAD → σ, Var(Δ³) = 20σ²,
+floored at the grid's quantisation noise grid/√12), λ by the discrepancy principle (Morozov 1966: the strip's RMS residual
+equals σ; log-grid then bisection), free boundary in the hole. Conjugate gradients with a Jacobi preconditioner.
+
+| scene / picture | reached | truth median (m) | p90 (m) | jumps v (len) | jumps h (len) | kinks v (len) | kinks h (len) |
+|---|---|---|---|---|---|---|---|
+| S2 | 100 % | 0.0000 | 0.0430 | 7 976 (21 905) | 238 (17 702) | 677 (3 251) | 238 (17 702) |
+| S9 | 100 % | 0.0000 | **0.0320** | 5 038 (37 497) | 9 824 (65 099) | 1 300 (47 738) | 2 445 (78 136) |
+| S26 | 100 % | **0.0000** | 0.0552 | 10 374 (67 789) | 232 (15 633) | 1 556 (75 602) | 253 (17 324) |
+| S15 | 99.7 % | 0.0402 | 4.867 | 10 697 (1 096 585) | 11 524 (1 579 199) | 9 917 (1 819 391) | 11 492 (2 637 178) |
+| troll | **34.6 %** | — | — | 59 066 (2 193 605) | 41 320 (2 602 197) | 26 529 (3 887 383) | 28 721 (4 805 132) |
+| vermeer | **9.8 %** | — | — | 51 754 (1 691 350) | 79 562 (3 176 639) | 22 436 (3 033 846) | 28 038 (5 897 705) |
+| room | **43.0 %** | — | — | 37 929 (690 665) | 30 473 (879 253) | 22 110 (1 077 254) | 23 879 (1 494 423) |
+
+On the kit it is the best interior so far (S26 median 0 with the seams halved; S9's p90 halves) except S15 (4 cm against the
+pinned plane's 1.3 cm: the dome is followed at the noise scale, not through every rim texel). On the pictures it collapses —
+and the collapse pointed at the real fault, §8.
+
+## 8. Why every sheet lands in front of the band on the pictures: the surface contains the occluder
+
+A check added to the run: the largest surface's strip against its own rims.
+
+| picture | strip texels of the largest surface | rims | strip texels nearer than the rims by > 20 tol | their disparity | band's own disparity |
+|---|---|---|---|---|---|
+| troll | 869 642 (the whole visible component) | 5 019 | 126 917 (14.6 %) | 5.00 | 4.86 |
+| vermeer | 902 436 | 5 041 | 108 117 (12.0 %) | 5.83 | 4.99 |
+
+DA3 joins the occluder to its background — at the feet, along the ramps at silhouettes (S28 §: "a quarter of the troll's band
+joins no visible surface"; the troll is joined to the ground and the trees). Under the join law the cave and the troll are
+ONE connected component, so "the cave's surface" was fitted to the troll's own texels too: a flat plane through both lands
+in front of a fifth of the band (§4.2), and the thin plate, which follows the data closely, lands in front of two thirds.
+The per-line law never met this because it works along a line, where the rim is a local discontinuity whether or not the
+two surfaces touch elsewhere. So the remaining fault of the sheet model on pictures is not the interior model; it is the
+**surface segmentation**: which visible texels are the background and which are the thing in front. That is the object
+question (S28/S29), and the app already has the answer's source.
+
+## 9. With the object mask (SAM, S28's troll map): `--mask`
+
+Texels of different object ids are never joined, so runs, components, strips and sheets stop at the mask.
+
+| troll | reached | jumps v (len) | jumps h (len) | kinks v (len) | kinks h (len) | same-sheet kinks v | boundary kinks v | own/unreached v |
+|---|---|---|---|---|---|---|---|---|
+| per-line law | — | 99 203 (1 711 260) | 65 535 (1 452 445) | 91 287 (2 727 132) | 65 610 (2 488 140) | — | — | — |
+| sheets, bare plane, no mask | 78.9 % | 17 444 (311 365) | 16 772 (421 282) | 18 325 (501 328) | 20 648 (682 536) | 0 | 282 679 | 218 650 |
+| sheets, bare plane, **mask** | **96.7 %** | 31 521 (764 975) | 25 296 (737 403) | 44 462 (1 367 137) | 39 900 (1 288 187) | 16 | 1 327 497 | 39 624 |
+| sheets, pinned, mask | 98.8 % | 86 176 (1 399 957) | 64 073 (1 329 339) | 93 856 (2 398 715) | 75 757 (2 249 766) | 323 411 | 2 037 172 | 38 132 |
+| sheets, thin plate, mask | (running) | | | | | | | |
+
+With the mask the bare-plane sheets reach 97 % of the band (from 79 %) and still cut the wall length by 55 % (vertical) and
+49 % (horizontal) against the per-line law, with no within-sheet kinks. What is left is sheet boundaries: 765 surfaces, of
+which 13 are the mask's objects and the rest DA3's fragments of the background (416 single-texel components), and the
+largest surface's strip still holds 18.5 % nearer texels — the mask covers the two figures, not every nearer thing.
+
+## 10. Where this leaves the design
+
+1. The sheet model is right where the surfaces are separable: kit truth kept or improved (S15 14×), seams halved, full
+   coverage; on the pictures, with an object mask, 97 % coverage and half the wall length gone.
+2. What it needs from upstream is the thing the stack was heading for anyway: an object segmentation (SAM masks, one pass —
+   S30's proposal chain), so that each object's reveal is filled from the surfaces *outside* it. The per-line law hid this
+   need by being one-dimensional.
+3. The interior model is a second-order choice once the segmentation is right: flat plane (smoothest, wrong shape on curved
+   surfaces), pinned (exact rim, DA3 noise), thin plate at the noise scale (best on the kit). The thin plate with the mask is
+   the arm to read next.
+4. The remaining seams are between background fragments. Whether a DA3 fragment is a surface (S15's leaves) or noise (the
+   troll's silhouette specks) is the porous question, unchanged.
+
