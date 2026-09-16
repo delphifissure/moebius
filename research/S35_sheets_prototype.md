@@ -451,3 +451,68 @@ a rule of its own. Not made the default.
 **Recommended construction, unchanged from §14**: object mask, fusion by body match, planar patches, no-area rule, 2-D
 geodesic domain, flat plane per patch, specks dropped, evidence order, two-sided for masked objects. It is the arm that gives
 vermeer's floor and S15's best kit number (0.069 m against the per-line law's 0.184 m).
+
+## 17. The faceting, and the thin plate per face (item b, done properly)
+
+**The faceting is real and it was measured first.** Splitting every far-field jump by owner (sunflower field, patches arm):
+
+| | total jump length | same sheet | facets of ONE join-law surface | different surfaces |
+|---|---|---|---|---|
+| vertical | 447 625 | 4 % | **96 %** | 0 % |
+| horizontal | 437 596 | 1 % | **98 %** | 0 % |
+
+**The merge** (`--smooth`). Two adjacent patches are one smooth face when the step between their planes is invisible over the
+distance they span: |slope_A − slope_B| · L ≤ tolAt, with L the smaller patch's own extent √area. Slope times length is a
+depth, compared against the same visible step the patches were cut with, so no constant is added; it is a crease test, not a
+flatness test, so a curved surface rejoins and a wall-against-floor crease fails it by orders of magnitude. Never merges
+across a join-law break. Sunflowers 19 173 → 6 853 faces, vermeer 11 007 → 4 514, S26 88 → 36, S2 56 → 24. The ownership map
+is visibly consolidated (`s35/room_panels_geo.png` against the new `who`), but **the seams did not move** (v 33 067 against
+27 175): a merged face is curved and a single plane cannot follow it, which is exactly what item (b) is for.
+
+**Two more falsifications on the way** (both removed or left as non-default flags):
+- *Facet-wide domains.* If the steps are domain truncation, give every facet its component's whole domain and let the order
+  pick. Worse, not better: sunflowers v 41 681 (len 840 937) against 27 175 (448 944). A facet's plane extended far is also
+  rejected wherever it flies in front of the occluder, so the mosaic returns with wilder values.
+- *Per-texel error budget* (`--budget`, kept, not default). Shrink the fitted slope by its own predicted standard error
+  against the visible step. It never fires: the patches are *selected* to be planar, so their residuals are the noise and the
+  covariance says the slope is certain. Selection bias, not a tuning problem. Sunflowers: 29 373 (445 094).
+
+**Why the plate needed a prior.** With merged faces the plate is fold-free, and on S26 it reaches **truth median 0.0000 m**,
+the best possible, p90 0.0532 (best of every arm). On S15 it still gave 2.25 m, and the reason is visible in the ownership:
+a face with a strip of **165 texels took 11 930 band texels** at 2.2 m error, while the same face's *plane* takes almost
+none. The plate's free boundary lets a small face bulge toward the camera over the hole and win the layered order. The
+face's own plane is the statement "no bending beyond what was measured", so it enters the energy as a prior on the domain at
+weight 1/visible step against the strip data at weight 1/σ. Since σ is far below the step the data rules on the strip and the
+prior rules where the plate would otherwise be free.
+
+**Only merged faces need a plate**: a face still made of one patch is planar by the patch grower's own test. That takes the
+solves from 6 853 to 192 (sunflowers) and 130 (vermeer), and reproduces S26 exactly (0.0253 with 7 solves against 10).
+
+| arm | S2 | S9 | S15 (median / p90) | S26 |
+|---|---|---|---|---|
+| per-line law (app) | 0.0000 | 0.0000 | 0.1838 / 8.5657 | 0.0000 |
+| patches + plane (§14) | 0.0000 | 0.0320 | 0.0691 / 6.7898 | 0.0299 |
+| merged faces + plane | — | — | 0.0853 / 6.7289 | 0.0257 |
+| merged faces + plate, no prior | — | — | 2.2540 / 6.7540 | **0.0000** |
+| merged faces + plate + prior | 0.0121 | 0.0320 | 0.0795 / **4.2489** | 0.0253 |
+
+**Net.** On the kit it is a wash on the medians and a clear gain on S15's tail (p90 4.25 against 6.79 and the per-line law's
+8.57). On the pictures it changes nothing visible: vermeer stays clean (`s35/vermeer_faceting_pair.png`, jumps 3 762 /
+55 543 against 3 333 / 57 310) and the sunflower field is unchanged (`s35/sunflowers_faceting_pair.png`, 27 994 against
+27 175). Two findings explain that:
+
+1. **Vermeer's remaining 55 000 horizontal "jumps" are not seams.** Their second differences are tiny — kinks 2 058 / 4 232
+   against the per-line law's 132 525 / 66 697, down 97 % — so the field is a smooth steep slope that the first-difference
+   instrument counts as wall length. The kink measure is the honest one for seams, as §12 said when it was introduced.
+2. **The sunflower field's jumps are not faceting either.** Its join-law component fuses foliage with sky through DA3's
+   ramps (component 0 spans 0.009–0.474), so the patches inside it are genuinely different surfaces and the crease test
+   correctly refuses to merge them. The "96 % facets of one surface" figure is measured against the *join-law component*,
+   which on this picture is a fused blob, not a surface. The staircase visible in its render is in neither arm's far field
+   (both are smooth, `s35/room_panels_geo.png`) and appears in the per-line panel too: it comes from the app's own plate
+   stage, not from the sheet.
+
+**Recommendation.** Keep the §14 construction and add the merge and the primed plate: object mask, fusion by body match,
+planar patches, crease-test merge, no-area rule, 2-D geodesic domain, thin plate on merged faces with the plane prior and
+plane elsewhere, specks dropped, evidence order, two-sided for masked objects. It is never worse than §14 on the kit, it is
+much better on S15's tail, and it leaves vermeer's floor exactly as it was. The cost is 130–190 plate solves per picture
+(20–37 min offline), so the app would ship planes first and the plate as an offline refinement.

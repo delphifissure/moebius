@@ -163,3 +163,14 @@ whole fold overshoot to depth 1.0 even after the solver was fixed with AMG). Beh
 floor at the visible floor's depths. Troll: faceted cave, equal seam length in smaller pieces; sunflowers worse (leaves are
 curved, and one-sided background sheets win the sky's hole — the "where does a sheet end" question, now with a test picture);
 kit S2/S9 unchanged, S15 0.18 → 0.07 m, S26 0 → 0.03 m. Next: the sheet's end (sky/corners), then the thin plate per face.
+
+**S35 §17, faceting and the plate per face (2026-09-16).** 96–98 % of the far field's jump length is between facets of one
+join-law component, so the patches were rejoined by a crease test (slope difference times the smaller facet's extent against
+the visible step; no new constant): 19 173 → 6 853 faces on the sunflowers, 11 007 → 4 514 on vermeer. Merging alone changes
+nothing because a merged face is curved; with the thin plate on merged faces S26 reaches truth 0.0000 m. The plate needed one
+fix: its free boundary let a 165-texel face bulge and take 11 930 band texels on S15 (2.25 m), cured by entering the face's
+own plane as a prior on the domain at weight 1/visible step (S15 0.0795 m, p90 4.25, the best tail measured). Only merged
+faces need a plate, which cuts the solves to 130–190 per picture. Net: kit a wash on medians, better on S15's tail, pictures
+visually unchanged. Two negatives recorded: facet-wide domains (worse) and the per-texel error budget (never fires, because
+patches are selected to be planar). Vermeer's remaining "jumps" are legitimate slope (kinks down 97 %), and the sunflower
+field's are real structure inside a fused foliage-sky component, not faceting.
