@@ -145,3 +145,10 @@ sheet is fitted partly to the thing in front. With S28's SAM object mask separat
 of the troll's band and cut the wall length by half. The sheet model needs the object segmentation; the interior model is
 second-order. Next: thin plate + mask (running); the mask path for the other pictures; then the app.
 
+**S35 closed (2026-09-16).** With SAM masks (troll's S28 map; vermeer and the sunflower field clicked for the test) the sheet
+construction reaches 94–99.7 % of the band on the two maskable pictures and, with fragment specks dropped, cuts the per-line
+law's vertical wall length by 80 % (troll, vermeer). Remaining seams: boundaries between DA3 background fragments (the
+porous question, now with a measured cost both ways). Thin plate: best on the kit, 5–28 min per picture offline. Decision
+for the user: take sheets (mask + flat plane per surface + specks dropped) into the app behind the far-side select, with the
+thin plate as the interior once a fast solver exists.
+

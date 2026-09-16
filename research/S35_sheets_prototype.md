@@ -167,23 +167,40 @@ two surfaces touch elsewhere. So the remaining fault of the sheet model on pictu
 **surface segmentation**: which visible texels are the background and which are the thing in front. That is the object
 question (S28/S29), and the app already has the answer's source.
 
-## 9. With the object mask (SAM, S28's troll map): `--mask`
+## 9. With object masks (SAM 2.1; the troll's S28 map, vermeer and the sunflower field clicked for this test): `--mask`
 
-Texels of different object ids are never joined, so runs, components, strips and sheets stop at the mask.
+Texels of different object ids are never joined, so runs, components, strips and sheets stop at the mask. Masks:
+troll picture 13 objects (S28), vermeer 9 (the woman, table, basket, jug, bowl, bread, wall basket, lantern, box;
+`harness/shots/objlayers/view_vermeer/overlay_sam.png`), the "room" picture — which is a sunflower field — 9 flower heads
+(porous; the mask covers 7 % of it). "Specks dropped" = a surface with no extent along either axis is not extrapolated.
 
-| troll | reached | jumps v (len) | jumps h (len) | kinks v (len) | kinks h (len) | same-sheet kinks v | boundary kinks v | own/unreached v |
-|---|---|---|---|---|---|---|---|---|
-| per-line law | — | 99 203 (1 711 260) | 65 535 (1 452 445) | 91 287 (2 727 132) | 65 610 (2 488 140) | — | — | — |
-| sheets, bare plane, no mask | 78.9 % | 17 444 (311 365) | 16 772 (421 282) | 18 325 (501 328) | 20 648 (682 536) | 0 | 282 679 | 218 650 |
-| sheets, bare plane, **mask** | **96.7 %** | 31 521 (764 975) | 25 296 (737 403) | 44 462 (1 367 137) | 39 900 (1 288 187) | 16 | 1 327 497 | 39 624 |
-| sheets, pinned, mask | 98.8 % | 86 176 (1 399 957) | 64 073 (1 329 339) | 93 856 (2 398 715) | 75 757 (2 249 766) | 323 411 | 2 037 172 | 38 132 |
-| sheets, thin plate, mask | 97.8 % | 30 362 (834 444) | 32 540 (1 158 622) | 16 728 (1 329 796) | 21 980 (1 850 057) | 45 695 | 1 057 272 | 226 830 |
+| picture | arm | reached | jumps v (len) | vs per-line | jumps h (len) | vs per-line | kinks v (len) | kinks h (len) | same-sheet / boundary / own kinks v |
+|---|---|---|---|---|---|---|---|---|---|
+| troll | per-line law | — | 99 203 (1 711 260) | | 65 535 (1 452 445) | | 91 287 (2 727 132) | 65 610 (2 488 140) | |
+| | flat plane, no mask | 78.9 % | 17 444 (311 365) | −82 % | 16 772 (421 282) | −71 % | 18 325 (501 328) | 20 648 (682 536) | 0 / 283 k / 219 k |
+| | flat plane, mask | 96.7 % | 31 521 (764 975) | −55 % | 25 296 (737 403) | −49 % | 44 462 (1 367 137) | 39 900 (1 288 187) | 16 / 1 327 k / 40 k |
+| | flat plane, mask, specks dropped | 94.2 % | 13 623 (335 207) | **−80 %** | 9 733 (396 736) | **−73 %** | 10 359 (577 243) | 12 788 (718 928) | 43 / 507 k / 71 k |
+| | pinned, mask | 98.8 % | 86 176 (1 399 957) | −18 % | 64 073 (1 329 339) | −8 % | 93 856 (2 398 715) | 75 757 (2 249 766) | 323 k / 2 037 k / 38 k |
+| | thin plate, mask | 97.8 % | 30 362 (834 444) | −51 % | 32 540 (1 158 622) | −20 % | 16 728 (1 329 796) | 21 980 (1 850 057) | 46 k / 1 057 k / 227 k |
+| vermeer | per-line law | — | 110 222 (4 151 799) | | 78 795 (2 188 851) | | 132 525 (7 705 370) | 66 697 (3 780 473) | |
+| | flat plane, no mask | 68.6 % | 22 945 (311 306) | −92 % | 41 184 (485 788) | −78 % | 14 511 (463 194) | 18 531 (729 414) | |
+| | flat plane, mask | 99.5 % | 29 532 (1 627 705) | −61 % | 33 405 (2 051 500) | −6 % | 48 617 (3 142 430) | 57 688 (3 898 326) | 0.4 k / 3 082 k / 60 k |
+| | flat plane, mask, specks dropped | 99.3 % | 7 440 (837 235) | **−80 %** | 11 634 (1 839 562) | −16 % | 10 622 (1 631 288) | 20 370 (3 602 362) | 0.5 k / 1 581 k / 49 k |
+| | thin plate, mask (28 min) | 99.7 % | 69 693 (1 470 059) | −65 % | 61 307 (1 327 558) | −39 % | 28 334 (2 080 518) | 24 694 (1 883 624) | 131 k / 1 863 k / 86 k |
+| sunflowers | per-line law | — | 44 834 (655 195) | | 44 071 (628 026) | | 54 298 (1 129 550) | 53 276 (1 089 251) | |
+| | flat plane, no mask | 83.6 % | 14 265 (326 013) | −50 % | 13 027 (232 864) | −63 % | 17 753 (575 432) | 16 025 (390 071) | |
+| | flat plane, mask | 91.3 % | 16 489 (485 405) | −26 % | 15 825 (424 706) | −32 % | 24 335 (871 583) | 23 337 (736 728) | 0 / 750 k / 122 k |
+| | thin plate, mask (11 min) | 88.5 % | 26 610 (623 667) | −5 % | 26 101 (590 701) | −6 % | 16 901 (1 010 630) | 17 087 (921 993) | 43 k / 594 k / 373 k |
 
-With the mask the bare-plane sheets reach 97 % of the band (from 79 %) and still cut the wall length by 55 % (vertical) and
-49 % (horizontal) against the per-line law, with no within-sheet kinks; the thin plate reaches 98 % and cuts it by 51 % and
-20 % (its within-sheet kinks stay small, 46 k; the boundaries between fragments carry the rest). What is left is sheet boundaries: 765 surfaces, of
-which 13 are the mask's objects and the rest DA3's fragments of the background (416 single-texel components), and the
-largest surface's strip still holds 18.5 % nearer texels — the mask covers the two figures, not every nearer thing.
+Reading. (a) The mask does what §8 said it would: the largest surface's strip holds 2.8 % nearer texels on vermeer (from 12 %),
+coverage goes to 94–99.7 % on the two pictures whose objects can be masked. (b) The remaining wall length is almost all
+**boundaries between background fragments**: vermeer's wall is 657 components under the join law, 410 of them single texels;
+each fragment's constant-depth sheet marches a one-texel line across the hole (the lattice in `s35/vermeer_far_mask.png`,
+second panel). Dropping surfaces with no extent along either axis removes most of it: troll −80 %/−73 %, vermeer −80 % on
+the vertical walls, at 94–99 % coverage — the same rule that hurt S15's canopy, where the fragments are real leaves. (c) The
+thin plate with the mask reaches the most but keeps more boundary length than the flat plane and costs 5–28 minutes per
+picture in this prototype; in the app it would need a multigrid solver or the flat plane. (d) The sunflower field is the
+porous class: 9 flower heads are not its objects, the field is; neither arm nor the mask changes it much.
 
 ## 10. Where this leaves the design
 
@@ -193,8 +210,13 @@ largest surface's strip still holds 18.5 % nearer texels — the mask covers the
    S30's proposal chain), so that each object's reveal is filled from the surfaces *outside* it. The per-line law hid this
    need by being one-dimensional.
 3. The interior model is a second-order choice once the segmentation is right: flat plane (smoothest, wrong shape on curved
-   surfaces), pinned (exact rim, DA3 noise), thin plate at the noise scale (best on the kit). The thin plate with the mask is
-   the arm to read next.
-4. The remaining seams are between background fragments. Whether a DA3 fragment is a surface (S15's leaves) or noise (the
-   troll's silhouette specks) is the porous question, unchanged.
+   surfaces, but the shape error is bounded by the ordering clamp and rarely visible), pinned (exact rim, DA3 noise), thin
+   plate at the noise scale (best on the kit, most coverage on pictures, 5–28 min here).
+4. The remaining seams are between DA3's background fragments. Dropping fragments with no extent along either axis takes
+   the troll and vermeer to −80 % of the per-line law's vertical wall length at 94–99 % coverage; S15's canopy wants those
+   fragments kept. Whether a fragment is a surface or noise is the porous question, and it now has a measured cost on both
+   sides.
+5. **Best measured configuration on pictures:** object mask + flat plane per surface + specks dropped. On the kit the same
+   configuration is the "plane, no residual" row of §2 (truth kept on S2/S9, S26 1.6 cm, S15 19 cm — the dome needs the
+   deformed plane, which the thin plate gives at 4 cm and the pinned plane at 1.3 cm).
 
