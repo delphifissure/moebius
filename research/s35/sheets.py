@@ -36,7 +36,7 @@ from PIL import Image
 
 ap = argparse.ArgumentParser()
 ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', type=float); ap.add_argument('--q', type=float, default=1 / 65535)
-ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
+ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
 A = ap.parse_args()
 P = A.probe; meta = json.load(open(f'{P}/meta.json')); pw, ph = meta['pw'], meta['ph']; N = pw * ph
 dQ = np.fromfile(f'{P}/dQ.f32', np.float32).reshape(ph, pw).astype(np.float64)
@@ -147,6 +147,53 @@ from scipy.sparse.csgraph import connected_components
 I_h = idx[:, :-1].ravel()[jh.ravel()]; J_h = idx[:, 1:].ravel()[jh.ravel()]; I_v = idx[:-1, :].ravel()[jv.ravel()]; J_v = idx[1:, :].ravel()[jv.ravel()]
 adj = sparse.coo_matrix((np.ones(len(I_h) + len(I_v)), (np.r_[I_h, I_v], np.r_[J_h, J_v])), shape=(N, N))
 nComp, comp = connected_components(adj, directed=False)
+if A.merge:
+    # S35 §11: the pairwise join law splits a wall into fragments wherever DA3's noise exceeds the tolerance between two neighbours.
+    # A REGIONAL join: a fragment belongs to an adjacent component if its texels lie within the same tolerance (tolAt, the app's) of
+    # that component's fitted plane in disparity — the surface's model instead of one neighbour's sample. Smallest fragments first,
+    # planes refitted after a merge; repeated until nothing merges. Fragments that fit no neighbour stay apart (a speck at another depth).
+    tm0 = time.time(); compM = comp.copy(); nBefore = nComp
+    # adjacency across 4-neighbour pairs that are NOT joined (different components), never across the mask
+    Ih = idx[:, :-1].ravel(); Jh = idx[:, 1:].ravel(); Iv = idx[:-1, :].ravel(); Jv = idx[1:, :].ravel()
+    if A.mask: okh = (oid[:, :-1] == oid[:, 1:]).ravel(); okv = (oid[:-1, :] == oid[1:, :]).ravel()
+    else: okh = np.ones(len(Ih), bool); okv = np.ones(len(Iv), bool)
+    PI = np.r_[Ih[okh], Iv[okv]]; PJ = np.r_[Jh[okh], Jv[okv]]
+    planeC = {}
+    def plane_of(c):
+        if c in planeC: return planeC[c]
+        t_ = np.flatnonzero(compM == c)
+        if len(t_) > 5000: t_ = t_[np.linspace(0, len(t_) - 1, 5000).astype(int)]
+        X_ = t_ % pw; Y_ = t_ // pw; V_ = DISP.ravel()[t_]
+        if len(t_) < 3: pl = (float(np.median(V_)), 0.0, 0.0)
+        else:
+            Am = np.stack([np.ones(len(t_)), X_, Y_], 1); c_, *_ = np.linalg.lstsq(Am, V_, rcond=None); pl = tuple(c_)
+        planeC[c] = pl; return pl
+    for it in range(4):
+        sizes_ = np.bincount(compM, minlength=compM.max() + 1)
+        ci = compM[PI]; cj = compM[PJ]; diff = ci != cj
+        pairs = np.unique(np.stack([np.minimum(ci[diff], cj[diff]), np.maximum(ci[diff], cj[diff])], 1), axis=0)
+        adj = {}
+        for a_, b_ in pairs: adj.setdefault(int(a_), set()).add(int(b_)); adj.setdefault(int(b_), set()).add(int(a_))
+        order = sorted(adj.keys(), key=lambda c: sizes_[c]); nM = 0
+        for c in order:
+            if sizes_[c] == 0: continue
+            t_ = np.flatnonzero(compM == c)
+            if len(t_) == 0: continue
+            X_ = t_ % pw; Y_ = t_ // pw; V_ = DISP.ravel()[t_]; tol_ = np.median(TOL.ravel()[t_])
+            best = None
+            for n_ in adj.get(c, ()):
+                if sizes_[n_] <= sizes_[c] or sizes_[n_] == 0: continue   # merge into a larger neighbour only
+                pl = plane_of(n_); res = np.abs(V_ - (pl[0] + pl[1] * X_ + pl[2] * Y_))
+                if np.median(res) <= tol_ and (best is None or sizes_[n_] > sizes_[best]): best = n_
+            if best is not None:
+                compM[t_] = best; sizes_[best] += sizes_[c]; sizes_[c] = 0; planeC.pop(best, None); nM += 1
+                for n_ in adj.get(c, ()):
+                    if n_ != best: adj.setdefault(best, set()).add(n_); adj.setdefault(n_, set()).add(best)
+        print(f'merge pass {it + 1}: {nM} fragments merged  ({time.time() - tm0:.1f}s)')
+        if nM == 0: break
+    # relabel to dense ids
+    _, comp = np.unique(compM, return_inverse=True); nComp = int(comp.max()) + 1
+    print(f'regional join: {nBefore} components -> {nComp}')
 compOfRim = comp[rims]; roots = {}; surfOf = {}
 for r, c in zip(rims, compOfRim): surfOf[r] = roots.setdefault(int(c), len(roots))
 nS = len(roots); members = [[] for _ in range(nS)]; compOfSurf = np.zeros(nS, int)
@@ -187,7 +234,7 @@ def strip_of(s):
     dist = ndimage.distance_transform_edt(seed[y0_:y1_, x0_:x1_])
     m = (dist <= W) & cm[y0_:y1_, x0_:x1_]
     yy, xx = np.nonzero(m); return (yy + y0_) * pw + (xx + x0_)
-planes = np.zeros((nS, 3)); isSky = np.zeros(nS, bool); stripN = np.zeros(nS, int); isThin = np.zeros(nS, bool); isGround = np.zeros(nS, bool); isGroundSurf = np.zeros(nS, bool)
+hedge = np.zeros(nS, bool); planes = np.zeros((nS, 3)); isSky = np.zeros(nS, bool); stripN = np.zeros(nS, int); isThin = np.zeros(nS, bool); isGround = np.zeros(nS, bool); isGroundSurf = np.zeros(nS, bool)
 for s in range(nS):
     if all(dQ.flat[r] < skyQ for r in members[s]): isSky[s] = True; continue
     st = strip_of(s); stripN[s] = len(st)
@@ -204,7 +251,13 @@ for s in range(nS):
     # per axis: the strip's extent along the axis against the reach along that axis (the app's w = min(len, g + 1) rule);
     # a slope the strip cannot support is not extrapolated (constant along that axis)
     extX = X.max() - X.min() + 1; extY = Y.max() - Y.min() + 1
-    useX = extX >= reachX[s] + 1 and reachX[s] > 0 or (reachX[s] == 0 and extX >= 3); useY = extY >= reachY[s] + 1 and reachY[s] > 0 or (reachY[s] == 0 and extY >= 3)
+    # The app's thin rule per LINE (S7b): g + 1 samples put the slope's error at half a quantum over g texels — an error budget.
+    # A 2-D strip fits one slope from many lines at once: the least-squares slope error falls as 1/((extent − 1)·√lines), so the
+    # same budget over the reach g is met when (extent − 1)·√(lines) ≥ g. (Vermeer's floor: 170 rows × 300 columns must carry
+    # its slope 600 rows up behind the woman; per line it is thin, as a strip it is not.)
+    nLinesX = len(np.unique(Y)); nLinesY = len(np.unique(X))   # lines available for the x-slope (rows) and the y-slope (columns)
+    useX = extX >= 3 and (reachX[s] == 0 or (extX - 1) * np.sqrt(nLinesX) >= reachX[s]); useY = extY >= 3 and (reachY[s] == 0 or (extY - 1) * np.sqrt(nLinesY) >= reachY[s])
+    hedge[s] = not (useX and useY)   # constant along at least one axis: a hedge along that axis
     cols = [np.ones_like(X, float)] + ([X] if useX else []) + ([Y] if useY else [])
     if not (useX or useY):
         isThin[s] = True
@@ -379,10 +432,12 @@ def harmonic_ext_fixed(dom, fixed):
 def build(domains, label):
     tb = time.time()
     best = np.full(N, -np.inf); second = np.full(N, -np.inf); who = np.full(N, -1, np.int32)
+    bestH = np.full(N, -np.inf); whoH = np.full(N, -1, np.int32)   # --evidence: the hedges' own order, used only where no fitted sheet reaches
     ownD = DISP.ravel(); ownT = TOL.ravel()
     for s in range(nS):
         dom = domains[s]
         if len(dom) == 0 or isGround[s]: continue
+        isHedge = A.evidence and (not isSky[s]) and hedge[s]
         if isSky[s]: val = np.zeros(len(dom))
         elif A.tps:
             if s not in tpsU: continue
@@ -414,6 +469,8 @@ def build(domains, label):
         # the app's candidate test (dlt > tol): only a sheet BEHIND the texel's own depth by more than the tolerance is a far side of
         # that texel; a sheet at or in front of it (the occluder's own body continued, a fringe texel's own surface) is not.
         ok = val < ownD[dom] - ownT[dom]; d = dom[ok]; v = val[ok]
+        if isHedge:
+            bh = bestH[d]; updh = v > bh; bestH[d[updh]] = v[updh]; whoH[d[updh]] = s; continue
         # nearest shows: update best / second
         b = best[d]; upd = v > b
         second[d[upd]] = np.maximum(second[d[upd]], b[upd]); best[d[upd]] = v[upd]; who[d[upd]] = s
@@ -425,6 +482,9 @@ def build(domains, label):
         d = dom[ok]; v = val[ok]; b = best[d]; upd = v > b
         second[d[upd]] = np.maximum(second[d[upd]], b[upd]); best[d[upd]] = v[upd]; who[d[upd]] = nS
         second[d[~upd]] = np.maximum(second[d[~upd]], v[~upd])
+    if A.evidence:
+        fill = ~np.isfinite(best) & np.isfinite(bestH); best[fill] = bestH[fill]; who[fill] = whoH[fill]
+        print(f'[{label}] evidence order: hedges fill {int((fill & band.ravel()).sum())} band texels no fitted sheet reached')
     reached = np.isfinite(best) & band.ravel()
     print(f'[{label}] reached {int(reached.sum())} of {int(band.sum())} band texels ({100 * reached.mean() / max(1e-9, band.mean()):.1f} %); layer 2 on {int((np.isfinite(second) & band.ravel()).sum())}  ({time.time() - tb:.1f}s)')
     return best, second, who, reached

@@ -220,3 +220,61 @@ porous class: 9 flower heads are not its objects, the field is; neither arm nor 
    configuration is the "plane, no residual" row of §2 (truth kept on S2/S9, S26 1.6 cm, S15 19 cm — the dome needs the
    deformed plane, which the thin plate gives at 4 cm and the pinned plane at 1.3 cm).
 
+## 11. Sanity check (user, 2026-09-16): the depth fields were not renders, and the flat sheets were wrong
+
+The user pointed out that nothing shown was a render and that the fields still looked streaky. Two corrections followed.
+
+**The flat-plane sheets had the wrong values.** Inside the troll's hole the flat sheets filled at depth 0.25 where the
+per-line law puts the cave at 0.07 (own depth 0.27); vermeer's wall the same (0.43 against 0.05). A smooth wrong surface has
+no seams, so the seam instrument rewarded it, and the kit truth did not catch it because the kit's scenes are planar and
+small. The "−80 %" of §9 for the flat plane was the smoothness of wrong values; it is withdrawn.
+
+**A check that needs no truth: continuity at the rim.** The fill just inside the band must match the visible far surface just
+outside it. Median mismatch (depth units) over band-edge texels with a visible far neighbour:
+
+| | per-line law | flat sheets | thin-plate sheets |
+|---|---|---|---|
+| troll | 0.298 | 0.211 | **0.089** |
+| vermeer | 0.018 | 0.357 | **0.008** |
+
+The deformed plane (thin plate) is the only interior that is both continuous with the visible surface and smooth; on the
+troll it is more continuous than the app's own law.
+
+**Renders through the app** (`harness/sheet_render.js`: the offline field written into the plate's depth texture after the
+app's own bake; colour is the app's wash; `s35/*_render_*_pair.png`, 45°): the troll behind the woman loses most of its
+horizontal streaking under the thin plate; vermeer's wall behind the woman still breaks into blocks.
+
+## 12. Why vermeer's wall broke into blocks, and the two rules that fix it
+
+Inside the woman's band, 75 % (vertical) and 91 % (horizontal) of the block seams were between sheet #0 (the wall, fill
+0.087) and sheet #11 (1 945 rims, fill 0.42): the **floor**, whose visible strip below her is 170 rows against a reach of
+600 rows upward — thin along y by the app's per-line rule — and therefore continued at **constant depth** up the whole hole,
+where, being nearer, it beat the wall under the layered order. A floor continued at constant depth is a wall in front of the
+wall; the app's law escapes this only because its row axis (the wall on both sides) wins the arbitration.
+
+1. **Evidence order** (`--evidence`): a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement;
+   where a fully fitted sheet also lies behind the texel, the fitted sheet shows, and hedges fill only what no fitted sheet
+   reaches. Vermeer (mask, flat, specks dropped): jumps v 23 392, h 31 904 — **99 % below the per-line law**; render
+   `s35/vermeer_render_evid_pair.png`: the wall behind her is one smooth surface. The floor behind her legs is then wall too
+   (a trench at her feet), which is the price of demoting the floor.
+2. **The 2-D thin criterion** (the app's error budget applied to a strip): the per-line rule needs g + 1 samples to hold the
+   slope's error to half a quantum over g; a strip fits one slope from many lines, and the least-squares slope error falls as
+   1/((extent − 1)·√lines), so the budget is met when (extent − 1)·√lines ≥ g. Vermeer's floor (170 rows × 300 columns) is
+   then fitted, not hedged. Result: it competes with the wall as a plane and the blocks return (jumps v 1 316 663, render
+   `s35/vermeer_render_evid2_pair.png`) — the fitted floor plane is not good enough over 600 rows on DA3's floor, or the
+   floor–wall crease it implies is not where the wall's sheet is. Kit under the same flags: S2 unchanged, S26 median 0,
+   S9 0.032 m (the ground now a fitted sheet that wins somewhere), S15 0.258 m (worse: no residual, hedges demoted).
+   Troll (mask, evidence, 2-D thin): jumps v 534 428 (−69 %), h 558 989 (−62 %), reached 95 %.
+
+Regional join (`--merge`: a fragment joins an adjacent surface when its texels lie within tolAt of that surface's plane)
+merged **0** of vermeer's 658 fragments: they are genuine deviations beyond the tolerance, not curvature breaks — DA3 speckle.
+
+## 13. Where this leaves it (honest)
+
+- The construction that renders clean on vermeer is: object mask + one flat sheet per surface + specks dropped + hedges
+  demoted. It is clean because the wall alone fills the hole. Where the floor should show behind her legs it shows wall.
+- The thin plate is the right interior by the rim-continuity check and the kit, and is what the troll's clean render used;
+  its cost (5–28 min) and its behaviour with demoted hedges are not yet measured together.
+- The kit and the pictures still pull in different directions on the hedges (S15's canopy and hill want them; vermeer's
+  floor must not win). One rule does not yet serve both; the object/porous split is where that line will have to be drawn.
+
