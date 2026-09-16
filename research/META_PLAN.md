@@ -152,3 +152,14 @@ porous question, now with a measured cost both ways). Thin plate: best on the ki
 for the user: take sheets (mask + flat plane per surface + specks dropped) into the app behind the far-side select, with the
 thin plate as the interior once a fast solver exists.
 
+
+**S35 §14, the floor (2026-09-16).** The 0.42 surface that filled the woman's lower band was not the floor but the strip of
+wall seen between table and woman, which DA3 gives the objects' depth; the app's ground detector cannot fit DA3's floor for
+structural reasons (wall+floor are one run; the horizon lies 10 000 rows out in the flattened world) and was removed from
+the prototype. Three rules solve the floor on vermeer with no new constants: fusion by body match (a fragment whose boundary
+depth is the neighbouring object's own is a hedge), no area no surface (one-texel silhouette ramps are not sheets), planar
+patches with a 2-D geodesic domain (the folded wall+floor+side-wall component is split into faces; the thin plate over the
+whole fold overshoot to depth 1.0 even after the solver was fixed with AMG). Behind her legs: wall to row 880, then the
+floor at the visible floor's depths. Troll: faceted cave, equal seam length in smaller pieces; sunflowers worse (leaves are
+curved, and one-sided background sheets win the sky's hole — the "where does a sheet end" question, now with a test picture);
+kit S2/S9 unchanged, S15 0.18 → 0.07 m, S26 0 → 0.03 m. Next: the sheet's end (sky/corners), then the thin plate per face.

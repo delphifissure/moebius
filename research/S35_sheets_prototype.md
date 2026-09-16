@@ -278,3 +278,115 @@ merged **0** of vermeer's 658 fragments: they are genuine deviations beyond the 
 - The kit and the pictures still pull in different directions on the hedges (S15's canopy and hill want them; vermeer's
   floor must not win). One rule does not yet serve both; the object/porous split is where that line will have to be drawn.
 
+
+## 14. The floor ("solve the floor")
+
+**What §12 called the floor was not the floor.** The 0.42 surface that filled the woman's lower band (§12's #11; #415 in the
+later runs, id 0, 8 192 texels, rows 603–1007, cols 61–534) is the strip of background visible **between the table and the
+woman**. DA3 gives it the objects' depth: row 720 reads 0.446/0.439/0.437/0.436 across the gap against the cloth at 0.436 and
+the skirt at 0.401; row 800 reads 0.422/0.402 against 0.427 and 0.405. The wall it actually shows is at 0.003. A narrow
+background gap between two near objects takes the objects' depth in a monocular map — the same fusion that made the object
+mask necessary (§8), seen from the background's side. The real floor, right of her skirt, is clean: the silhouette steps
+0.327 → 0.238 → 0.056 in two texels (row 950), the floor is constant along a row (0.056 at row 950, 0.105 at row 1000 over
+cols 660–780) and rises linearly with the row (col 850: 0.003 at row 880, 0.007 at 888, … 0.102 at 1000 — 0.0085 per 8 rows;
+col 800 has a step 0.003 → 0.035 at row 856 and then the same rise). The wall–floor crease is a smooth bend at ~row 880.
+
+**The app's ground detector cannot see this floor, and no tolerance fixes it** (`--ground-detect`, ported, then removed;
+record comment in `sheets.py`). With the precision tolerance at the grid (the app), at the third-difference σ (which reads
+1.0 grid on this map: the estimator sees the quantisation, not the map's deviation from planarity) or at the join quantum,
+the result is identical: horizon vote at row −335 404, 0 inliers of 326–355 "horizontal" columns. Two structural reasons:
+(1) under the join law the wall and the floor are **one column run** (rows 0–1007 at columns 700 and 800) because the crease
+is a smooth bend, so every "rising run" is wall+floor and its line fit is meaningless; (2) in the app's flattened world (6 cm
+of relief across the whole picture) a real floor's horizon lies ~10 000 rows above the frame (the floor's ze changes 1 % over
+127 rows), so the shared-horizon vote has no power. The premise (grid tolerance is why 16-bit maps have no ground) is
+falsified. The wall+floor is an L-bent sheet like any other and needs the bend-capable interior, not a plane law.
+
+**Fusion test** (`--fused`). A component whose depth along its boundary to other mask ids is the neighbouring objects' own
+depth is fused; its sheet is a hedge. Three versions were needed to make it a classifier, each falsified by the numbers:
+
+| version | comparison | vermeer result |
+|---|---|---|
+| 1 | pair straddling the mask line, depth-joined? majority | wall 0.81, woman 0.82, table 0.99, sliver 1.00 — everything "fused" |
+| 2 | boundary texel vs the nearest texel of the other id's **body** (largest depth component of that id), ratio test (rimT); majority | woman 0.08, table 0.09, sliver 0.99; **wall 0.66** (its boundary with the basket, 1.00, and the foot warmer, 1.00: one surface under rimT in the flattened world) |
+| 3 | as 2, bodies exempt (fusion is a property of a fragment) | sliver FUSED (0.99 of 3 033 pairs); 350 fragments, 14 561 texels in all; every body distinct |
+
+Version 1 failed because SAM's edge sits a few texels off DA3's depth edge, so the pair across the mask line is wall–wall
+or skirt–skirt; version 2 because two bodies matched along their boundary are simply one surface under the app's law. The
+distribution under version 3 for the 23 components ≥ 100 texels: matched share < 10 % for 5, 10–50 % for 3, 50–90 % for 2,
+≥ 90 % for 13 — the bodies at both ends, the sliver at 0.99. The rule uses the app's ratio tolerance and the majority; no
+new constant. Known limit: an object whose mask is split by a depth step into two comparable halves has a "fragment" that
+can be called fused.
+
+**Plane arm with the fusion rule** (mask, flat, specks dropped, evidence, two-sided, fused; `s35_fused`): reached 99.4 %,
+hedges needed for 536 texels only; jumps v 732 (len 26 168), h 1 531 (len 35 865) against the per-line law's 110 222 /
+78 795 and the previous best (§12's "wall only") 23 392 / 31 904; boundary kinks v 307 / h 319 (from 29 734 / 28 349). The
+fill behind her legs is now the wall+floor sheet alone (#0 on every row) — but a **plane**, so it reads 0.098–0.117 on every
+row from 640 to 1000 where the wall is 0.003 (rows < 880) and the floor rises 0.007 → 0.105 (rows 880–1000): the slab of
+§12, for the known reason (§10: a plane cannot be an L). The thin-plate interior on the same configuration is the test of
+the floor itself (below).
+
+**The thin plate on the L-bent component** (`s35_fused_tps`, solver fixed). Two findings on the way. (1) The earlier thin-plate
+runs had not converged: Jacobi-preconditioned CG on the 870 k-unknown biharmonic system returned the strip data and ≈ 0 on
+the domain, which the discrepancy search read as rms < σ at every λ (the "0.000" fills behind the woman in `s35_mask_tps`,
+§11's rim-continuity numbers included). Now algebraic multigrid (pyamg, smoothed aggregation with the affine null space as
+candidates) preconditions CG and the relative residual is checked after every solve (worst 1.0e-8 on vermeer; 217 s for the
+big surface). (2) Converged, the plate of the wall+floor component behind the woman's legs comes out at depth 0.67–1.0 —
+nearer than the woman — and 0.000 above her: the component also holds the left side wall (a ramp 0.008 → 0.5 across the
+leftmost 50 columns, DA3's receding window wall), so it is a sheet with three folds, and a biharmonic surface fitted through
+them extrapolates its rim slopes across the hole. With the data tolerance raised to the visible step (the app's tolAt; λ
+1.2e5) it is worse, not better (1.0 everywhere behind the legs). A single deformed plane is the wrong sheet for a folded
+surface; the folds must be found first.
+
+**Planar patches** (`--patches`). Every join-law component is split into patches that one plane fits within the visible step
+(tolAt, the join tolerance: a texel within one step of a plane is that plane at every pose). Region growing in waves from the
+texel deepest inside the unassigned set; the plane is refitted from all members after each wave; members the final plane no
+longer fits are released and seeded again. Vermeer: 11 007 patches from 658 components in 8 s — the back wall is one patch
+of 343 515 texels (rows 0–891), the floor splits into row strips (rows 927–958 at 0.047, 964–997 at 0.084: DA3's floor is
+not planar to one step over its whole rise), the side wall into vertical strips. Two more rules were needed, each from the
+buffer:
+- **No area, no surface**: a strip whose texels are collinear along a grid line is a line, not a surface (three
+  non-collinear points determine a plane). These are DA3's one-texel silhouette ramps (0.24–0.32 between skirt and floor):
+  legitimate far rims under the candidate rule, nearer than the floor, and they had won the whole band behind her legs
+  (fill 0.32–0.45). Dropped: 185 previously fitted line sheets.
+- **2-D domain** (`--geo`): a floor strip's rims lie along the skirt's edge, so its along-line marches cover only its own
+  rows; between two strips' rows the wall's column marches or a hedge showed (row striping: jumps v 21 716 / h 45 861). A
+  sheet now claims the band texels within geodesic reach of its rims through the band, the reach being its own longest
+  march (the reach is a property of the hole, not of a direction; no new constant). Objects under the two-sided rule keep
+  only their closed marches as fitted. Computed on demand per sheet — storing 4 311 discs was 14 GB.
+
+**Result on vermeer** (`s35_geo`: mask, fused, patches, geo, no-area, specks dropped, evidence, two-sided): reached 100 %,
+hedges needed for 56 texels; behind her legs the fill is the wall (0.008) down to row 880 and then the floor at 0.024 /
+0.066 / 0.105 on rows 920 / 960 / 1000 — the visible floor to her right reads 0.030 / 0.065 / 0.102 on those rows at column
+850 — constant along each row (min = max). The floor also continues under the table across the whole width. Jumps v 3 333
+(len 23 563), h 57 310 (len 151 825): many, but 2.6 steps each — the seams between overlapping wall patches and floor strips
+whose planes differ by a step or two where they meet; per-line law 110 222 / 78 795 (4.15 M / 2.19 M). Render
+`s35/vermeer_render_geo_p45_pair.png` (and `_user26_`): the wall ends at its foot and the floor recedes behind her.
+Panels `s35/vermeer_floor_panels.png`.
+
+**The other two pictures and the kit under the same flags** (jump counts (length in steps), v / h; kit: band depth error vs
+the first hidden layer, median m):
+
+| scene | flat sheets (fused rule) | patches + geo | per-line law |
+|---|---|---|---|
+| vermeer | 732 (26 168) / 1 531 (35 865), slab behind the legs | 3 333 (23 563) / 57 310 (151 825), floor right | 110 222 (4.15 M) / 78 795 (2.19 M) |
+| troll | 6 332 (341 839) / 8 354 (446 573), reached 95.3 % | 46 683 (380 291) / 25 246 (348 877), reached 99.7 % | see §8 |
+| sunflowers | 8 162 (158 263) / 8 991 (168 668), reached 90.2 % | 26 886 (447 679) / 19 975 (437 808), reached 99.3 % | see §8 |
+| S2 | 0.0000 | 0.0000 | 0.0000 |
+| S9 | 0.0320 | 0.0320 | 0.0000 |
+| S15 | 1.0630 | **0.0691** | 0.1838 |
+| S26 | 0.0000 | 0.0299 | 0.0000 |
+
+Panels `s35/troll_panels_geo.png`, `s35/room_panels_geo.png`. Reading: the patches make every hole a mosaic of tangent
+planes — right for the room's walls and floor (vermeer), a faceted approximation of the troll's cave (many small seams of a
+step or two instead of few large ones; total length about equal), and wrong in the sunflower field, whose leaves are curved
+and whose big flower stands against the sky: leaf and stem patches (background id, one-sided) extend upward within their
+reach, and being nearer than the sky they win the sky's hole under the layered order (both arms do this; the patch arm
+more, ×2.7 in length). S26 loses 3 cm: its curved ground is faceted. S15 gains (1.06 → 0.07 m) because the flat sheet over
+its dome was the slab problem in another form.
+
+**Where this leaves the floor.** Solved on vermeer by three rules that generalise (fusion by body match, no-area, planar
+patches with a 2-D domain), each with the app's own tolerance and the majority rule, no new constants. Open, with numbers:
+(a) a sheet's END — a background sheet that meets the sky (or a corner) should stop there; the two-sided rule does this for
+objects, `--twosided-all` did it for backgrounds but broke the table-hides-wall case (§13); the sunflower field is the test
+picture; (b) curved surfaces are faceted (S26 +3 cm, the troll's cave) — the deformed plane per PATCH (a thin plate whose
+domain is one face, so it has no folds to extrapolate) is the natural next interior, now that the solver converges.
