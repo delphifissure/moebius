@@ -177,10 +177,11 @@ Texels of different object ids are never joined, so runs, components, strips and
 | sheets, bare plane, no mask | 78.9 % | 17 444 (311 365) | 16 772 (421 282) | 18 325 (501 328) | 20 648 (682 536) | 0 | 282 679 | 218 650 |
 | sheets, bare plane, **mask** | **96.7 %** | 31 521 (764 975) | 25 296 (737 403) | 44 462 (1 367 137) | 39 900 (1 288 187) | 16 | 1 327 497 | 39 624 |
 | sheets, pinned, mask | 98.8 % | 86 176 (1 399 957) | 64 073 (1 329 339) | 93 856 (2 398 715) | 75 757 (2 249 766) | 323 411 | 2 037 172 | 38 132 |
-| sheets, thin plate, mask | (running) | | | | | | | |
+| sheets, thin plate, mask | 97.8 % | 30 362 (834 444) | 32 540 (1 158 622) | 16 728 (1 329 796) | 21 980 (1 850 057) | 45 695 | 1 057 272 | 226 830 |
 
 With the mask the bare-plane sheets reach 97 % of the band (from 79 %) and still cut the wall length by 55 % (vertical) and
-49 % (horizontal) against the per-line law, with no within-sheet kinks. What is left is sheet boundaries: 765 surfaces, of
+49 % (horizontal) against the per-line law, with no within-sheet kinks; the thin plate reaches 98 % and cuts it by 51 % and
+20 % (its within-sheet kinks stay small, 46 k; the boundaries between fragments carry the rest). What is left is sheet boundaries: 765 surfaces, of
 which 13 are the mask's objects and the rest DA3's fragments of the background (416 single-texel components), and the
 largest surface's strip still holds 18.5 % nearer texels — the mask covers the two figures, not every nearer thing.
 
