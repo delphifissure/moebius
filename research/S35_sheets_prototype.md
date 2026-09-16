@@ -390,3 +390,64 @@ patches with a 2-D domain), each with the app's own tolerance and the majority r
 objects, `--twosided-all` did it for backgrounds but broke the table-hides-wall case (§13); the sunflower field is the test
 picture; (b) curved surfaces are faceted (S26 +3 cm, the troll's cave) — the deformed plane per PATCH (a thin plate whose
 domain is one face, so it has no folds to extrapolate) is the natural next interior, now that the solver converges.
+
+## 15. Where a sheet ends (item a): three rules tried, three falsified
+
+The question: a sheet reaches into a hole; how far may it go? Under the layered order the nearest sheet that reaches a texel
+shows, so a sheet that reaches too far wins ground it has no right to (the sunflower field: leaves at 0.06–0.13 filling the
+big flower head's band where the sky at 0.009 is visible all around it). Each candidate rule below was implemented, measured
+on the kit's truth and the three maskable pictures, and removed when the numbers refused it (rule 7). No constants were
+involved in any of them; they failed on their logic, not their tuning.
+
+**1. The exit test** (`--ends`, removed; record comment in `sheets.py`). A march that exits into a surface FARTHER than the
+sheet contradicts it — the far surface is visible where the sheet would have to be — while closed, frame-edge and
+nearer-surface exits do not. The four cases are exhaustive and each is the app's own comparison (the join tolerance, then
+the ratio test so that a facet of the same surface does not contradict itself). **Falsified on S15**: the fill that is right
+behind its trunks is the NEAR canopy (fill 0.47 against truth 0.08 m), and the canopy's marches exit into the far hill and
+the sky, so the rule demoted it. 17 878 of 26 087 scored texels changed owner and their error went 0.054 → 2.264 m; the band
+median went 0.069 → 1.315 m. The exit says only that the sheet must end SOMEWHERE along that march, never where, and a near
+surface legitimately continues behind an occluder and comes out into the far background.
+
+**2. The own-extent bound** (`--reach`, kept as a flag, not a default). A sheet continues into the hole no farther than the
+surface itself extends outside it: reach = min(longest march, geodesic radius of its own visible patch walked from its rims).
+Symmetric with the domain, so no units to convert. **Falsified by what the radius measures**: walking inward from the rims
+measures the surface's THICKNESS, not its size, and a surface seen as a strip (rims along its whole length) reads ~0 — the
+median own-extent was 0 on S15, S2 and S26. S15 truth 0.069 → 0.412 m, with the canopy starved like everything else.
+
+**3. Everything is a bounded thing** (`--twosided-all` under the current stack). If the sunflowers' leaves fail because they
+are things with silhouettes, treat every surface as one: only closed (two-sided) marches are measurements. **Falsified on the
+picture it was for**: the big flower head's fill moved AWAY from the sky (0.067 → 0.139), because demoting every sheet to the
+hedge tier leaves the same "nearest shows" order inside that tier — the tiering does not change which sheet is nearest, only
+which pool it competes in. Vermeer under the same flags: jumps 59 732 / 86 015 (len 1.81 M / 3.27 M) against 3 333 / 57 310
+(23 563 / 151 825). S15's truth alone improved (0.069 → 0.012 m).
+
+**What the sunflower field actually shows.** Reading the fill rather than the rule: behind the big head DA3 has foliage at
+0.06–0.13 around its base and sky at 0.009 above, and the geo arm's fill there is p10 0.019 / p50 0.067 / p90 0.131 — a
+mixture of both, which is roughly what is behind it. What the render shows is not a sheet reaching too far but a band broken
+into steps, and the seam counts say the same: flat sheets over whole components 8 162 (len 158 263), patches 26 886 (len
+447 679). **The sunflower regression is the facet problem (b), not the end problem (a).** Item (a) is closed with a negative
+result: the depth map alone does not say where a sheet ends, and none of the three tests recovers it. What does say it is the
+object segmentation — a masked object's sheet is bounded by its own silhouette, which is the two-sided rule that already
+works on vermeer and the troll. The sunflower field has 9 flowers masked out of a field of foliage, and its unmasked leaves
+are treated as background, which is exactly what "clearly defined blobs" would fix at the segmentation stage.
+
+## 16. The thin plate per face (item b)
+
+With each patch fold-free by construction, the smoothing thin plate can be solved per face over the same 2-D domain
+(`--patches --geo --tps`; AMG solver, converged, worst relative residual 1e-8).
+
+| scene | flat plane per patch | thin plate per face | per-line law |
+|---|---|---|---|
+| S26 jumps v / h | 2 308 (114 533) / 2 105 (83 890) | **1 551 (52 264) / 744 (52 565)** | 11 129 (148 302) / 465 (26 710) |
+| S26 truth median | 0.0299 m | 0.0311 m | 0.0000 m |
+| S15 jumps v / h | 4 761 (778 942) / 4 063 (814 002) | 5 576 (685 744) / 4 672 (732 887) | 8 115 (800 260) / 6 041 (978 458) |
+| S15 truth median | **0.0691 m** | 2.2678 m | 0.1838 m |
+
+The plate halves S26's seam length and cuts S15's, and costs S15 2.2 m of accuracy: over a deep hole (S15's median march is
+106 texels) the plate continues the face's curvature, and curvature integrated over 100 texels is metres. A plane does not.
+So the interior stays a plane at long reach; the plate is worth having only where the reach is short, and "short" would need
+a rule of its own. Not made the default.
+
+**Recommended construction, unchanged from §14**: object mask, fusion by body match, planar patches, no-area rule, 2-D
+geodesic domain, flat plane per patch, specks dropped, evidence order, two-sided for masked objects. It is the arm that gives
+vermeer's floor and S15's best kit number (0.069 m against the per-line law's 0.184 m).

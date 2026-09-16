@@ -36,7 +36,7 @@ from PIL import Image
 
 ap = argparse.ArgumentParser()
 ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', type=float); ap.add_argument('--q', type=float, default=1 / 65535)
-ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--twosided', action='store_true', help='an OBJECT surface (mask id > 0) passes behind an occluder only where its own rims close the span on both sides of the line (S3 kind-2: a same-surface pair is a positive detection); a one-sided march of an object sheet is a hedge'); ap.add_argument('--twosided-all', action='store_true', help='the two-sided rule for every surface, not only masked objects (backgrounds end at corners too); the ground plane is the exception'); ap.add_argument('--fused', action='store_true', help='a visible component whose boundary to other mask ids is depth-JOINED on the majority of its length is fused with its neighbours (DA3 gives a narrow background gap between two near objects the objects\' depth); its sheet is a hedge, never a measurement'); ap.add_argument('--geo', action='store_true', help='2-D domain: a sheet claims the band texels within geodesic reach of its rims through the band (reach = its own longest march) instead of the along-line marches only'); ap.add_argument('--patches', action='store_true', help='split every visible component into planar patches (region growing; a texel joins while one plane fits the patch within the visible step tolAt); patches are the surfaces'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
+ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--twosided', action='store_true', help='an OBJECT surface (mask id > 0) passes behind an occluder only where its own rims close the span on both sides of the line (S3 kind-2: a same-surface pair is a positive detection); a one-sided march of an object sheet is a hedge'); ap.add_argument('--twosided-all', action='store_true', help='the two-sided rule for every surface, not only masked objects (backgrounds end at corners too); the ground plane is the exception'); ap.add_argument('--fused', action='store_true', help='a visible component whose boundary to other mask ids is depth-JOINED on the majority of its length is fused with its neighbours (DA3 gives a narrow background gap between two near objects the objects\' depth); its sheet is a hedge, never a measurement'); ap.add_argument('--reach', action='store_true', help="where a sheet ends: it continues into the hole no farther than the surface itself extends outside it (geodesic radius of its own visible patch from its rims), instead of as far as the hole is deep"); ap.add_argument('--geo', action='store_true', help='2-D domain: a sheet claims the band texels within geodesic reach of its rims through the band (reach = its own longest march) instead of the along-line marches only'); ap.add_argument('--patches', action='store_true', help='split every visible component into planar patches (region growing; a texel joins while one plane fits the patch within the visible step tolAt); patches are the surfaces'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
 A = ap.parse_args()
 P = A.probe; meta = json.load(open(f'{P}/meta.json')); pw, ph = meta['pw'], meta['ph']; N = pw * ph
 dQ = np.fromfile(f'{P}/dQ.f32', np.float32).reshape(ph, pw).astype(np.float64)
@@ -124,7 +124,7 @@ gtex = None
 # than tol are the occluder's own parts and are skipped; the first run that IS behind (or sky) is the far side, its first texel
 # the rim). A rim may be a band texel (the reveal set holds one texel of the background at the silhouette).
 DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-rimOf = {}; entryOf = {}   # rim -> set of (band texel b, dir); (b, dir) -> rim
+rimOf = {}   # rim -> set of (band texel b, dir)
 def scan_lines(axis):
     # axis 0: rows (dirs +x, -x); axis 1: columns (dirs +y, -y)
     L = pw if axis == 0 else ph; nL = ph if axis == 0 else pw
@@ -319,7 +319,7 @@ def dom_march(b, k):
     while 0 <= x < pw and 0 <= y < ph and band[y, x]:
         out.append(y * pw + x); x -= dx; y -= dy
     return out
-closeStat = {}; geoInfo = {}
+closeStat = {}; geoInfo = {}; reachOwn = np.zeros(nS, dtype=np.int64)
 domStop = [None] * nS; domExt = [None] * nS; domWeak = [None] * nS; reachMax = np.zeros(nS, dtype=np.int64); reachX = np.zeros(nS, dtype=np.int64); reachY = np.zeros(nS, dtype=np.int64)
 oidArr = oid if A.mask else None
 if gtex is None: gtex = np.fromfile(f'{P}/groundTex.u8', np.uint8) if os.path.exists(f'{P}/groundTex.u8') else None
@@ -329,29 +329,32 @@ for s in range(nS):
     for r in members[s]:
         for (b, k) in rimOf[r]:
             dx, dy = DIRS[k]; x, y = b % pw, b // pw; n = 0; march = []
-            entryOf[(s, b)] = r
             while 0 <= x < pw and 0 <= y < ph and band[y, x]:
                 i2 = y * pw + x
                 if i2 != r: dom.add(i2); march.append(i2)
                 x -= dx; y -= dy; n += 1   # march away from the rim through the band
+            # WHERE A SHEET ENDS, attempt 1 — REMOVED (S35 §15). Rule tried: a march that exits into a surface FARTHER than the
+            # sheet contradicts it (the far surface is visible where the sheet would have to be), while closed, frame-edge and
+            # nearer-surface exits do not. Falsified on S15: the fill that is right there is the NEAR canopy (fill 0.47 against
+            # truth 0.08 m), and its marches exit into the far hill and the sky, so the rule demoted it — 17 878 of 26 087 scored
+            # texels changed owner and their error went 0.054 -> 2.264 m (band median 0.069 -> 1.315 m). A near surface genuinely
+            # continues behind an occluder and its march legitimately comes out into the far background; the exit says nothing
+            # about how far the sheet reaches, only that the sheet must end SOMEWHERE along it. The two-sided rule for masked
+            # objects (below) is kept: there the surface is known to be a bounded thing.
             if isObj and (A.twosided or A.twosided_all):
                 # the first texel beyond the band on the far side of this march that belongs to a surface with support (a
                 # component of 3+ texels; silhouette specks are skipped): the span is closed if it is this same surface
-                # the band is a strip along the silhouette, not the occluder's footprint: the march continues through the occluder's
-                # own visible interior (the band texel's mask id) and through specks, and closes on the first texel of another surface
                 xx, yy = x, y; closed = False; bid = oidArr.flat[b] if oidArr is not None else -1
                 while 0 <= xx < pw and 0 <= yy < ph:
                     i3 = yy * pw + xx; c_ = comp[i3]
                     if compSize[c_] >= 3 and not band[yy, xx] and not (oidArr is not None and oidArr.flat[i3] == bid and bid > 0): closed = (c_ == compOfSurf[s]); break
                     xx -= dx; yy -= dy
                 if not closed: weak.update(march)
-                closeStat.setdefault(s, [0, 0, {}]); closeStat[s][0 if closed else 1] += 1
-                if not closed:
-                    key = 'edge' if not (0 <= xx < pw and 0 <= yy < ph) else int(comp[yy * pw + xx]); closeStat[s][2][key] = closeStat[s][2].get(key, 0) + 1
+                closeStat.setdefault(s, {'closed': 0, 'open': 0})['closed' if closed else 'open'] += 1
             reachMax[s] = max(reachMax[s], n); holes.add(int(holeLab[b // pw, b % pw]))
             if dx != 0: reachX[s] = max(reachX[s], n)
             else: reachY[s] = max(reachY[s], n)
-    domStop[s] = np.fromiter(dom, dtype=np.int64); domWeak[s] = weak
+    domStop[s] = np.fromiter(dom, dtype=np.int64); domWeak[s] = np.sort(np.fromiter(weak, dtype=np.int64)); weak = None   # arrays, not sets: 4 311 sets of weak texels were 12.8 GB on vermeer
     ext = np.nonzero(np.isin(holeLab.ravel(), list(holes)) & band.ravel())[0]
     domExt[s] = ext
     if A.geo:
@@ -362,13 +365,28 @@ for s in range(nS):
         # direction. Domain: band texels within geodesic distance R of the sheet's entry texels through the band, R = the
         # sheet's own longest march. For an object under the two-sided rule, texels not on a closed march stay weak. Computed
         # on demand in build() for the sheets that get a plane (4 311 stored discs of up to 370 k texels were 14 GB: OOM).
-        geoInfo[s] = (np.array(sorted({int(b) for r in members[s] for (b, k) in rimOf[r]}), dtype=np.int64), int(reachMax[s]), (dom - weak) if (isObj and (A.twosided or A.twosided_all)) else None)
+        # WHERE A SHEET ENDS, attempt 2 (--reach, S35 §15): a sheet continues into the hole no farther than the surface itself
+        # extends OUTSIDE it. The reach used so far is the depth of the HOLE (the longest march), which lets a 20-texel leaf fill
+        # 200 texels of a flower's band; the surface's own extent is the evidence of how big the surface is. Measured the same way
+        # as the domain, so the two are comparable with no constant and no units to convert: the geodesic radius of the surface's
+        # own visible patch, walking from its rim texels inside the patch, capped at the march length.
+        Rg = int(reachMax[s])
+        if A.reach and Rg > 0:
+            cmpId = compOfSurf[s]; rr_ = np.array(members[s], dtype=np.int64); seenV = np.zeros(N, bool); seenV[rr_] = True; fr_ = rr_; E = 0
+            for stp in range(1, Rg + 1):
+                x_ = fr_ % pw; y_ = fr_ // pw; nb = []
+                for dx_, dy_ in DIRS:
+                    okn_ = (x_ + dx_ >= 0) & (x_ + dx_ < pw) & (y_ + dy_ >= 0) & (y_ + dy_ < ph); nb.append(fr_[okn_] + dy_ * pw + dx_)
+                nb = np.unique(np.concatenate(nb)); nb = nb[(comp[nb] == cmpId) & ~seenV[nb]]
+                if len(nb) == 0: break
+                seenV[nb] = True; fr_ = nb; E = stp
+            reachOwn[s] = E; Rg = min(Rg, E)
+        geoInfo[s] = (np.array(sorted({int(b) for r in members[s] for (b, k) in rimOf[r]}), dtype=np.int64), Rg, (np.setdiff1d(domStop[s], domWeak[s]) if (isObj and (A.twosided or A.twosided_all)) else None))
 if closeStat:
-    big = sorted(closeStat.items(), key=lambda kv: -(kv[1][0] + kv[1][1]))[:4]
-    for s_, (nc, no, why) in big:
-        top = sorted(why.items(), key=lambda kv: -kv[1])[:4]
-        print(f'   closure, surface {s_} (comp {compOfSurf[s_]}, {len(members[s_])} rims): closed {nc}, open {no}; open ends at: ' + ', '.join(f'{k}(size {compSize[k] if k != "edge" else "-"}) x{v}' for k, v in top))
+    print(f'closure (masked objects): closed {sum(cs["closed"] for cs in closeStat.values())}, open {sum(cs["open"] for cs in closeStat.values())} marches')
 comp.astype(np.int32).tofile(f'{OUT}/comp.i32')
+if A.patches: compJ.astype(np.int32).tofile(f'{OUT}/compJ.i32')
+if A.reach: print(f'own extent vs hole depth: surfaces whose extent bounds the reach {int((reachOwn < reachMax).sum())} of {nS}; extent median {int(np.median(reachOwn))}, hole depth median {int(np.median(reachMax))}')
 print(f'domains: stop median {int(np.median([len(d) for d in domStop]))} texels, extend median {int(np.median([len(d) for d in domExt]))}  ({time.time() - T0:.1f}s)')
 
 # ---- 3 strips + 4 planes ----
@@ -489,6 +507,22 @@ if A.local:
             W = 1 + max(0, max((len(dom_march(b, k)) for (b, k) in rimOf[r]), default=0))
             localPlane[r] = fit_local(r, W)
     print(f'local planes: {len(localPlane)} fitted  ({time.time() - tl0:.1f}s)')
+# ---- the 2-D geodesic domain of one sheet (S35 §14), computed on demand: storing 4 311 discs was 14 GB ----
+def geo_domain(s):
+    if not (A.geo and s in geoInfo): return domStop[s], None
+    entries, R, closedSet = geoInfo[s]; src_ = domStop[s]
+    if closedSet is None: wsrc = np.zeros(len(src_), bool)
+    else: wsrc = ~np.isin(src_, closedSet)
+    seen = np.zeros(N, bool); lab_ = np.zeros(N, bool); seen[src_] = True; lab_[src_] = wsrc; front = src_
+    for _ in range(R):
+        if len(front) == 0: break
+        x_ = front % pw; y_ = front // pw; nb = []; pl_ = []
+        for dx, dy in DIRS:
+            okn_ = (x_ + dx >= 0) & (x_ + dx < pw) & (y_ + dy >= 0) & (y_ + dy < ph); nb.append(front[okn_] + dy * pw + dx); pl_.append(lab_[front[okn_]])
+        nb = np.concatenate(nb); pl_ = np.concatenate(pl_); nb, first = np.unique(nb, return_index=True); pl_ = pl_[first]
+        keep_ = band.ravel()[nb] & ~seen[nb]; nb = nb[keep_]; pl_ = pl_[keep_]; seen[nb] = True; lab_[nb] = pl_; front = nb
+    seen[np.array(members[s], dtype=np.int64)] = False
+    return np.flatnonzero(seen), lab_
 # ---- the smoothing thin-plate sheet (--tps): the deformed plane. Unknown u over strip ∪ domain; energy
 #   Σ_strip (u − disp)² / σ² + λ Σ (u_xx² + 2 u_xy² + u_yy²)
 # σ = the strip's own noise (S21's estimator: third differences, MAD → σ, Var(Δ³) = 20σ²), floored at the grid's quantisation
@@ -565,7 +599,7 @@ if A.tps:
     tt0 = time.time()
     for s_ in range(nS):
         if isSky[s_] or isGround[s_] or isGroundSurf[s_]: continue
-        st = strip_of(s_); dom = domStop[s_]
+        st = strip_of(s_); dom = geo_domain(s_)[0]
         if len(st) < 3 or len(dom) == 0: continue
         om, x, sig, lam, rr, worst = tps_sheet(s_, st, dom); tpsU[s_] = (om, x)
         if len(dom) > 5000 or worst > 1e-6: print(f'   tps surface {s_}: {len(st)} strip, {len(dom)} domain, sigma {sig:.3e}, lambda {lam:.2e}, rms {rr:.3e}, worst relative residual {worst:.1e}{"  UNCONVERGED" if worst > 1e-6 else ""}  ({time.time() - tt0:.0f}s)')
@@ -601,17 +635,8 @@ def build(domains, label):
     for s in range(nS):
         dom = domains[s]
         if len(dom) == 0 or isGround[s]: continue
-        weakSet = domWeak[s]
-        if A.geo and label == 'stop' and s in geoInfo:
-            entries, R, closedSet = geoInfo[s]; seen = np.zeros(N, bool); seen[entries] = True; front = entries
-            for _ in range(R):
-                if len(front) == 0: break
-                x_ = front % pw; y_ = front // pw; nb = []
-                for dx, dy in DIRS:
-                    okn_ = (x_ + dx >= 0) & (x_ + dx < pw) & (y_ + dy >= 0) & (y_ + dy < ph); nb.append(front[okn_] + dy * pw + dx)
-                nb = np.unique(np.concatenate(nb)); nb = nb[band.ravel()[nb] & ~seen[nb]]; seen[nb] = True; front = nb
-            seen[np.array(members[s], dtype=np.int64)] = False; dom = np.flatnonzero(seen)
-            if closedSet is not None: weakSet = set(int(i) for i in dom) - closedSet
+        weakSet = domWeak[s]; weakArr = None
+        if A.geo and label == 'stop' and s in geoInfo: dom, weakArr = geo_domain(s)
         isHedge = ((A.evidence and hedge[s]) or fusedS[s]) and (not isSky[s])
         if isSky[s]: val = np.zeros(len(dom))
         elif A.tps:
@@ -653,8 +678,8 @@ def build(domains, label):
                 if same.any():
                     ds = d[same]; vs = v[same]; bh = bestH[ds]; updh = vs > bh; bestH[ds[updh]] = vs[updh]; whoH[ds[updh]] = s
                     d = d[~same]; v = v[~same]
-        if (A.twosided or A.twosided_all) and weakSet:
-            wk = np.fromiter((int(i) in weakSet for i in d), dtype=bool, count=len(d))
+        if (A.twosided or A.twosided_all) and (weakArr is not None or len(weakSet)):
+            wk = weakArr[d] if weakArr is not None else np.isin(d, weakSet)
             if wk.any():
                 dw = d[wk]; vw = v[wk]; bh = bestH[dw]; updh = vw > bh; bestH[dw[updh]] = vw[updh]; whoH[dw[updh]] = s
                 d = d[~wk]; v = v[~wk]
