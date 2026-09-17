@@ -558,3 +558,59 @@ it belongs offline, or it needs the work below.
 4 514 surfaces in Python including the thousands of specks that the no-area and three-texel rules drop immediately
 afterwards; and the layered order, which recomputes each face's geodesic domain a second time. None of the three is
 intrinsic to the method.
+
+## 20. First principles: what the reference "Silver Warrior" GIF actually does
+
+The user asked how someone's parallax GIF of Frazetta's Silver Warrior (`silverwarrior_anim.gif` in the app repo) is so
+clean. Measured, not guessed (`s35/silverwarrior_gif_frames.png`, `s35/silverwarrior_gif_crops.png`):
+
+| property | measured |
+|---|---|
+| frames, size, loop | 31 frames, 726 × 966, 3.2 s, pendulum (frame 7 ≡ frame 23 against frame 0) |
+| frame timing | 100 ms per frame, 200 ms holds at the two turning points (eased reversal) |
+| motion axis | horizontal only; every band's vertical shift is 0 |
+| far content (sky, mountain, warrior) | −24 to −36 px at the extreme |
+| near content (front bears) | +32 to +37 px at the extreme |
+| zero-parallax plane | the sled and middle bears (rows 480–640 shift ≈ 0) |
+| total relative parallax, nearest to farthest | 65 px = **9 % of the width**; per side ≈ 5 % |
+| depth field | graded, not layered: the background band alone runs −24 → −36 → −72 across its width |
+
+**Why it looks so good, in order of weight.**
+1. **It reveals almost nothing.** The widest disocclusion any silhouette can open is the relative shift across it, at most
+   65 px and at most once per silhouette; the warrior against the mountain opens about 6 px because both are far. The app's
+   envelope on vermeer reveals **41 % of the picture** at some pose (370 698 of 903 168 texels); this GIF never reveals more
+   than a few per cent, in strips no wider than a bear's whisker line. Everything in §1–§19 is about what fills a reveal; at
+   5 % amplitude there is barely a reveal to fill.
+2. **One axis.** Horizontal motion opens only vertical silhouettes; the bears' backs, the sled's rim and the horizon never
+   open. The app moves on two axes and the user wants ±90° on both.
+3. **The pivot sits mid-scene**, so far and near each carry half the total shift, which halves the widest reveal at any one
+   silhouette. (The app pivots at the portal plane, which is the same idea.)
+4. **The picture forgives.** Where the widest reveals happen — the front bears against snow and fur — the background is
+   texture with no structure, so a stretch or a blur or a painted fill reads as more of the same. The one structured
+   background behind a near object, the sled's ornament behind the bears' heads, opens only a few pixels because the depth
+   authored there puts the heads barely in front of the sled.
+5. **Motion hides seams.** The eye tracks the moving content; a strip that would be a visible artefact when held still is
+   crossed in three frames at 100 ms and the turning points are eased.
+
+**What it does not tell us.** Nothing about depth accuracy (the graded shifts are consistent with a smooth AI depth map or
+a hand-painted one), nothing about the fill law (nothing is revealed wide enough to judge one), and nothing about the app's
+regime: at ±45° the same picture opens strips ten times wider than anything in this GIF, and at those widths the sheet
+question is unavoidable. The honest lesson is a design one: amplitude and axis count buy more cleanliness than any fill
+law, and the reference effect spends 5 % of the width where the app spends its whole envelope.
+
+## 19. The bake, made fast (plane-only path first)
+
+Every change below leaves the far field bit-identical (vermeer, S26, S15 compared field-to-field; the only differences are
+conjugate-gradient noise below 1/1000 of a visible step, with no owner changes). Measured on vermeer, 896 × 1008:
+
+| stage | §18 | now | what changed |
+|---|---|---|---|
+| domain pass | 456 s | 56 s | the marches were a Python while-loop over 339 M texel steps; now four cumulative scans give each march's length and the march is a row or column slice marked at C speed. The extend-arm domain ran a full-image `isin` per surface although `--no-extend` is the default; built only when asked. Surfaces whose face is under three texels or one texel wide are dropped before any of it (1 554 of vermeer's 2 320): their strip is a subset of their face, so the three-texel and no-area rules would drop them anyway |
+| layered order | 220 s (435 s after the domain fix exposed it) | 9 s | profiled, not guessed: 59.5 of 62.9 s on the sunflowers was the rim-pinned harmonic residual, a sparse Laplace solve per sheet assembled in Python. It is now off by default — §11 had already measured that following each rim's residual brings the map's noise back, the §14 recommendation ran without it, and the kit is unchanged to within solver noise (S2 0.0121, S9 0.0320, S15 0.0717, S26 0.0252). The geodesic disc is a `binary_dilation` in C for every surface without a two-sided weak set; the disc is cached between the plate stage and the order |
+| thin plate, 130 faces | 1 410 s | 483 s | forked workers, three by default (`--jobs`), largest faces first; BLAS threads pinned to one per process, without which three workers were eleven times *slower* than one (S15: 29 s → 336 s → 14 s) |
+| **plane-only bake** (`--no-tps`) | ~700 s | **74 s** | |
+| **full bake** | 2 109 s | **556 s** | |
+
+Where the 74 s goes now: runs, rims, components, patches and merge ~16 s; the domain pass ~40 s, of which the remaining
+Python is the two-sided closure walk for masked objects; the order 9 s. Peak memory 4.5 GB (was 10 GB). The sunflower
+field's plane-only bake is 27 s.

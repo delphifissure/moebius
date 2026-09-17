@@ -29,6 +29,7 @@ band texels whose depths differ by more than the visible step: count and summed 
 (farField.f32) and for the sheets, 'stop' and 'extend'. Figures: surfaces, far fields, the wall maps.
 """
 import sys, os, json, time, argparse
+for _v in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS'): os.environ.setdefault(_v, '1')   # S35 §19: forked plate workers oversubscribed BLAS threads (S15: 29 s serial -> 336 s with 3 workers)
 import numpy as np
 from scipy import ndimage, sparse
 from scipy.sparse.linalg import spsolve, cg
@@ -37,7 +38,7 @@ from PIL import Image
 ap = argparse.ArgumentParser()
 ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', type=float); ap.add_argument('--q', type=float, default=1 / 65535)
 ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--twosided', action='store_true', help='an OBJECT surface (mask id > 0) passes behind an occluder only where its own rims close the span on both sides of the line (S3 kind-2: a same-surface pair is a positive detection); a one-sided march of an object sheet is a hedge'); ap.add_argument('--twosided-all', action='store_true', help='the two-sided rule for every surface, not only masked objects (backgrounds end at corners too); the ground plane is the exception'); ap.add_argument('--fused', action='store_true', help='a visible component whose boundary to other mask ids is depth-JOINED on the majority of its length is fused with its neighbours (DA3 gives a narrow background gap between two near objects the objects\' depth); its sheet is a hedge, never a measurement'); ap.add_argument('--planeprior', action='store_true', help="the thin plate is pulled toward its own face's plane on the domain with weight 1/visible step, against the strip data at weight 1/sigma: the plate is free to bend where the data supports it and relaxes to the plane where it does not"); ap.add_argument('--smooth', action='store_true', help="faceting: adjacent planar patches of one surface are rejoined when their planes differ by less than the visible step over the smaller patch's own extent (a crease test, not a flatness test), so a smoothly curved surface is one face again and only real creases stay split"); ap.add_argument('--budget', action='store_true', help="per-texel error budget: the fitted slope is shrunk by its own predicted standard error against the visible step, so a sheet continues its slope only as far as its own fit supports it and relaxes to its constant beyond that; continuous, no new constant"); ap.add_argument('--faces', action='store_true', help="faceting: every facet of one join-law component is extended over that component's whole 2-D domain instead of its own disc, so the layered order picks the nearest facet everywhere and the sheet is continuous, with creases where the facets' planes cross"); ap.add_argument('--reach', action='store_true', help="where a sheet ends: it continues into the hole no farther than the surface itself extends outside it (geodesic radius of its own visible patch from its rims), instead of as far as the hole is deep"); ap.add_argument('--geo', action='store_true', help='2-D domain: a sheet claims the band texels within geodesic reach of its rims through the band (reach = its own longest march) instead of the along-line marches only'); ap.add_argument('--patches', action='store_true', help='split every visible component into planar patches (region growing; a texel joins while one plane fits the patch within the visible step tolAt); patches are the surfaces'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
-ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
+ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
 ap.add_argument('--no-smooth', action='store_true'); ap.add_argument('--no-tps', action='store_true'); ap.add_argument('--no-prior', action='store_true'); ap.add_argument('--no-patches', action='store_true')
 ap.add_argument('--no-evidence', action='store_true'); ap.add_argument('--no-geo', action='store_true'); ap.add_argument('--no-fused', action='store_true'); ap.add_argument('--no-twosided', action='store_true'); ap.add_argument('--no-drop-thin2', action='store_true')
 A = ap.parse_args()
@@ -49,6 +50,11 @@ if not A.plain:
     A.patches = not A.no_patches; A.smooth = not A.no_smooth; A.tps = not A.no_tps; A.planeprior = not A.no_prior
     A.evidence = not A.no_evidence; A.geo = not A.no_geo; A.fused = not A.no_fused; A.drop_thin2 = not A.no_drop_thin2
     A.twosided = bool(A.mask) and not A.no_twosided; A.no_extend = True
+    # the rim-pinned harmonic residual is OFF by default (S35 §19): §11 measured that following each rim's residual brings the
+    # map's own noise back into the sheet, and the §14 recommendation ran without it. It also turned out to be the whole cost of
+    # the layered order — a sparse Laplace solve per sheet, assembled in Python (sunflowers: 59.5 s of the 62.9 s pass). Off, the
+    # kit is unchanged to within solver noise (S2 0.0121, S9 0.0320, S15 0.0717, S26 0.0252) and the pass costs 3.3 s.
+    A.no_residual = True
 P = A.probe; meta = json.load(open(f'{P}/meta.json')); pw, ph = meta['pw'], meta['ph']; N = pw * ph
 dQ = np.fromfile(f'{P}/dQ.f32', np.float32).reshape(ph, pw).astype(np.float64)
 band = np.fromfile(f'{P}/disocc.u8', np.uint8).reshape(ph, pw) > 0
@@ -394,40 +400,62 @@ closeStat = {}; geoInfo = {}; reachOwn = np.zeros(nS, dtype=np.int64)
 domStop = [None] * nS; domExt = [None] * nS; domWeak = [None] * nS; reachMax = np.zeros(nS, dtype=np.int64); reachX = np.zeros(nS, dtype=np.int64); reachY = np.zeros(nS, dtype=np.int64)
 oidArr = oid if A.mask else None
 if gtex is None: gtex = np.fromfile(f'{P}/groundTex.u8', np.uint8) if os.path.exists(f'{P}/groundTex.u8') else None
+# SPEED (S35 §19). Three costs were measured on vermeer: the marches were a Python while-loop over 339 M texel steps; the
+# extend-arm domain ran a full-image np.isin for every surface although --no-extend is the default and it is never read; and
+# nine surfaces in ten are specks that the very next rules drop. Now: the march length in each of the four directions comes
+# from four cumulative scans over the band, the march itself is a contiguous row or column SLICE marked at C speed, the
+# extend domain is built only when it is asked for, and a surface whose face is under three texels or one texel wide in
+# either axis is marked dropped before any of it (its strip is a subset of its face, so the three-texel and no-area rules
+# would drop it anyway — the same verdict, reached without the work).
+_bandF = band.astype(np.int32)
+runL = np.zeros((ph, pw), np.int32); runR = np.zeros((ph, pw), np.int32); runU = np.zeros((ph, pw), np.int32); runD = np.zeros((ph, pw), np.int32)
+for x_ in range(pw): runL[:, x_] = np.where(band[:, x_], (runL[:, x_ - 1] if x_ else 0) + 1, 0)
+for x_ in range(pw - 1, -1, -1): runR[:, x_] = np.where(band[:, x_], (runR[:, x_ + 1] if x_ < pw - 1 else 0) + 1, 0)
+for y_ in range(ph): runU[y_, :] = np.where(band[y_, :], (runU[y_ - 1, :] if y_ else 0) + 1, 0)
+for y_ in range(ph - 1, -1, -1): runD[y_, :] = np.where(band[y_, :], (runD[y_ + 1, :] if y_ < ph - 1 else 0) + 1, 0)
+RUN = [runL, runR, runU, runD]   # DIRS[k] = (dx, dy); the march steps by (-dx, -dy)
+_boxes = ndimage.find_objects(comp.reshape(ph, pw) + 1)
+preDrop = np.zeros(nS, bool)
 for s in range(nS):
-    dom = set(); holes = set(); weak = set()
+    c_ = compOfSurf[s]; bx = _boxes[c_] if c_ < len(_boxes) else None
+    if compSize[c_] < 3 or bx is None or (bx[0].stop - bx[0].start) < 2 or (bx[1].stop - bx[1].start) < 2: preDrop[s] = True
+print(f'pre-dropped surfaces (face under three texels or one texel wide): {int(preDrop.sum())} of {nS}')
+_mark = np.zeros((ph, pw), bool); _wmark = np.zeros((ph, pw), bool)
+for s in range(nS):
+    if preDrop[s]:
+        domStop[s] = np.zeros(0, np.int64); domWeak[s] = np.zeros(0, np.int64); domExt[s] = np.zeros(0, np.int64); continue
+    holes = set(); y0m = ph; y1m = -1; x0m = pw; x1m = -1; anyWeak = False
     isObj = A.twosided_all or ((oidArr is not None) and (oidArr.flat[members[s][0]] > 0))
+    twoSided = isObj and (A.twosided or A.twosided_all)
     for r in members[s]:
         for (b, k) in rimOf[r]:
-            dx, dy = DIRS[k]; x, y = b % pw, b // pw; n = 0; march = []
-            while 0 <= x < pw and 0 <= y < ph and band[y, x]:
-                i2 = y * pw + x
-                if i2 != r: dom.add(i2); march.append(i2)
-                x -= dx; y -= dy; n += 1   # march away from the rim through the band
-            # WHERE A SHEET ENDS, attempt 1 — REMOVED (S35 §15). Rule tried: a march that exits into a surface FARTHER than the
-            # sheet contradicts it (the far surface is visible where the sheet would have to be), while closed, frame-edge and
-            # nearer-surface exits do not. Falsified on S15: the fill that is right there is the NEAR canopy (fill 0.47 against
-            # truth 0.08 m), and its marches exit into the far hill and the sky, so the rule demoted it — 17 878 of 26 087 scored
-            # texels changed owner and their error went 0.054 -> 2.264 m (band median 0.069 -> 1.315 m). A near surface genuinely
-            # continues behind an occluder and its march legitimately comes out into the far background; the exit says nothing
-            # about how far the sheet reaches, only that the sheet must end SOMEWHERE along it. The two-sided rule for masked
-            # objects (below) is kept: there the surface is known to be a bounded thing.
-            if isObj and (A.twosided or A.twosided_all):
-                # the first texel beyond the band on the far side of this march that belongs to a surface with support (a
-                # component of 3+ texels; silhouette specks are skipped): the span is closed if it is this same surface
-                xx, yy = x, y; closed = False; bid = oidArr.flat[b] if oidArr is not None else -1
+            dx, dy = DIRS[k]; bx_ = b % pw; by_ = b // pw; n = int(RUN[k][by_, bx_])
+            if n <= 0: continue
+            if k == 0: ys, ye, xs, xe = by_, by_ + 1, bx_ - n + 1, bx_ + 1
+            elif k == 1: ys, ye, xs, xe = by_, by_ + 1, bx_, bx_ + n
+            elif k == 2: ys, ye, xs, xe = by_ - n + 1, by_ + 1, bx_, bx_ + 1
+            else: ys, ye, xs, xe = by_, by_ + n, bx_, bx_ + 1
+            _mark[ys:ye, xs:xe] = True
+            y0m = min(y0m, ys); y1m = max(y1m, ye); x0m = min(x0m, xs); x1m = max(x1m, xe)
+            if twoSided:
+                xx, yy = bx_ - dx * n, by_ - dy * n; closed = False; bid = oidArr.flat[b] if oidArr is not None else -1
                 while 0 <= xx < pw and 0 <= yy < ph:
                     i3 = yy * pw + xx; c_ = comp[i3]
                     if compSize[c_] >= 3 and not band[yy, xx] and not (oidArr is not None and oidArr.flat[i3] == bid and bid > 0): closed = (c_ == compOfSurf[s]); break
                     xx -= dx; yy -= dy
-                if not closed: weak.update(march)
+                if not closed: _wmark[ys:ye, xs:xe] = True; anyWeak = True
                 closeStat.setdefault(s, {'closed': 0, 'open': 0})['closed' if closed else 'open'] += 1
-            reachMax[s] = max(reachMax[s], n); holes.add(int(holeLab[b // pw, b % pw]))
+            reachMax[s] = max(reachMax[s], n)
+            if not A.no_extend: holes.add(int(holeLab[by_, bx_]))
             if dx != 0: reachX[s] = max(reachX[s], n)
             else: reachY[s] = max(reachY[s], n)
-    domStop[s] = np.fromiter(dom, dtype=np.int64); domWeak[s] = np.sort(np.fromiter(weak, dtype=np.int64)); weak = None   # arrays, not sets: 4 311 sets of weak texels were 12.8 GB on vermeer
-    ext = np.nonzero(np.isin(holeLab.ravel(), list(holes)) & band.ravel())[0]
-    domExt[s] = ext
+    if y1m < 0: domStop[s] = np.zeros(0, np.int64); domWeak[s] = np.zeros(0, np.int64); domExt[s] = np.zeros(0, np.int64); continue
+    sub = _mark[y0m:y1m, x0m:x1m]; yy_, xx_ = np.nonzero(sub); dom_ = (yy_ + y0m) * pw + (xx_ + x0m); sub[:] = False
+    if anyWeak:
+        subw = _wmark[y0m:y1m, x0m:x1m]; yw_, xw_ = np.nonzero(subw); domWeak[s] = np.sort((yw_ + y0m) * pw + (xw_ + x0m)); subw[:] = False
+    else: domWeak[s] = np.zeros(0, np.int64)
+    domStop[s] = dom_
+    domExt[s] = (np.nonzero(np.isin(holeLab.ravel(), list(holes)) & band.ravel())[0] if not A.no_extend else np.zeros(0, np.int64))
     if A.geo:
         # 2-D DOMAIN (S35 §14). The along-line marches are the per-line law's domain: a floor strip whose rims lie along the
         # skirt's edge reaches only its own rows, and between two strips' rows the wall's column marches or a hedge show — the
@@ -472,6 +500,7 @@ def strip_of(s):
 hedge = np.zeros(nS, bool); planes = np.zeros((nS, 3)); budget = {}; isSky = np.zeros(nS, bool); stripN = np.zeros(nS, int); isThin = np.zeros(nS, bool); isGround = np.zeros(nS, bool); isGroundSurf = np.zeros(nS, bool)
 for s in range(nS):
     if all(dQ.flat[r] < skyQ for r in members[s]): isSky[s] = True; continue
+    if preDrop[s]: isGround[s] = True; continue   # the three-texel / no-area verdict, already reached above
     st = strip_of(s); stripN[s] = len(st)
     X = st % pw; Y = st // pw; V = DISP.ravel()[st]
     # THIN EVIDENCE (the app's rule, evalRun): a surface whose strip is shorter than the gap it must cross has a slope uncertain
@@ -615,8 +644,10 @@ def _bfs(entries, R, wsrc=None, srcTex=None):
         nb = np.concatenate(nb); pl_ = np.concatenate(pl_); nb, first = np.unique(nb, return_index=True); pl_ = pl_[first]
         keep_ = band.ravel()[nb] & ~seen[nb]; nb = nb[keep_]; pl_ = pl_[keep_]; seen[nb] = True; lab_[nb] = pl_; front = nb
     return seen, lab_
+_gdcache = {}
 def geo_domain(s):
     if not (A.geo and s in geoInfo): return domStop[s], None
+    if _gdcache.get('s') == s: return _gdcache['v']   # the plate stage and the layered order ask for the same disc
     entries, R, closedSet = geoInfo[s]; src_ = domStop[s]
     if A.faces and closedSet is None:
         # FACETING (S35 §17): the steps between facets of one surface come from domain truncation, not from the facets
@@ -635,16 +666,19 @@ def geo_domain(s):
         return _gcache['dom'], None
     if closedSet is None: wsrc = np.zeros(len(src_), bool)
     else: wsrc = ~np.isin(src_, closedSet)
-    seen = np.zeros(N, bool); lab_ = np.zeros(N, bool); seen[src_] = True; lab_[src_] = wsrc; front = src_
-    for _ in range(R):
-        if len(front) == 0: break
-        x_ = front % pw; y_ = front // pw; nb = []; pl_ = []
-        for dx, dy in DIRS:
-            okn_ = (x_ + dx >= 0) & (x_ + dx < pw) & (y_ + dy >= 0) & (y_ + dy < ph); nb.append(front[okn_] + dy * pw + dx); pl_.append(lab_[front[okn_]])
-        nb = np.concatenate(nb); pl_ = np.concatenate(pl_); nb, first = np.unique(nb, return_index=True); pl_ = pl_[first]
-        keep_ = band.ravel()[nb] & ~seen[nb]; nb = nb[keep_]; pl_ = pl_[keep_]; seen[nb] = True; lab_[nb] = pl_; front = nb
+    # SPEED (S35 §19): "band texels within geodesic distance R of the marches" is a geodesic dilation, which scipy does in C.
+    # The two-colour version (fitted against weak, for masked objects under the two-sided rule) still needs the step-by-step
+    # walk because a texel takes the status of the nearest march, so it keeps the Python loop — but that is the minority of
+    # surfaces, and the majority now costs one call instead of R frontier passes (vermeer's ordering: 421 s -> see below).
+    _cross = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], bool)
+    if not wsrc.any():
+        seed = np.zeros((ph, pw), bool); seed.ravel()[src_] = True
+        seen = ndimage.binary_dilation(seed, structure=_cross, iterations=max(1, R), mask=band).ravel(); lab_ = None
+    else:
+        seen, lab_ = _bfs(entries, R, wsrc=wsrc, srcTex=src_)
     seen[np.array(members[s], dtype=np.int64)] = False
-    return np.flatnonzero(seen), lab_
+    _gdcache.clear(); _gdcache['s'] = s; _gdcache['v'] = (np.flatnonzero(seen), lab_)
+    return _gdcache['v']
 # ---- the smoothing thin-plate sheet (--tps): the deformed plane. Unknown u over strip ∪ domain; energy
 #   Σ_strip (u − disp)² / σ² + λ Σ (u_xx² + 2 u_xy² + u_yy²)
 # σ = the strip's own noise (S21's estimator: third differences, MAD → σ, Var(Δ³) = 20σ²), floored at the grid's quantisation
@@ -753,17 +787,30 @@ def tps_sheet(s_, st, dom):   # s_ is the face; --planeprior uses planes[s_]
     lam = 10 ** (0.5 * (a + b))
     x = solve(lam, x)
     return om, x, sig, lam, rms(x), solve.worst
+def _tps_job(s_):
+    st = strip_of(s_); dom = geo_domain(s_)[0]
+    if len(st) < 3 or len(dom) == 0: return (s_, None, None, 0.0, 0.0, 0.0, 0.0, len(st), len(dom))
+    om, x, sig, lam, rr, worst = tps_sheet(s_, st, dom)
+    return (s_, np.asarray(om, dtype=np.int64), np.asarray(x, dtype=np.float64), sig, lam, rr, worst, len(st), len(dom))
 if A.tps:
     tt0 = time.time()
-    for s_ in (np.argsort(groupOf, kind='stable') if A.faces else range(nS)):
-        s_ = int(s_)
-        if isSky[s_] or isGround[s_] or isGroundSurf[s_]: continue
-        if curvedFace is not None and not curvedFace[compOfSurf[s_]]: continue   # single-patch face: its plane is the sheet
-        st = strip_of(s_); dom = geo_domain(s_)[0]
-        if len(st) < 3 or len(dom) == 0: continue
-        om, x, sig, lam, rr, worst = tps_sheet(s_, st, dom); tpsU[s_] = (om, x)
-        if len(dom) > 5000 or worst > 1e-6: print(f'   tps surface {s_}: {len(st)} strip, {len(dom)} domain, sigma {sig:.3e}, lambda {lam:.2e}, rms {rr:.3e}, worst relative residual {worst:.1e}{"  UNCONVERGED" if worst > 1e-6 else ""}  ({time.time() - tt0:.0f}s)')
-    print(f'thin-plate sheets: {len(tpsU)} solved  ({time.time() - tt0:.1f}s)')
+    faces_ = [int(s_) for s_ in (np.argsort(groupOf, kind='stable') if A.faces else range(nS))
+              if not (isSky[s_] or isGround[s_] or isGroundSurf[s_]) and not (curvedFace is not None and not curvedFace[compOfSurf[s_]])]
+    # SPEED (S35 §19): the faces are independent solves, so they run in forked workers (copy-on-write globals; each worker
+    # allocates only its own face's matrices). Largest faces first so the long pole starts at once.
+    faces_.sort(key=lambda s_: -int(compSize[compOfSurf[s_]]))
+    def _take(res):
+        s_, om, x, sig, lam, rr, worst, nst, ndom = res
+        if om is None: return
+        tpsU[s_] = (om, x)
+        if ndom > 5000 or worst > 1e-6: print(f'   tps surface {s_}: {nst} strip, {ndom} domain, sigma {sig:.3e}, lambda {lam:.2e}, rms {rr:.3e}, worst relative residual {worst:.1e}{"  UNCONVERGED" if worst > 1e-6 else ""}  ({time.time() - tt0:.0f}s)')
+    if A.jobs > 1 and len(faces_) > 1:
+        import multiprocessing as mp
+        with mp.get_context('fork').Pool(min(A.jobs, len(faces_))) as pool:
+            for res in pool.imap_unordered(_tps_job, faces_, chunksize=1): _take(res)
+    else:
+        for s_ in faces_: _take(_tps_job(s_))
+    print(f'thin-plate sheets: {len(tpsU)} solved with {min(A.jobs, max(1, len(faces_)))} workers  ({time.time() - tt0:.1f}s)')
 def harmonic_ext_fixed(dom, fixed):
     """Laplace on dom; texels in `fixed` (subset of dom) hold their value; zero flux elsewhere."""
     if len(dom) == 0: return np.zeros(0)
@@ -788,7 +835,7 @@ def harmonic_ext_fixed(dom, fixed):
     h = np.nan_to_num(h, nan=0.0, posinf=0.0, neginf=0.0)
     return h
 def build(domains, label):
-    tb = time.time()
+    tb = time.time(); _prof = {'geo': 0.0, 'val': 0.0, 'gate': 0.0, 'order': 0.0}
     best = np.full(N, -np.inf); second = np.full(N, -np.inf); who = np.full(N, -1, np.int32)
     bestH = np.full(N, -np.inf); whoH = np.full(N, -1, np.int32)   # --evidence: the hedges' own order, used only where no fitted sheet reaches
     ownD = DISP.ravel(); ownT = TOL.ravel()
@@ -796,7 +843,9 @@ def build(domains, label):
         s = int(s); dom = domains[s]
         if len(dom) == 0 or isGround[s]: continue
         weakSet = domWeak[s]; weakArr = None
+        _t0 = time.time()
         if A.geo and label == 'stop' and s in geoInfo: dom, weakArr = geo_domain(s)
+        _prof['geo'] += time.time() - _t0; _t0 = time.time()
         isHedge = ((A.evidence and hedge[s]) or fusedS[s]) and (not isSky[s])
         if isSky[s]: val = np.zeros(len(dom))
         elif A.tps and s in tpsU:
@@ -831,6 +880,7 @@ def build(domains, label):
                 val = val + harmonic_ext_fixed(dom, ev)
         # the app's candidate test (dlt > tol): only a sheet BEHIND the texel's own depth by more than the tolerance is a far side of
         # that texel; a sheet at or in front of it (the occluder's own body continued, a fringe texel's own surface) is not.
+        _prof['val'] += time.time() - _t0; _t0 = time.time()
         ok = val < ownD[dom] - ownT[dom]; d = dom[ok]; v = val[ok]
         if A.mask and len(d):
             # an object's own farther parts are a far side of its own band only where nothing else is (self-occlusion may sample
@@ -849,9 +899,11 @@ def build(domains, label):
         if isHedge:
             bh = bestH[d]; updh = v > bh; bestH[d[updh]] = v[updh]; whoH[d[updh]] = s; continue
         # nearest shows: update best / second
+        _prof['gate'] += time.time() - _t0; _t0 = time.time()
         b = best[d]; upd = v > b
         second[d[upd]] = np.maximum(second[d[upd]], b[upd]); best[d[upd]] = v[upd]; who[d[upd]] = s
         second[d[~upd]] = np.maximum(second[d[~upd]], v[~upd])
+        _prof['order'] += time.time() - _t0
     # the ground as a sheet where the app has one
     if (not A.no_ground) and meta.get('ground') and gcol is not None:
         g = meta['ground']; dom = np.nonzero(band.ravel())[0]; X = dom % pw; Y = dom // pw
@@ -862,6 +914,7 @@ def build(domains, label):
     if A.evidence or A.twosided or A.twosided_all or A.mask:
         fill = ~np.isfinite(best) & np.isfinite(bestH); best[fill] = bestH[fill]; who[fill] = whoH[fill]
         print(f'[{label}] evidence order: hedges fill {int((fill & band.ravel()).sum())} band texels no fitted sheet reached')
+    print('   build profile: ' + ', '.join(f'{k} {v:.1f}s' for k, v in _prof.items()))
     reached = np.isfinite(best) & band.ravel()
     print(f'[{label}] reached {int(reached.sum())} of {int(band.sum())} band texels ({100 * reached.mean() / max(1e-9, band.mean()):.1f} %); layer 2 on {int((np.isfinite(second) & band.ravel()).sum())}  ({time.time() - tb:.1f}s)')
     return best, second, who, reached

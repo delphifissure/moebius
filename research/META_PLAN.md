@@ -174,3 +174,10 @@ faces need a plate, which cuts the solves to 130–190 per picture. Net: kit a w
 visually unchanged. Two negatives recorded: facet-wide domains (worse) and the per-texel error budget (never fires, because
 patches are selected to be planar). Vermeer's remaining "jumps" are legitimate slope (kinks down 97 %), and the sunflower
 field's are real structure inside a fused foliage-sky component, not faceting.
+
+**S35 §19–§20, speed and the reference GIF (2026-09-17).** Vermeer's plane-only bake 12 min → 74 s and the full bake with
+the plate 35 min → 9.3 min, bit-identical fields: marches as C-speed slices, specks dropped before the domain pass, the
+never-read extend domain no longer built, the rim-pinned residual off by default (it was the whole ordering cost and §11 had
+already shown it adds noise), geodesic discs by C dilation, three forked plate workers with BLAS pinned. The Silver Warrior
+GIF was measured: a horizontal pendulum of ±5 % of the width with the pivot mid-scene, so it never reveals more than a few
+per cent of the picture where the app's envelope reveals 41 %; its cleanliness is amplitude and one axis, not a fill law.
