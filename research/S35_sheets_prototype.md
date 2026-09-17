@@ -663,12 +663,13 @@ picture unlabelled; the classifier is what turns that into an object map.
 | troll, 13-click | v 46 683 (380 291) h 25 246 (348 877) | v 1 961 (36 975) h 30 565 (108 828) | **wrong: x-ray** — the band behind the troll is the deepest gap between the trees (depth ≈ 0), not the forest |
 | troll, auto | — | v 5 521 (95 706) h 8 583 (101 267) | same x-ray |
 | starwatcher, no mask | v 42 701 (241 932) h 3 975 (108 099) | identical | 17 things, none touching the band |
-| starwatcher, auto | — | v 2 232 (48 897) h 1 161 (21 262) | render pending at the time of writing; not judged |
+| starwatcher, auto | — | v 2 232 (48 897) h 1 161 (21 262) | right: the striped ramp behind the figure's head and lamp in the adopted arm is gone, the band is a smooth wash (`s35/star_things_p45.png`) |
 | sunflowers, 9-click (geo) | v 26 886 (447 679) h 19 975 (437 808) | — | beside the big head: fill 0.28/0.40/0.42 (p10/50/90), 0 of 211 rows sky, 60 row jumps — the staircase |
 | sunflowers, auto, no classifier | v 15 015 (327 626) h 14 854 (359 509) | — | 0 of 211 rows sky, 43 jumps: the unlabelled 26 % (leaves) still fills as background |
 | sunflowers, auto + classifier | — | **v 1 349 (24 540) h 1 856 (15 443)** | 197 of 211 rows sky, 0 jumps; the lower band is the distant field (0.15): the plausible layering |
 
-Figures: `s35/look_vermeer_ta2.png` (vermeer auto: one wall sheet, no floor), `s35/look_troll_t13.png` (troll: the far field
+Renders through the app at p45 (per-line law / adopted sheets / sheets + classifier): `s35/troll_things_p45.png` (the x-ray reads clean in a still — the depth is wrong, not the wash), `s35/room_things_p45.png` and `s35/room_things2_p45.png` (the staircase gone), `s35/vermeer_things_p45.png`, `s35/star_things_p45.png`.
+Buffer figures: `s35/look_vermeer_ta2.png` (vermeer auto: one wall sheet, no floor), `s35/look_troll_t13.png` (troll: the far field
 inside the troll is black = the deep gap), `s35/look_room_ta.png` and `s35/look_room_nt.png` (sunflowers: sky + field vs
 leaves), `s35/floor_look_ta.png`.
 
