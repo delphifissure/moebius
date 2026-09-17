@@ -922,3 +922,33 @@ S2 unchanged), so the colour model stays.
 **Open.** (i) the app itself is untouched: this is the offline prototype plus the render harness, and moving it into the app
 is the atlas work (item 1); (ii) S26 and S2 say the wash still loses to a locally chosen run where ownership is wrong, which
 is the §22 classifier question again; (iii) plate 2 has no sheet colour yet.
+
+## 26. Starwatcher's streaking diagnosed: the figure has no object mask, so his own surface fills his band
+
+The user's read of the §25 shots: "starwatcher streaking is terrible". Looking at the buffer behind the figure
+(`s35/bleed/star_figure.png`: colour, depth, band, far field, owner, sheet colour), the far field INSIDE his footprint is
+his own shape — a grey silhouette of the hood and the pack — sitting three to four visible steps behind his own depth
+(column 300: own depth 0.337, far field 0.304–0.331). A surface a few steps behind him wins the layered order over the sky,
+so the band renders as a card standing just behind him, and its facets step from row to row: the stripes.
+
+**The cause is the segmentation, not the sheet law.** That arm ran with no object mask. The figure's feet meet the ground and
+DA3 joins them, so the figure and the ground are ONE visible component; its sheet therefore continues the figure's own body
+behind the figure. It is the depth twin of the foreground-clone rule we forbid for colour.
+
+**With the figure treated as an object it goes away** (`--things` over the automatic SAM mask, which classifies him a thing):
+
+| starwatcher, p45 | vertical jumps (length) | horizontal jumps | vertical kinks | horizontal kinks |
+|---|---|---|---|---|
+| the per-line law | 12 308 (199 331) | 33 531 (478 201) | 15 147 | 44 110 |
+| sheets, no mask | 42 701 (241 932) | 3 975 (108 099) | 13 437 | 5 531 |
+| sheets + classifier | **2 232 (48 897)** | **1 161 (21 262)** | **2 550** | **2 079** |
+
+The render agrees (`s35/bleed/star_fix_p45.png`): the striped card behind the figure is replaced by a smooth sky wash. Note
+the automatic SAM mask alone does not do it — it labels the sky and leaves the figure unlabelled — so the classifier's
+reading of which units are things is what supplies the figure.
+
+**This moves the §22 decision.** The classifier is now shown to fix three pictures (S9, the sunflowers' staircase,
+starwatcher's card) and the argument against it is one picture (the troll's x-ray) plus vermeer under the automatic mask
+(the floor voted a thing on two boundary pairs) and S15 (a canopy behind its own trunk). The troll's x-ray is the blocker
+worth attacking next: it is one rule — a thing whose marches all exit onto OTHER things has no fitted sheet and hedges to
+the deepest surface — and every failing case is of that shape.

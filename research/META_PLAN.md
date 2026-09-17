@@ -220,3 +220,10 @@ sheets' own fill. Against the kit's hidden-layer colour the sheets beat the app 
 S9 146 vs 177) and lose where ownership is wrong (S26 91 vs 56, S2 92 vs 86): the colour adds no error of its own, it
 reports the model's ownership. Streaks inside the band drop (vermeer |dC| 1.54 → 1.06). Nearest-clean-sample fallback tried
 and rejected (S9 146 → 181). The app is untouched; moving this in is item 1.
+
+**S35 §26, starwatcher's streaking diagnosed (2026-09-17).** The band behind the figure was filled with his own body three to
+four steps behind himself — without an object mask his feet join the ground, so his own surface is the one that continues
+behind him, and the layered order prefers it to the sky. The classifier over the automatic SAM mask supplies the figure as a
+thing and the card goes: vertical jumps 42 701 → 2 232, horizontal 3 975 → 1 161, both far under the per-line law's 12 308 /
+33 531. Three pictures now need the classifier (S9, the sunflower staircase, starwatcher) against the troll's x-ray, which is
+the one rule left to fix before it can be the default.
