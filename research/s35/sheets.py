@@ -1162,7 +1162,11 @@ if A.color:
         for ch in range(3):
             x_, info = cg(Lm, rhs[:, ch], rtol=1e-6, maxiter=500, M=Mp); sol[:, ch] = x_
         outC = COL.copy()
-        outC[uu[bandF[uu]]] = np.clip(sol[bandF[uu]], 0, 255)
+        # written into the band AND the blend fringe: the fringe texels are the surface's own anti-aliased edge, darkened by the
+        # occluder's ink; left as they are they stay on the plate as a faint outline of the figure once it moves (§27). The
+        # extension already solved them (they are unknowns), so they take the surface's own colour. At rest this changes a
+        # one-texel ring of mixed texels on the surface side of each silhouette into the surface's colour.
+        outC[uu] = np.clip(sol, 0, 255)
         Image.fromarray(outC.reshape(ph, pw, 3).astype(np.uint8)).save(f'{OUT}/color_stop.png')
         # scored against the kit's own hidden-layer COLOUR where there is one (scope_gt rgb), beside the app's per-line fill
         if A.truth and os.path.exists(A.truth):

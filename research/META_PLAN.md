@@ -233,4 +233,4 @@ depth in the map and stay on the plate while the figure moves. A segmentation-co
 offline, no constant): the farthest real surface, its halo absorbed, then unlabelled components at its depth enclosed by it
 and touching nearer material take the nearer depth. Starwatcher 1 209 texels, sunflowers 1 813 (petal tips), vermeer 197,
 troll 0; three looser versions rejected by their counts. Baked from the repaired depth the glow and loop move with the
-figure and the ghost is gone; the band numbers are unchanged. App untouched.
+figure and the ghost is gone; the band numbers are unchanged. The figure's ink outline was next (a ring hugging the figure failed the enclosure test by half; the nearer thing's contact no longer counts): starwatcher 6 097 texels, and the colour stage now repaints the one-texel blend fringe too, so the black outline baked into the sky goes. App untouched.

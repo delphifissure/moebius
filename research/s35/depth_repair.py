@@ -64,10 +64,13 @@ for sid in ids:
     # ENCLOSED BY S: the majority of the component's outer boundary is S (a thin thing inside the sky), not merely touching
     # it (a small segment at the sky's depth would otherwise make the whole sky a candidate: 312 k texels on starwatcher)
     cS_ = np.zeros(n + 1, np.int64); cO_ = np.zeros(n + 1, np.int64)
+    # (the contact with the NEARER thing it hangs off does not count against enclosure: the figure's ink outline is a ring with
+    #  the sky on one side and the figure on the other, and it is the figure's — left at the sky's depth it bakes a black
+    #  outline of the figure into the sky)
     for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)):
-        nl = np.roll(np.roll(lab, dy, 0), dx, 1); ns = np.roll(np.roll(S2, dy, 0), dx, 1)
+        nl = np.roll(np.roll(lab, dy, 0), dx, 1); ns = np.roll(np.roll(S2, dy, 0), dx, 1); nn = np.roll(np.roll(nearer, dy, 0), dx, 1)
         contact = (lab > 0) & (nl != lab)
-        cS_ += np.bincount(lab[contact & ns], minlength=n + 1); cO_ += np.bincount(lab[contact & ~ns], minlength=n + 1)
+        cS_ += np.bincount(lab[contact & ns], minlength=n + 1); cO_ += np.bincount(lab[contact & ~ns & ~nn], minlength=n + 1)
     okB = cS_ > cO_
     cand = rest & okB[lab] & okN[lab]
     if not cand.any(): continue

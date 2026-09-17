@@ -992,3 +992,16 @@ colour, and that sky is the glow's own halo. A colour matter, small, recorded.
 **Where it lives.** Offline only (a depth PNG in, a depth PNG out), nothing in the app changed, as asked. In the app it
 belongs at depth import after SAM, before the bake; the segment it needs is the one the classifier already calls the
 farthest surface.
+
+**Addendum: the black outline baked into the sky.** With the thin parts repaired, a dark rim still ran along the wash
+behind the figure (`s35/bleed/star_outline_zoom.png`, middle): the figure's ink OUTLINE, one to two texels wide, which
+SAM excludes from the sky but the depth leaves at the sky's depth. The rule skipped it because a ring hugging the figure has
+the figure on one side and fails the enclosure test by half. The contact with the nearer thing it hangs off does not count
+against enclosure (it is that thing's edge); with that change the rule takes the outline too: starwatcher 1 209 → 6 097
+texels (the figure's contour, the crystals' outer edges, the horizon line — `star_repair_map2.png`), sunflowers 1 813 →
+2 911, vermeer 197 → 278, troll 0. The rim goes (`star_outline_zoom2.png`, middle). What was left after that is the
+anti-aliased sky-side texels the ink darkened, which the colour stage already solves for as the blend fringe and then left
+untouched; it now writes the surface's own colour into them as well (at rest that changes a one-texel ring of mixed texels
+on the surface side of each silhouette). `star_outline_zoom2.png`, right: the rim is gone; a very faint trace of the shaft
+remains in the sky where the ink's blur reached farther than the one-texel fringe. The sheet numbers stay within noise
+(vertical jumps 2 245 → 2 249). Nothing in the app changed.
