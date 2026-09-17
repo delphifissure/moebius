@@ -714,3 +714,85 @@ After the removals the default arm reproduces §18 exactly (S15 0.0717 m, v 5 18
 - Item 3 (completeness): the classifier is the only candidate and it is wrong in clutter (troll) and for a thing before its
   own body (S15). It stays opt-in. The decision — classifier off (troll right, sunflowers staircase), on (sunflowers right,
   troll x-ray), or a per-picture switch in the panel — is the user's; the numbers and buffers above are the case.
+
+## 23. Where the colours come from: the bleeding and the streaks measured (user question, 2026-09-17)
+
+**The question.** Streaking and bleeding of the foreground into the disocclusion gap; the hypothesis was that the depth does
+not capture the outline exactly, so a sliver of foreground RGB counts as background and is sampled into the fill.
+
+**How the app colours the band** (`moebius.js` 15995–16059). For every carrier texel with a far side, the colour is the mean
+of the SOURCE colour over the rim window of the rim the far side came from: `winMean(j, w)` = `w` texels from the rim texel
+`j` outward along the axis. `w` is the depth fit's window, `min(len, g+1)` (699): the gap plus one texel, so for the band
+texels next to the silhouette `w` is 1–2. Then the band's outer ring holds those colours as Dirichlet values and the interior
+is a harmonic membrane. The inner side of that ring runs along the occluder's silhouette (the ring was moved there on purpose,
+16021–16024), so the whole band is bounded on one side by colours read from the one or two texels touching the silhouette.
+
+**Measurement 1 — the rim texel** (`s35/bleed/rimcolor.py`; the app's own `farRimJ`/`farRimW` from the probe dumps, four
+pictures + the troll). Of rim windows with a colour contrast between occluder and far run:
+
+| picture | window w (median) | rim texel closer to the OCCLUDER colour than to its own run | occluder-coloured leading texels (mean / p90) | colour edge vs depth edge |
+|---|---|---|---|---|
+| troll | 2 | 62 % | 1.7 / 5 | on the depth edge (median); inside the far run in 35–39 % |
+| vermeer | 2 | 52–58 % | 1.2 / 3–4 | median on the edge; inside in 35–42 % |
+| sunflowers | 2 | 59 % | 1.5–1.9 / 5–6 | median on the edge; inside in 48–53 % |
+| silverwarrior | 2 | 52 % | 1.3–1.6 / 5 | median on the edge; inside in 30–33 % |
+| starwatcher | 2 | 28 % | 0.5–0.7 / 1–2 | inside in 21–24 % |
+
+So the hypothesis is half right: the depth edge sits ON the colour edge in the median (offset −0.5 texel: the step is between
+the last occluder texel and the first far texel), but the first far texel is a blend or an outline texel in more than half
+of the rims, and the colour edge lies one or more texels inside the far run in a third to a half of them (soft outlines, DA3's
+edge a texel inside the painted one). With a window of two texels, that texel IS the fill colour.
+
+**Measurement 2 — the fill itself** (`s35/bleed/ringcontam.py`, on `plateColor.u8`): the occluder's share of the fill colour
+(0 = the far surface's own colour, 1 = the occluder edge colour), on the inner ring and 6 / 15 texels into the band:
+
+| picture | inner ring | 6 texels in | 15 texels in |
+|---|---|---|---|
+| troll | 0.20 | 0.31 | 0.30 |
+| vermeer | 0.16 | 0.28 | 0.36 |
+| sunflowers | 0.39 | 0.37 | 0.35 |
+| silverwarrior | 0.05 | 0.46 | 0.55 |
+| starwatcher | −0.30 | −0.06 | 0.01 |
+
+The contamination does not fade into the band: the membrane carries the ring's blend across it. Crops
+(`s35/bleed/crop_vermeer_shoulder.png`, `crop_vermeer_hip.png`, `crop_troll_arm.png`): a dotted dark or blue rim along the
+silhouette (each ring texel its own line's 2-texel mean), a halo inward, then a smooth gradient between that halo and the
+clean outer ring.
+
+**Two issues, one cause each.**
+- *Bleeding* = the colour window. It is the depth fit's window reused for colour; next to the silhouette it is the blended
+  texel itself. Depth misregistration adds to it on a third of the rims but is not the root.
+- *Streaking* = two things. Along the silhouette, the ring is a per-line quantity (neighbouring rows read different 2-texel
+  means: the dotted rim in the crops), and the membrane's gradient from a noisy boundary reads as streaks. Across the band,
+  the per-line geometry's row-to-row depth jumps stretch the fill along the lines (the S33/S34 seams); the sheets remove
+  those, which is why the sheet renders look smoother than the per-line ones, but their colour is still the app's per-line
+  fill (the harness injects only the geometry), so the halo and the surface mismatch remain in them: the per-line far side and
+  the sheet's differ by more than 0.05 on 40–85 % of the band, so in the sunflower render the band behind the head is
+  leaf-grey where the sheet says sky. That mismatch is the harness, not a law.
+- The "cleaner washes before" are consistent with this: the code's own comment records the ring being moved onto the
+  silhouette's outline texels (the box on S9 had gone floor-grey with the ring one texel further out), and the g+1 window
+  came with the thin-evidence rule; both put the fill's boundary values on the blended texels.
+
+**Remedy, previewed offline** (`s35/bleed/remedy.py`), occluder share of the boundary colour, median (mean):
+
+| picture | app window, w = g+1 | median of the whole far run | run median after skipping the blended leading texels |
+|---|---|---|---|
+| troll | 0.48 (0.48) / 0.42 (0.43) | 0.03 (0.07) / 0.06 (0.11) | 0.01 (0.04) / 0.04 (0.08) |
+| vermeer | 0.24 (0.32) / 0.06 (0.21) | 0.02 (0.05) / −0.01 (0.07) | 0.01 (0.03) / −0.01 (0.05) |
+| sunflowers | 0.38 (0.46) / 0.38 (0.48) | 0.03 (0.10) / 0.04 (0.16) | 0.02 (0.08) / 0.02 (0.14) |
+| silverwarrior | 0.28 (0.35) / 0.06 (0.26) | 0.02 (0.06) / 0.01 (0.04) | 0.01 (0.04) / 0.00 (0.02) |
+
+(two slots = the two sides.) The blend skip is constant-free: a leading texel is skipped while it lies toward the occluder
+colour and farther from the run's median than the run's own colour spread (MAD); it skips 1 texel in the median, 1.4–2.1 on
+average. The run median alone takes out nine tenths of the contamination; the skip takes out most of the rest.
+
+**Plan.**
+1. In the app's fill: colour window = the far RUN, not the fit window: the run's median colour after the blend skip, as
+   Dirichlet values; a run shorter than four texels has no clean colour and contributes no boundary value (the membrane
+   takes the neighbours'). Measured by the tables above before/after, plus the ring's texel-to-texel colour variance along
+   the silhouette (the streak number) and the kit's hidden-layer colour where the scenes have one.
+2. In the sheet model: the colour of a band texel comes from the SHEET that owns it, from that sheet's own visible texels away
+   from its silhouette (the same skip), as a colour field per sheet, so colour and geometry are one law and there is no
+   per-line ring at all. This is item 1's atlas per sheet.
+3. The render harness injects the sheets' colour with their geometry, so the screengrabs show the sheets' fill, not the
+   per-line one under sheet geometry.

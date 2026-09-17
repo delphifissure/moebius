@@ -193,3 +193,12 @@ and removed; one clean A/B showed three of them had broken vermeer without the c
 arm restored bit-identically; classifier opt-in (`--things`). S9 alone is also fixed by the auto SAM mask under the adopted
 arm. Decision for the user: classifier on/off/per picture. App-side: S10c's σ = 0 gate leaves sky-heavy maps at quantum = grid
 (starwatcher; `_visStep=1` forces the floor).
+
+**S35 §23, where the colours come from (2026-09-17).** The band's fill colour is the mean of the source colour over the depth
+fit's window from the rim texel, and that window is the gap plus one texel, so next to the silhouette it is the one or two
+texels straddling the edge; the membrane then carries that across the band. Measured on five pictures: the first far texel is
+occluder-coloured in 52–62 % of rims (starwatcher 28 %), the colour edge lies inside the far run in a third to a half of them,
+and the occluder's share of the fill is 0.2–0.5 across the band. Remedy previewed offline: the far run's median colour after a
+constant-free blend skip brings the share to 0.00–0.04. The streaks are the per-line ring plus the per-line geometry; the sheet
+renders still carried the per-line colour (harness). Plan: run-median colour in the app; per-sheet colour fields in the
+prototype; the harness to inject colour with geometry.
