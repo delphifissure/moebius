@@ -904,7 +904,16 @@ measured and not used as a verdict.
 sheet geometry with the sheets' colour): on **vermeer** the band behind the milkmaid becomes a smooth wall wash and the
 banding at her right edge goes (`vermeer_color2_p45.png`); on the **sunflowers** colour and geometry now agree, which makes
 the staircase read as foliage instead of a pale card (`room_color2_p45.png`) — the geometry is the §22 question, not the
-colour's. Buffer crops of the two fills side by side: `fillcmp_vermeer_hip.png`, `fillcmp_vermeer_shoulder.png`.
+colour's. on the **troll** the band is dark forest instead of a pale grey card (`troll_color_p45.png`); on **starwatcher** the striped
+ramp behind the figure keeps its stripes under the sheets' colour, so what remains there is geometry, not colour
+(`star_color_p45.png`). Buffer crops of the two fills side by side: `fillcmp_vermeer_hip.png`,
+`fillcmp_vermeer_shoulder.png`.
+
+**The sunflowers with the §22 classifier AND the sheets' colour** (`room_things_color_p45.png`) is the best result on that
+picture so far: the staircase is gone (the classifier's geometry) and the band beside the big head is a smooth sky wash (the
+sheets' colour), where the per-line law puts a white card and the classifier with the old per-line colour puts a cream one.
+It is the first picture where both halves of the model are right at once, and it is the case for settling §22's decision
+in favour of the classifier for pictures of this kind.
 
 **Falsified on the way (removed, rule 7).** The fallback for non-adjacent owners was first the surface's **nearest clean
 sample** instead of its colour model; measured against the kit it is worse (S9 146 → 181, S26 91 → 96, S15 53.8 → 53.3,
