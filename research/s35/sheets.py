@@ -38,7 +38,7 @@ from PIL import Image
 ap = argparse.ArgumentParser()
 ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', type=float); ap.add_argument('--q', type=float, default=1 / 65535)
 ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--twosided', action='store_true', help='an OBJECT surface (mask id > 0) passes behind an occluder only where its own rims close the span on both sides of the line (S3 kind-2: a same-surface pair is a positive detection); a one-sided march of an object sheet is a hedge'); ap.add_argument('--twosided-all', action='store_true', help='the two-sided rule for every surface, not only masked objects (backgrounds end at corners too); the ground plane is the exception'); ap.add_argument('--fused', action='store_true', help='a visible component whose boundary to other mask ids is depth-JOINED on the majority of its length is fused with its neighbours (DA3 gives a narrow background gap between two near objects the objects\' depth); its sheet is a hedge, never a measurement'); ap.add_argument('--planeprior', action='store_true', help="the thin plate is pulled toward its own face's plane on the domain with weight 1/visible step, against the strip data at weight 1/sigma: the plate is free to bend where the data supports it and relaxes to the plane where it does not"); ap.add_argument('--smooth', action='store_true', help="faceting: adjacent planar patches of one surface are rejoined when their planes differ by less than the visible step over the smaller patch's own extent (a crease test, not a flatness test), so a smoothly curved surface is one face again and only real creases stay split"); ap.add_argument('--budget', action='store_true', help="per-texel error budget: the fitted slope is shrunk by its own predicted standard error against the visible step, so a sheet continues its slope only as far as its own fit supports it and relaxes to its constant beyond that; continuous, no new constant"); ap.add_argument('--faces', action='store_true', help="faceting: every facet of one join-law component is extended over that component's whole 2-D domain instead of its own disc, so the layered order picks the nearest facet everywhere and the sheet is continuous, with creases where the facets' planes cross"); ap.add_argument('--reach', action='store_true', help="where a sheet ends: it continues into the hole no farther than the surface itself extends outside it (geodesic radius of its own visible patch from its rims), instead of as far as the hole is deep"); ap.add_argument('--geo', action='store_true', help='2-D domain: a sheet claims the band texels within geodesic reach of its rims through the band (reach = its own longest march) instead of the along-line marches only'); ap.add_argument('--patches', action='store_true', help='split every visible component into planar patches (region growing; a texel joins while one plane fits the patch within the visible step tolAt); patches are the surfaces'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
-ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
+ap.add_argument('--things', action='store_true', help='things/surfaces classifier (S35 §22, opt-in): every visible unit (mask segment or depth component) that is in front of a neighbour becomes a two-sided thing, the rest background. Fixes the sunflower staircase, S9 and S2; wrong on the troll (x-ray to the deepest surface behind him), on vermeer with the automatic mask (the floor voted a thing) and on S15 (a canopy behind its own trunk) -- see the note'); ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
 ap.add_argument('--no-smooth', action='store_true'); ap.add_argument('--no-tps', action='store_true'); ap.add_argument('--no-prior', action='store_true'); ap.add_argument('--no-patches', action='store_true')
 ap.add_argument('--no-evidence', action='store_true'); ap.add_argument('--no-geo', action='store_true'); ap.add_argument('--no-fused', action='store_true'); ap.add_argument('--no-twosided', action='store_true'); ap.add_argument('--no-drop-thin2', action='store_true')
 A = ap.parse_args()
@@ -86,6 +86,8 @@ def joined_pair(i, j):   # flat indices; the app's joinedIdx (ratio test, then t
     return False
 
 T0 = time.time()
+_dt = np.linspace(0, 1, 4097); _dsp = disp(_dt); _ord = np.argsort(_dsp)
+def depth_of_disp_early(v): return float(np.interp(v, _dsp[_ord], _dt[_ord])) if np.isfinite(v) else float('nan')
 # ---- vectorised join test between two arrays of flat indices (the same rule as joined_pair) ----
 def joined_arr(I, J):
     dA = dQ.ravel()[I]; dB = dQ.ravel()[J]; skyA = dA < skyQ; skyB = dB < skyQ
@@ -102,12 +104,69 @@ def joined_arr(I, J):
 idx = np.arange(N).reshape(ph, pw)
 jh = joined_arr(idx[:, :-1].ravel(), idx[:, 1:].ravel()).reshape(ph, pw - 1)   # texel x joined to x+1
 jv = joined_arr(idx[:-1, :].ravel(), idx[1:, :].ravel()).reshape(ph - 1, pw)   # texel y joined to y+1
+oid = np.zeros((ph, pw), np.int32)
 if A.mask:
     # S35 object-aware surfaces: an object mask (SAM, S28/S29) separates the occluder from its background where the depth map
     # joins them (contact points, ramps); pairs of different ids are unjoined, so runs, components and strips stop at the mask
     oid = np.asarray(Image.open(A.mask)); oid = oid[..., 0] if oid.ndim == 3 else oid
     if oid.shape != (ph, pw): oid = np.asarray(Image.fromarray(oid).resize((pw, ph), Image.NEAREST))
-    jh0 = jh.copy(); jv0 = jv.copy()   # the depth law's own verdict on every pair, kept for the fusion test (--fused)
+    oid = oid.astype(np.int32)
+jh0 = jh.copy(); jv0 = jv.copy()   # the depth law's own verdict on every pair, kept for the fusion test (--fused)
+if A.things:
+    # THINGS AND SURFACES (S35 §22). A segmentation says where the pieces are, not which of them are bounded things. SAM's
+    # automatic mode labels the sky, the ground plain and every brick as a segment (starwatcher: the sky is 40 % of the picture
+    # and passes the 60 % background cut; S9: 205 segments, the bricks and the tiles among them), and leaves the tangled part
+    # of a thicket unlabelled (sunflowers: 26 % of the picture), which "unlabelled = background" then extends into every hole.
+    # The depth map says which is which, and it says it for every visible UNIT: a SAM segment where there is one, a join-law
+    # component of the depth map otherwise. A unit is a THING if it is in front of at least one neighbouring unit along the
+    # majority of their shared boundary AND by the two units' median depths (the local and the global verdict must agree: at the
+    # horizon DA3 puts the distant field farther than the sky, so by boundary pairs alone the sky was "in front"; the floor is
+    # nearer than the wall by medians but joined to it along the crease); neighbours whose shared boundary is shorter than the
+    # median shared boundary of that unit do not vote. Things keep or get an id; surfaces become background. No constant.
+    tb0 = time.time()
+    from scipy.sparse.csgraph import connected_components as _cc
+    bg = (oid == 0).ravel(); Ih_ = idx[:, :-1].ravel(); Jh_ = idx[:, 1:].ravel(); Iv_ = idx[:-1, :].ravel(); Jv_ = idx[1:, :].ravel()
+    okh_ = jh0.ravel() & bg[Ih_] & bg[Jh_]; okv_ = jv0.ravel() & bg[Iv_] & bg[Jv_]
+    adj_ = sparse.coo_matrix((np.ones(int(okh_.sum()) + int(okv_.sum())), (np.r_[Ih_[okh_], Iv_[okv_]], np.r_[Jh_[okh_], Jv_[okv_]])), shape=(N, N))
+    nC_, cbg = _cc(adj_, directed=False)
+    unit = np.where(bg, 256 + cbg, oid.ravel()).astype(np.int64); nU = int(unit.max()) + 1
+    cutH_ = (unit.reshape(ph, pw)[:, :-1] != unit.reshape(ph, pw)[:, 1:]); cutV_ = (unit.reshape(ph, pw)[:-1, :] != unit.reshape(ph, pw)[1:, :])
+    T_ = np.r_[idx[:, :-1][cutH_], idx[:-1, :][cutV_], idx[:, 1:][cutH_], idx[1:, :][cutV_]]; U_ = np.r_[idx[:, 1:][cutH_], idx[1:, :][cutV_], idx[:, :-1][cutH_], idx[:-1, :][cutV_]]
+    dT = DISP.ravel()[T_]; dU = DISP.ravel()[U_]; tl_ = np.maximum(TOL.ravel()[T_], TOL.ravel()[U_]); uT = unit[T_]; uU = unit[U_]
+    key_ = uT * nU + uU; uk_, inv_ = np.unique(key_, return_inverse=True)
+    nAB = np.bincount(inv_, minlength=len(uk_)); fAB = np.bincount(inv_, weights=(dT > dU + tl_), minlength=len(uk_)); bAB = np.bincount(inv_, weights=(dT < dU - tl_), minlength=len(uk_))
+    ua_ = uk_ // nU; ub_ = uk_ % nU
+    # per-unit median disparity and tolerance (sort-based, vectorised)
+    order_ = np.argsort(unit, kind='stable'); us_ = unit[order_]; starts_ = np.r_[0, np.flatnonzero(us_[1:] != us_[:-1]) + 1]; ends_ = np.r_[starts_[1:], len(us_)]
+    medD = np.full(nU, np.nan); medT = np.full(nU, np.nan); px_ = np.zeros(nU, np.int64)
+    dso = DISP.ravel()[order_]; tso = TOL.ravel()[order_]
+    for a_, b_ in zip(starts_, ends_): medD[us_[a_]] = np.median(dso[a_:b_]); medT[us_[a_]] = np.median(tso[a_:b_]); px_[us_[a_]] = b_ - a_
+    gFront = medD[ua_] > medD[ub_] + np.maximum(medT[ua_], medT[ub_])
+    # per unit: neighbours with boundary >= that unit's median boundary, in front locally and globally
+    thing = np.zeros(nU, bool); rel_order = np.argsort(ua_, kind='stable'); ua_s = ua_[rel_order]; st2 = np.r_[0, np.flatnonzero(ua_s[1:] != ua_s[:-1]) + 1]; en2 = np.r_[st2[1:], len(ua_s)]
+    for a_, b_ in zip(st2, en2):
+        sel_ = rel_order[a_:b_]; n_ = nAB[sel_]; med_ = np.median(n_)
+        thing[ua_s[a_]] = bool(((n_ >= med_) & (fAB[sel_] > bAB[sel_]) & gFront[sel_]).any())
+    thing[0] = False
+    if os.environ.get('THINGS_DIAG'):
+        # the vote behind each large unit's verdict: its neighbours with a boundary at or above the unit's median boundary
+        for u_ in np.argsort(-px_)[:int(os.environ['THINGS_DIAG'])]:
+            if px_[u_] == 0: continue
+            sel_ = np.flatnonzero(ua_ == u_); med_ = np.median(nAB[sel_]); rows_ = []
+            for j_ in sel_[np.argsort(-nAB[sel_])][:6]:
+                rows_.append(f'{"seg " + str(int(ub_[j_])) if ub_[j_] < 256 else "comp " + str(int(ub_[j_]) - 256)}({int(px_[ub_[j_]])}px, d {depth_of_disp_early(medD[ub_[j_]]):.3f}) n {int(nAB[j_])}{"*" if nAB[j_] >= med_ else ""} front {int(fAB[j_])} behind {int(bAB[j_])} gFront {int(gFront[j_])}')
+            print(f'   DIAG {"seg " + str(int(u_)) if u_ < 256 else "comp " + str(int(u_) - 256)} ({int(px_[u_])} px, d {depth_of_disp_early(medD[u_]):.3f}) -> {"THING" if thing[u_] else "surface"}; median boundary {med_:.0f}; ' + ' | '.join(rows_))
+    newId = np.zeros(nU, np.int32); k_ = 1
+    for u_ in np.flatnonzero(thing): newId[u_] = k_; k_ += 1
+    oid = newId[unit].reshape(ph, pw)
+    nSeg = int((px_[1:256] > 0).sum()); nSegT = int(thing[1:256].sum()); nRem = int((px_[256:] > 0).sum()); nRemT = int(thing[256:].sum())
+    print(f'things and surfaces: labelled segments {nSeg} -> {nSegT} things; unlabelled depth components {nRem} -> {nRemT} things; {k_ - 1} things in all, the rest background  ({time.time() - tb0:.1f}s)')
+    big_ = np.argsort(-px_)[:10]
+    for u_ in big_:
+        if px_[u_] == 0: continue
+        print(f'   unit {"seg " + str(int(u_)) if u_ < 256 else "comp " + str(int(u_) - 256)}: {int(px_[u_])} px, median depth {depth_of_disp_early(medD[u_]):.3f} -> {"thing" if thing[u_] else "surface"}')
+    if k_ > 1 and not A.mask: A.mask = 'things'; A.twosided = not A.no_twosided
+if A.mask:
     jh &= (oid[:, :-1] == oid[:, 1:]); jv &= (oid[:-1, :] == oid[1:, :])
     print(f'object mask: {len(np.unique(oid)) - 1} objects, {int((oid > 0).sum())} texels')
 def runs_1d(joinedNext, axis):
@@ -439,12 +498,28 @@ for s in range(nS):
             y0m = min(y0m, ys); y1m = max(y1m, ye); x0m = min(x0m, xs); x1m = max(x1m, xe)
             if twoSided:
                 xx, yy = bx_ - dx * n, by_ - dy * n; closed = False; bid = oidArr.flat[b] if oidArr is not None else -1
+                # The span is closed when the march, skipping the occluder's own id, exits onto this sheet's own join-law component.
+                # Three S15-motivated variants were tried and FALSIFIED (S35 §22): closed = the same THING on the far side, closed on
+                # ANY axis, and a self-occlusion stop (the first own-id texel behind the band texel closes the span). None brought S15
+                # under 3 m and together they broke vermeer (v jumps 5 539 -> 16 788, the table's own folds behind the table) and
+                # the troll (the skin behind the troll). The adopted rule below is the one §18 measured.
+                # The span is closed when the march, skipping the occluder's own id, exits onto this sheet's own join-law component
+                # (the §18 rule). FALSIFIED variants (S35 §22), all aimed at S15's canopy behind its own trunk: closed = the same
+                # THING on the far side; closed on ANY axis; a self-occlusion stop (the first own-id texel behind the band texel
+                # closes the span) with same-id demotion lifted on the self-revealed band. None brought S15 under 3 m; together they
+                # broke vermeer (v jumps 3 339 -> 16 788: the table's own folds behind the table) and the troll (his skin behind him).
                 while 0 <= xx < pw and 0 <= yy < ph:
                     i3 = yy * pw + xx; c_ = comp[i3]
                     if compSize[c_] >= 3 and not band[yy, xx] and not (oidArr is not None and oidArr.flat[i3] == bid and bid > 0): closed = (c_ == compOfSurf[s]); break
                     xx -= dx; yy -= dy
                 if not closed: _wmark[ys:ye, xs:xe] = True; anyWeak = True
-                closeStat.setdefault(s, {'closed': 0, 'open': 0})['closed' if closed else 'open'] += 1
+                cs_ = closeStat.setdefault(s, {'closed': 0, 'open': 0, 'exit': {}}); cs_['closed' if closed else 'open'] += 1
+                if not closed:
+                    if not (0 <= xx < pw and 0 <= yy < ph): ek = 'edge'
+                    else:
+                        eo = int(oidArr.flat[yy * pw + xx]) if oidArr is not None else 0
+                        ek = ('bg d=%.2f' % dQ.flat[yy * pw + xx]) if eo == 0 else ('thing %d d=%.2f' % (eo, dQ.flat[yy * pw + xx]))
+                    cs_['exit'][ek] = cs_['exit'].get(ek, 0) + 1
             reachMax[s] = max(reachMax[s], n)
             if not A.no_extend: holes.add(int(holeLab[by_, bx_]))
             if dx != 0: reachX[s] = max(reachX[s], n)
@@ -482,7 +557,10 @@ for s in range(nS):
             reachOwn[s] = E; Rg = min(Rg, E)
         geoInfo[s] = (np.array(sorted({int(b) for r in members[s] for (b, k) in rimOf[r]}), dtype=np.int64), Rg, (np.setdiff1d(domStop[s], domWeak[s]) if (isObj and (A.twosided or A.twosided_all)) else None))
 if closeStat:
-    print(f'closure (masked objects): closed {sum(cs["closed"] for cs in closeStat.values())}, open {sum(cs["open"] for cs in closeStat.values())} marches')
+    print(f'closure (things): closed {sum(cs["closed"] for cs in closeStat.values())}, open {sum(cs["open"] for cs in closeStat.values())} marches')
+    for s_, cs in sorted(closeStat.items(), key=lambda kv: -(kv[1]['closed'] + kv[1]['open']))[:3]:
+        top = sorted(cs['exit'].items(), key=lambda kv: -kv[1])[:6]
+        print(f'   thing surface {s_} (id {int(oidArr.flat[members[s_][0]]) if oidArr is not None else 0}, rim depth {np.median(dQ.ravel()[np.array(members[s_])]):.3f}, {len(members[s_])} rims): closed {cs["closed"]}, open {cs["open"]}; open exits: ' + ', '.join(f'{k} x{v}' for k, v in top))
 comp.astype(np.int32).tofile(f'{OUT}/comp.i32')
 np.asarray(groupOf, dtype=np.int32).tofile(f'{OUT}/groupOf.i32')   # join-law component of each surface, for the faceting instrument
 if A.patches: compJ.astype(np.int32).tofile(f'{OUT}/compJ.i32')

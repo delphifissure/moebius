@@ -614,3 +614,102 @@ conjugate-gradient noise below 1/1000 of a visible step, with no owner changes).
 Where the 74 s goes now: runs, rims, components, patches and merge ~16 s; the domain pass ~40 s, of which the remaining
 Python is the two-sided closure walk for masked objects; the order 9 s. Peak memory 4.5 GB (was 10 GB). The sunflower
 field's plane-only bake is 27 s.
+
+## 21. Correction to §17, and the three items (staircase, segmentation, S9)
+
+**§17 was wrong about the sunflower staircase.** It said the steps were in neither arm's far field. They are in the adopted
+arm's field, and the gamma panel hid them: beside the big head (id 1, rows 179–389, cols 313–407; the 6 287 band texels to
+its right) the adopted arm fills 0.30–0.43 — leaves, extended sideways into the sky — with 56 row-to-row jumps over a step
+in 210 rows, 33 of them over three steps, the largest 77 steps. The per-line law fills the same texels with 0.009, the sky,
+for the upper two thirds and foliage only near the bottom, 33 jumps. The staircase in the render is the reveal width
+stepping row by row with those facet depths. So on this picture the adopted sheets are *worse* than the app's law behind the
+big head, and it is the §15 problem in its plainest form: unmasked leaves treated as background reach the head's hole
+through its stem's band and, being nearer than the sky, win. The per-line law escapes it by its axis arbitration (the row
+through the head meets sky on the far side), not by a principle. Item 2 therefore folds into item 3: the automatic
+segmentation (S28's SAM pipeline, `--auto`) is the test, on the sunflowers, the troll, starwatcher and S9.
+
+**S9's 3 cm is the same thing on the kit.** The scene is three quads at different depths before a brick wall on a checker
+floor. Behind the red quad the truth is the wall; the sheets fill 26 986 texels with the middle quad's plane (0.2739,
+error 0.064 m) because the quad, unmasked, is a background surface that continues. The per-line law fills the wall. The
+kit has no object mask for S9, so the automatic segmentation is tried there too, where truth can score it.
+
+## 22. Items 2–4: the things/surfaces classifier, what it fixes, where it is wrong, and what was falsified on the way
+
+**The question behind all three items.** The adopted arm (§18) knows two kinds of visible material: masked objects (two-sided:
+their sheets continue behind another object only where a march across that object exits onto the sheet's own component)
+and everything else, which is background and continues one-sidedly into any hole it reaches. The staircase beside the big
+sunflower head (§21), S9's 3 cm (an unmasked quad extended as background) and the "segmentation completeness" item are one
+question: which visible units are bounded THINGS and which are SURFACES, when the mask is partial or absent.
+
+**The classifier (opt-in, `--things`).** Every visible unit — a mask segment where there is one, a join-law component of the
+depth map otherwise — is a thing iff, for some neighbouring unit whose shared boundary is at least the unit's median shared
+boundary, the boundary pairs where this unit is nearer by more than the tolerance outnumber those where it is farther, AND
+the unit's median disparity is nearer than the neighbour's by more than the larger of the two median tolerances. Things get
+ids and are two-sided; surfaces become background. No constant; the tolerance is the app's `tolAt`. SAM 2.1's automatic
+mode was run on every picture (`--auto --n 0`, S28's constants) and gives 12 (vermeer), 16 (troll), 32 (starwatcher),
+91 (sunflowers) and 205 (S9) segments, with the sky, the ground plain and single bricks among them and 26 % of the sunflower
+picture unlabelled; the classifier is what turns that into an object map.
+
+**Results (plane-only unless noted; stop arm; jumps v (length) h (length); kit = band depth error vs the first hidden layer).**
+
+| test | adopted §18 | + classifier | verdict from the buffer |
+|---|---|---|---|
+| S2 | 0.0121 m | **0.0000 m** | right |
+| S9 (no mask) | 0.0320 m | **0.0000 m** | right; the auto SAM mask alone, no classifier, also gives 0.0000 |
+| S26 | 0.0252 m | 0.0281 m | slightly worse |
+| S15 | 0.0717 m | **8.55 m** | wrong: the tree (trunks + canopy, one unit of 240 k px) is a thing, so the canopy may not fill behind its own trunk; the sky does |
+| vermeer, 9-click mask | v 3 340 (26 180) h 55 526 (153 620) | v 3 339 (26 176) h 55 526 (153 617) | identical in effect (309 things, 301 of them depth-only specks) |
+| vermeer, auto mask | — | v 360 (6 901) h 508 (39 933) | **wrong: the floor is lost** — behind the legs rows 920/960/1000 read 0.008 (the wall) instead of 0.024/0.066/0.105 |
+| troll, 13-click | v 46 683 (380 291) h 25 246 (348 877) | v 1 961 (36 975) h 30 565 (108 828) | **wrong: x-ray** — the band behind the troll is the deepest gap between the trees (depth ≈ 0), not the forest |
+| troll, auto | — | v 5 521 (95 706) h 8 583 (101 267) | same x-ray |
+| starwatcher, no mask | v 42 701 (241 932) h 3 975 (108 099) | identical | 17 things, none touching the band |
+| starwatcher, auto | — | v 2 232 (48 897) h 1 161 (21 262) | render pending at the time of writing; not judged |
+| sunflowers, 9-click (geo) | v 26 886 (447 679) h 19 975 (437 808) | — | beside the big head: fill 0.28/0.40/0.42 (p10/50/90), 0 of 211 rows sky, 60 row jumps — the staircase |
+| sunflowers, auto, no classifier | v 15 015 (327 626) h 14 854 (359 509) | — | 0 of 211 rows sky, 43 jumps: the unlabelled 26 % (leaves) still fills as background |
+| sunflowers, auto + classifier | — | **v 1 349 (24 540) h 1 856 (15 443)** | 197 of 211 rows sky, 0 jumps; the lower band is the distant field (0.15): the plausible layering |
+
+Figures: `s35/look_vermeer_ta2.png` (vermeer auto: one wall sheet, no floor), `s35/look_troll_t13.png` (troll: the far field
+inside the troll is black = the deep gap), `s35/look_room_ta.png` and `s35/look_room_nt.png` (sunflowers: sky + field vs
+leaves), `s35/floor_look_ta.png`.
+
+**Why the two failures are the same failure.** The classifier's model is "things never continue behind other things unless
+the march across closes on their own component". Behind the troll the marches of every tree exit onto *another* tree
+(208 of 407 depth components are things), so every tree is open, a hedge, and the only fitted sheet that reaches is the deep
+background: an x-ray to the deepest surface. Behind the sunflower head the same x-ray gives the sky and the distant field,
+which is right there because the sunflowers are sparse before a real background; a forest IS the background. A closure
+that would tell the two apart without a constant (a tree exits onto "similar" depth, a leaf onto the sky) was not found: the
+join tolerance is one visible step, which no two trees satisfy, and anything looser is a number.
+
+**The floor vote (vermeer auto) is a flaw in the local test, recorded, not fixed.** The floor (depth component of 174 759 px,
+median depth 0.167) was voted a thing by a SAM piece of the floor itself (20 605 px, 0.069): of their 470 boundary pairs, 468
+are continuous, 2 have the floor nearer, 0 farther; "nearer pairs outnumber farther pairs" passes on 2 : 0. Requiring the
+majority of ALL pairs would fail the milkmaid against the same floor (643 nearer of 2 282; the rest continuous at her hem,
+where DA3 blends her into the floor). The honest test is the unit's plane against the neighbour's boundary texels, not
+pairwise depths; not built, because the troll and S15 failures are structural and would remain.
+
+**Falsified on the way (all removed from the code, rule 7).** All were aimed at S15's canopy behind its own trunk.
+1. *Closure against the same THING instead of the same component*, *closed on ANY axis*, and *same-id demotion lifted when
+   two-sided* (the three together): S15 8.5 → 3.29 m, still wrong; and — the confound only found by a clean A/B — they broke
+   vermeer WITHOUT the classifier: 9-click v jumps 3 340 → 16 788 (length 26 180 → 665 559), the table's own folds filling
+   behind the table (`look_vermeer_t9.png`). With the closure restored the 9-click run is bit-identical to `s35_plane`.
+2. *Self-occlusion stop* (a same-id march stops at the first own-id texel behind the band texel): the milkmaid's band filled
+   with her dress, the troll's with his skin (`look_vermeer_ta.png`, `look_troll_ta.png`): the foreground clone as
+   background, the one thing the brief forbids.
+3. *Self-occlusion band* (band texels revealed by a rim of their own thing keep the thing's own sheets, and such a march
+   closes on the first own-id texel behind): S15 3.64 m; vermeer 9-click v 3 339 → 11 789 (length 1 195 418); vermeer auto
+   360 → 6 364 (901 438); troll 13-click 1 961 → 18 153.
+After the removals the default arm reproduces §18 exactly (S15 0.0717 m, v 5 183 (768 829) h 4 360 (823 833); vermeer
+9-click bit-identical).
+
+**App-side finding recorded here.** Starwatcher's dump was degenerate (effective quantum = grid): S10c's gate (`moebius.js`
+~14572–14594) applies the visible-step floor only when the median second difference σ > 0, and on a sky-heavy DA3 map σ = 0.
+`FLAGS=_visStep=1` forces the floor (`starwatcher_vs`); the gate wants a case for σ = 0 in the app. Not changed.
+
+**Where this leaves items 2–4.**
+- Item 4 (S9): solved by the object map — the automatic SAM mask alone gives 0.0000 m under the adopted arm; the classifier
+  is not needed for it.
+- Item 2 (staircase): needs the classifier or its principle (the unlabelled leaves must be things); the adopted arm with the
+  auto mask keeps the staircase (43 jumps).
+- Item 3 (completeness): the classifier is the only candidate and it is wrong in clutter (troll) and for a thing before its
+  own body (S15). It stays opt-in. The decision — classifier off (troll right, sunflowers staircase), on (sunflowers right,
+  troll x-ray), or a per-picture switch in the panel — is the user's; the numbers and buffers above are the case.

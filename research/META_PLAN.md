@@ -181,3 +181,15 @@ never-read extend domain no longer built, the rim-pinned residual off by default
 already shown it adds noise), geodesic discs by C dilation, three forked plate workers with BLAS pinned. The Silver Warrior
 GIF was measured: a horizontal pendulum of ±5 % of the width with the pivot mid-scene, so it never reveals more than a few
 per cent of the picture where the app's envelope reveals 41 %; its cleanliness is amplitude and one axis, not a fill law.
+
+**S35 §21–§22, the three items and the things/surfaces classifier (2026-09-17).** §17 was wrong: the sunflower staircase IS in
+the adopted arm (unlabelled leaves extended into the sky beside the big head, 60 row jumps), the same failure as S9's 3 cm
+(an unmasked quad extended). A things/surfaces classifier over every visible unit (SAM segment or depth component; a thing
+iff nearer than a neighbour along their boundary and by medians, no constant) fixes S9 and S2 to 0.0000 m and the sunflowers
+(197 of 211 rows sky, 0 jumps), leaves vermeer 9-click unchanged, and is wrong on the troll (x-ray: every tree is a thing,
+none closes, the deep gap fills the whole band), on vermeer with the auto mask (the floor voted a thing on 2 of 470 boundary
+pairs) and on S15 (8.55 m: the canopy may not fill behind its own trunk). Four closure variants aimed at S15 were falsified
+and removed; one clean A/B showed three of them had broken vermeer without the classifier (v jumps 3 340 → 16 788). Default
+arm restored bit-identically; classifier opt-in (`--things`). S9 alone is also fixed by the auto SAM mask under the adopted
+arm. Decision for the user: classifier on/off/per picture. App-side: S10c's σ = 0 gate leaves sky-heavy maps at quantum = grid
+(starwatcher; `_visStep=1` forces the floor).
