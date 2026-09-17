@@ -743,7 +743,7 @@ the last occluder texel and the first far texel), but the first far texel is a b
 of the rims, and the colour edge lies one or more texels inside the far run in a third to a half of them (soft outlines, DA3's
 edge a texel inside the painted one). With a window of two texels, that texel IS the fill colour.
 
-**Measurement 2 — the fill itself** (`s35/bleed/ringcontam.py`, on `plateColor.u8`): the occluder's share of the fill colour
+**Measurement 2 (SUPERSEDED by §24 — read that first)** — the fill itself (`s35/bleed/ringcontam.py`, on `plateColor.u8`): the occluder's share of the fill colour
 (0 = the far surface's own colour, 1 = the occluder edge colour), on the inner ring and 6 / 15 texels into the band:
 
 | picture | inner ring | 6 texels in | 15 texels in |
@@ -796,3 +796,57 @@ average. The run median alone takes out nine tenths of the contamination; the sk
    per-line ring at all. This is item 1's atlas per sheet.
 3. The render harness injects the sheets' colour with their geometry, so the screengrabs show the sheets' fill, not the
    per-line one under sheet geometry.
+
+
+## 24. The colour window tested in the app and FALSIFIED as the fix (S35 §23 step 1, 2026-09-17)
+
+§23's plan was to replace the band's colour window (the depth fit's window, the gap plus one texel) with the far run's own
+colour past a blend skip. Three arms were built in `moebius.js` behind `window._colorWindow` and baked on five pictures
+(troll, vermeer, sunflowers, silverwarrior, starwatcher; ten probe bakes, `harness/shots/a257probe/c_<picture>_{before,after,shift}`):
+
+- **fit** — the law as it stands: the mean over `w = min(len, g+1)` texels from the rim texel;
+- **run** — the median over the whole far run, after skipping leading texels that are blends of the occluder
+  (a texel is skipped while it lies toward the occluder's edge colour and farther from the run's median than the run's own
+  colour spread, the median absolute deviation scaled by 1.4826; no picture constant);
+- **shift** — the same skip, then the median over the fit window's width, keeping the colour local to the texel's own part
+  of the run.
+
+**The result: the three are visually indistinguishable** (`s35/bleed/arms_vermeer_hip.png`, `s35/bleed/arms_troll_arm.png`;
+colour, depth, then the three fills). The measurements say the same:
+
+| picture | occluder share at the silhouette: fit → run | seam vs the visible far surface: fit → run → shift | streaks across the lines |
+|---|---|---|---|
+| troll | +0.76 → +1.00 | — | unchanged |
+| vermeer | +0.25 → +0.12 | 82 → 100 → 103 | 1.49 → 1.60 → 1.60 |
+| sunflowers | +0.37 → +0.32 | — | unchanged |
+| silverwarrior | +0.74 → +0.67 | — | unchanged |
+| starwatcher | +0.29 → +0.20 | — | unchanged |
+
+**Why §23's diagnosis was half wrong.** The fit window is `g+1`, where `g` is the gap from the band texel to its rim. It is
+short ONLY for band texels within a few texels of their rim — 2–4 % of the band. For the rest (vermeer: 22 045 of 26 000
+sampled at `g > 40`) the old window already spans the whole run, so fit and run agree to 0.01 in occluder share. §23's
+"occluder share 0.2–0.5 across the band" compared a fill that is legitimately a long average of the run against a LOCAL
+reference eight texels past the rim: it measured non-locality, not contamination. The rim-texel measurement in §23 stands
+(the first far texel is occluder-coloured in 52–62 % of rims); it simply does not drive the fill.
+
+**What the buffer says instead** (trace of the troll's arm band, `s35/bleed/verify_impl.py` and the trace in the log):
+- band texel (252,524), source colour (50,52,53): its far side is a rim **400 texels away**, run length 55, colour
+  (131,130,108) — the pale wash over the arm. The colour is a faithful sample of the surface the GEOMETRY chose;
+- band texel (214,491): its two rims have run lengths **1 and 2**. There is no clean colour to read at all — no window rule
+  can help, because the only evidence is a blend;
+- 25–29 % of rims on the troll have a run shorter than four texels.
+
+So the bleeding the eye sees at a silhouette is the far-side CHOICE (which surface is continued, and from how far away),
+and the streaks are that choice changing from line to line — the per-line law's own seams, the thing the sheets remove.
+The colour stage is downstream of both and faithfully reports them.
+
+**Removed (rule 7).** `bgRunColor`, the `_colorWindow` arms, the run-length export (`farRimL`) and an untested `_colorTrust`
+rule (a rim whose blend skip cleared no texel gives no Dirichlet value and becomes a membrane unknown) are removed from
+`moebius.js`; the app is byte-identical to before this test. The instruments stay in `s35/bleed/` (`score3.py` by gap,
+`score4.py` at the silhouette, `crops.py`, `verify_impl.py`) and the ten probe dumps stay on disk.
+
+**Where this leaves the colour.** Step 2 of the §23 plan is now the whole of it: the colour of a band texel comes from the
+SHEET that owns it, sampled from that sheet's own visible texels away from its silhouette. That fixes both causes at once —
+one surface per band region instead of a per-line choice, and no per-line ring — and it is the same construction as the
+per-sheet atlas (item 1). Step 3 (the render harness injecting the sheets' colour with their geometry) stands: until it is
+done, every sheet screengrab carries the per-line fill over sheet geometry.

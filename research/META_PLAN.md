@@ -202,3 +202,12 @@ and the occluder's share of the fill is 0.2–0.5 across the band. Remedy previe
 constant-free blend skip brings the share to 0.00–0.04. The streaks are the per-line ring plus the per-line geometry; the sheet
 renders still carried the per-line colour (harness). Plan: run-median colour in the app; per-sheet colour fields in the
 prototype; the harness to inject colour with geometry.
+
+**S35 §24, the colour window falsified (2026-09-17).** The §23 remedy was built in the app behind `_colorWindow` (three arms:
+the fit window, the run median past a blend skip, the fit window past the blend) and baked on five pictures. The arms are
+visually indistinguishable and the seam against the visible far surface gets worse (vermeer 82 → 100). The fit window is short
+only for the 2–4 % of band texels within a few texels of their rim; elsewhere it already spans the whole run. §23's
+"contamination across the band" measured non-locality against a local reference, not contamination, and is corrected. The
+buffer shows the real cause: the far side chosen can be a different surface 400 texels away (the troll's pale arm wash), and
+25–29 % of rims have runs under four texels where no clean colour exists. All of it removed from the app (rule 7); the fix is
+per-sheet colour (§23 step 2), which is the same construction as the per-sheet atlas.
