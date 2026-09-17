@@ -850,3 +850,66 @@ SHEET that owns it, sampled from that sheet's own visible texels away from its s
 one surface per band region instead of a per-line choice, and no per-line ring — and it is the same construction as the
 per-sheet atlas (item 1). Step 3 (the render harness injecting the sheets' colour with their geometry) stands: until it is
 done, every sheet screengrab carries the per-line fill over sheet geometry.
+
+## 25. Colour folded into the sheet model (§23 step 2 and step 3, 2026-09-17)
+
+§24 left the colour with one cause to fix and it is upstream: the fill follows whatever far side the per-line law chose, so a
+band texel can be washed with a surface 400 texels away, and neighbouring lines disagree. The answer is the same object as
+the per-sheet atlas: **the colour of a band texel is its owning SHEET's own colour, continued.** Built in `sheets.py`
+behind `--color`, with `--rgb` for the source image.
+
+**The construction.**
+1. The colour's unit is the **visible surface** (the join-law component), not the planar patch the depth fit uses. Colour
+   does not obey planarity: a wall split into facets is one painted surface. (Grouping by patch first left 88 % of vermeer's
+   band with nothing to extend from, and blotched it — `s35/bleed/` has that version's render.)
+2. Each band texel belongs to the surface of the sheet that owns it (`who`), and its colour is the **harmonic extension**
+   of that surface's own visible colour over the texels it owns (Perez, Gangnet & Blake 2003), solved per surface, so no two
+   surfaces ever mix and there is no per-line ring anywhere.
+3. The extension may not be anchored on the source's **anti-aliased fringe**: the surface's texels at a silhouette are
+   mixtures of it and the occluder (§23: the first far texel is occluder-coloured in 52–62 % of rims). The fringe's width is
+   **measured on the picture**, not assumed — at every step edge, the number of leading texels on the far side closer to the
+   near side's colour than to the far side's own colour, median over that picture's edges. It comes out 1 texel on vermeer,
+   the troll and the sunflowers, 0 on starwatcher. Those texels join the unknowns and keep their source colour in the output
+   (they are visible at rest; only band texels are written).
+4. Where the owning surface is **not adjacent** to the texels it owns — ownership is by depth, not adjacency, and on S9 that
+   is every band texel — the extension has nothing to propagate from. Those texels take the surface's own **colour model**:
+   a plane per channel over its clean visible texels, clipped to the range that surface actually shows, the same
+   construction the depth uses, and still coupled to the Laplacian so the field is smoothed rather than stamped.
+5. `sheet_render.js` now takes `COLORPNG=` and replaces the plate's colour map with the sheets' own (step 3). Until this,
+   every sheet screengrab carried the per-line fill over sheet geometry.
+
+**Scored against the kit's hidden-layer colour** (`scope_gt.npz` `rgb`, the first hidden layer in the band; |fill − truth|
+summed over channels, median):
+
+| scene | sheets' colour | the app's per-line fill | the source itself (a clone) |
+|---|---|---|---|
+| S15 (tree, sky) | **53.8** | 170.0 | 76.0 |
+| S9 (quads, wall) | **146.0** | 177.0 | 237.0 |
+| S2 | 91.8 | **86.0** | 150.0 |
+| S26 (quads) | 91.0 | **56.0** | 101.0 |
+
+**What that says.** The colour now follows the geometry exactly, so its error tracks the model's OWNERSHIP error. Where the
+sheets' depth is much better than the per-line law, the colour is much better (S15, a third of the app's error; S9). Where
+the sheet model picks the wrong surface — S9's unmasked quad (§21), S26's quads — the colour is the wrong surface's colour,
+and the app's per-line read of a locally chosen run wins. The colour law adds no error of its own: it is the same evidence,
+grouped by surface instead of by line.
+
+Measured on the pictures too (`s35/bleed/score5.py`): the fill's texel-to-texel variation inside the band drops
+(vermeer mean |dC| 1.54 → 1.06 vertical, sunflowers 3.96 → 3.30) — fewer streaks, as intended. The "fill within the noise of
+its own source colour" count rises (vermeer 0.2 → 8.1 %, troll 7.2 → 32 %), but that instrument is not a clone detector on
+a dark picture: a band correctly filled with dark forest lands within the noise of the dark occluder beside it. Recorded as
+measured and not used as a verdict.
+
+**Renders through the app at p45** (`s35/bleed/`, three panels: the per-line law, sheet geometry with the per-line colour,
+sheet geometry with the sheets' colour): on **vermeer** the band behind the milkmaid becomes a smooth wall wash and the
+banding at her right edge goes (`vermeer_color2_p45.png`); on the **sunflowers** colour and geometry now agree, which makes
+the staircase read as foliage instead of a pale card (`room_color2_p45.png`) — the geometry is the §22 question, not the
+colour's. Buffer crops of the two fills side by side: `fillcmp_vermeer_hip.png`, `fillcmp_vermeer_shoulder.png`.
+
+**Falsified on the way (removed, rule 7).** The fallback for non-adjacent owners was first the surface's **nearest clean
+sample** instead of its colour model; measured against the kit it is worse (S9 146 → 181, S26 91 → 96, S15 53.8 → 53.3,
+S2 unchanged), so the colour model stays.
+
+**Open.** (i) the app itself is untouched: this is the offline prototype plus the render harness, and moving it into the app
+is the atlas work (item 1); (ii) S26 and S2 say the wash still loses to a locally chosen run where ownership is wrong, which
+is the §22 classifier question again; (iii) plate 2 has no sheet colour yet.

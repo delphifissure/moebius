@@ -211,3 +211,12 @@ only for the 2–4 % of band texels within a few texels of their rim; elsewhere 
 buffer shows the real cause: the far side chosen can be a different surface 400 texels away (the troll's pale arm wash), and
 25–29 % of rims have runs under four texels where no clean colour exists. All of it removed from the app (rule 7); the fix is
 per-sheet colour (§23 step 2), which is the same construction as the per-sheet atlas.
+
+**S35 §25, colour folded into the sheet model (2026-09-17).** A band texel's colour is now its owning sheet's own colour,
+continued: grouped by visible surface (not planar patch), harmonic extension per surface, the source's anti-aliased fringe
+measured per picture (1 texel on three pictures, 0 on starwatcher) and left unanchored, and a per-surface colour plane where
+the owner is not adjacent to what it owns. `sheet_render.js` injects it with the geometry, so screengrabs finally show the
+sheets' own fill. Against the kit's hidden-layer colour the sheets beat the app where their depth is better (S15 54 vs 170,
+S9 146 vs 177) and lose where ownership is wrong (S26 91 vs 56, S2 92 vs 86): the colour adds no error of its own, it
+reports the model's ownership. Streaks inside the band drop (vermeer |dC| 1.54 → 1.06). Nearest-clean-sample fallback tried
+and rejected (S9 146 → 181). The app is untouched; moving this in is item 1.

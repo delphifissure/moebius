@@ -38,6 +38,8 @@ from PIL import Image
 ap = argparse.ArgumentParser()
 ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', type=float); ap.add_argument('--q', type=float, default=1 / 65535)
 ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--twosided', action='store_true', help='an OBJECT surface (mask id > 0) passes behind an occluder only where its own rims close the span on both sides of the line (S3 kind-2: a same-surface pair is a positive detection); a one-sided march of an object sheet is a hedge'); ap.add_argument('--twosided-all', action='store_true', help='the two-sided rule for every surface, not only masked objects (backgrounds end at corners too); the ground plane is the exception'); ap.add_argument('--fused', action='store_true', help='a visible component whose boundary to other mask ids is depth-JOINED on the majority of its length is fused with its neighbours (DA3 gives a narrow background gap between two near objects the objects\' depth); its sheet is a hedge, never a measurement'); ap.add_argument('--planeprior', action='store_true', help="the thin plate is pulled toward its own face's plane on the domain with weight 1/visible step, against the strip data at weight 1/sigma: the plate is free to bend where the data supports it and relaxes to the plane where it does not"); ap.add_argument('--smooth', action='store_true', help="faceting: adjacent planar patches of one surface are rejoined when their planes differ by less than the visible step over the smaller patch's own extent (a crease test, not a flatness test), so a smoothly curved surface is one face again and only real creases stay split"); ap.add_argument('--budget', action='store_true', help="per-texel error budget: the fitted slope is shrunk by its own predicted standard error against the visible step, so a sheet continues its slope only as far as its own fit supports it and relaxes to its constant beyond that; continuous, no new constant"); ap.add_argument('--faces', action='store_true', help="faceting: every facet of one join-law component is extended over that component's whole 2-D domain instead of its own disc, so the layered order picks the nearest facet everywhere and the sheet is continuous, with creases where the facets' planes cross"); ap.add_argument('--reach', action='store_true', help="where a sheet ends: it continues into the hole no farther than the surface itself extends outside it (geodesic radius of its own visible patch from its rims), instead of as far as the hole is deep"); ap.add_argument('--geo', action='store_true', help='2-D domain: a sheet claims the band texels within geodesic reach of its rims through the band (reach = its own longest march) instead of the along-line marches only'); ap.add_argument('--patches', action='store_true', help='split every visible component into planar patches (region growing; a texel joins while one plane fits the patch within the visible step tolAt); patches are the surfaces'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
+ap.add_argument('--color', action='store_true', help="per-sheet colour (S35 §25): every band texel's colour is its OWN sheet's visible colour continued over the texels that sheet owns (harmonic extension per sheet), never a per-line rim window; the source's anti-aliased fringe at each silhouette is measured on the picture and left unanchored")
+ap.add_argument('--rgb', help='the source colour image (defaults to <dump>/color.png)')
 ap.add_argument('--things', action='store_true', help='things/surfaces classifier (S35 §22, opt-in): every visible unit (mask segment or depth component) that is in front of a neighbour becomes a two-sided thing, the rest background. Fixes the sunflower staircase, S9 and S2; wrong on the troll (x-ray to the deepest surface behind him), on vermeer with the automatic mask (the floor voted a thing) and on S15 (a canopy behind its own trunk) -- see the note'); ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
 ap.add_argument('--no-smooth', action='store_true'); ap.add_argument('--no-tps', action='store_true'); ap.add_argument('--no-prior', action='store_true'); ap.add_argument('--no-patches', action='store_true')
 ap.add_argument('--no-evidence', action='store_true'); ap.add_argument('--no-geo', action='store_true'); ap.add_argument('--no-fused', action='store_true'); ap.add_argument('--no-twosided', action='store_true'); ap.add_argument('--no-drop-thin2', action='store_true')
@@ -1010,6 +1012,177 @@ for label, doms in ([('stop', domStop)] + ([] if A.no_extend else [('extend', do
     results[label] = dict(ff=ff, ff2=ff2, who=who.reshape(ph, pw), reached=reached.reshape(ph, pw))
     ff.astype(np.float32).tofile(f'{OUT}/farField_{label}.f32'); ff2.astype(np.float32).tofile(f'{OUT}/farField2_{label}.f32'); who.astype(np.int32).tofile(f'{OUT}/who_{label}.i32')
 results['perline'] = dict(ff=ffL)
+
+# ---- per-sheet colour (S35 §25) ----
+# The app colours a band texel from the rim its own LINE found, with a window sized by the depth fit, and lets a membrane
+# spread those values across the band; §24 measured what that costs — the colour follows a per-line far-side choice, so a
+# texel can be washed with a surface 400 texels away, and neighbouring lines disagree. Here the colour comes from the SHEET
+# that owns the texel: the sheet's own visible colour, continued over the texels it owns, and nothing else. The continuation
+# is the harmonic extension (Perez, Gangnet & Blake 2003) of that sheet's visible colour, solved per sheet, so no two
+# surfaces ever mix and there is no per-line ring at all.
+# The one quantity it needs is the BLEND FRINGE: the source's own edges are anti-aliased, so the surface's texels at its
+# silhouette are mixtures of it and the occluder. Anchoring the extension there paints the occluder into the band (§23's
+# measurement: the first far texel is occluder-coloured in 52-62 % of rims). The fringe's width is measured from this
+# picture, not assumed: at every step edge, the number of leading texels on the far side that are closer to the near side's
+# colour than to the far side's own colour; the picture's fringe is the median over its edges. Those texels join the
+# unknowns, so the extension is anchored only on clean colour, and they keep their source colour in the output (they are
+# visible at rest; only band texels are written).
+if A.color:
+    tC0 = time.time()
+    rgbc = A.rgb or (f'{P}/color.png' if os.path.exists(f'{P}/color.png') else None)
+    if rgbc is None or not os.path.exists(rgbc): print('[colour] no source colour image; --color skipped')
+    else:
+        _im = Image.open(rgbc).convert('RGB')
+        COL = np.asarray(_im if _im.size == (pw, ph) else _im.resize((pw, ph), Image.BILINEAR)).astype(np.float64).reshape(N, 3)
+        who = results['stop']['who'].ravel(); bandF = band.ravel()
+        # the colour's unit is the VISIBLE SURFACE, not the planar patch: colour does not obey planarity, and a wall split
+        # into facets by the depth fit is one painted surface. (With patches as the surfaces, the owner of a band texel is
+        # rarely the same patch as the visible texel beside it, so grouping by patch left 88 % of vermeer's band with no
+        # value to extend from and blotched it with per-patch colour models.)
+        cgrp = compJ if A.patches else comp
+        grpOfSheet = np.array([int(cgrp[members[s_][0]]) if len(members[s_]) else -1 for s_ in range(nS)] + [-1], dtype=np.int64)
+        # build() marks the app's fitted GROUND plane with the owner index nS: it is a plane, not a visible component, so its
+        # colour comes from the surface its own visible texels belong to (the floor)
+        if gtex is not None:
+            gv = np.flatnonzero((gtex > 0) & ~band.ravel())
+            if len(gv): grpOfSheet[nS] = int(np.bincount(cgrp[gv]).argmax())
+        # 1 the blend fringe, measured on this picture's own step edges
+        idx2 = np.arange(N).reshape(ph, pw); prof = []
+        for ax_ in (0, 1):
+            I_ = (idx2[:, :-1] if ax_ == 0 else idx2[:-1, :]).ravel(); Jn = (idx2[:, 1:] if ax_ == 0 else idx2[1:, :]).ravel()
+            jn = (jh0 if ax_ == 0 else jv0).ravel(); st_ = 1 if ax_ == 0 else pw
+            for near, far, sgn in ((I_, Jn, +1), (Jn, I_, -1)):           # 'far' is the background side, stepping away by sgn
+                m_ = (~jn) & (DISP.ravel()[near] > DISP.ravel()[far] + TOL.ravel()[far])
+                f_ = far[m_]; n_ = near[m_]
+                if not len(f_): continue
+                pos = (f_ % pw) if ax_ == 0 else (f_ // pw); lim = pw if ax_ == 0 else ph
+                ok = (pos + sgn * 11 >= 0) & (pos + sgn * 11 < lim)
+                f_ = f_[ok]; n_ = n_[ok]
+                if not len(f_): continue
+                o_ = COL[n_]; ref = np.median(np.stack([COL[f_ + sgn * k * st_] for k in range(4, 12)], 0), 0)
+                good = np.linalg.norm(o_ - ref, axis=1) > 24
+                if not good.any(): continue
+                o_ = o_[good]; ref = ref[good]; f2 = f_[good]
+                cnt = np.zeros(len(f2), np.int64); alive = np.ones(len(f2), bool)
+                for k in range(4):
+                    ck = COL[f2 + sgn * k * st_]
+                    c_ = alive & (np.linalg.norm(ck - o_, axis=1) < np.linalg.norm(ck - ref, axis=1))
+                    cnt += c_; alive &= c_
+                prof.append(cnt)
+        fringe = int(np.median(np.concatenate(prof))) if prof else 0
+        nEdge = int(sum(len(p) for p in prof))
+        # 2 the fringe set: visible texels within `fringe` steps of a step edge (any 4-neighbour not joined and nearer)
+        stepEdge = np.zeros((ph, pw), bool)
+        stepEdge[:, :-1] |= (~jh0) & (DISP.reshape(ph, pw)[:, 1:] > DISP.reshape(ph, pw)[:, :-1] + TOL.reshape(ph, pw)[:, :-1])
+        stepEdge[:, 1:] |= (~jh0) & (DISP.reshape(ph, pw)[:, :-1] > DISP.reshape(ph, pw)[:, 1:] + TOL.reshape(ph, pw)[:, 1:])
+        stepEdge[:-1, :] |= (~jv0) & (DISP.reshape(ph, pw)[1:, :] > DISP.reshape(ph, pw)[:-1, :] + TOL.reshape(ph, pw)[:-1, :])
+        stepEdge[1:, :] |= (~jv0) & (DISP.reshape(ph, pw)[:-1, :] > DISP.reshape(ph, pw)[1:, :] + TOL.reshape(ph, pw)[1:, :])
+        fr = ndimage.binary_dilation(stepEdge, np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]]), iterations=fringe) if fringe > 0 else stepEdge.copy()
+        fringeF = fr.ravel() & ~bandF
+        # 3 the unknowns: band texels a sheet owns, plus the fringe texels of those sheets' components
+        sheetOf = np.full(N, -1, np.int64)     # the colour GROUP of each unknown (a visible surface), not the sheet index
+        okB = bandF & (who >= 0); sheetOf[okB] = grpOfSheet[who[okB]]
+        okF = fringeF.copy(); sheetOf[okF] = cgrp[okF]
+        unk = (okB & (sheetOf >= 0)) | (okF & (sheetOf >= 0))
+        okB = okB & (sheetOf >= 0)
+        uIdx = np.full(N, -1, np.int64); uu = np.flatnonzero(unk); uIdx[uu] = np.arange(len(uu)); nU = len(uu)
+        # 4 the Laplacian over the unknowns; a neighbour is coupled only if it is an unknown of the SAME sheet, and is a
+        #   Dirichlet value only if it is a clean visible texel of that sheet's component
+        rowsL = [np.arange(nU)]; colsL = [np.arange(nU)]; valsL = [np.zeros(nU)]; rhs = np.zeros((nU, 3)); deg = np.zeros(nU)
+        X_ = uu % pw; Y_ = uu // pw; sU = sheetOf[uu]
+        for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+            xn = X_ + dx; yn = Y_ + dy; ins = (xn >= 0) & (xn < pw) & (yn >= 0) & (yn < ph)
+            nb = np.full(nU, -1, np.int64); nb[ins] = yn[ins] * pw + xn[ins]
+            same = ins & (nb >= 0)
+            isU = same.copy(); isU[same] = (uIdx[nb[same]] >= 0) & (sheetOf[nb[same]] == sU[same])
+            isD = same & ~isU
+            if isD.any():
+                cleanD = isD.copy(); nbD = nb[isD]
+                cleanD[isD] = (~bandF[nbD]) & (~fringeF[nbD]) & (cgrp[nbD] == sU[isD])
+                isD = cleanD
+            deg += isU + isD
+            if isU.any():
+                k_ = np.flatnonzero(isU); rowsL.append(k_); colsL.append(uIdx[nb[k_]]); valsL.append(-np.ones(len(k_)))
+            if isD.any():
+                k_ = np.flatnonzero(isD); rhs[k_] += COL[nb[k_]]
+        valsL[0] = deg
+        # THE SHEET'S OWN COLOUR MODEL. Ownership is by depth, not by adjacency: the sheet that shows behind a texel is often
+        # not the surface next to it, so most owned regions touch no visible texel of their owner and the extension has
+        # nothing to anchor on (sunflowers: 86 % of the owned band). For those the colour is the same construction the depth
+        # uses — the sheet's own plane, here per channel over its clean visible texels — evaluated at the texel and clipped
+        # to the range that sheet actually shows, so the wash carries the surface's own colour and gradient and never a
+        # colour it never had. Where the sheet IS adjacent, the harmonic extension decides and this is not used.
+        # THE SURFACE'S OWN COLOUR MODEL. Ownership is by depth, not adjacency: the surface that shows behind a texel is
+        # often not the one beside it (S9: every band texel is owned by a quad it does not touch), so the extension has
+        # nothing to propagate from. Those texels take their surface's own colour model — a plane per channel over its clean
+        # visible texels, clipped to the range that surface actually shows, the same construction the depth uses — and stay
+        # coupled to the Laplacian, so the field is smoothed rather than stamped.
+        # (The nearest clean sample of the same surface was tried instead and is worse against the kit's hidden-layer
+        # colour: S9 146 -> 181, S26 91 -> 96, S15 53.8 -> 53.3, S2 unchanged. Rejected.)
+        cmod = {}
+        def sheet_color(s_, xx, yy):
+            m_ = cmod.get(int(s_))
+            if m_ is None:
+                t_ = np.flatnonzero((cgrp == s_) & ~fringeF & ~bandF)
+                if len(t_) < 3: t_ = np.flatnonzero(cgrp == s_)
+                cx = t_ % pw; cy = t_ // pw; V_ = COL[t_]
+                if len(t_) >= 3:
+                    Am = np.stack([np.ones(len(t_)), cx - cx.mean(), cy - cy.mean()], 1)
+                    cc_, *_ = np.linalg.lstsq(Am, V_, rcond=None)
+                    m_ = (cc_, cx.mean(), cy.mean(), V_.min(0), V_.max(0))
+                else:
+                    med_ = np.median(V_, 0) if len(t_) else np.zeros(3)
+                    m_ = (np.stack([med_, np.zeros(3), np.zeros(3)]), 0.0, 0.0, med_, med_)
+                cmod[int(s_)] = m_
+            cc_, mx_, my_, lo_, hi_ = m_
+            A_ = np.stack([np.ones(len(xx)), xx - mx_, yy - my_], 1)
+            return np.clip(A_ @ cc_, lo_, hi_)
+        # a texel with no neighbour at all inside its own sheet (a speck) takes its sheet's colour model
+        lone = deg <= 0
+        if lone.any():
+            valsL[0] = np.where(lone, 1.0, deg)
+            k_ = np.flatnonzero(lone)
+            for s_ in np.unique(sU[k_]):
+                kk = k_[sU[k_] == s_]; rhs[kk] = sheet_color(s_, X_[kk], Y_[kk])
+        Lm = sparse.csr_matrix((np.concatenate(valsL), (np.concatenate(rowsL), np.concatenate(colsL))), shape=(nU, nU))
+        # components of the unknown graph with no Dirichlet value anywhere (a sheet whose whole visible edge is fringe):
+        # pin them to that sheet's clean median, else the solve is singular there
+        nCmp, lab = connected_components(Lm, directed=False)
+        anyD = np.zeros(nCmp, bool); np.logical_or.at(anyD, lab, rhs.any(1))
+        pinned = ~anyD[lab]
+        if pinned.any():
+            dg = Lm.diagonal().copy(); dg[pinned] += 1.0; Lm.setdiag(dg)
+            k_ = np.flatnonzero(pinned)
+            for s_ in np.unique(sU[k_]):
+                kk = k_[sU[k_] == s_]; rhs[kk] = rhs[kk] + sheet_color(s_, X_[kk], Y_[kk])
+        import pyamg
+        ml = pyamg.smoothed_aggregation_solver(Lm.tocsr(), max_coarse=500); Mp = ml.aspreconditioner(cycle='V')
+        sol = np.zeros((nU, 3))
+        for ch in range(3):
+            x_, info = cg(Lm, rhs[:, ch], rtol=1e-6, maxiter=500, M=Mp); sol[:, ch] = x_
+        outC = COL.copy()
+        outC[uu[bandF[uu]]] = np.clip(sol[bandF[uu]], 0, 255)
+        Image.fromarray(outC.reshape(ph, pw, 3).astype(np.uint8)).save(f'{OUT}/color_stop.png')
+        # scored against the kit's own hidden-layer COLOUR where there is one (scope_gt rgb), beside the app's per-line fill
+        if A.truth and os.path.exists(A.truth):
+            z_ = np.load(A.truth); cls_ = z_['cls']; w_ = z_['w_disp'].astype(np.float32); rgb_ = z_['rgb']
+            H_, W_, K_ = cls_.shape; y0_ = (H_ - ph) // 2; x0_ = (W_ - pw) // 2
+            cc = cls_[y0_:y0_ + ph, x0_:x0_ + pw]; ww = w_[y0_:y0_ + ph, x0_:x0_ + pw]; rr = rgb_[y0_:y0_ + ph, x0_:x0_ + pw]
+            vis_ = (cc >= 2) & (cc <= 5) & (ww > 0); has_ = vis_.any(-1); kk_ = np.argmax(vis_, -1)
+            cTrue = np.take_along_axis(rr, kk_[..., None, None], 1)[:, 0] if False else rr[np.arange(ph)[:, None], np.arange(pw)[None, :], kk_]
+            m_ = band & has_
+            def cerr(img):
+                e = np.abs(img.reshape(ph, pw, 3)[m_].astype(np.float64) - cTrue[m_].astype(np.float64)).sum(1)
+                return f'median {np.median(e):5.1f} mean {e.mean():5.1f} p90 {np.percentile(e, 90):5.1f}'
+                
+            print(f'[colour truth] {int(m_.sum())} band texels with a known hidden colour; |fill - truth| (L1 over channels): sheets {cerr(outC)}')
+            if os.path.exists(f'{P}/plateColor.u8'):
+                ap_ = np.fromfile(f'{P}/plateColor.u8', np.uint8).reshape(ph, pw, 4)[..., :3]
+                print(f'[colour truth]   the app per-line fill on the same texels: {cerr(ap_.reshape(N, 3))}; the source (a clone): {cerr(COL)}')
+        (bandF & (who >= 0)).astype(np.uint8).tofile(f'{OUT}/colorMask_stop.u8')
+        print(f'[colour] blend fringe {fringe} texels (median over {nEdge} step edges); {int(okB.sum())} band texels coloured from their own sheet, '
+              f'{int((okF & (sheetOf >= 0)).sum())} fringe texels solved with them, {int(pinned.sum())} carried by their surface own colour model, '
+              f'{int((bandF & (who < 0)).sum())} band texels no sheet owns (kept)  ({time.time() - tC0:.1f}s)')
 
 # ---- scoring ----
 step = A.step
