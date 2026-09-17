@@ -516,3 +516,45 @@ planar patches, crease-test merge, no-area rule, 2-D geodesic domain, thin plate
 plane elsewhere, specks dropped, evidence order, two-sided for masked objects. It is never worse than §14 on the kit, it is
 much better on S15's tail, and it leaves vermeer's floor exactly as it was. The cost is 130–190 plate solves per picture
 (20–37 min offline), so the app would ship planes first and the plate as an offline refinement.
+
+## 18. Adopted as the default, and what it costs to bake
+
+`sheets.py` with no flags is now the §17 construction: object mask (when one is given) → fusion by body match → planar
+patches → crease-test merge into faces → no-area rule → 2-D geodesic domain → thin plate with the plane prior on merged
+faces and the plane elsewhere → specks dropped → evidence order → two-sided for masked objects. Every part has its own
+`--no-<part>` switch and `--plain` turns the lot off for an A/B against the earlier arms. Verified by rerunning the kit with
+no flags: S26 0.0252 m against the flagged run's 0.0253, S15 0.0715 m (p90 4.2489, unchanged).
+
+**Two solver changes, neither of which touches the answer.** The multigrid hierarchy is a *preconditioner*, so conjugate
+gradients converge to the same solution whichever λ it was built at; it is now rebuilt only when λ has moved more than two
+decades, and the relative residual is still asserted after every solve (worst 1e-8), with an automatic rebuild-and-redo if
+it is not met. The discrepancy search replaced its nine-point λ grid plus six bisections with a bracketed secant in
+(log λ, log rms), which finds the same λ in about five solves instead of sixteen.
+
+| stage | before | after |
+|---|---|---|
+| S26 thin plate | 21.4 s | 6.9 s |
+| S15 thin plate | 109.4 s | 30.6 s |
+| vermeer thin plate | 2 247.7 s | 1 410.1 s |
+
+**The bake, measured on vermeer (896 × 1008, 370 698 band texels), offline Python on one core:**
+
+| stage | time |
+|---|---|
+| patches, merge, fits | ~30 s |
+| domain pass (marches + closure) | 456 s |
+| thin plate, 130 faces | 1 410 s |
+| layered order and output | 220 s |
+| **total** | **2 109 s (35 min)** |
+
+So the plate is two thirds of it. `--no-tps` gives the same construction with planes and costs about 12 min on the same
+picture, which is what the §14 arm already cost — the merge itself is nearly free. None of this is the app's bake: the app
+has no sheets in it at all yet, this is the offline prototype, single-threaded Python with per-surface loops, and the app's
+own per-line bake is seconds. What the prototype's timing does say is that the plate cannot be a browser bake as written;
+it belongs offline, or it needs the work below.
+
+**Where the remaining time is, in order of size**: 130 plate solves at ~11 s each, dominated by a handful of large faces
+(parallel across cores is the obvious 4×, held back here by a 10 GB peak); the domain pass, which marches every rim of
+4 514 surfaces in Python including the thousands of specks that the no-area and three-texel rules drop immediately
+afterwards; and the layered order, which recomputes each face's geodesic domain a second time. None of the three is
+intrinsic to the method.

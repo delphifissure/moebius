@@ -37,7 +37,18 @@ from PIL import Image
 ap = argparse.ArgumentParser()
 ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', type=float); ap.add_argument('--q', type=float, default=1 / 65535)
 ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--twosided', action='store_true', help='an OBJECT surface (mask id > 0) passes behind an occluder only where its own rims close the span on both sides of the line (S3 kind-2: a same-surface pair is a positive detection); a one-sided march of an object sheet is a hedge'); ap.add_argument('--twosided-all', action='store_true', help='the two-sided rule for every surface, not only masked objects (backgrounds end at corners too); the ground plane is the exception'); ap.add_argument('--fused', action='store_true', help='a visible component whose boundary to other mask ids is depth-JOINED on the majority of its length is fused with its neighbours (DA3 gives a narrow background gap between two near objects the objects\' depth); its sheet is a hedge, never a measurement'); ap.add_argument('--planeprior', action='store_true', help="the thin plate is pulled toward its own face's plane on the domain with weight 1/visible step, against the strip data at weight 1/sigma: the plate is free to bend where the data supports it and relaxes to the plane where it does not"); ap.add_argument('--smooth', action='store_true', help="faceting: adjacent planar patches of one surface are rejoined when their planes differ by less than the visible step over the smaller patch's own extent (a crease test, not a flatness test), so a smoothly curved surface is one face again and only real creases stay split"); ap.add_argument('--budget', action='store_true', help="per-texel error budget: the fitted slope is shrunk by its own predicted standard error against the visible step, so a sheet continues its slope only as far as its own fit supports it and relaxes to its constant beyond that; continuous, no new constant"); ap.add_argument('--faces', action='store_true', help="faceting: every facet of one join-law component is extended over that component's whole 2-D domain instead of its own disc, so the layered order picks the nearest facet everywhere and the sheet is continuous, with creases where the facets' planes cross"); ap.add_argument('--reach', action='store_true', help="where a sheet ends: it continues into the hole no farther than the surface itself extends outside it (geodesic radius of its own visible patch from its rims), instead of as far as the hole is deep"); ap.add_argument('--geo', action='store_true', help='2-D domain: a sheet claims the band texels within geodesic reach of its rims through the band (reach = its own longest march) instead of the along-line marches only'); ap.add_argument('--patches', action='store_true', help='split every visible component into planar patches (region growing; a texel joins while one plane fits the patch within the visible step tolAt); patches are the surfaces'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
+ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
+ap.add_argument('--no-smooth', action='store_true'); ap.add_argument('--no-tps', action='store_true'); ap.add_argument('--no-prior', action='store_true'); ap.add_argument('--no-patches', action='store_true')
+ap.add_argument('--no-evidence', action='store_true'); ap.add_argument('--no-geo', action='store_true'); ap.add_argument('--no-fused', action='store_true'); ap.add_argument('--no-twosided', action='store_true'); ap.add_argument('--no-drop-thin2', action='store_true')
 A = ap.parse_args()
+# ---- ADOPTED DEFAULTS (S35 §18). The construction recommended in §17 is what runs when no flags are given: object mask (when
+# one is supplied) -> fusion by body match -> planar patches -> crease-test merge into faces -> no-area rule -> 2-D geodesic
+# domain -> thin plate with the plane prior on merged faces, plane elsewhere -> specks dropped -> evidence order -> two-sided
+# for masked objects. Every part has a --no-<part> switch, and --plain turns the lot off for an A/B against the earlier arms.
+if not A.plain:
+    A.patches = not A.no_patches; A.smooth = not A.no_smooth; A.tps = not A.no_tps; A.planeprior = not A.no_prior
+    A.evidence = not A.no_evidence; A.geo = not A.no_geo; A.fused = not A.no_fused; A.drop_thin2 = not A.no_drop_thin2
+    A.twosided = bool(A.mask) and not A.no_twosided; A.no_extend = True
 P = A.probe; meta = json.load(open(f'{P}/meta.json')); pw, ph = meta['pw'], meta['ph']; N = pw * ph
 dQ = np.fromfile(f'{P}/dQ.f32', np.float32).reshape(ph, pw).astype(np.float64)
 band = np.fromfile(f'{P}/disocc.u8', np.uint8).reshape(ph, pw) > 0
@@ -690,29 +701,56 @@ def tps_sheet(s_, st, dom):   # s_ is the face; --planeprior uses planes[s_]
     try: import pyamg
     except Exception: pyamg = None
     Bnull = np.stack([np.ones(n), (X - X.mean()) / max(1, X.std()), (Y - Y.mean()) / max(1, Y.std())], 1)
+    # SPEED (S35 §18): the multigrid hierarchy is a PRECONDITIONER, so CG converges to the same solution whichever lambda it was
+    # built at — only the iteration count changes, and the relative residual is asserted after every solve. Rebuilding it for
+    # each of the sixteen lambdas in the discrepancy search was most of the bake: it is now rebuilt only when lambda has moved
+    # more than two decades from the build point.
+    _pc = {'lam': None, 'M': None}
     def solve(lam, x0=None):
         M_ = (DtD + lam * BtB).tocsr()
         if pyamg is not None:
-            ml = pyamg.smoothed_aggregation_solver(M_, B=Bnull, symmetry='symmetric', max_coarse=500); Mp = ml.aspreconditioner(cycle='V')
+            if _pc['lam'] is None or abs(np.log10(lam) - np.log10(_pc['lam'])) > 2:
+                _pc['lam'] = lam; _pc['M'] = pyamg.smoothed_aggregation_solver(M_, B=Bnull, symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V')
+            Mp = _pc['M']
         else: Mp = sparse.diags(1.0 / np.maximum(M_.diagonal(), 1e-30))
         x, info = cg(M_, Dtb, x0=x0, rtol=1e-8, maxiter=2000, M=Mp)
-        r_ = float(np.linalg.norm(M_ @ x - Dtb) / max(1e-300, np.linalg.norm(Dtb))); solve.worst = max(getattr(solve, 'worst', 0.0), r_)
+        r_ = float(np.linalg.norm(M_ @ x - Dtb) / max(1e-300, np.linalg.norm(Dtb)))
+        if r_ > 1e-6 and pyamg is not None:   # the reused hierarchy was too far off: rebuild at this lambda and redo
+            _pc['lam'] = lam; _pc['M'] = pyamg.smoothed_aggregation_solver(M_, B=Bnull, symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V')
+            x, info = cg(M_, Dtb, x0=x0, rtol=1e-8, maxiter=2000, M=_pc['M']); r_ = float(np.linalg.norm(M_ @ x - Dtb) / max(1e-300, np.linalg.norm(Dtb)))
+        solve.worst = max(getattr(solve, 'worst', 0.0), r_)
         return x
     solve.worst = 0.0
     def rms(x): return float(np.sqrt(np.mean((x[kS] - d) ** 2)))
-    # discrepancy: RMS(λ) = σ; RMS grows with λ; bracket on a log grid then bisect
-    lo, hi = -8.0, 8.0; x = None; grid_ = np.linspace(lo, hi, 9); r_ = []
-    for g in grid_: x = solve(10 ** g, x); r_.append(rms(x))
-    r_ = np.array(r_); above = np.flatnonzero(r_ > sig)
-    if len(above) == 0: lam = 10 ** hi
-    elif above[0] == 0: lam = 10 ** lo
-    else:
-        a, bb = grid_[above[0] - 1], grid_[above[0]]
-        for _ in range(6):
-            mid = 0.5 * (a + bb); x = solve(10 ** mid, x)
-            if rms(x) > sig: bb = mid
-            else: a = mid
-        lam = 10 ** (0.5 * (a + bb))
+    # DISCREPANCY SEARCH (Morozov): lambda such that the strip's RMS residual equals its own noise sigma. rms(lambda) is
+    # monotone, so a secant in (log lambda, log rms) finds it in a handful of solves instead of the nine-point grid plus six
+    # bisections the first version used — sixteen solves per face was most of the bake. Warm-started, bracketed, and it falls
+    # back to bisection if the secant leaves the bracket.
+    lo, hi = -8.0, 8.0; x = None
+    def ev(g, x0):
+        xx = solve(10 ** g, x0); return xx, rms(xx)
+    x, r0 = ev(0.0, None); pts = [(0.0, r0)]
+    if r0 > sig:                       # too stiff already: walk down
+        g = 0.0
+        while g > lo and r0 > sig:
+            g -= 3.0; x, r0 = ev(g, x); pts.append((g, r0))
+        a, b = g, min(g + 3.0, hi)
+    else:                              # too free: walk up
+        g = 0.0; r1 = r0
+        while g < hi and r1 <= sig:
+            g += 3.0; x, r1 = ev(g, x); pts.append((g, r1))
+        a, b = max(g - 3.0, lo), g
+    for _ in range(4):
+        ra = [r for gg, r in pts if abs(gg - a) < 1e-9]; rb = [r for gg, r in pts if abs(gg - b) < 1e-9]
+        if ra and rb and ra[0] > 0 and rb[0] > 0 and abs(np.log10(rb[0]) - np.log10(ra[0])) > 1e-12:
+            t = (np.log10(sig) - np.log10(ra[0])) / (np.log10(rb[0]) - np.log10(ra[0])); gm = a + t * (b - a)
+            if not (min(a, b) + 1e-3 < gm < max(a, b) - 1e-3): gm = 0.5 * (a + b)
+        else: gm = 0.5 * (a + b)
+        x, rm = ev(gm, x); pts.append((gm, rm))
+        if abs(rm - sig) <= 0.05 * sig: a = b = gm; break
+        if rm > sig: b = gm
+        else: a = gm
+    lam = 10 ** (0.5 * (a + b))
     x = solve(lam, x)
     return om, x, sig, lam, rms(x), solve.worst
 if A.tps:
