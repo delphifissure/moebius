@@ -227,3 +227,10 @@ behind him, and the layered order prefers it to the sky. The classifier over the
 thing and the card goes: vertical jumps 42 701 → 2 232, horizontal 3 975 → 1 161, both far under the per-line law's 12 308 /
 33 531. Three pictures now need the classifier (S9, the sunflower staircase, starwatcher) against the troll's x-ray, which is
 the one rule left to fix before it can be the default.
+
+**S35 §27, line work split off the foreground (2026-09-17).** Starwatcher's staff loop and lantern glow sit at the sky's
+depth in the map and stay on the plate while the figure moves. A segmentation-consistent depth repair (`depth_repair.py`,
+offline, no constant): the farthest real surface, its halo absorbed, then unlabelled components at its depth enclosed by it
+and touching nearer material take the nearer depth. Starwatcher 1 209 texels, sunflowers 1 813 (petal tips), vermeer 197,
+troll 0; three looser versions rejected by their counts. Baked from the repaired depth the glow and loop move with the
+figure and the ghost is gone; the band numbers are unchanged. App untouched.

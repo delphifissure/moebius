@@ -952,3 +952,43 @@ starwatcher's card) and the argument against it is one picture (the troll's x-ra
 (the floor voted a thing on two boundary pairs) and S15 (a canopy behind its own trunk). The troll's x-ray is the blocker
 worth attacking next: it is one rule — a thing whose marches all exit onto OTHER things has no fitted sheet and hedges to
 the deepest surface — and every failing case is of that shape.
+
+## 27. Line work split off the foreground: segmentation-consistent depth (user request, 2026-09-17)
+
+**The observation.** On starwatcher the staff does not come through whole: at p45 the lantern's glow and the top of the loop
+stay on the background while the figure moves, and a ghost of the staff's outline is left on the plate
+(`s35/bleed/star_staff_zoom.png`, first two panels). Strong line work splitting off the foreground.
+
+**Why.** The depth map loses thin structure: the shaft above the hand and the lantern's loop sit at the SKY's depth
+(`s35/bleed/star_repair.png`, "depth before"), so they belong to the plate and are revealed like sky. The segmentation
+knows better: SAM's sky segment excludes the staff exactly, loop and all.
+
+**The rule** (`s35/depth_repair.py`, a preprocessing step on the 16-bit depth, before any bake; no constant):
+1. The picture's far limit is its farthest real SURFACE: among SAM segments that are the majority of the unlabelled-or-own
+   material at their own depth (a surface, not a fragment such as a rock on the plain), the one with the smallest median
+   depth. Only that surface can be the background a thin thing is lost against — nothing opaque can sit AT the sky's depth in
+   front of the sky, whereas a loaf on a table legitimately sits at the table's depth (vermeer: 14 536 texels of bread and
+   basket would otherwise have moved).
+2. Its HALO first: SAM's segment stops a texel or two short of a silhouette; unlabelled texels at the surface's depth whose
+   colour is closer to the surface's median than to the nearest nearer texel's colour are the surface (starwatcher: 8 468
+   such texels ring the figure, with the staff's ink inside the ring).
+3. Then a 4-connected component of the remaining unlabelled texels at the surface's depth whose outer boundary is MOSTLY
+   that surface (enclosed by it) and which touches material nearer than it by more than the visible step is a thin part of
+   that nearer thing whose depth failed. Each such texel takes the depth of the nearest nearer texel.
+
+**What it touches.** Starwatcher 1 209 texels (the staff's shaft and loop, the lantern's glow, the crystals' edges, the
+craft's edge — `star_repair_map.png`); the sunflowers 1 813 (petal tips and flower edges against the sky —
+`room_repair_map.png`); vermeer 197 (against the wall); the troll 0. Three earlier versions of the rule were measured and
+rejected on the way: without the enclosure test a small segment at the sky's depth made the whole sky a candidate
+(312 138 texels); without the unlabelled-only restriction other segments' own texels were candidates (230 172); without the
+far-limit restriction the horizon fragments repaired 26 000 plain texels and the table moved its bread.
+
+**Result on starwatcher** (baked from the repaired depth, sheets + classifier + sheet colour; `star_staff_zoom.png`, third
+panel): the lantern's glow and the loop move with the figure; the ghost outline on the plate is gone. The sheet numbers are
+unchanged to within noise (vertical jumps 2 232 → 2 245, horizontal 1 161 → 1 178): this is a foreground fix, not a band one.
+What remains is a pale disc on the plate where the glow was — the band behind the lantern now takes the surrounding sky's
+colour, and that sky is the glow's own halo. A colour matter, small, recorded.
+
+**Where it lives.** Offline only (a depth PNG in, a depth PNG out), nothing in the app changed, as asked. In the app it
+belongs at depth import after SAM, before the bake; the segment it needs is the one the classifier already calls the
+farthest surface.

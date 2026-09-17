@@ -167,6 +167,7 @@ if A.things:
     for u_ in big_:
         if px_[u_] == 0: continue
         print(f'   unit {"seg " + str(int(u_)) if u_ < 256 else "comp " + str(int(u_) - 256)}: {int(px_[u_])} px, median depth {depth_of_disp_early(medD[u_]):.3f} -> {"thing" if thing[u_] else "surface"}')
+    oid.astype(np.int32).tofile(f'{OUT}/oid.i32')   # the classifier's verdict per texel (things 1..k, 0 = surface)
     if k_ > 1 and not A.mask: A.mask = 'things'; A.twosided = not A.no_twosided
 if A.mask:
     jh &= (oid[:, :-1] == oid[:, 1:]); jv &= (oid[:-1, :] == oid[1:, :])
