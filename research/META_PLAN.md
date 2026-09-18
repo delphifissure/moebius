@@ -300,3 +300,10 @@ texel's own depth on every band measured. Self-continuation (§33) contradicts t
 wants the far plain, whose sheet is a thing (in front of the backdrop along the horizon) and hedged; the classifier item
 stands, now stated topologically: a thing's far side continues behind it on both sides, a ground's front boundary is with
 the picture's farthest surface only. Measured arm unchanged: `comp + reach-group`.
+
+**S35 §35 (2026-09-18).** Topological classifier `--thingrule wrap`: a thing's stepped front boundary (by step and medians)
+surrounds it — directions from its centroid not contained in a half-plane. First classifier under which grounds, fields and
+skies are surfaces and figures, heads, jugs are things on every input (starwatcher's far plain borderline at 176°). Run with
+the group reach it exposes the defect the old rule hid: pieces of a joined surface carry their own planes over the group's
+extent (L2 background 0 → 0.51 m, the sunflowers' band filled to the sky rows). Next construction: the group's plane or plate
+for fragments beyond their own extent; then `wrap + reach-group` measured again. Two alternative direction sets falsified.

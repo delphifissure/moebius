@@ -41,7 +41,7 @@ ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_arg
 ap.add_argument('--color', action='store_true', help="per-sheet colour (S35 §25): every band texel's colour is its OWN sheet's visible colour continued over the texels that sheet owns (harmonic extension per sheet), never a per-line rim window; the source's anti-aliased fringe at each silhouette is measured on the picture and left unanchored")
 ap.add_argument('--rgb', help='the source colour image (defaults to <dump>/color.png)')
 ap.add_argument('--closure', default='comp', choices=['comp', 'layer', 'surround'], help="two-sided closure test for a THING's march. 'comp' (the §18 rule, adopted): the march skips the band texel's own id and is closed when it exits onto the sheet's own join-law component. 'layer' (S35 §28, NOT adopted): closed on own component or ANY thing, plus the rim-behind-band test, any-closed-march fits, the same-thing lift and the per-march exposure bound; fixes the troll and S15 and breaks three pictures (§28). 'surround' (S35 §29, item C): closed on own component or own THING (self-occlusion); otherwise a thing's sheet is fitted behind an occluder only if it is not nearer than the MEDIAN depth of that occluder's own far-side surroundings (the rim of its band, its own texels and what is nearer than it excluded) -- the majority of what surrounds an occluder is what most likely continues behind it; nearer minority clutter is a hedge. Per-texel exposure trim on things' sheets. No layer grouping (falsified twice in §29: chaining by depth overlap and by step-relative difference).")
-ap.add_argument('--thingrule', default='neighbour', choices=['neighbour', 'steps'], help="S35 §29: which units are things. 'neighbour' (§22): in front of at least one neighbour along the majority of their shared boundary and by medians; with hundreds of tiny neighbours the median shared boundary is two texels and a three-texel fragment can make a whole far field a thing (the sunflowers' field before a sky fragment, S15's ground). 'steps': over the unit's whole boundary, only pairs with a depth STEP vote (joined pairs, a part beside its sibling part, do not); the unit is a thing when the boundary length along which it is in front exceeds the length along which it is behind, both counted only against neighbours whose median depth agrees. (A plain majority of the whole boundary, frame included, was tried and falsified: SAM's part segments are bounded mostly by their own siblings, starwatcher's figure stopped being a thing, v jumps 2 249 -> 45 700; removed.)"); ap.add_argument('--things', action='store_true', help='things/surfaces classifier (S35 §22, opt-in): every visible unit (mask segment or depth component) that is in front of a neighbour becomes a two-sided thing, the rest background. Fixes the sunflower staircase, S9 and S2; wrong on the troll (x-ray to the deepest surface behind him), on vermeer with the automatic mask (the floor voted a thing) and on S15 (a canopy behind its own trunk) -- see the note'); ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
+ap.add_argument('--thingrule', default='neighbour', choices=['neighbour', 'steps', 'wrap'], help="S35 §29: which units are things. 'neighbour' (§22): in front of at least one neighbour along the majority of their shared boundary and by medians; with hundreds of tiny neighbours the median shared boundary is two texels and a three-texel fragment can make a whole far field a thing (the sunflowers' field before a sky fragment, S15's ground). 'steps': over the unit's whole boundary, only pairs with a depth STEP vote (joined pairs, a part beside its sibling part, do not); the unit is a thing when the boundary length along which it is in front exceeds the length along which it is behind, both counted only against neighbours whose median depth agrees. (A plain majority of the whole boundary, frame included, was tried and falsified: SAM's part segments are bounded mostly by their own siblings, starwatcher's figure stopped being a thing, v jumps 2 249 -> 45 700; removed.)"); ap.add_argument('--things', action='store_true', help='things/surfaces classifier (S35 §22, opt-in): every visible unit (mask segment or depth component) that is in front of a neighbour becomes a two-sided thing, the rest background. Fixes the sunflower staircase, S9 and S2; wrong on the troll (x-ray to the deepest surface behind him), on vermeer with the automatic mask (the floor voted a thing) and on S15 (a canopy behind its own trunk) -- see the note'); ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
 ap.add_argument('--no-smooth', action='store_true'); ap.add_argument('--no-tps', action='store_true'); ap.add_argument('--no-prior', action='store_true'); ap.add_argument('--no-patches', action='store_true')
 ap.add_argument('--no-evidence', action='store_true'); ap.add_argument('--no-geo', action='store_true'); ap.add_argument('--no-fused', action='store_true'); ap.add_argument('--no-twosided', action='store_true'); ap.add_argument('--no-drop-thin2', action='store_true')
 A = ap.parse_args()
@@ -197,6 +197,30 @@ if A.things:
     # slabs, the milkmaid (9 -> 4 labelled things on vermeer) and the troll (13 -> 2) became surfaces too, their own planes
     # filled their bands, and every picture's jumps went up tenfold. Neither the length nor the depth statistics of a unit at
     # this level separate a ground from a figure standing on it.
+    if A.thingrule == 'wrap':
+        # S35 §35, THE TOPOLOGICAL TEST. A thing stands in front of a surface that continues BEHIND it: its stepped front boundary
+        # surrounds it, with the far side on opposite sides of it. A ground stands in front of the picture's farthest surface along
+        # one side only (a horizon) and runs to the frame elsewhere; a table in front of a wall along its top edge likewise. Per
+        # unit: the directions from its centroid to every boundary texel where it is in front by a step and by medians; a THING
+        # when those directions are not contained in any half-plane (largest angular gap under a half turn). The half turn is not
+        # a tuned constant: it is what "on both sides" means. Starwatcher's two plains (§31-34: things by every depth statistic,
+        # their bands therefore never fitted) have their whole front boundary above their centroids.
+        cx_ = np.zeros(nU); cy_ = np.zeros(nU); xo_ = (order_ % pw).astype(float); yo_ = (order_ // pw).astype(float)
+        for a_, b_ in zip(starts_, ends_): cx_[us_[a_]] = xo_[a_:b_].mean(); cy_[us_[a_]] = yo_[a_:b_].mean()
+        # Two other direction sets were tried and are falsified: local steps alone (vermeer's wall 109 deg, the sunflowers' field
+        # 54 deg -- noise fragments wrap every background) and 'surrounding neighbours' (any neighbour with at least the median
+        # shared boundary that is not nearer by medians: starwatcher's sky 90 deg, its far plain 145 deg, the sunflowers' field
+        # 127 deg -- joined specks at a background's own depth surround it). The stepped front with the medians gate stands.
+        frontTex = (dT > dU + tl_) & gFront[inv_]
+        tx_ = (T_ % pw).astype(float); ty_ = (T_ // pw).astype(float)
+        ang_ = np.arctan2(ty_ - cy_[uT], tx_ - cx_[uT])
+        thing = np.zeros(nU, bool); wrapGap = np.full(nU, 2 * np.pi)
+        ordA = np.lexsort((ang_[frontTex], uT[frontTex])); uA = uT[frontTex][ordA]; aA = ang_[frontTex][ordA]
+        stA = np.r_[0, np.flatnonzero(uA[1:] != uA[:-1]) + 1]; enA = np.r_[stA[1:], len(uA)]
+        for a_, b_ in zip(stA, enA):
+            if b_ - a_ < 2: continue
+            g_ = np.diff(aA[a_:b_]); gap = max(float(g_.max()), float(2 * np.pi - (aA[b_ - 1] - aA[a_])))
+            wrapGap[uA[a_]] = gap; thing[uA[a_]] = gap < np.pi
     if A.thingrule == 'steps':
         # S35 §29: the vote is by boundary LENGTH over the stepped pairs only. F = the length along which the unit is in front of
         # neighbours that are also behind it by medians; B = the length along which it is behind neighbours that are also in
@@ -222,7 +246,7 @@ if A.things:
     big_ = np.argsort(-px_)[:10]
     for u_ in big_:
         if px_[u_] == 0: continue
-        print(f'   unit {"seg " + str(int(u_)) if u_ < 256 else "comp " + str(int(u_) - 256)}: {int(px_[u_])} px, median depth {depth_of_disp_early(medD[u_]):.3f} -> {"thing" if thing[u_] else "surface"} | edge: continues {int(Cu[u_])} steps off {int(Su[u_])} texels, miss/step median {edgeRatio[u_]:.2f}')
+        print(f'   unit {"seg " + str(int(u_)) if u_ < 256 else "comp " + str(int(u_) - 256)}: {int(px_[u_])} px, median depth {depth_of_disp_early(medD[u_]):.3f} -> {"thing" if thing[u_] else "surface"} | edge: continues {int(Cu[u_])} steps off {int(Su[u_])} texels, miss/step median {edgeRatio[u_]:.2f}' + (f' | wrap gap {np.degrees(wrapGap[u_]):.0f} deg' if A.thingrule == 'wrap' else ''))
     oid.astype(np.int32).tofile(f'{OUT}/oid.i32')   # the classifier's verdict per texel (things 1..k, 0 = surface)
     if k_ > 1 and not A.mask: A.mask = 'things'; A.twosided = not A.no_twosided
 medRim = None; occArr = None

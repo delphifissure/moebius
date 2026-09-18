@@ -1430,3 +1430,46 @@ the four pictures and L1–L4.
 |---|---|---|---|---|---|---|---|
 | comp + reach-group (RG, the measured arm) | 0.015 | 0.000 | 0.000 | 51 | 6.0 | 84 (197) | 72.6 |
 | RG + sky abstains | 0.015 | 0.000 | 0.000 | 51 | — | — | — |
+
+## 35. The topological test (user: "build the topological test", 2026-09-18)
+
+**The rule** (`--thingrule wrap`). A thing stands in front of a surface that continues behind it, so its stepped front
+boundary surrounds it: the far side lies on opposite sides of it. A ground stands in front of the picture's farthest surface
+along one side only and runs to the frame elsewhere. Per unit: the directions from its centroid to every boundary texel
+where it is in front of a neighbour by a step and by the two units' medians; a THING when those directions are not
+contained in any half-plane, i.e. the largest angular gap between them is under a half turn. The half turn is what "on both
+sides" means, not a tuned constant. Two other direction sets were tried in the same hour and are falsified, recorded in the
+code: local steps alone (noise fragments wrap every background — vermeer's wall 109°, the sunflowers' field 54°), and
+"surrounding neighbours" (any neighbour with at least the unit's median shared boundary that is not nearer by medians —
+joined specks at a background's own depth surround it: starwatcher's sky 90°, its far plain 145°).
+
+**Verdicts** (gap in degrees; thing under 180): L2 ground 206 → surface, big head 19, heads 52–110, leaves 3–19, stems, all
+things; L3 floor 192 and ceiling/wall 360 → surfaces, milkmaid 51, table 139, jug 116, bowl 129 → things; vermeer wall 360 →
+surface, milkmaid 93, table 175, jug 117, basket 195 → surface; the sunflowers' sky 360 and far field 190 → surfaces, the
+heads and plants 76–159 → things; starwatcher's sky 360 and near plain 191 → surfaces, its far plain 176 → thing (the
+crystals rise from its horizon), its figure a thing. This is the first classifier under which grounds, fields and skies are
+surfaces and figures, heads and jugs are things on every input — the §31 casualty's cause, at last, with one borderline case
+(the far plain at 176°). S2 cannot test it: its "boxes on a floor in contact" are joined to the floor by the join law and the
+scene has three units, wall and two floor+box halves; the truth wants those halves treated as things (0.000 vs 0.012 m).
+
+**What it exposes when run** (`wrap + reach-group`, kit and pictures): L1 0.015 m (unchanged), L3 0.000, L4 0.000 → 0.0039
+median but its hidden leaves 0.098 → 0.038 m, S26 0.028 → 0.026, S15 8.12 → 0.076 m median (mean −1.6); starwatcher the
+smoothest field yet (v jumps 1 995 → 731) with its plain band still sky (48 %: the far plain is still the thing at 176°);
+the troll's gap 6.0 → 1.5 %; vermeer at baseline (v 2 819). And two collapses of one kind: **L2's background 0.000 → 0.514 m**
+and **the sunflowers' band 84 → 1.5 % sky-valued, 0 of 211 sky rows, jumps 1 029 → 15 724**. In both the classifier is right
+— L2's ground and the sunflowers' far field ARE surfaces — and what then shows is the defect the neighbour rule had been
+hiding by mislabelling them things (hedged, so the sky won): the pieces of a big joined surface carry their OWN planes over
+the group's whole extent. L2's culprits are two 860-texel ground pieces with 136 and 84 rims, own extent 8 and 15, whose
+planes at d 0.36 own 47 000 texels of sky; the sunflowers' are the field pieces at 0.2–0.4 running up beside the head. The
+reach law gives a fragment its group's DOMAIN (right: the ground continues behind the head) but leaves it its own PLANE
+(wrong: a 900-texel strip's slope says nothing 130 texels away). That is the group-surface item: a fragment of a joined
+surface should carry the group's plane, or its plate, beyond its own extent — the construction §17's faces circled.
+
+| arm | L1 | L2 bg / thing | L3 | L4 thing | S2 | S15 med | starwatcher sky % / v | troll gap % | sunflowers sky % (rows) / v | vermeer v |
+|---|---|---|---|---|---|---|---|---|---|---|
+| comp + reach-group (RG, measured arm) | 0.015 | −0.000 / +0.476 | 0.000 | 0.098 | 0.000 | 8.12 | 51 / 1 995 | 6.0 | 84 (197) / 1 029 | 3 110 |
+| wrap + reach-group (WG) | 0.015 | −0.421 / +0.008 | 0.000 | 0.038 | 0.012 | 0.076 | 48 / 731 | 1.5 | 1.5 (0) / 15 724 | 2 819 |
+
+**Standing.** `wrap` is the classifier to carry, and it cannot be adopted until fragments of a joined surface stop carrying
+their own planes across the group; with that construction in place `wrap + reach-group` is the arm to measure against the
+kit again. The measured arm stays `comp + reach-group` today.
