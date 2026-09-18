@@ -292,3 +292,11 @@ but 98 % of vermeer's band and 57 % of the sunflowers' become self (the milkmaid
 depends on whether the app's plate tears at quantum steps inside a gradient (band = tiny tears, wants self) or only at
 silhouettes (band = reveal zone, wants the wall): the next thing to read in the app. Measured arm unchanged (`comp +
 reach-group`).
+
+**S35 §34 (2026-09-18).** Tear law read: under the rim law the plate tears only at unjoined edges (eye-distance ratio > 3.7 %
+or a failed affine prediction); a quantum step is joined; the band is the area the near content vacates over the envelope,
+inverted through the far field, and takes the far field's depth — the app's own far field is 100–250 steps behind the
+texel's own depth on every band measured. Self-continuation (§33) contradicts that and is removed. Starwatcher's plain band
+wants the far plain, whose sheet is a thing (in front of the backdrop along the horizon) and hedged; the classifier item
+stands, now stated topologically: a thing's far side continues behind it on both sides, a ground's front boundary is with
+the picture's farthest surface only. Measured arm unchanged: `comp + reach-group`.

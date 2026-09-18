@@ -1384,3 +1384,49 @@ sunflowers' plants, and the app's band semantics on quantised gradients must be 
 wrong. Instruments added this session and kept: `--reach-diag` / `bleed/reach_diag.py`, the edge instrument in the
 classifier stage, `sheets_info.npz`, `bleed/owners_err.py`, `bleed/fillcheck.py`, `bleed/jumps.py`-style counts, the
 `DBG_SHEET` line in the domain builder.
+
+## 34. The tear law read, the band's semantics settled (user: "read the tear law in the app and settle it", 2026-09-18)
+
+**The rim law** (`moebius.js` L378–461, `bgRimLawFor`). An edge between two texels is JOINED iff the ratio of their eye
+distances is within t = 1 + (hfov / pw) / tan(g_min), g_min = 2°, OR the linear prediction of either from its own two
+previous samples lands within the quantisation bound tolAt (the grazing-plane rescue; sky joins nothing but sky). With
+starwatcher's geometry t − 1 ≈ 0.037 of the eye distance; one quantum of an 8-bit map moves it by about 0.002. **The plate
+does not tear inside a quantised gradient**: it takes a step of some twenty quanta at once, or an affine prediction that
+fails, to open an edge. The pre-rim fold criterion (A160, "shift span > cell extent") did tear terraces on slow gradients;
+the rim law replaced it precisely because it tore nine tenths of every grazing floor (S1 §5c), and the probes run under the
+rim law.
+
+**Where the band comes from** (L8318–8660, the CPU sweep). Per pose the foreground is drawn as quads wherever all four
+corners are joined, at the nearest corner's depth, as a rubber sheet however far it stretches (the stretch cut is off under
+the rim law); an unjoined corner leaves only a point splat. Every in-frame cell the foreground leaves uncovered is a reveal,
+inverted through the FAR FIELD's shift to the plate texel that must cover it; the union over the 17 × 5 poses, plus
+pinholes and a one-texel dilation, is `disocc.u8`. So a band texel inside a figure or a plain is not a tear: it is a texel
+whose far-field copy lands in a cell the near content vacated at some pose — the reveal zone of what is behind it, and it
+takes the far field's depth. The app's own far field confirms the semantics on every input measured: band fill minus own
+depth in steps, p50 — starwatcher's near plain −149, its figure −131, vermeer's milkmaid −217, the troll's surroundings
+−117, L1 background −55, L2 things −96, L3 things −80; never within 20 steps of the texel's own depth except on L2's
+3 000-texel ground band (fill = own, p50 0). The kit scores that semantics at 0.0075 m median on L1 and 0.000 on L2.
+
+**Self-continuation is therefore falsified and removed** (rule 7; the code keeps the record). It gave a receding surface's
+band its own next level where no eye motion revealed what lies behind — the opposite of what the band means. It looked
+right on starwatcher only because the alternative under the reach arm was the sky; the app's answer for that band is the
+FAR PLAIN, ~150 steps behind. Its overreach on vermeer (98 % of the band) had a second cause worth keeping: DA3's silhouette
+ramps are joined to the figure by the rim law's affine rescue, so any walk "on the figure's own surface" runs down the ramp
+to the wall's depth.
+
+**Starwatcher's plain band, finally.** Its far side by the app's semantics is the far plain. The far plain's sheet (640
+rims, 51 k texels, group 157 k) is classified a THING — it stands in front of the picture's backdrop (d 0.002) along the
+horizon by a step — so its own-body marches take the self-closure test, do not close (they run down the near plain and off
+the frame), and it is a hedge; the reach law rightly removed the 9-rim slivers that used to substitute for it, and the sky
+(the only uncapped fitted candidate) wins. "Pairs against the sky class do not vote" was tried and removed: the app's sky
+class is d < 0.5/65535 and a photograph's backdrop is not it. The item is the one §31 named: a ground in front of the
+picture's farthest surface along a horizon is not thereby a thing, and no unit statistic tried separates it from a figure
+in front of a wall. Two facts narrow it: the far plain's front boundary is with the FARTHEST surface of the picture only,
+and it touches both frame sides; a figure's front boundary is with a surface that continues behind it on both sides. That
+is a topological statement (the far side's continuation around the unit), the next thing to build, and cheap to measure on
+the four pictures and L1–L4.
+
+| arm | L1 | L3 | S2 | starwatcher sky-valued % | troll gap % | sunflowers sky-valued % (rows) | vermeer sky-valued % |
+|---|---|---|---|---|---|---|---|
+| comp + reach-group (RG, the measured arm) | 0.015 | 0.000 | 0.000 | 51 | 6.0 | 84 (197) | 72.6 |
+| RG + sky abstains | 0.015 | 0.000 | 0.000 | 51 | — | — | — |
