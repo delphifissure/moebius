@@ -37,7 +37,7 @@ from PIL import Image
 
 ap = argparse.ArgumentParser()
 ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', type=float); ap.add_argument('--q', type=float, default=1 / 65535)
-ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--twosided', action='store_true', help='an OBJECT surface (mask id > 0) passes behind an occluder only where its own rims close the span on both sides of the line (S3 kind-2: a same-surface pair is a positive detection); a one-sided march of an object sheet is a hedge'); ap.add_argument('--twosided-all', action='store_true', help='the two-sided rule for every surface, not only masked objects (backgrounds end at corners too); the ground plane is the exception'); ap.add_argument('--fused', action='store_true', help='a visible component whose boundary to other mask ids is depth-JOINED on the majority of its length is fused with its neighbours (DA3 gives a narrow background gap between two near objects the objects\' depth); its sheet is a hedge, never a measurement'); ap.add_argument('--planeprior', action='store_true', help="the thin plate is pulled toward its own face's plane on the domain with weight 1/visible step, against the strip data at weight 1/sigma: the plate is free to bend where the data supports it and relaxes to the plane where it does not"); ap.add_argument('--smooth', action='store_true', help="faceting: adjacent planar patches of one surface are rejoined when their planes differ by less than the visible step over the smaller patch's own extent (a crease test, not a flatness test), so a smoothly curved surface is one face again and only real creases stay split"); ap.add_argument('--budget', action='store_true', help="per-texel error budget: the fitted slope is shrunk by its own predicted standard error against the visible step, so a sheet continues its slope only as far as its own fit supports it and relaxes to its constant beyond that; continuous, no new constant"); ap.add_argument('--faces', action='store_true', help="faceting: every facet of one join-law component is extended over that component's whole 2-D domain instead of its own disc, so the layered order picks the nearest facet everywhere and the sheet is continuous, with creases where the facets' planes cross"); ap.add_argument('--reach', action='store_true', help="where a sheet ends: it continues into the hole no farther than the surface itself extends outside it (geodesic radius of its own visible patch from its rims), instead of as far as the hole is deep"); ap.add_argument('--reach-things', action='store_true', help="S35 §29: the §15 reach rule (a sheet continues into the hole no farther than its own visible patch extends, geodesic radius from its rims) applied to THINGS only -- a thing ends within its own size behind an occluder, a wall or a floor does not; tried because every rule that fits small things' sheets behind an occluder let their planes run the whole hole (L2's tilted heads, the sunflowers' field pieces)"); ap.add_argument('--geo', action='store_true', help='2-D domain: a sheet claims the band texels within geodesic reach of its rims through the band (reach = its own longest march) instead of the along-line marches only'); ap.add_argument('--patches', action='store_true', help='split every visible component into planar patches (region growing; a texel joins while one plane fits the patch within the visible step tolAt); patches are the surfaces'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
+ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--twosided', action='store_true', help='an OBJECT surface (mask id > 0) passes behind an occluder only where its own rims close the span on both sides of the line (S3 kind-2: a same-surface pair is a positive detection); a one-sided march of an object sheet is a hedge'); ap.add_argument('--twosided-all', action='store_true', help='the two-sided rule for every surface, not only masked objects (backgrounds end at corners too); the ground plane is the exception'); ap.add_argument('--fused', action='store_true', help='a visible component whose boundary to other mask ids is depth-JOINED on the majority of its length is fused with its neighbours (DA3 gives a narrow background gap between two near objects the objects\' depth); its sheet is a hedge, never a measurement'); ap.add_argument('--planeprior', action='store_true', help="the thin plate is pulled toward its own face's plane on the domain with weight 1/visible step, against the strip data at weight 1/sigma: the plate is free to bend where the data supports it and relaxes to the plane where it does not"); ap.add_argument('--smooth', action='store_true', help="faceting: adjacent planar patches of one surface are rejoined when their planes differ by less than the visible step over the smaller patch's own extent (a crease test, not a flatness test), so a smoothly curved surface is one face again and only real creases stay split"); ap.add_argument('--budget', action='store_true', help="per-texel error budget: the fitted slope is shrunk by its own predicted standard error against the visible step, so a sheet continues its slope only as far as its own fit supports it and relaxes to its constant beyond that; continuous, no new constant"); ap.add_argument('--faces', action='store_true', help="faceting: every facet of one join-law component is extended over that component's whole 2-D domain instead of its own disc, so the layered order picks the nearest facet everywhere and the sheet is continuous, with creases where the facets' planes cross"); ap.add_argument('--reach', action='store_true', help="where a sheet ends: it continues into the hole no farther than the surface itself extends outside it (geodesic radius of its own visible patch from its rims), instead of as far as the hole is deep"); ap.add_argument('--reach-group', action='store_true', help="S35 §30: the reach law with the JOIN GROUP's extent -- a sheet continues into the hole no farther than the largest visible extent among the sheets its join law puts on one surface with it (a fragment of the ground reaches as far as the ground; an isolated leaf only as far as itself). The truth's answer to §29: small pieces' true hidden extent is their own size (L2 discs J90 1-2 texels) unless they are pieces of a larger surface (a 39-texel ground fragment, J90 64)"); ap.add_argument('--expo', action='store_true', help="S35 §30: the §29 per-texel exposure trim under every closure and for every sheet -- a sheet's disc keeps a texel at geodesic distance j from its entries only while j <= KPAR (disp_texel - disp_rim), the app's own parallax reach: a leaf 8 mm behind a head is revealed almost nowhere, the ground 0.3 m behind it a hundred texels in. (Under §29 the trim walked from a footprint that was the whole march, j = 1 everywhere, so it never trimmed.)"); ap.add_argument('--reach-diag', action='store_true', help='S35 §30: dump, per fitted sheet and disc texel, the geodesic distance from its entries, its own visible extent, and whether the truth first hidden surface there is its own primitive (kit scenes with --truth; reach_diag.npz)'); ap.add_argument('--reach-things', action='store_true', help="S35 §29: the §15 reach rule (a sheet continues into the hole no farther than its own visible patch extends, geodesic radius from its rims) applied to THINGS only -- a thing ends within its own size behind an occluder, a wall or a floor does not; tried because every rule that fits small things' sheets behind an occluder let their planes run the whole hole (L2's tilted heads, the sunflowers' field pieces)"); ap.add_argument('--geo', action='store_true', help='2-D domain: a sheet claims the band texels within geodesic reach of its rims through the band (reach = its own longest march) instead of the along-line marches only'); ap.add_argument('--patches', action='store_true', help='split every visible component into planar patches (region growing; a texel joins while one plane fits the patch within the visible step tolAt); patches are the surfaces'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
 ap.add_argument('--color', action='store_true', help="per-sheet colour (S35 §25): every band texel's colour is its OWN sheet's visible colour continued over the texels that sheet owns (harmonic extension per sheet), never a per-line rim window; the source's anti-aliased fringe at each silhouette is measured on the picture and left unanchored")
 ap.add_argument('--rgb', help='the source colour image (defaults to <dump>/color.png)')
 ap.add_argument('--closure', default='comp', choices=['comp', 'layer', 'surround'], help="two-sided closure test for a THING's march. 'comp' (the §18 rule, adopted): the march skips the band texel's own id and is closed when it exits onto the sheet's own join-law component. 'layer' (S35 §28, NOT adopted): closed on own component or ANY thing, plus the rim-behind-band test, any-closed-march fits, the same-thing lift and the per-march exposure bound; fixes the troll and S15 and breaks three pictures (§28). 'surround' (S35 §29, item C): closed on own component or own THING (self-occlusion); otherwise a thing's sheet is fitted behind an occluder only if it is not nearer than the MEDIAN depth of that occluder's own far-side surroundings (the rim of its band, its own texels and what is nearer than it excluded) -- the majority of what surrounds an occluder is what most likely continues behind it; nearer minority clutter is a hedge. Per-texel exposure trim on things' sheets. No layer grouping (falsified twice in §29: chaining by depth overlap and by step-relative difference).")
@@ -490,7 +490,7 @@ compOfRim = comp[rims]; roots = {}; surfOf = {}
 for r, c in zip(rims, compOfRim): surfOf[r] = roots.setdefault(int(c), len(roots))
 nS = len(roots); members = [[] for _ in range(nS)]; compOfSurf = np.zeros(nS, int)
 for r in rims: members[surfOf[r]].append(r); compOfSurf[surfOf[r]] = comp[r]
-groupOf = (compJ[np.array([members[s][0] for s in range(nS)], dtype=np.int64)] if (A.patches and A.faces) else np.arange(nS))
+groupOf = (compJ[np.array([members[s][0] for s in range(nS)], dtype=np.int64)] if A.patches else np.arange(nS))   # the join-law component of each surface (used by --faces and --reach-group)
 sizes = np.array([len(m) for m in members]); print(f'surfaces {nS} of {nComp} visible components (rim texels per surface: median {int(np.median(sizes))}, max {sizes.max()}, singletons {(sizes == 1).sum()})  ({time.time() - T0:.1f}s)')
 fusedS = fusedComp[compOfSurf]
 # ---- 5 domains: along-line reach from each rim texel into the band ----
@@ -600,6 +600,10 @@ for s in range(nS):
                     # S35 §29: fitted behind this occluder when the sheet is not nearer than the median of the occluder's surroundings
                     X_ = int(occArr.flat[b]) if occArr is not None else 0
                     if X_ > 0 and X_ < len(medRim) and np.isfinite(medRim[X_]) and not (rDs_ > medRim[X_] + rT_): closed = True
+                # S35 §30, FALSIFIED and removed (rule 7): 'none' (no closure test, the reach law the only bound) and 'disocc' (a march whose
+                # band texel is nearer than the rim fitted without the exit test). On L2 they recovered the hidden things (0.51 -> 0.03 m)
+                # and lost the background (-0.17 m: leaves touching a head from below filled up to their extent behind it); on the
+                # pictures 54 % (troll) and 18 % (sunflowers) of the band were filled with values not behind the occluder at all.
                 if not closed: _wmark[ys:ye, xs:xe] = True; anyWeak = True
                 elif A.closure in ('layer', 'surround'):
                     _cmark[ys:ye, xs:xe] = True; anyClosed = True   # a texel on ANY closed march is fitted
@@ -645,7 +649,7 @@ for s in range(nS):
         # as the domain, so the two are comparable with no constant and no units to convert: the geodesic radius of the surface's
         # own visible patch, walking from its rim texels inside the patch, capped at the march length.
         Rg = int(reachMax[s])
-        if (A.reach or (A.reach_things and twoSided)) and Rg > 0:
+        if (A.reach or A.reach_group or (A.reach_things and twoSided)) and Rg > 0:
             cmpId = compOfSurf[s]; rr_ = np.array(members[s], dtype=np.int64); seenV = np.zeros(N, bool); seenV[rr_] = True; fr_ = rr_; E = 0
             for stp in range(1, Rg + 1):
                 x_ = fr_ % pw; y_ = fr_ // pw; nb = []
@@ -654,9 +658,35 @@ for s in range(nS):
                 nb = np.unique(np.concatenate(nb)); nb = nb[(comp[nb] == cmpId) & ~seenV[nb]]
                 if len(nb) == 0: break
                 seenV[nb] = True; fr_ = nb; E = stp
-            reachOwn[s] = E; Rg = min(Rg, E)
-        geoInfo[s] = (np.array(sorted({int(b) for r in members[s] for (b, k) in rimOf[r]}), dtype=np.int64), Rg, (np.setdiff1d(domStop[s], domWeak[s]) if (isObj and (A.twosided or A.twosided_all)) else None))
-        if A.closure == 'surround' and twoSided: expoOf[s] = rDs_
+            reachOwn[s] = E
+            if not A.reach_group: Rg = min(Rg, E)
+        # ENTRIES (S35 §30): rimOf[r] lists every band texel a rim serves along its lines (164 per rim on L2), so the set of all b
+        # was the march FOOTPRINT, not the march starts -- the geodesic distance from the "entries" was 1 on every march texel,
+        # the §15 reach cap never bit and the §29 exposure trim never trimmed. The entries are the footprint texels 4-adjacent to
+        # a rim texel of this sheet: the first band texel of each march.
+        # a rim's march start is not always 4-adjacent to it (the run may sit past a fringe the march skipped): the entry per rim
+        # and direction is the served band texel NEAREST to the rim
+        _ent = set()
+        for r in members[s]:
+            rx_, ry_ = r % pw, r // pw; best_ = {}
+            for (b, k) in rimOf[r]:
+                d_ = abs(b % pw - rx_) + abs(b // pw - ry_)
+                if k not in best_ or d_ < best_[k][0]: best_[k] = (d_, int(b))
+            _ent.update(v[1] for v in best_.values())
+        _ent = np.array(sorted(_ent), dtype=np.int64)
+        geoInfo[s] = (_ent, Rg, (np.setdiff1d(domStop[s], domWeak[s]) if (isObj and (A.twosided or A.twosided_all)) else None))
+        if (A.closure == 'surround' and twoSided) or A.expo: expoOf[s] = rDs_
+if A.reach_group:
+    # the group's extent: the largest own extent among the sheets of one join-law component; the sheet's reach is the smaller of
+    # its hole depth and that extent
+    gE = {}
+    for s_ in geoInfo: gE[int(groupOf[s_])] = max(gE.get(int(groupOf[s_]), 0), int(reachOwn[s_]))
+    nCap = 0
+    for s_ in list(geoInfo):
+        en_, R_, cs_ = geoInfo[s_]; Rn = min(int(reachMax[s_]), gE[int(groupOf[s_])])
+        if Rn < R_: nCap += 1
+        geoInfo[s_] = (en_, Rn, cs_)
+    print(f'reach by group extent: {nCap} of {len(geoInfo)} sheets capped below their hole depth; group extent median {int(np.median(list(gE.values())))}, own extent median {int(np.median([reachOwn[s_] for s_ in geoInfo]))}')
 if _diagExit:
     # the depth gap between a sheet and the thing its march closed on, in units of the sheet's OWN depth extent (p90 - p10 of its
     # strip): is there an invariant that separates a forest (troll) from a leaf closing onto the field below (sunflowers)?
@@ -840,6 +870,11 @@ def geo_domain(s):
     if not (A.geo and s in geoInfo): return domStop[s], None
     if _gdcache.get('s') == s: return _gdcache['v']   # the plate stage and the layered order ask for the same disc
     entries, R, closedSet = geoInfo[s]; src_ = domStop[s]
+    # S35 §30: a sheet whose reach is CAPPED below its hole depth (--reach / --reach-group / --reach-things) gets the disc of
+    # radius R about its ENTRIES. Seeding from the marches (the §14 construction) lets every march run its full length along
+    # the line and caps only the sideways spread, so the §15 reach never limited how far a sheet went: L2's 3-texel leaf kept
+    # 9 217 texels of the band with R = 3.
+    if R < int(reachMax[s]): src_ = entries
     if A.faces and closedSet is None:
         # FACETING (S35 §17): the steps between facets of one surface come from domain truncation, not from the facets
         # disagreeing — each facet's plane stops at its own disc and the next texel belongs to another facet's plane (70 % of
@@ -1151,6 +1186,64 @@ for label, doms in ([('stop', domStop)] + ([] if A.no_extend else [('extend', do
     results[label] = dict(ff=ff, ff2=ff2, who=who.reshape(ph, pw), reached=reached.reshape(ph, pw))
     ff.astype(np.float32).tofile(f'{OUT}/farField_{label}.f32'); ff2.astype(np.float32).tofile(f'{OUT}/farField2_{label}.f32'); who.astype(np.int32).tofile(f'{OUT}/who_{label}.i32')
 results['perline'] = dict(ff=ffL)
+
+if A.reach_diag and A.truth and os.path.exists(A.truth):
+    # REACH DIAGNOSTIC (S35 §30). §29 ended with every failure traced to one mechanism: a small piece's plane runs the whole hole
+    # and, nearer than the true far side, wins. The question is whether the truth holds a LAW for how far a sheet may be trusted
+    # away from its own patch. Per fitted sheet: its primitive (the rest render's first-hit pid at its rims), its own visible
+    # extent E (geodesic radius of its patch from its rims), the hole reach R, and for every texel of its disc the geodesic
+    # distance j from its entries, whether the truth's first hidden surface there IS this primitive, and the plane's error in
+    # metres. Rows dumped for the offline analysis (reach_diag.py): match rate and error against j, j/E and the patch's size.
+    tRD = time.time(); z_ = np.load(A.truth); restL = os.path.join(os.path.dirname(os.path.dirname(A.truth)), os.path.basename(os.path.dirname(A.truth)).split('_env')[0], 'rest_layers.npz')
+    if not os.path.exists(restL): print(f'[reach diag] no {restL}; skipped')
+    else:
+        pidRest = np.load(restL)['pid'][..., 0].astype(np.int32)
+        if pidRest.shape != (ph, pw): print(f'[reach diag] rest pid {pidRest.shape} vs probe {(ph, pw)}; skipped'); pidRest = None
+    if pidRest is not None:
+        cls = z_['cls']; w = z_['w_disp'].astype(np.float32); dep = z_['depth']; pidT = z_['pid']; H, W, K = cls.shape; y0 = (H - ph) // 2; x0 = (W - pw) // 2
+        cls_c = cls[y0:y0 + ph, x0:x0 + pw]; w_c = w[y0:y0 + ph, x0:x0 + pw]; dep_c = dep[y0:y0 + ph, x0:x0 + pw]; pid_c = pidT[y0:y0 + ph, x0:x0 + pw]
+        vis = (cls_c >= 2) & (cls_c <= 5) & (w_c > 0); has = vis.any(-1); kk = np.argmax(vis, -1)
+        dTrue = np.take_along_axis(dep_c, kk[..., None], -1)[..., 0].ravel(); pTrue = np.take_along_axis(pid_c, kk[..., None], -1)[..., 0].ravel().astype(np.int32); hasT = (has & np.isfinite(dTrue.reshape(ph, pw))).ravel()
+        whoS = results['stop']['who'].ravel(); cross = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], bool)
+        rows = []; per = []
+        for s in range(nS):
+            if isSky[s] or isGround[s] or s not in geoInfo or len(domStop[s]) == 0: continue
+            rr_ = np.array(members[s], dtype=np.int64); pidS = int(np.median(pidRest.ravel()[rr_]))
+            dom, _ = geo_domain(s)
+            if len(dom) == 0: continue
+            entries, R, _cs = geoInfo[s]
+            # own extent: geodesic radius of the visible patch from its rims (the --reach walk, capped at 400 steps)
+            cmpId = compOfSurf[s]; seenV = np.zeros(N, bool); seenV[rr_] = True; fr_ = rr_; E = 0
+            for stp in range(1, 401):
+                x_ = fr_ % pw; y_ = fr_ // pw; nb = []
+                for dx_, dy_ in DIRS:
+                    okn_ = (x_ + dx_ >= 0) & (x_ + dx_ < pw) & (y_ + dy_ >= 0) & (y_ + dy_ < ph); nb.append(fr_[okn_] + dy_ * pw + dx_)
+                nb = np.unique(np.concatenate(nb)); nb = nb[(comp[nb] == cmpId) & ~seenV[nb]]
+                if len(nb) == 0: break
+                seenV[nb] = True; fr_ = nb; E = stp
+            # geodesic distance from the entries through the disc
+            S2 = np.zeros((ph, pw), bool); S2.ravel()[dom] = True; ys, xs = np.nonzero(S2); ya, yb, xa, xb = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+            sub = S2[ya:yb, xa:xb]; ent = np.zeros((ph, pw), bool); ent.ravel()[entries] = True; cur = ent[ya:yb, xa:xb] & sub
+            dist = np.full(sub.shape, -1, np.int64); dist[cur] = 1; visd = cur.copy()
+            for st in range(2, 2 * max(1, R) + 3):
+                nxt = ndimage.binary_dilation(cur, structure=cross) & sub & ~visd
+                if not nxt.any(): break
+                dist[nxt] = st; visd |= nxt; cur = nxt
+            jd = np.full(N, -1, np.int64); jd.reshape(ph, pw)[ya:yb, xa:xb] = dist; j_ = jd[dom]
+            X = dom % pw; Y = dom // pw; val = planes[s, 0] + planes[s, 1] * X + planes[s, 2] * Y
+            dApp = -z_of_d(np.clip(depth_of_disp(val), 0, 1)); ok = hasT[dom] & (j_ > 0)
+            if not ok.any(): continue
+            e_ = (dApp - dTrue[dom])[ok]; mt = (pTrue[dom] == pidS)[ok]; won = (whoS[dom] == s)[ok]
+            isT = bool(np.median(oid.ravel()[rr_]) > 0)   # the classifier's verdict (oid), not the two-sided flag
+            rows.append(np.stack([np.full(ok.sum(), s), j_[ok], np.full(ok.sum(), E), np.full(ok.sum(), R), mt.astype(int), won.astype(int), np.full(ok.sum(), int(compSize[cmpId])), np.full(ok.sum(), len(rr_)), np.full(ok.sum(), int(hedge[s])), np.full(ok.sum(), int(isThin[s])), e_, np.full(ok.sum(), int(isT))], 1).astype(np.float32))
+            per.append((s, pidS, E, R, len(rr_), int(compSize[cmpId]), int(ok.sum()), float(mt.mean()), float(won.mean()), float(np.median(np.abs(e_[mt]))) if mt.any() else float('nan'), float(np.median(np.abs(e_[~mt]))) if (~mt).any() else float('nan')))
+        if rows:
+            Rw = np.concatenate(rows, 0); np.savez_compressed(f'{OUT}/reach_diag.npz', rows=Rw, cols=np.array(['s', 'j', 'E', 'R', 'match', 'won', 'compSize', 'rims', 'hedge', 'thin', 'err_m', 'thing']), per=np.array(per, dtype=np.float64))
+            j = Rw[:, 1]; E_ = np.maximum(Rw[:, 2], 1); mt = Rw[:, 4] > 0; won = Rw[:, 5] > 0
+            print(f'[reach diag] {len(per)} sheets, {len(Rw)} disc texels with truth; match overall {100*mt.mean():.1f} %, among won texels {100*mt[won].mean():.1f} % (n {int(won.sum())})  ({time.time()-tRD:.1f}s)')
+            for lo, hi in ((0, 0.5), (0.5, 1), (1, 2), (2, 4), (4, 8), (8, 1e9)):
+                m_ = (j / E_ >= lo) & (j / E_ < hi)
+                if m_.any(): print(f'   j/E in [{lo:g},{hi:g}): {int(m_.sum()):7d} texels, match {100*mt[m_].mean():5.1f} %; won {int((m_&won).sum()):7d}, match among won {100*mt[m_&won].mean() if (m_&won).any() else float("nan"):5.1f} %, |err| median won {np.median(np.abs(Rw[m_&won, 10])) if (m_&won).any() else float("nan"):.3f} m')
 
 # ---- per-sheet colour (S35 §25) ----
 # The app colours a band texel from the rim its own LINE found, with a window sized by the depth fit, and lets a membrane
