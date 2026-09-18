@@ -1302,3 +1302,37 @@ into the horizon) while a figure's silhouette is a step of constant size — a p
 the boundary, not a per-unit statistic. That is a contour/edge instrument, the same family as the contact-geometry test §30
 named for hidden things, and it is the next classifier item. Until then `comp + reach-group` stands as the measured arm with
 starwatcher's near plain as its one documented casualty, and the fact that the baseline's fill there was also wrong.
+
+## 32. The edge instrument (user: "do the edge instrument", 2026-09-18)
+
+**The instrument.** At every boundary texel where a unit stands in front of its neighbour by a depth step, the unit's depth
+along the inward grid line (up to 24 texels, at least 4) is fitted by a line and extrapolated one texel past the edge. The
+unit CONTINUES there when the extrapolation lands on the far side within the tolerance; it STEPS OFF when it does not. Per
+unit: the front-boundary length of each kind and the median of the extrapolation's miss over the actual step (printed with
+`THINGS_DIAG`; always computed in the classifier stage, `sheets.py`).
+
+**What it says about starwatcher's plain: it steps off.** The near plain steps off along 864 of its 917 stepped front
+texels (miss/step 1.18), the far plain along 946 of 954 (1.00); every figure, jug and head on vermeer and the sunflowers
+1.0–1.9. In DA3's map the near plain ends in a terrace step of 17 times its own per-row slope, not in a horizon it recedes
+into. So the map presents the plain as a slab in front of another slab; the classifier is not wrong about the map, and the
+baseline's fill of the plain's band with the far plain was the map's own geometry. The edge test cannot separate a
+terrace from a figure, and no per-unit or per-edge depth statistic tried today can (§31: three rules; §32: this one).
+
+**What the band behind the figure's legs actually is** (`DBG_SHEET` on the domain builder): the near plain's own
+self-occlusion band — the whole plain is band, because a receding ground has a far side everywhere — and under the baseline
+it was filled by a 9-rim sliver of far plain whose 923-texel column marches, dilated by their own length, reached 21 846
+texels. The reach law cuts that sliver to 754 texels, correctly. The true far side is the plain itself a little farther
+up, and no arm constructs it: the plain is a thing, so its own-body marches take the §18 self-closure test, and they run up
+the whole plain (all band) to exit at the horizon onto the far plain — open, hedge, sky. Two constructions were tried
+against this and are falsified (rule 7, both removed): closing also on an exit onto the sheet's own join group (29 k of
+794 k marches closed; sky-valued 50.6 → 47.0 %, jumps 1 967 → 5 662), and the join group's AREA as the reach extent
+(`--reach-area`, kept as an option: the inradius undersells a wide strip, but the strip that mattered was a sliver; kit L1
+0.030 m against `reach-group`'s 0.015, every picture identical to `reach-group`).
+
+**The construction that is missing** is the per-line law's own: what is revealed at a band texel is what lies the reveal
+distance up the line, and when that is the same surface (joined all the way) the surface continues itself — a stretch,
+not a far side. The sheets model has no such case: its far sides are other surfaces' planes, and a fully banded receding
+surface has no rims of its own. On the kit this never shows because the kit's grounds are one visible component and one
+sheet; on a photograph a smooth ground is strips. That is the next construction item, with the layer notion (L1/L4) the
+one after it. The measured arm remains `comp + reach-group`; starwatcher's plain is its documented casualty, and today
+established that the casualty is a missing construction, not a classifier verdict.

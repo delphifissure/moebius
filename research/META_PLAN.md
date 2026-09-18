@@ -276,3 +276,10 @@ everywhere — is never fitted and the sky wins once the far plain is capped. Th
 (stepped vote + group reach, frame contact, recede): each fixes or misses the plain and breaks the sunflowers, or S2, the
 milkmaid and the troll. What separates a ground from a figure is how its depth approaches its far edge (continuing vs a step),
 an edge instrument, not a unit statistic — the next classifier item. `comp + reach-group` stands as the measured arm.
+
+**S35 §32 (2026-09-18).** Edge instrument built (continue vs step-off along the inward line at every stepped front texel).
+Verdict: starwatcher's near plain steps off (864 of 917 texels) — a terrace in DA3's map, not a horizon; no per-unit or
+per-edge depth statistic separates it from a figure. The band behind the legs is the plain's own self-occlusion; the reach
+law rightly removed the far-plain sliver that filled it; the missing piece is the per-line law's self-continuation (what is
+revealed is the same surface farther up), a construction the sheets model lacks. Two attempts falsified and removed
+(join-group closure; join-group area as extent kept as an option). Next: the self-continuation construction; then L1/L4.
