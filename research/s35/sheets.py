@@ -157,6 +157,15 @@ if A.things:
     for a_, b_ in zip(st2, en2):
         sel_ = rel_order[a_:b_]; n_ = nAB[sel_]; med_ = np.median(n_)
         thing[ua_s[a_]] = bool(((n_ >= med_) & (fAB[sel_] > bAB[sel_]) & gFront[sel_]).any())
+    # S35 §31, FALSIFIED and removed (rule 7), two more classifier rules aimed at starwatcher's near plain (a SAM segment in front
+    # of the far plain across a join-law break at the horizon, so a "thing", whose own band -- a smooth receding ground has a far
+    # side everywhere -- is therefore never fitted): (a) FRAME CONTACT, thing iff its stepped front boundary is longer than its
+    # contact with the frame's edges -- a ground is in front of the sky along a horizon as long as the frame's bottom, both plains
+    # stayed things; (b) RECEDE, thing iff the mean disparity drop at its stepped front edge exceeds its own disparity range
+    # (p90 - p10) -- both plains became surfaces and starwatcher's ground band filled (sky-valued 51 -> 0.5 %), but S2's slanted
+    # slabs, the milkmaid (9 -> 4 labelled things on vermeer) and the troll (13 -> 2) became surfaces too, their own planes
+    # filled their bands, and every picture's jumps went up tenfold. Neither the length nor the depth statistics of a unit at
+    # this level separate a ground from a figure standing on it.
     if A.thingrule == 'steps':
         # S35 §29: the vote is by boundary LENGTH over the stepped pairs only. F = the length along which the unit is in front of
         # neighbours that are also behind it by medians; B = the length along which it is behind neighbours that are also in
@@ -792,6 +801,7 @@ try:
     near = dS > np.percentile(dR, 90) + 20 * tR
     print(f'strip check, largest surface {sBig}: {len(stB)} strip texels, {len(rr)} rims; rim disparity median {np.median(dR):.3f} (p10 {np.percentile(dR,10):.3f}, p90 {np.percentile(dR,90):.3f}); strip texels nearer than the rims by > 20 tol: {int(near.sum())} ({100*near.mean():.1f} %), their disparity median {np.median(dS[near]) if near.any() else 0:.3f}; band texels own disparity median {np.median(DISP[band]):.3f}')
 except Exception as e: print('strip check failed', e)
+np.savez_compressed(f'{OUT}/sheets_info.npz', rims=np.array([len(m) for m in members]), compSize=compSize[compOfSurf], E=reachOwn, R=reachMax, group=np.asarray(groupOf), hedge=hedge, thin=isThin, sky=isSky, dropped=isGround, groundSurf=isGroundSurf, rimDepth=np.array([float(np.median(dQ.ravel()[np.array(m)])) if len(m) else np.nan for m in members]), sid=np.array([int(np.median(oid.ravel()[np.array(m)])) if (A.mask and len(m)) else -1 for m in members]), thing=np.array([bool(np.median(oid.ravel()[np.array(m)]) > 0) if len(m) else False for m in members]))   # S35 §30: per-sheet facts for the offline instruments
 print(f'planes fitted: {int((~isSky & ~isThin & ~isGround & ~isGroundSurf).sum())} full, {int(isThin.sum())} thin (constant), {int(isSky.sum())} sky, {int(isGroundSurf.sum())} on the ground plane, {int(isGround.sum())} dropped (strip under three texels); strip texels median {int(np.median(stripN[~isSky & ~isGround])) if (~isSky & ~isGround).any() else 0}  ({time.time() - T0:.1f}s)')
 
 # ---- 4b residual extension per surface over its domain (harmonic, Dirichlet at the surface's rim texels) ----

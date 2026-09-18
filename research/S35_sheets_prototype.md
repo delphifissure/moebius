@@ -1258,3 +1258,47 @@ kept small pieces' planes from running the hole.
 L2's background exact); its casualties are starwatcher's ground (the join law not joining a smooth ground) and, shared with
 every arm, the things hidden behind things (L2's slivers, L4's leaves behind the figure). The next item is the layer notion
 measured on L1/L4 with the reach law in place, and the join law on a smooth ground; not another closure.
+
+## 31. The casualty of the reach arm, traced: starwatcher's ground is a thing (2026-09-18, "ok continue")
+
+**Where the lost texels are.** Under `comp + reach-group` starwatcher's band goes 19 → 51 % sky-valued. Every one of the
+43 307 lost texels is BELOW the horizon (row 481; lost rows 555–674, columns 142–435, behind the figure's legs and to its
+left), so it is a real loss, not a correction (`reach_starwatcher.png`). The baseline had filled them with one sheet — the far
+plain at d 0.077 — which was itself wrong: the band there is the near plain's OWN band (a smooth receding ground has a far
+side everywhere: the app's disocclusion rule fires on the gradient), and its far side is the plain a little farther up, at
+0.3–0.5, not the horizon and not the sky.
+
+**Why nothing fits it.** The near plain is a SAM segment (id 2, 131 k texels, d 0.527) and the classifier calls it a THING:
+it is in front of the far plain by medians (0.53 vs 0.03) and by a depth step across the join-law break at the horizon. A
+thing's own-body marches take the §18 self-closure test, they do not close (the plain runs off the frame), so its sheets are
+hedges and whoever else reaches wins: the far plain under the baseline (uncapped, wrong), the sky under any reach arm (the
+far plain capped to its group's extent, 173 texels). The near plain's own join group has sheets with extents up to 263; they
+are hedges too.
+
+**Three classifier rules tried against it, all constant-free, all falsified (rule 7, the code records each):**
+- *Stepped vote* (§29 `steps`) + `reach-group`: starwatcher's jumps 2 249 → 794 but the plain stays a thing (51 → 53 %
+  sky-valued); on the sunflowers the plants become surfaces and, given the background's group extent, fill the sky rows
+  (0 of 211 sky, jumps 1 349 → 14 648) — §29's failure of `steps` was not only the reach defect. The join law puts the
+  sunflowers' far field and sky in ONE group (519 k texels, extent 283): the horizon is a gradient DA3 joins.
+- *Frame contact* (thing iff its stepped front boundary is longer than its contact with the frame's edges): both plains
+  stay things — a ground is in front of the sky along a horizon as long as the frame's bottom.
+- *Recede* (thing iff the mean disparity drop at its stepped front edge exceeds its own disparity range): both plains become
+  surfaces and starwatcher's band fills (0.5 % sky-valued, fill 0.28) — and so do S2's slanted slabs (0.000 → 0.012 m), the
+  milkmaid (9 → 4 labelled things) and the troll (13 → 2): their own planes fill their bands, vermeer's wall goes 72 → 6.5 %
+  sky-valued, every picture's jump count rises tenfold. On the kit it gave S15 6.55 → 0.076 m median (mean −1.6: the crown
+  pieces as surfaces), L4 0.000 → 0.049 m.
+
+| arm | L1 med | L2 bg / thing mean | L4 med | S2 med | S15 med | starwatcher sky-valued % / v | sunflowers sky-valued % / v | troll gap % | vermeer sky-valued % / v |
+|---|---|---|---|---|---|---|---|---|---|
+| comp (baseline) | 0.092 | −0.228 / +0.095 | 0.000 | 0.000 | 8.55 | 19 / 2 249 | 82 / 1 349 | 91.8 | 72 / 3 339 |
+| comp + reach-group (RG) | 0.015 | −0.000 / +0.476 | 0.000 | 0.000 | 8.12 | 51 / 1 995 | 84 / 1 029 | 6.0 | 72.6 / 3 110 |
+| steps + RG | 0.015 | −0.013 / +0.386 | 0.000 | 0.000 | 6.55 | 53 / 794 | 1.8 / 14 648 | 1.1 | 72.6 / 3 110 |
+| recede + RG | 0.014 | +0.000 / +0.493 | 0.049 | 0.012 | 0.076 | 0.5 / 25 272 | 1.8 / 35 141 | 17.4 | 6.5 / 20 912 |
+
+**What separates a ground from a figure standing on it** is not in a unit's boundary lengths or depth statistics at this
+level: the ground is in front of the sky along a horizon as long as the frame, and a figure's DA3 depth spans as much as its
+drop to what is behind it. The property is that the ground's depth at its far edge CONTINUES into the far side (it recedes
+into the horizon) while a figure's silhouette is a step of constant size — a per-edge test on the run of depths approaching
+the boundary, not a per-unit statistic. That is a contour/edge instrument, the same family as the contact-geometry test §30
+named for hidden things, and it is the next classifier item. Until then `comp + reach-group` stands as the measured arm with
+starwatcher's near plain as its one documented casualty, and the fact that the baseline's fill there was also wrong.

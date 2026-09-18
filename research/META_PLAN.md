@@ -269,3 +269,10 @@ remain hedged; two closures without re-emergence were falsified and removed. L1 
 median but the leaves behind the figure 0.098 m under all of them — the layer's things are filled only when the background
 happens to be fragmented (the troll's accident). Carry `--reach-group`; next: the layer notion on L1/L4 with the reach in
 place, and why the join law does not join a smooth ground.
+
+**S35 §31 (2026-09-18).** The reach arm's one casualty traced: starwatcher's near plain is a SAM segment the classifier calls a
+thing (in front of the far plain across a join-law break at the horizon), so its own band — a receding ground has a far side
+everywhere — is never fitted and the sky wins once the far plain is capped. Three constant-free classifier rules tried
+(stepped vote + group reach, frame contact, recede): each fixes or misses the plain and breaks the sunflowers, or S2, the
+milkmaid and the troll. What separates a ground from a figure is how its depth approaches its far edge (continuing vs a step),
+an edge instrument, not a unit statistic — the next classifier item. `comp + reach-group` stands as the measured arm.
