@@ -1509,3 +1509,45 @@ behind a select in §32), which respects creases because it interpolates the sur
 Wiring the plate as the fragment's value beyond its own extent is the next item; with it, `wrap + reach-group` can be
 measured fairly on vermeer and starwatcher. The join law's horizon problem (sky joined to field on the sunflowers) is a
 separate item and older. Measured arm today: still `comp + reach-group`.
+
+## 37. The clamped plate per join group (user: "wire the clamped plate in for fragments", 2026-09-18)
+
+**The wiring** (`--group-plate`). One thin-plate solve per join group, with the machinery of `--tps` (the §14 plate: bending
+energy, data at the strip's own noise, Morozov's discrepancy for λ, algebraic multigrid): data = the group's visible texels
+within reach of its sheets' discs, unknowns = data ∪ the union of those discs, no plane prior (the group's own texels pin
+the plate on every side of a hole; a prior toward any plane brought back the wall+floor plane at vermeer's crease). Every
+sheet of the group takes the plate's values on its disc, so fragments carry the surface — creases, curvature and all — and
+share one field. Under `wrap + reach-group`:
+
+| arm | L1 med / things | L2 bg / thing | L3 | L4 thing | S2 | S26 | S15 med | starwatcher sky % / v | troll gap % | sunflowers sky rows / v | vermeer sky % / v |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| comp + reach-group (RG, measured arm) | 0.015 / 0.046 | −0.000 / +0.476 | 0.000 | 0.098 | 0.000 | 0.028 | 8.12 | 51 / 1 995 | 6.0 | 197 / 1 029 | 72.6 / 3 110 |
+| wrap + reach-group + group strip (WGS) | 0.0156 / 0.024 | −0.001 / +0.475 | 0.000 | 0.098 | 0.036 | 0.027 | 0.071 | 64 / 878 | 0.4 | 0 / 25 859 | 0.4 / 2 043 |
+| wrap + reach-group + group plate (WGP) | **0.0101 / 0.007** | −0.000 / +0.479 | 0.000 | 0.099 | 0.0029 | 0.030 | 1.21 | 98 / 1 664 | 30.7 | 165 / 48 068 | 21 / 95 350 |
+
+**On the kit it is the construction.** L1's hidden forest layer, the troll's configuration in exact truth, goes from 0.046 m
+(RG) to **0.007 m** — the leaves behind the figure carried by their layer's plate rather than each leaf's plane or the
+wall; L1's median 0.0101 m is under the app's own 0.0075 m by a third of a step (`groupplate_L1.png`). L2's background is
+exact; S2 comes back to 0.003 m (the group plate carries the floor+box halves as the surface they are); S15 8.5 → 1.2 m.
+The kit's join groups are surfaces, and the plate interpolates a surface.
+
+**On the photographs it fails, and the failure is upstream of it.** Vermeer's wall band goes 72 → 21 % sky-valued at
+fill 0.3 with the jump count thirty times the baseline; the troll's gap opens to 31 %; the sunflowers land between the
+arms (165 of 211 sky rows, jumps 48 k). Each is the join law's grouping on a DA3 map: vermeer's wall is one group with its
+floor (the crease, by design) and with the figure's silhouette ramps (the affine rescue joins a ramp as a grazing plane),
+so the plate is pinned by data at three depths; the troll's forest group has 56 visible texels within reach of a 177 k
+domain (the leaves' own texels are all band), so the plate is essentially free and did not converge; the sunflowers' group
+is sky + field + ramp-joined plants. A plate interpolates whatever the data say is one surface, and on these maps the join
+law says the wrong things are one surface. Starwatcher's plain band (98 % sky) is §34's point once more: the plain's own
+plate reproduces the plain, which is not behind the plain, and the far plain that the app puts there is still the thing at
+176°.
+
+**Where the thread ends today.** The chain §30 → §35 → §36 → §37 is complete on the kit: the reach law bounded by the whole
+(§30), the whole named honestly by the topological classifier (§35), the fragment carrying the whole's surface by the
+plate (§37) — L1 0.0101 m, L2 background exact, L3 0.000, L4 0.000, S2 0.003, S9 0.000, S26 0.030, S15 1.21 m. What the
+photographs add is one item, older than all of these and now isolated by them: the join law joins what is not one surface
+on an estimator's map — creases are joined by design and should stay so for the plate, but silhouette ramps and soft
+horizons are joined by the affine rescue and must not be. A ramp is a monotone run of a few texels spanning a large depth
+between two surfaces that each continue beyond it; a grazing plane is not. That test on the rim law, measured on the
+troll, vermeer and the sunflowers with the kit as the regression bar, is the next item. Measured arm today: still
+`comp + reach-group`; the arm to measure once the join law is repaired: `wrap + reach-group + group-plate`.

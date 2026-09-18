@@ -313,3 +313,10 @@ window. L2's background 0.514 → 0.000 m under the wrap classifier (exact); bre
 is a continuous surface, not a plane; wall band 0.008 → 0.11). Growth and consensus repairs falsified. Next: the §32 clamped
 plate per join group as the fragment's value beyond its own extent; then wrap + reach-group re-measured. The sunflowers' sky
 joined to its field by the rim law's affine rescue is a separate, older item.
+
+**S35 §37 (2026-09-18).** Clamped plate per join group as every fragment's value (`--group-plate`). Kit: L1 0.0101 m with the
+hidden layer at 0.007 m, L2 background exact, S2 0.003, S15 1.2 m — the §30–§37 chain closed on the kit. Photographs fail
+for one upstream reason: the join law joins silhouette ramps and soft horizons (the affine rescue) so groups are not
+surfaces (vermeer's wall band 21 % sky-valued, troll gap 31 %). Next: a ramp test in the rim law (a few-texel monotone run
+spanning a large depth between two surfaces that continue beyond it is not a grazing plane), kit as the regression bar.
+Measured arm unchanged; the arm to measure after the repair is `wrap + reach-group + group-plate`.
