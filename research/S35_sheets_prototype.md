@@ -1083,3 +1083,79 @@ code was re-run after the cleanup: S15 0.9490 m under `layer` and 8.5468 m under
   cases. Disadvantages: a new construction, unmeasured; the risk of another five attempts.
 Recommendation: A now, item 1 proceeds; C only if the troll's kind of background (a porous layer in front of a deep gap)
 matters enough to spend another sprint on.
+
+## 29. Item C: the layer notion tested, with four new kit scenes (user: "do C… I'm wondering if we need some more synthetic data", 2026-09-18)
+
+**Why synthetic data first.** §28 ended with the finding that no per-march exit test separates the troll's forest from a petal
+behind a petal, and with only the eye at p45 as the truth for the sunflower side of the conflict. Four kit scenes now hold the
+disputed configurations with exact truth (`truthkit/scenes.py`, `layer_scenes.png`): **L1** a dense leaf layer (300 discs of
+radius 0.08 W at 0.5–0.7 W, nine tenths of the frame covered) before a far wall, a figure in front — the troll; **L4** the
+same with 100 discs, the layer and the gap even; **L2** thin discs on stems (the sunflowers), a big near head, two leaves per
+stem chaining the plants, before a ground plane and a sky-blue wall 4 W back; **L3** a figure before a brick wall with a table
+and a cluster of small things beside her — the milkmaid. Each scene gets its rest render, its env45 truth, an object-id map
+from its own truth (`truth_ids.py`: the first hit's THING primitive per texel, the kit's stand-in for SAM; the forest's leaves
+left unlabelled as under the troll's click mask, so they are depth components), and the app's plane bake through the a257
+probe. The step passed to `sheets.py` is the visible step the probe prints, as for S15.
+
+**A kit artefact caught on the way** (`layer_L2_squash.png`). L2 was first built like S32, ground to 300 W. The app's depth
+law then puts the whole plant field and the near ground within ten tolerances of one depth (d 0.482–0.491): the app's
+per-row law scored 0.0002 m there and the sheets 0.32 m, because no plane can separate a head from the ground at that
+resolution. That is the law's squash of the near field under a far outer limit, not a property of the sheets; the scene was
+rebuilt with the sky as a far wall at 4 W (as in the picture, where the sky is the farthest surface, d 0.009) and the app's
+own score on it is median 0.000 m, p90 0.49 m.
+
+**Layer groupings: two forms, both falsified before the kit scored them.** (1) Things adjacent with overlapping p10–p90 depth
+ranges, union-find: 202 of the troll's 211 things (836 k of 870 k texels) became one layer, 393 of the sunflowers' things
+another. (2) Adjacent things whose depth difference is below either one's own step down to what lies behind it: still one
+layer of 179 things on the troll. With the pictures' blurred depth every clump overlaps its neighbours and the chain runs
+through the troll himself; with the kit's exact leaves (ranges of one texel) nothing chains at all. A layer is not a
+depth-range object. Both removed (rule 7).
+
+**What a layer is, then: the majority of an occluder's surroundings** (`--closure surround`). The forest continues behind
+the troll because nine tenths of what surrounds him is forest; the petals do not continue behind the head because six tenths
+of what surrounds the head is sky. Per occluder X: the far-side texels along the rim of X's band (X's own texels excluded,
+texels nearer than their band neighbour excluded — they are in front of X), their median depth m(X). A thing's sheet is
+fitted behind X when it is not nearer than m(X); nearer things are minority clutter and hedges there; own-component and
+own-thing closure (§18) stay as the self-occlusion case; per-texel exposure trim from §28 kept. No grouping, no threshold
+beyond the median. Measured:
+
+| arm | troll gap / forest % | sunflowers sky rows | starwatcher v | vermeer v | S15 m | S9 / S2 / S26 m | L3 m | L2 m |
+|---|---|---|---|---|---|---|---|---|
+| comp + classifier (baseline) | 91.8 / 6.4 | 197 | 2 249 | 3 339 | 8.55 | 0.000 / 0.000 / 0.028 | 0.000 | 0.015 |
+| layer (§28) | 2.5 / 89.6 | 0 | 19 522 | 37 429 | 0.95 | same | — | — |
+| surround | 3.1 / 83.6 | 0 | 12 819 | 18 170 | 1.93 | same | 0.000 | 0.083 |
+| surround + reach on things | — | — | — | — | 1.91 | — | 0.000 | 0.055 |
+| steps classifier + comp | 1.1 / 84.4 | 0 | 942 | 3 339 | 5.33 | 0.000 / 0.000 / 0.028 | 0.000 | — |
+| steps classifier + surround | 0.8 / 84.7 | 0 | 18 307 | pending | 1.22 | pending | 0.000 | — |
+| steps + comp + slope budget | 0.7 / 88.8 | 0 | 889 | 3 312 | 5.59 | same | 0.000 | 0.43 |
+| app's per-row law (kit check) | — | — | — | — | — | — | — | 0.000 |
+
+The troll is kept and L3 is neutral, but L2, the sunflowers, starwatcher and vermeer are all worse than `comp`. The buffers say
+why, and it is the same thing every time (`layer_room_head.png`, `layer_L2.png`): once more sheets of SMALL pieces are fitted
+behind an occluder, their planes run the whole hole and, being nearer than the true far side, win the layered order. Right of
+the sunflower head the winners are pieces of the far field whose rims sit 200 rows below at 0.097 and whose planes read
+0.245 up in the sky's rows; on L2 the tilted discs of the farther heads. Under `comp` those pieces were things whose marches
+never closed, so they were hedges and the sky won — a guard by accident. Every rule that removes the accident (any-thing
+closure, the surroundings' median, and the classifier change below) exposes the extrapolation.
+
+**The classifier's part.** The buffer also showed the sunflowers' whole far field (157 k texels at 0.084) classified as a
+THING: with hundreds of tiny neighbours its median shared boundary is two texels, and a three-texel fragment it stands in
+front of casts the deciding vote (the §22 floor-vote flaw). Two repairs measured (`--thingrule`): a plain majority of the
+whole boundary, frame included — falsified at once (SAM's part segments are bounded by their own siblings; starwatcher's
+figure stopped being a thing, v 2 249 → 45 700; removed); and the vote by boundary length over STEPPED pairs only, joined
+boundary abstaining (`steps`): starwatcher 2 249 → 942, vermeer 3 339 unchanged, the troll's forest becomes surfaces and his
+gap 91.8 → 1.1 % under plain `comp` — and the sunflowers 197 → 0 sky rows, because the same far-field pieces, surfaces now,
+are fitted everywhere and their planes run up into the sky. The slope budget (`--budget`) on top does not save it (0 rows;
+L2 0.015 → 0.43 m, the ground's own slope shrunk).
+
+**Where this leaves C.** The layer notion as a grouping is falsified; as a majority-of-surroundings rule it does what §28's
+rule did — fixes the troll and S15 — and fails the same pictures for the same reason. The kit made that reason visible: the
+sheet model has no rule for how far a small piece's plane may be trusted away from its own patch, and the two-sided hedge
+tier has been standing in for one. That is the next item, and it is not a closure item: a reach or a slope law for small
+patches (the §15 reach rule limited to things helped L2 a little, 0.083 → 0.055; the budget hurt) measured on L1–L4, where
+the truth now exists. `comp` + the §22 classifier remains the best all-round arm; `steps` is a better classifier on three
+counts and worse on one for the reason above, so it waits for the reach law too.
+
+**Pending when this was written:** the L1 and L4 truths (the forest scenes were rebuilt with 300 / 100 discs after the
+1 200-disc truth spent an hour in its first eye) and their scores under `comp`, `surround` and `steps`; vermeer under
+`steps + surround`. Added below when they land.

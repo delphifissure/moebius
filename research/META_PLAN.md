@@ -245,3 +245,14 @@ them; the forest is a layer of many things and a petal is one small thing, which
 forms removed; `--closure layer` kept beside the adopted `comp`. Recommendation: `comp` + classifier as the default with
 the troll's x-ray recorded as the known exception; the layer grouping (things → layers by adjacency and overlapping depth)
 is the untested candidate, a bounded item after item 1 if wanted.
+
+**S35 §29, item C: the layer notion tested against four new kit scenes (2026-09-18).** Scenes L1/L4 (a leaf layer before a gap,
+dense and sparse, figure in front), L2 (thin discs before a far sky wall), L3 (figure with a cluster beside her), each with
+env45 truth, a truth-derived id map and the app's probe. Layer GROUPING falsified twice (range overlap and step-relative
+chaining both swallow the picture). The majority-of-surroundings rule (`--closure surround`) keeps the troll (gap 3.1 %) and
+S15 (1.93 m) and is neutral on L3, but loses L2 (0.015 → 0.083 m), the sunflowers, starwatcher and vermeer — the buffers
+show the same mechanism every time: once small pieces' sheets are fitted behind an occluder, their planes run the whole hole
+and beat the true far side; `comp`'s hedge tier had been guarding against that by accident. A stepped-boundary vote for the
+classifier (`--thingrule steps`) fixes starwatcher (2 249 → 942) and the troll under plain comp (gap 1.1 %) and breaks the
+sunflowers the same way. Next item is therefore a reach / slope-trust law for small patches, measured on L1–L4; not a closure
+item. L1/L4 scores pending.
