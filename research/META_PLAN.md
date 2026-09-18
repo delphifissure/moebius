@@ -320,3 +320,10 @@ for one upstream reason: the join law joins silhouette ramps and soft horizons (
 surfaces (vermeer's wall band 21 % sky-valued, troll gap 31 %). Next: a ramp test in the rim law (a few-texel monotone run
 spanning a large depth between two surfaces that continue beyond it is not a grazing plane), kit as the regression bar.
 Measured arm unchanged; the arm to measure after the repair is `wrap + reach-group + group-plate`.
+
+**S35 §38 (2026-09-18).** Ramp test in the rim law (`--ramp`): a steep joined run whose flat flanks, extrapolated to its
+middle, disagree by more than quantisation over the span is unjoined and its texels join the band. Vermeer's wall and
+milkmaid separate (2 426 + 2 036 runs cut); kit nothing regresses, S26 0.030 → 0.000. The kit chain is complete: L1 0.0101
+(hidden layer 0.007), L2 exact, L3/L4/S9/S26 0.000, S2 0.003, S15 1.3 m. Photographs still fail under the validated arm for
+three named reasons: the crease inside a hole (a plate cannot bend there), a thing's march through another thing (§28), and
+data-poor groups (need a plane fallback). Measured arm unchanged.

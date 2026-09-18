@@ -1551,3 +1551,45 @@ horizons are joined by the affine rescue and must not be. A ramp is a monotone r
 between two surfaces that each continue beyond it; a grazing plane is not. That test on the rim law, measured on the
 troll, vermeer and the sunflowers with the kit as the regression bar, is the next item. Measured arm today: still
 `comp + reach-group`; the arm to measure once the join law is repaired: `wrap + reach-group + group-plate`.
+
+## 38. The ramp test in the rim law (user: "build the ramp test in the rim law", 2026-09-18)
+
+**The test** (`--ramp`). Along each row and column, a maximal run of joined edges each of which crosses more than the
+tolerance (a distinct depth level per texel) is a candidate; its two flanks must be flat joined edges. Each flank is
+extrapolated by its own affine law to the run's middle; the run is a RAMP when the two extrapolations disagree by more
+than quantisation can explain over the span (L texels × tolerance) — it bridges a step between two surfaces that each
+continue beyond it. A crease meets in value there and a grazing plane's near part predicts its far part, so both stay
+joined. Ramp edges are unjoined and the ramp's interior texels join the band, so the march passes through them to the
+surface beyond instead of taking the estimator's blur as a far rim. A first form took only runs joined by the affine
+rescue and found 20 on all of vermeer: her silhouette ramps are joined by the RATIO test itself (3.3 % of eye distance per
+texel under the 3.7 % that g_min = 2° allows), which is worth knowing about the rim law.
+
+**What it does.** Vermeer: 2 426 row runs and 2 036 column runs cut, 10 804 ramp texels; the wall (375 k texels) and the
+milkmaid (171 k) become separate join groups where they were one. Kit, under `wrap + reach-group + group-plate`: nothing
+regresses and S26 goes 0.030 → 0.000 m — L1 0.0101 (hidden layer 0.007), L2 background exact, L3 0.000, L4 0.000, S2
+0.003, S9 0.000, S26 0.000, S15 1.32 m. Seven of the kit's eight layered scenes are at or under the app's own law.
+
+**What it does not do: rescue the plate on the photographs.** Vermeer's band behind the milkmaid fills at 0.21 (wall
+0.008), the troll's gap is 30 %, starwatcher 21 % sky-valued with 18 % unreached, the sunflowers back to 211 sky rows
+with jumps at 24 k. The owners behind the milkmaid say why, and it is three things, none of them the ramp: (1) the wall's
+group plate itself reads 0.095 there — the wall and the floor are one group at the crease, by design, and a plate pinned
+by the wall above her and the floor below her interpolates a blend where the truth is wall down to a crease; a plate
+cannot make a crease inside a hole, the crease's line has to be extrapolated; (2) the table's sheet, a thing, owns 46 000
+of her band texels at 0.21 as a fitted sheet — a thing's march up through her body, the §28 question again; (3) hedged
+specks. The troll's forest groups have no visible texels within reach of their discs once the leaves are cut apart, so
+their plates are free.
+
+| arm | L1 / hidden layer | L2 bg | L3 | L4 thing | S2 | S26 | S15 | starwatcher sky % / v | troll gap % | sunflowers sky rows / v | vermeer sky % (wall behind her) / v |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| comp + reach-group (RG, measured arm) | 0.015 / 0.046 | −0.000 | 0.000 | 0.098 | 0.000 | 0.028 | 8.12 | 51 / 1 995 | 6.0 | 197 / 1 029 | 72.6 (94 %) / 3 110 |
+| wrap + reach-group + group-plate (WGP) | 0.0101 / 0.007 | −0.000 | 0.000 | 0.099 | 0.003 | 0.030 | 1.21 | 98 / 1 664 | 30.7 | 165 / 48 068 | 21 / 95 350 |
+| WGP + ramp (RW) | 0.0101 / 0.007 | −0.000 | 0.000 | 0.098 | 0.003 | **0.000** | 1.32 | 21 / 77 615 | 29.8 | 211 / 24 409 | 17 (27 %) / 86 749 |
+
+**Where the day ends.** On the kit the sheet model is now complete and exact or near it: reach bounded by the whole (§30),
+the whole named by the topological classifier (§35), the fragment carrying the whole's surface by the plate (§37), ramps
+cut out of the join law (§38). On the photographs the same arm fails, and the failures are now three named constructions,
+not a mystery: the crease inside a hole (extrapolate the crease line; the plate cannot bend there), a thing's march
+through another thing (§28's question, untouched today), and data-poor groups (fall back to the plane when a group's
+visible texels are few against its domain). The measured arm stays `comp + reach-group`; `wrap + reach-group +
+group-plate + ramp` is the arm the kit has validated and the photographs have not. The instruments to carry: the reach
+diagnostic, the edge instrument, the wrap gap, `sheets_info.npz`, the fill and owner checks.
