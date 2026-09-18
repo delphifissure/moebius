@@ -283,3 +283,12 @@ per-edge depth statistic separates it from a figure. The band behind the legs is
 law rightly removed the far-plain sliver that filled it; the missing piece is the per-line law's self-continuation (what is
 revealed is the same surface farther up), a construction the sheets model lacks. Two attempts falsified and removed
 (join-group closure; join-group area as extent kept as an option). Next: the self-continuation construction; then L1/L4.
+
+**S35 §33 (2026-09-18).** Self-continuation built behind `--selfcont`: per band texel, whether what lies behind it along its
+rest ray is revealed from any eye motion (walk on its own joined surface; an own texel at t occludes the exit surface X iff
+KPAR (D_t − D_X) ≤ t); if no direction reveals, the surface continues itself one depth level down, decided per join group
+by majority. Kit neutral or better (S15 8.1 → 5.1 m), starwatcher's plain fixed (sky 51 → 1.3 %), troll gap 6.0 → 0.6 %;
+but 98 % of vermeer's band and 57 % of the sunflowers' become self (the milkmaid fills with herself). Whether that is wrong
+depends on whether the app's plate tears at quantum steps inside a gradient (band = tiny tears, wants self) or only at
+silhouettes (band = reveal zone, wants the wall): the next thing to read in the app. Measured arm unchanged (`comp +
+reach-group`).

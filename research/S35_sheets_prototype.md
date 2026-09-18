@@ -1336,3 +1336,51 @@ surface has no rims of its own. On the kit this never shows because the kit's gr
 sheet; on a photograph a smooth ground is strips. That is the next construction item, with the layer notion (L1/L4) the
 one after it. The measured arm remains `comp + reach-group`; starwatcher's plain is its documented casualty, and today
 established that the casualty is a missing construction, not a classifier verdict.
+
+## 33. The self-continuation construction (user: "do the self-continuation construction", 2026-09-18)
+
+**What it is** (`--selfcont`). A steep receding surface's band is the union of tiny per-texel gaps — starwatcher's whole plain,
+41 % of vermeer — so no exit test at the far end of a march finds its far side (§32). The construction asks, per band texel
+b, whether what lies BEHIND b along its rest ray is ever revealed: walk from b along each grid line while on b's own
+joined surface; the walk ends at t_s onto a surface X (a frame edge is the surface continuing, an exit onto a nearer
+surface says nothing); from the eye motion that direction stands for, an own texel at distance t occludes X's point behind
+b iff KPAR (D_t − D_X) ≤ t; X is revealed in that direction iff the surface ends before any own texel does that. The truth
+counts a reveal from any eye, so b continues itself only when NO direction reveals; the value is the surface's next depth
+level behind b (its own map, one level down), and the decision is taken per join group by majority so that a footprint or
+a SAM part on a plain does not leave salt-and-pepper sky behind it. It enters the layered order as a candidate like a
+fitted sheet. Three earlier forms are recorded in the code and falsified by the kit: the first same-surface level behind
+(filled every figure with itself), the first screen-space crossing KPAR (D_b − D_j) ≥ j (L3 0.000 → 0.083 m, S2 0.000 →
+0.056 m: a curved body crosses before its silhouette), and the rest-ray test with the nearest candidate over directions
+instead of no-reveal-in-any (the milkmaid's skirt 135 texels below her chest occludes the wall for a vertical eye while a
+sideways one reveals it 50 texels away).
+
+**On the kit** the final form is neutral or better everywhere: L1 0.015, L2 0.000 (bg exact), L3 0.000, L4 0.000, S2 0.000,
+S9 0.000, S26 0.028, S15 8.12 → 5.10 m median. **On starwatcher** it does what was asked (`selfcont_starwatcher.png`): the
+plain fills with itself within two steps of its own depth (sky-valued 51 → 1.3 %), its texture is the map's own staircase
+(the jump count over four steps 1 131 → 6 270, along the terrace line and the figure's edges), and 17 % of the figure's
+band leaks into self because DA3 joins the figure to the far plain's group. The troll's gap closes fully (6.0 → 0.6 %).
+
+**On vermeer and the sunflowers it overreaches** (`selfcont_pictures.png`): 98 % of vermeer's band and 57 % of the
+sunflowers' become self fills — the milkmaid and the table fill with themselves, the plants with themselves (rows of sky
+beside the head 197 → 82). The numbers behind it: under the app's depth law (D 0.2, outer 0.02) the parallax reach behind
+her chest is KPAR (D_chest − D_wall) = 78 texels for the full envelope, and the band across her on one row is 185 wide —
+so from one side or the other the wall is revealed behind nearly all of her, and the rest-ray test should say so; it says
+"occluded" because her own body has depth structure (a fold at d 0.3, 50 texels away, has 47 texels of reach against the
+wall and so covers the point behind her chest for that eye motion). Whether that is a defect of the model or of the band
+turns on a question this note cannot settle from the offline side: on a quantised gradient, does the app's plate tear at
+every quantum step (then the band inside a figure or a plain is tiny tears and wants self) or only at the silhouette (then
+the band inside her is the wall's reveal zone and wants the wall)? The band's width across her says the app marks her whole
+body; the rim tear law tears at steps above the tolerance and a quantum step sits at it. That is the next thing to read in
+the app, and it decides the construction's scope.
+
+| arm | L1 | L2 bg / thing | L3 | L4 | S2 | S15 | starwatcher sky-valued % | troll gap % | sunflowers sky-valued % (rows) | vermeer sky-valued % |
+|---|---|---|---|---|---|---|---|---|---|---|
+| comp + reach-group (RG) | 0.015 | −0.000 / +0.476 | 0.000 | 0.000 | 0.000 | 8.12 | 51 | 6.0 | 84 (197) | 72.6 |
+| RG + self-continuation (RGS) | 0.015 | −0.005 / +0.475 | 0.000 | 0.000 | 0.000 | 5.10 | 1.3 | 0.6 | 40 (82) | 1.7 |
+
+**Standing.** `--selfcont` stays an option, not part of the measured arm: right on the kit and on starwatcher's plain, and the
+one construction that filled the troll's gap to under a percent, but it claims the whole of vermeer's figure and the
+sunflowers' plants, and the app's band semantics on quantised gradients must be read before that can be called right or
+wrong. Instruments added this session and kept: `--reach-diag` / `bleed/reach_diag.py`, the edge instrument in the
+classifier stage, `sheets_info.npz`, `bleed/owners_err.py`, `bleed/fillcheck.py`, `bleed/jumps.py`-style counts, the
+`DBG_SHEET` line in the domain builder.

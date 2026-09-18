@@ -9,4 +9,4 @@ for d in sys.argv[3:]:
     except Exception: print(d,'missing'); continue
     try: who=np.fromfile(f'{P}/{d}/who_stop.i32',np.int32).reshape(ph,pw)
     except Exception: who=np.zeros((ph,pw),np.int32)
-    unr=band&(who<0); imp=band&(who>=0)&(ff>=dQ-step); sky=band&(ff<0.02); print(f'{d:10}: band {int(band.sum())}; unreached {100*unr.sum()/band.sum():.1f} %; not behind occluder {int(imp.sum())} ({100*imp.sum()/band.sum():.1f} %); sky-valued {100*sky.sum()/band.sum():.1f} %; sky-valued in lower third {100*(sky&low).sum()/max(1,(band&low).sum()):.1f} % of {int((band&low).sum())}; fill median {np.median(ff[band]):.3f}')
+    unr=band&(who==-1); imp=band&(who!=-1)&(ff>=dQ-step); sky=band&(ff<0.02); print(f'{d:10}: band {int(band.sum())}; unreached {100*unr.sum()/band.sum():.1f} %; not behind occluder {int(imp.sum())} ({100*imp.sum()/band.sum():.1f} %); sky-valued {100*sky.sum()/band.sum():.1f} %; sky-valued in lower third {100*(sky&low).sum()/max(1,(band&low).sum()):.1f} % of {int((band&low).sum())}; fill median {np.median(ff[band]):.3f}')
