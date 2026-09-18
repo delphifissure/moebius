@@ -40,6 +40,7 @@ ap.add_argument('probe'); ap.add_argument('--truth'); ap.add_argument('--step', 
 ap.add_argument('--out'); ap.add_argument('--tag', default='sheets'); ap.add_argument('--no-ground', action='store_true'); ap.add_argument('--no-residual', action='store_true'); ap.add_argument('--no-extend', action='store_true'); ap.add_argument('--drop-thin2', action='store_true', help='a surface thin along both axes is not extrapolated at all'); ap.add_argument('--local', action='store_true', help='sheet = Shepard blend of local tangent planes fitted around each rim texel (2-D windows), instead of one plane + pinned residual'); ap.add_argument('--mask', help='object-id PNG (0 = background): texels of different ids are never joined, so an object is its own surface and never part of its background'); ap.add_argument('--merge', action='store_true', help='merge a visible fragment into an adjacent surface when its texels lie within the join tolerance of that surface\'s fitted plane (regional join instead of pairwise)'); ap.add_argument('--evidence', action='store_true', help='a sheet extrapolated at constant depth along a thin axis is a hedge, not a measurement: where a fully fitted sheet also lies behind the texel, the fitted sheet shows'); ap.add_argument('--twosided', action='store_true', help='an OBJECT surface (mask id > 0) passes behind an occluder only where its own rims close the span on both sides of the line (S3 kind-2: a same-surface pair is a positive detection); a one-sided march of an object sheet is a hedge'); ap.add_argument('--twosided-all', action='store_true', help='the two-sided rule for every surface, not only masked objects (backgrounds end at corners too); the ground plane is the exception'); ap.add_argument('--fused', action='store_true', help='a visible component whose boundary to other mask ids is depth-JOINED on the majority of its length is fused with its neighbours (DA3 gives a narrow background gap between two near objects the objects\' depth); its sheet is a hedge, never a measurement'); ap.add_argument('--planeprior', action='store_true', help="the thin plate is pulled toward its own face's plane on the domain with weight 1/visible step, against the strip data at weight 1/sigma: the plate is free to bend where the data supports it and relaxes to the plane where it does not"); ap.add_argument('--smooth', action='store_true', help="faceting: adjacent planar patches of one surface are rejoined when their planes differ by less than the visible step over the smaller patch's own extent (a crease test, not a flatness test), so a smoothly curved surface is one face again and only real creases stay split"); ap.add_argument('--budget', action='store_true', help="per-texel error budget: the fitted slope is shrunk by its own predicted standard error against the visible step, so a sheet continues its slope only as far as its own fit supports it and relaxes to its constant beyond that; continuous, no new constant"); ap.add_argument('--faces', action='store_true', help="faceting: every facet of one join-law component is extended over that component's whole 2-D domain instead of its own disc, so the layered order picks the nearest facet everywhere and the sheet is continuous, with creases where the facets' planes cross"); ap.add_argument('--reach', action='store_true', help="where a sheet ends: it continues into the hole no farther than the surface itself extends outside it (geodesic radius of its own visible patch from its rims), instead of as far as the hole is deep"); ap.add_argument('--geo', action='store_true', help='2-D domain: a sheet claims the band texels within geodesic reach of its rims through the band (reach = its own longest march) instead of the along-line marches only'); ap.add_argument('--patches', action='store_true', help='split every visible component into planar patches (region growing; a texel joins while one plane fits the patch within the visible step tolAt); patches are the surfaces'); ap.add_argument('--tps', action='store_true', help='sheet = smoothing thin plate over strip + domain, data weighted by the strip noise, lambda by the discrepancy principle')
 ap.add_argument('--color', action='store_true', help="per-sheet colour (S35 §25): every band texel's colour is its OWN sheet's visible colour continued over the texels that sheet owns (harmonic extension per sheet), never a per-line rim window; the source's anti-aliased fringe at each silhouette is measured on the picture and left unanchored")
 ap.add_argument('--rgb', help='the source colour image (defaults to <dump>/color.png)')
+ap.add_argument('--closure', default='comp', choices=['comp', 'layer'], help="two-sided closure test for a THING's march. 'comp' (the §18 rule, adopted): the march skips the band texel's own id and is closed when it exits onto the sheet's own join-law component. 'layer' (S35 §28, the troll's x-ray; NOT adopted): the march skips whatever is nearer than the sheet's rim and is closed when it exits onto the sheet's own component or onto any THING; a march counts only when its band texel is nearer than the rim; a texel on any closed march is fitted; the same-id demotion is lifted where the march closed on the sheet's own thing; a thing's march is kept only over its exposed prefix, j <= k (d_occluder(j) - d_rim) with k the app's cone law. Fixes the troll (gap 91.8 -> 2.5 %) and S15 (8.55 -> 0.95 m) and breaks vermeer, starwatcher and the sunflowers through one mechanism (§28); the intermediate forms and the depth-ordered variant were falsified and removed")
 ap.add_argument('--things', action='store_true', help='things/surfaces classifier (S35 §22, opt-in): every visible unit (mask segment or depth component) that is in front of a neighbour becomes a two-sided thing, the rest background. Fixes the sunflower staircase, S9 and S2; wrong on the troll (x-ray to the deepest surface behind him), on vermeer with the automatic mask (the floor voted a thing) and on S15 (a canopy behind its own trunk) -- see the note'); ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
 ap.add_argument('--no-smooth', action='store_true'); ap.add_argument('--no-tps', action='store_true'); ap.add_argument('--no-prior', action='store_true'); ap.add_argument('--no-patches', action='store_true')
 ap.add_argument('--no-evidence', action='store_true'); ap.add_argument('--no-geo', action='store_true'); ap.add_argument('--no-fused', action='store_true'); ap.add_argument('--no-twosided', action='store_true'); ap.add_argument('--no-drop-thin2', action='store_true')
@@ -65,6 +66,13 @@ gcol = np.fromfile(f'{P}/groundCol.u8', np.uint8) if os.path.exists(f'{P}/ground
 OUT = A.out or f'{P}/s35'; os.makedirs(OUT, exist_ok=True)
 outer, inner, pn, D, t = meta['outer'], meta['inner'], meta['pn'], meta.get('D', 0.2), meta['rimT']
 q = A.q; skyQ = 0.5 * (1 / 65535)
+# THE APP'S PARALLAX SCALE (attempt 5, S35 §28): how many plate texels a depth gap of one unit slides at the envelope's edge.
+# moebius.js bgConeSlopePerPx (line 993): sCone = 0.0025 * 1920 / pw depth units per px, i.e. k = 1 / sCone = 400 * pw / 1920
+# px per depth unit ("k = 396 * (pw/1920) px per depth unit at the fade-end", a89 comment; the geometric form differs by 1 %).
+# Its units are px per (normalised depth) and it scales with pw, so it is the same physical shift on any picture. A band texel
+# j texels from the silhouette is uncovered for a far side at gap g = d_occluder - d_far only when j <= k g: beyond that the
+# occluder still covers it at every pose in the envelope.
+KPAR = 400.0 * pw / 1920.0
 
 # ---- the app's depth law and join law (bgRimLawFor) ----
 def z_of_d(d):
@@ -482,21 +490,31 @@ for s in range(nS):
     c_ = compOfSurf[s]; bx = _boxes[c_] if c_ < len(_boxes) else None
     if compSize[c_] < 3 or bx is None or (bx[0].stop - bx[0].start) < 2 or (bx[1].stop - bx[1].start) < 2: preDrop[s] = True
 print(f'pre-dropped surfaces (face under three texels or one texel wide): {int(preDrop.sum())} of {nS}')
-_mark = np.zeros((ph, pw), bool); _wmark = np.zeros((ph, pw), bool)
+_mark = np.zeros((ph, pw), bool); _wmark = np.zeros((ph, pw), bool); _cmark = np.zeros((ph, pw), bool); _smark = np.zeros((ph, pw), bool); domSame = {}
+_diagExit = [] if os.environ.get('DIAG_EXIT') else None   # (sheet, rim depth, exit depth, band texel depth) of marches closed on ANOTHER thing
 for s in range(nS):
     if preDrop[s]:
         domStop[s] = np.zeros(0, np.int64); domWeak[s] = np.zeros(0, np.int64); domExt[s] = np.zeros(0, np.int64); continue
-    holes = set(); y0m = ph; y1m = -1; x0m = pw; x1m = -1; anyWeak = False
+    holes = set(); y0m = ph; y1m = -1; x0m = pw; x1m = -1; anyWeak = False; anyClosed = False; anySame = False
+    sidOwn_ = int(oidArr.flat[members[s][0]]) if (oidArr is not None and len(members[s])) else 0
     isObj = A.twosided_all or ((oidArr is not None) and (oidArr.flat[members[s][0]] > 0))
     twoSided = isObj and (A.twosided or A.twosided_all)
     for r in members[s]:
         for (b, k) in rimOf[r]:
             dx, dy = DIRS[k]; bx_ = b % pw; by_ = b // pw; n = int(RUN[k][by_, bx_])
             if n <= 0: continue
-            if k == 0: ys, ye, xs, xe = by_, by_ + 1, bx_ - n + 1, bx_ + 1
-            elif k == 1: ys, ye, xs, xe = by_, by_ + 1, bx_, bx_ + n
-            elif k == 2: ys, ye, xs, xe = by_ - n + 1, by_ + 1, bx_, bx_ + 1
-            else: ys, ye, xs, xe = by_, by_ + n, bx_, bx_ + 1
+            nM = n
+            if A.closure == 'layer' and twoSided:
+                # S35 §28 (attempt 5): the EXPOSURE bound. Texel j of this march (j = 1 at the rim's band neighbour) is uncovered for
+                # this sheet only while j <= KPAR (d_occluder(j) - d_rim): the part of the run the app can never show for this sheet
+                # is not this sheet's to claim. The run keeps its exposed prefix; the closure walk below still crosses the whole
+                # occluder. (Attempt 3's bound by the thing's bounding box was replaced by this and removed.)
+                jj_ = np.arange(n); idx_ = b + jj_ * (-dy * pw - dx); keep_ = (jj_ + 1) <= KPAR * (DISP.flat[idx_] - DISP.flat[r])
+                nM = n if keep_.all() else int(np.argmin(keep_))
+            if k == 0: ys, ye, xs, xe = by_, by_ + 1, bx_ - nM + 1, bx_ + 1
+            elif k == 1: ys, ye, xs, xe = by_, by_ + 1, bx_, bx_ + nM
+            elif k == 2: ys, ye, xs, xe = by_ - nM + 1, by_ + 1, bx_, bx_ + 1
+            else: ys, ye, xs, xe = by_, by_ + nM, bx_, bx_ + 1
             _mark[ys:ye, xs:xe] = True
             y0m = min(y0m, ys); y1m = max(y1m, ye); x0m = min(x0m, xs); x1m = max(x1m, xe)
             if twoSided:
@@ -511,11 +529,36 @@ for s in range(nS):
                 # THING on the far side; closed on ANY axis; a self-occlusion stop (the first own-id texel behind the band texel
                 # closes the span) with same-id demotion lifted on the self-revealed band. None brought S15 under 3 m; together they
                 # broke vermeer (v jumps 3 339 -> 16 788: the table's own folds behind the table) and the troll (his skin behind him).
-                while 0 <= xx < pw and 0 <= yy < ph:
-                    i3 = yy * pw + xx; c_ = comp[i3]
-                    if compSize[c_] >= 3 and not band[yy, xx] and not (oidArr is not None and oidArr.flat[i3] == bid and bid > 0): closed = (c_ == compOfSurf[s]); break
-                    xx -= dx; yy -= dy
+                if A.closure == 'layer':
+                    # S35 §28 (the troll's x-ray; five attempts, not adopted). The occluder is whatever is NEARER than the sheet's rim,
+                    # not whatever shares the band texel's id; the walk skips it and stops at the first non-band texel that is not
+                    # nearer. The span is closed when that texel is the sheet's own component (as before) OR another THING: a forest
+                    # wall continues behind the troll. Only a march whose band texel is NEARER than the rim is a disocclusion of this
+                    # sheet (a nearer surface's plane is not continued behind a farther object). This is the one rule that fixes the
+                    # troll, and it is also what breaks vermeer, starwatcher and the sunflowers: a thing's sheet closed on an
+                    # UNRELATED thing at another depth becomes fitted and, being nearer than the true far surface, wins (§28).
+                    # FALSIFIED and removed (§28): closing on another thing only at the sheet's own depth (troll forest 90 -> 49 %,
+                    # the three pictures unchanged); the same-id lift on ANY closed march (petals behind petals); the reach bound by
+                    # the thing's bounding box; texels no march reached counted weak.
+                    rD_ = DISP.flat[r]; rT_ = TOL.flat[r]; closedSame = False
+                    if not (DISP.flat[b] > rD_ + rT_): xx = -1
+                    while 0 <= xx < pw and 0 <= yy < ph:
+                        i3 = yy * pw + xx; c_ = comp[i3]
+                        if compSize[c_] >= 3 and not band[yy, xx] and not (DISP.flat[i3] > rD_ + rT_):
+                            closed = (c_ == compOfSurf[s]) or (oidArr is not None and oidArr.flat[i3] > 0)
+                            closedSame = closed and oidArr is not None and sidOwn_ > 0 and int(oidArr.flat[i3]) == sidOwn_   # the far side is this thing itself (S15's canopy beyond its trunk)
+                            if _diagExit is not None and closed and c_ != compOfSurf[s]: _diagExit.append((s, float(dQ.flat[r]), float(dQ.flat[i3]), float(dQ.flat[b])))
+                            break
+                        xx -= dx; yy -= dy
+                else:
+                    while 0 <= xx < pw and 0 <= yy < ph:
+                        i3 = yy * pw + xx; c_ = comp[i3]
+                        if compSize[c_] >= 3 and not band[yy, xx] and not (oidArr is not None and oidArr.flat[i3] == bid and bid > 0): closed = (c_ == compOfSurf[s]); break
+                        xx -= dx; yy -= dy
                 if not closed: _wmark[ys:ye, xs:xe] = True; anyWeak = True
+                elif A.closure == 'layer':
+                    _cmark[ys:ye, xs:xe] = True; anyClosed = True   # a texel on ANY closed march is fitted
+                    if closedSame: _smark[ys:ye, xs:xe] = True; anySame = True
                 cs_ = closeStat.setdefault(s, {'closed': 0, 'open': 0, 'exit': {}}); cs_['closed' if closed else 'open'] += 1
                 if not closed:
                     if not (0 <= xx < pw and 0 <= yy < ph): ek = 'edge'
@@ -523,15 +566,24 @@ for s in range(nS):
                         eo = int(oidArr.flat[yy * pw + xx]) if oidArr is not None else 0
                         ek = ('bg d=%.2f' % dQ.flat[yy * pw + xx]) if eo == 0 else ('thing %d d=%.2f' % (eo, dQ.flat[yy * pw + xx]))
                     cs_['exit'][ek] = cs_['exit'].get(ek, 0) + 1
-            reachMax[s] = max(reachMax[s], n)
+            reachMax[s] = max(reachMax[s], nM)
             if not A.no_extend: holes.add(int(holeLab[by_, bx_]))
-            if dx != 0: reachX[s] = max(reachX[s], n)
-            else: reachY[s] = max(reachY[s], n)
+            if dx != 0: reachX[s] = max(reachX[s], nM)
+            else: reachY[s] = max(reachY[s], nM)
     if y1m < 0: domStop[s] = np.zeros(0, np.int64); domWeak[s] = np.zeros(0, np.int64); domExt[s] = np.zeros(0, np.int64); continue
     sub = _mark[y0m:y1m, x0m:x1m]; yy_, xx_ = np.nonzero(sub); dom_ = (yy_ + y0m) * pw + (xx_ + x0m); sub[:] = False
     if anyWeak:
-        subw = _wmark[y0m:y1m, x0m:x1m]; yw_, xw_ = np.nonzero(subw); domWeak[s] = np.sort((yw_ + y0m) * pw + (xw_ + x0m)); subw[:] = False
-    else: domWeak[s] = np.zeros(0, np.int64)
+        subw = _wmark[y0m:y1m, x0m:x1m]
+        if A.closure == 'layer' and anyClosed:
+            subc = _cmark[y0m:y1m, x0m:x1m]; subw &= ~subc; subc[:] = False   # an open march does not veto a closed one
+        yw_, xw_ = np.nonzero(subw); domWeak[s] = np.sort((yw_ + y0m) * pw + (xw_ + x0m)); subw[:] = False
+    else:
+        domWeak[s] = np.zeros(0, np.int64)
+        if A.closure == 'layer' and anyClosed: _cmark[y0m:y1m, x0m:x1m] = False
+    if A.closure == 'layer':
+        if anySame:
+            subs = _smark[y0m:y1m, x0m:x1m]; ysm, xsm = np.nonzero(subs); domSame[s] = np.sort((ysm + y0m) * pw + (xsm + x0m)); subs[:] = False
+        else: domSame[s] = np.zeros(0, np.int64)
     domStop[s] = dom_
     domExt[s] = (np.nonzero(np.isin(holeLab.ravel(), list(holes)) & band.ravel())[0] if not A.no_extend else np.zeros(0, np.int64))
     if A.geo:
@@ -559,6 +611,16 @@ for s in range(nS):
                 seenV[nb] = True; fr_ = nb; E = stp
             reachOwn[s] = E; Rg = min(Rg, E)
         geoInfo[s] = (np.array(sorted({int(b) for r in members[s] for (b, k) in rimOf[r]}), dtype=np.int64), Rg, (np.setdiff1d(domStop[s], domWeak[s]) if (isObj and (A.twosided or A.twosided_all)) else None))
+if _diagExit:
+    # the depth gap between a sheet and the thing its march closed on, in units of the sheet's OWN depth extent (p90 - p10 of its
+    # strip): is there an invariant that separates a forest (troll) from a leaf closing onto the field below (sunflowers)?
+    de = np.array(_diagExit); ext = {}
+    for s_ in np.unique(de[:, 0].astype(int)):
+        t_ = dQ.ravel()[comp == compOfSurf[s_]]; ext[int(s_)] = max(A.q, float(np.percentile(t_, 90) - np.percentile(t_, 10))) if len(t_) else A.q
+    gap = de[:, 1] - de[:, 2]                      # + = the exit is FARTHER than the rim (sheet nearer than the far side)
+    u_ = gap / np.array([ext[int(s_)] for s_ in de[:, 0]])
+    occ = de[:, 3] - de[:, 1]                       # how much nearer the occluder (band texel) is than the rim
+    print(f'[exit diag] {len(de)} marches closed on another thing: exit farther than the rim by depth p10 {np.percentile(gap,10):+.3f} p50 {np.percentile(gap,50):+.3f} p90 {np.percentile(gap,90):+.3f}; in units of the sheet own extent p10 {np.percentile(u_,10):+.1f} p50 {np.percentile(u_,50):+.1f} p90 {np.percentile(u_,90):+.1f}; occluder nearer than rim by p50 {np.percentile(occ,50):+.3f}; share with exit farther than rim by more than its extent {100*(u_>1).mean():.0f} %, than half the occluder gap {100*(gap>0.5*occ).mean():.0f} %')
 if closeStat:
     print(f'closure (things): closed {sum(cs["closed"] for cs in closeStat.values())}, open {sum(cs["open"] for cs in closeStat.values())} marches')
     for s_, cs in sorted(closeStat.items(), key=lambda kv: -(kv[1]['closed'] + kv[1]['open']))[:3]:
@@ -723,7 +785,9 @@ def _bfs(entries, R, wsrc=None, srcTex=None):
         for dx, dy in DIRS:
             okn_ = (x_ + dx >= 0) & (x_ + dx < pw) & (y_ + dy >= 0) & (y_ + dy < ph); nb.append(front[okn_] + dy * pw + dx); pl_.append(lab_[front[okn_]])
         nb = np.concatenate(nb); pl_ = np.concatenate(pl_); nb, first = np.unique(nb, return_index=True); pl_ = pl_[first]
-        keep_ = band.ravel()[nb] & ~seen[nb]; nb = nb[keep_]; pl_ = pl_[keep_]; seen[nb] = True; lab_[nb] = pl_; front = nb
+        keep_ = band.ravel()[nb] & ~seen[nb]; nb = nb[keep_]; pl_ = pl_[keep_]; seen[nb] = True
+        lab_[nb] = pl_
+        front = nb
     return seen, lab_
 _gdcache = {}
 def geo_domain(s):
@@ -915,6 +979,7 @@ def harmonic_ext_fixed(dom, fixed):
     except Exception: h, _ = cg(Lm, rhs)
     h = np.nan_to_num(h, nan=0.0, posinf=0.0, neginf=0.0)
     return h
+_traceT = (lambda t: int(t[0]) * pw + int(t[1]))(os.environ['TRACE_TEXEL'].split(',')) if os.environ.get('TRACE_TEXEL') else None
 def build(domains, label):
     tb = time.time(); _prof = {'geo': 0.0, 'val': 0.0, 'gate': 0.0, 'order': 0.0}
     best = np.full(N, -np.inf); second = np.full(N, -np.inf); who = np.full(N, -1, np.int32)
@@ -963,12 +1028,21 @@ def build(domains, label):
         # that texel; a sheet at or in front of it (the occluder's own body continued, a fringe texel's own surface) is not.
         _prof['val'] += time.time() - _t0; _t0 = time.time()
         ok = val < ownD[dom] - ownT[dom]; d = dom[ok]; v = val[ok]
+        if _traceT is not None and _traceT in dom:
+            k_ = int(np.flatnonzero(dom == _traceT)[0]); inD_ = bool(ok[k_])
+            wk_ = (bool(weakArr[_traceT]) if weakArr is not None else bool(np.isin(_traceT, weakSet))) if (weakArr is not None or len(weakSet)) else False
+            rr_ = np.array(members[s]); print(f'   TRACE texel {_traceT // pw},{_traceT % pw} (own d {dQ.flat[_traceT]:.3f}): sheet {s} val d {float(depth_of_disp(np.array([val[k_]]))[0]) if np.isfinite(val[k_]) else float("nan"):.3f} candidate {inD_} weak {wk_} hedge {bool(isHedge)} sid {int(np.median(oid.ravel()[rr_])) if A.mask else -1} rim rows {int((rr_ // pw).min())}-{int((rr_ // pw).max())} cols {int((rr_ % pw).min())}-{int((rr_ % pw).max())} rim d {np.median(dQ.ravel()[rr_]):.3f} closed/open {closeStat.get(s, {}).get("closed", 0)}/{closeStat.get(s, {}).get("open", 0)}')
         if A.mask and len(d):
             # an object's own farther parts are a far side of its own band only where nothing else is (self-occlusion may sample
             # itself, S26/S27; a clone of the object shown as its background may not): same-id texels go to the hedge tier
             sid_ = int(np.median(oid.ravel()[np.array(members[s])]))
             if sid_ > 0:
                 same = oid.ravel()[d] == sid_
+                if A.closure == 'layer' and same.any() and len(domSame.get(s, ())):
+                    # S35 §28: lifted only where the march closed on THIS thing's own far side (S15's canopy beyond its trunk, 8.55 ->
+                    # 0.95 m); a march that closed on another thing keeps the demotion (lifting it too let the petals fill behind the
+                    # petals and the dress behind the milkmaid: sunflowers 0/211 rows sky, vermeer v jumps 3 339 -> 36 754; removed)
+                    same &= ~np.isin(d, domSame[s])
                 if same.any():
                     ds = d[same]; vs = v[same]; bh = bestH[ds]; updh = vs > bh; bestH[ds[updh]] = vs[updh]; whoH[ds[updh]] = s
                     d = d[~same]; v = v[~same]

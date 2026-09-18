@@ -1005,3 +1005,81 @@ untouched; it now writes the surface's own colour into them as well (at rest tha
 on the surface side of each silhouette). `star_outline_zoom2.png`, right: the rim is gone; a very faint trace of the shaft
 remains in the sky where the ink's blur reached farther than the one-texel fringe. The sheet numbers stay within noise
 (vertical jumps 2 245 → 2 249). Nothing in the app changed.
+
+## 28. The troll's x-ray, five attempts (user: "go after the troll, go 5 times", 2026-09-18)
+
+**The problem.** With the classifier the troll is a thing and his band should be the forest behind him. It is the deep gap
+instead: 91.8 % of the band inside his footprint is filled below 0.05 (the sky seen between the trees), 6.4 % with forest
+(0.12–0.45). The reason is the §18 closure test: the forest is hundreds of small components and things, so a forest sheet's
+march across the troll never exits onto its own component — every forest sheet is a hedge, while the gap, a far surface with
+no closure test, is fitted and wins. Instruments: `s35/bleed/trollfill.py` (shares of gap/forest in the troll's band),
+`headfill.py` (rows of sky right of the big sunflower head, the staircase picture), the vermeer floor rows (§14), the 9-click
+vermeer and automatic starwatcher vertical jumps, the kit's S15/S9/S2/S26 truth medians. All five attempts are one switch,
+`--closure`, in `sheets.py`; the default (`comp`, §18) is untouched.
+
+| arm | troll gap / forest % | sunflowers rows sky (of 211) | S15 truth m | vermeer v jumps | starwatcher v jumps |
+|---|---|---|---|---|---|
+| comp + classifier (baseline, same flags) | 91.8 / 6.4 | 197 (v 1 349) | 8.55 | 3 339 | 2 249 |
+| 1 closed on own component OR any thing (skip what is nearer than the rim) | 2.4 / 85.6 | 0 | 8.40 | 31 598 | — |
+| 2 = 1, a texel on any closed march is fitted, unreached texels weak | 32.4 / 54.4 | 4 | 8.44 | 8 923 | 5 922 |
+| 3 = 1 + any-closed-fits, march counts only if its band texel is nearer than the rim, same-id lift on any closed march, reach ≤ thing's box | 1.3 / 92.6 | 0 | 3.27 | 36 754 | 15 648 |
+| 4 = 3, same-id lift only where the march closed on the SAME thing | 2.3 / 85.7 | 0 | 1.009 | 35 200 | 14 921 |
+| 5 = 4, box bound replaced by the EXPOSURE bound | 2.5 / 89.6 | 0 | 0.949 | 37 429 | 19 522 |
+| diagnostic after 5: closed on another thing only at the sheet's own depth | 26.8 / 49.0 | 0 | 2.36 | 34 754 | 21 609 |
+
+S9 (0.000 m), S2 (0.000) and S26 (0.028) are unchanged in every arm. Baselines re-run with the chains' exact flags
+(`s35_a0`): sunflowers 197/211, starwatcher 2 249, vermeer 3 339 — the regressions are the closure and nothing else.
+
+**What the five did.** Attempt 1 changes the occluder from "the band texel's id" to "whatever is nearer than the sheet's rim"
+and closes a march that exits onto ANY thing, not only the sheet's own component: a forest wall continues behind the troll.
+It fixes the troll at once and breaks the other three pictures at once. Attempts 2–4 are repairs of its side effects that
+keep the troll: a texel on any closed march is fitted (2; the unreached-texels-weak part cost the troll and was dropped), a
+march counts only when its band texel is nearer than the sheet's rim so a nearer plane is not continued behind a farther
+object (3), and the same-id demotion (an object does not fill its own band) is lifted where the march closed on the object's
+own far side (3 on any closure — the petals filled behind the petals; 4 on the same thing only), which is what brings S15's
+canopy from 8.55 m to 1.0 m (the canopy beyond its own trunk, the kit's one self-occlusion). Attempt 5 replaces attempt 3's
+bound "a thing's sheet reaches no farther than the thing's bounding box" by a physical one: the app's parallax scale
+(`moebius.js` `bgConeSlopePerPx`, k = 400·pw/1920 texels per depth unit at the envelope's edge, the geometric derivation
+gives 396) says a band texel j texels from the silhouette is uncovered for a far side at gap g only while j ≤ k·g, so a
+thing's march keeps only that exposed prefix. Same units on both sides, scales with the picture. It held the troll and the
+kit (S15 1.009 → 0.949 m) and did not touch the three regressions.
+
+**Why not: the mechanism, read off the buffer** (`s35/bleed/owners.py`; figures `troll5_vermeer_a4.png`,
+`troll5_vermeer_a5.png`, `troll5_star_a5.png`). Under `comp` the milkmaid's band is 92.8 % the wall (sheet 2, 0.008) and
+two floor sheets; under attempt 5 the wall keeps 54.6 % and the rest goes to forty sheets of the things around and on her —
+a part of her own group at 0.413 (24 %, filling at 0.353), the loaf's segment at 0.349 (4.7 %), and so on, each a THING whose
+march across her exited onto some other thing (the foot-warmer, the table's objects) and so counted as closed. Starwatcher:
+the horizon sheet drops from 59 % to 15 % of the figure's band and five sheets of things at 0.05–0.31 take 8–16 % each. The
+sunflowers: the band right of the big head belongs to a nearer leaf (0.627); under `comp` it is sky (72 % from the two sky
+sheets at 0.009), under attempt 5 it is 43 sheets of petals and leaves at 0.10–0.45 whose rims lie up to 200 rows away
+(one leaf sheet with its rim at 0.097 owns 26 % of it, filled at 0.246). The exposure bound cannot stop these: their
+occluders are far nearer than they are (0.627 against 0.097 is 111 exposed texels at k = 210), so the exposed prefix is
+long; it only cut sheets nearly at their occluder's depth. The diagnostic variant — a march closes on another thing only
+when that thing sits within the sheet's own depth spread — halves the troll's fix (the foliage it exits onto is at every
+depth from 0.12 to 0.45) and leaves the three pictures where they were (a petal closes on a petal at the same depth, a part
+of the dress on another part). Falsified; removed.
+
+**The finding.** "Closed when the far side is a thing" is the only rule of the five that continues the troll's forest, and
+it is the same rule that continues a petal behind a petal, a leaf behind a leaf, and the milkmaid's parts behind the
+milkmaid. Neither the depth map nor the segmentation, as the closure test reads them (one exit texel per march), separates
+the two: the forest is a LAYER — many things at overlapping depths that together are nine tenths of what surrounds the troll
+— and it continues because the layer is large; a petal is one small thing whose continuation beyond the head is nothing.
+The untested candidate is that layer notion itself: things grouped into layers by adjacency and overlapping depth range,
+closure and reach decided per layer with the layer's own extent. Not attempted within the five; recorded, not started.
+
+**Per rule 7.** The intermediate forms (attempts 1–4 as separate switches, the box bound, the any-closure lift, the
+unreached-weak rule) and the depth-ordered diagnostic are removed from `sheets.py`; what remains is `--closure layer`
+(attempt 5's rule, complete) beside the adopted `comp`, so the troll's fix can be re-run but is not the default. The
+code was re-run after the cleanup: S15 0.9490 m under `layer` and 8.5468 m under `comp`, byte-identical jump counts.
+
+**Options** (the user's screen decides; screengrabs `s35/bleed/troll5_renders.png`, p45):
+- A. Keep `comp` (§18) and make the classifier the default. Advantages: five pictures and the kit as measured in §22–§27;
+  nothing new to integrate. Disadvantages: the troll's x-ray stays (his band is the gap between the trees), and S15's canopy
+  stays at 8.5 m in the kit.
+- B. Adopt `layer`. Advantages: the troll (gap 91.8 → 2.5 %) and S15 (8.55 → 0.95 m). Disadvantages: vermeer, starwatcher
+  and the sunflowers break through the mechanism above (vertical jumps ×11, ×9, sky rows 197 → 0).
+- A per-picture switch is not an option (zero per-image tuning).
+- C. The layer grouping as a bounded research item after item 1. Advantages: it is the one statement that fits all five
+  cases. Disadvantages: a new construction, unmeasured; the risk of another five attempts.
+Recommendation: A now, item 1 proceeds; C only if the troll's kind of background (a porous layer in front of a deep gap)
+matters enough to spend another sprint on.

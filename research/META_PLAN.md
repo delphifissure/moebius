@@ -234,3 +234,14 @@ offline, no constant): the farthest real surface, its halo absorbed, then unlabe
 and touching nearer material take the nearer depth. Starwatcher 1 209 texels, sunflowers 1 813 (petal tips), vermeer 197,
 troll 0; three looser versions rejected by their counts. Baked from the repaired depth the glow and loop move with the
 figure and the ghost is gone; the band numbers are unchanged. The figure's ink outline was next (a ring hugging the figure failed the enclosure test by half; the nearer thing's contact no longer counts): starwatcher 6 097 texels, and the colour stage now repaints the one-texel blend fringe too, so the black outline baked into the sky goes. App untouched.
+
+**S35 §28, the troll's x-ray, five attempts (2026-09-18).** The one rule that continues the troll's forest behind him
+(a thing's march closes when it exits onto ANY thing, not only its own component) fixes the troll (gap 91.8 → 2.5 %,
+forest 6 → 90 %) and S15 (8.55 → 0.95 m with the same-thing lift) and breaks vermeer, starwatcher and the sunflowers by
+the same mechanism: things' sheets closed on unrelated things become fitted and, nearer than the true far surface, win
+(vertical jumps 3 339 → 37 429, 2 249 → 19 522, sky rows 197 → 0). Four repairs (any-closed-fits, rim-behind-band,
+same-thing lift, the exposure bound from the app's own parallax scale) and a depth-ordered diagnostic did not separate
+them; the forest is a layer of many things and a petal is one small thing, which no per-march exit test sees. Falsified
+forms removed; `--closure layer` kept beside the adopted `comp`. Recommendation: `comp` + classifier as the default with
+the troll's x-ray recorded as the known exception; the layer grouping (things → layers by adjacency and overlapping depth)
+is the untested candidate, a bounded item after item 1 if wanted.
