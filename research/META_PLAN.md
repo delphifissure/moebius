@@ -256,3 +256,14 @@ and beat the true far side; `comp`'s hedge tier had been guarding against that b
 classifier (`--thingrule steps`) fixes starwatcher (2 249 → 942) and the troll under plain comp (gap 1.1 %) and breaks the
 sunflowers the same way. Next item is therefore a reach / slope-trust law for small patches, measured on L1–L4; not a closure
 item. L1/L4 scores pending.
+
+**S35 §30, the reach law against the truth (2026-09-18).** Instrument: per sheet and disc texel, geodesic distance from the
+entries vs own extent vs whether the truth's hidden surface is that sheet's primitive. Two defects found on the way: the disc
+"entries" were the whole march footprint (so the §15 reach and the §29 exposure trim never acted), and capped discs were
+seeded from the marches; both fixed. The truth's law: a whole thing continues about its own extent (J90/E ≈ 1 on L2/L3), a
+fragment as far as its whole (ground pieces, S15's crown). `--reach` (own extent) makes L2's background exact and fixes the
+troll (gap 3.4 %) but destroys every fragmented background on the photographs (starwatcher 19 → 92 % sky-valued); the
+join-group extent (`--reach-group`) keeps the troll (6 %), holds the sunflowers and vermeer at baseline, half-loses
+starwatcher (the join law does not join its smooth ground — the next question). Hidden things behind things (L2's 15 %)
+remain hedged; two closures without re-emergence were falsified and removed. L1/L4 truths still rendering; scored
+automatically when they land (`kitL_after.sh`).

@@ -1159,3 +1159,76 @@ counts and worse on one for the reason above, so it waits for the reach law too.
 **Pending when this was written:** the L1 and L4 truths (the forest scenes were rebuilt with 300 / 100 discs after the
 1 200-disc truth spent an hour in its first eye) and their scores under `comp`, `surround` and `steps`; vermeer under
 `steps + surround`. Added below when they land.
+
+## 30. The reach law, measured against the truth (user: "yes continue with reach", 2026-09-18)
+
+**The instrument first** (`--reach-diag`, `bleed/reach_diag.py`). Per fitted sheet: its primitive (the rest render's first-hit
+pid at its rims), its own visible extent E (geodesic radius of its patch from its rims), the hole reach R, and for every
+texel of its disc the geodesic distance j from its entries, whether the truth's first hidden surface there IS that primitive,
+and the plane's error. It asks whether the truth holds a law for how far a sheet may be trusted away from its own patch.
+
+**Two defects the instrument exposed before it could answer.** (1) The "entries" of a sheet's disc were the whole march
+footprint: `rimOf[r]` lists every band texel a rim serves along its lines (164 per rim on L2), so the geodesic distance from
+the entries was 1 on every march texel. The §15 reach cap therefore only trimmed the sideways spread of a disc that was
+already the full marches (L2's 3-texel leaf kept 9 217 texels with R = 3), and the §29 per-texel exposure trim never trimmed
+anything. (2) A capped sheet's disc was seeded from its marches, not its entries. Both fixed: the entry per rim and
+direction is the served band texel nearest the rim (a march start is not always 4-adjacent to it), and a sheet whose reach
+is capped below its hole depth gets the disc of radius R about its entries. §29's conclusion stands (the majority rule fixes
+the troll and fails the pictures); its trim did not exist. A third thing the instrument caught: L2's "median 0.015 m" under
+`comp` sat on a knife-edge — 35 % of the band was at half a metre; the mean (−0.17 m) and the p90 told it, the median did not.
+
+**What the truth says** (L2, L3, S15; true entries). On L2 the sheets are right on 88 % of the texels they win within their
+own extent (j ≤ E), on 90 % between E and 2E, and on 2.5 % beyond 2E — 26 728 wrong texels, all beyond twice the extent.
+Per sheet, J90 (the 90th percentile of j over the texels where the hidden surface is the sheet's own primitive) against E:
+whole things (L2's discs, L3's jug and bowl) J90/E 0.3–1.9, median about 1; fragments of a larger surface (a 39-texel
+ground component: E 2, J90 251) and pieces of a layer (S15's crown discs, one Canopy primitive: J90/E 10–29) far beyond E.
+**A whole thing's hidden extent behind an occluder is of the order of its own visible extent; a fragment's is that of the
+whole it belongs to.** The second half is §29's layer question; the first half is a law with no constant in it.
+
+**The law on the kit** (`--reach`, own extent, every sheet — L2's runaway leaf is classified a surface, so things-only would
+miss it). L2's buffer (`reach_L2.png`): the leaf that owned 51 % of the band (28 622 texels at 0.51 m) owns 162, all correct;
+the background class goes from mean −0.228 m to −0.000 m. What remains on L2 is the other class: the hidden things (8 594
+texels, 15 % of the band — heads behind the big head, leaves behind heads) are hedges under `comp` because their marches
+never re-emerge, and the sky fills them (thing class 0.512 m). The truth says those slivers are real (J90 ≈ E/3 to E). Two
+closures without re-emergence were tried and are falsified (rule 7, removed): `none` and `disocc` (a march whose band
+texel is nearer than the rim is fitted, own-body marches keep the §18 test), each with the parallax trim (`--expo`, the §29
+trim that now works): L2 things 0.51 → 0.03 m and L3 things 0.079 → 0.001 m, but L2 background −0.17 m — leaves that touch
+a head's silhouette from below fill up to E behind it where the truth is the ground (their true continuation is zero: a leaf
+beside a head is not behind it) — and on the pictures half the troll's and vermeer's bands go unreached (capped discs,
+and with every march "closed" no hedge tier to fill behind them). No scalar of a patch separates a head that continues 13
+texels behind its neighbour from a leaf that continues none; the geometry of the contact would (a convex thing hidden along
+half its contour continues about its radius, one touching at a point continues nothing). That is a contour instrument, and
+it is the next thing to build if the hidden-thing class matters.
+
+**The law on the pictures: the fragment half of the statement bites at once** (`reach_pics_R.png`). Under `comp + reach`
+the troll is fixed (gap 91.8 → 3.4 %, forest 84 %) for the reason the truth gave — the far-background pieces that owned his
+band are fragments with tiny E, capped, and the forest hedges fill — and starwatcher's ground is destroyed for the same
+reason: its band goes 19 → 92 % sky-valued, because the ground behind the figure is fragments too, capped, and the sky wins.
+The sunflowers' band goes 82 → 98 % sky-valued (the field pieces capped; the "211 sky rows" beside the head are that same
+loss, not a gain), vermeer 72 → 84 % with a fourfold jump length. The join-group extent (`--reach-group`: a fragment reaches
+as far as the largest sheet its join law puts on one surface with it) keeps the troll (gap 6.0 %, forest 92 %), returns the
+sunflowers (84 %) and vermeer (72.6 %, jumps at baseline) to their baselines, and recovers half of starwatcher (51 %
+sky-valued; group extent median 4 — the ground's strips are not joined by the join law, which is the open question). Things
+only (`--reach-things`) is the baseline everywhere but a few hundred jumps. On the kit `reach-group` equals `reach` (kit
+surfaces are whole).
+
+| arm | L2 bg / thing mean (m) | L2 med / p90 | L3 thing | S15 med | troll gap % | sunflowers sky-valued % (rows) | starwatcher sky-valued % | starwatcher v | vermeer v / h |
+|---|---|---|---|---|---|---|---|---|---|
+| comp (baseline) | −0.228 / +0.095 | 0.015 / 0.534 | 0.079 | 8.55 | 91.8 | 82 (197) | 19 | 2 249 | 3 339 / 55 526 |
+| comp + reach (R) | −0.000 / +0.476 | 0.000 / 0.490 | 0.079 | 8.12 | 3.4 | 98 (211) | 92 | 1 716 | 2 747 / 32 001 |
+| comp + reach-group (RG) | = R | = R | = R | = R | 6.0 | 84 (197) | 51 | 1 995 | 3 110 / 56 827 |
+| comp + reach-things (RT) | = comp | = comp | = comp | = comp | 92.6 | 82 (197) | 19 | 2 136 | = comp |
+| surround + reach + expo (SRE) | −0.012 / +0.451 | 0.000 / 0.490 | 0.079 | 1.99 | 19.3 (53 % unreached) | 27 (18 % unreached) | 33 (12 % unreached) | 20 113 | 25 337 / 69 984 |
+| disocc + reach + expo (falsified) | −0.166 / +0.069 | 0.000 / 0.551 | 0.001 | 6.47 | 22.8 (54 % unreached) | 19 (17 % unreached) | 26 (13 % unreached) | — | — |
+
+S2 and S9 are unchanged by every arm; S26 0.028 → 0.023 m under the closures that were falsified, unchanged otherwise.
+
+**Where this leaves the reach.** The law is real and has no constant: a sheet is trusted no farther than the extent of the
+whole it belongs to. What the sheet model lacks is the WHOLE — on the kit every surface is one, on a photograph every
+background is fragments, and the join law reconstructs the whole for the sunflowers' field and vermeer's wall but not for
+starwatcher's smooth ground. `reach-group` is the arm to carry (it is the first that fixes the troll without breaking the
+sunflowers or vermeer); its one casualty is the instrument for the next item: why the join law does not join a smooth
+ground's strips. Not adopted as default until L1 and L4 (the forest scenes, exact truth for the troll's configuration) are
+scored: their truths are rendering (the 300-disc canopy fills the frame's bounding ellipsoid, ten minutes per eye, so the
+grid was cut to the extreme eyes ±45° × ±29°, 15 eyes), and `kitL_after.sh` scores comp / R / RG / RT on them with the
+diagnostic the moment they land.
