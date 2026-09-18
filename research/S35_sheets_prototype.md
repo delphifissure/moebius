@@ -1232,3 +1232,29 @@ ground's strips. Not adopted as default until L1 and L4 (the forest scenes, exac
 scored: their truths are rendering (the 300-disc canopy fills the frame's bounding ellipsoid, ten minutes per eye, so the
 grid was cut to the extreme eyes ±45° × ±29°, 15 eyes), and `kitL_after.sh` scores comp / R / RG / RT on them with the
 diagnostic the moment they land.
+
+**L1 and L4 landed** (`reach_L1.png`; the truths finished while the pictures ran — the scope log prints only every fifth eye,
+so the count I was watching was wrong). L1, the dense layer (the troll): the app's own per-row law median 0.0075 m, p90
+0.093; `comp` median 0.092 m, mean +0.075 — the forest not continued behind the figure, the wall fills, thing class 0.105 m:
+the troll's gap in exact truth. `reach` 0.0115 m, mean −0.002, both classes 0.017 m — the app's level. `reach-group` 0.015 m
+(bg 0.066 / things 0.046): worse than `reach` here, because the join law groups leaves with the wall pieces between them.
+`reach-things` = `comp`. But L4, the sparse layer, says why the L1 fix is the troll's accident again: under every arm L4 is
+median 0.000, thing class 0.098 m, fill 0.000 — the leaves hidden behind the figure are hedges and the wall, one whole surface
+with a large extent, is never capped and wins. On L1 the wall behind the figure is fragments seen between leaves, capped, and
+the leaf hedges fill. The layer's things behind the figure are filled when the background happens to be fragmented, not
+because the model knows a layer. That is the same open item as §29 (a layer notion that is not a depth range), now with two
+exact scenes to measure it on, and the reach law is the precondition for it: without the cap nothing but the hedge accident
+kept small pieces' planes from running the hole.
+
+| arm | L1 med / mean | L1 bg / thing | L4 med / mean | L4 thing |
+|---|---|---|---|---|
+| app per-row law | 0.0075 / +0.019 | — | 0.000 / +0.018 | — |
+| comp | 0.092 / +0.075 | 0.000 / 0.105 | 0.000 / +0.035 | 0.099 |
+| comp + reach | 0.0115 / −0.002 | 0.017 / 0.017 | 0.000 / +0.034 | 0.098 |
+| comp + reach-group | 0.015 / −0.019 | 0.066 / 0.046 | 0.000 / +0.034 | 0.098 |
+| comp + reach-things | 0.092 / +0.075 | 0.000 / 0.105 | 0.000 / +0.034 | 0.099 |
+
+**Recommendation.** Carry `--reach-group` as the measured arm (troll 6 %, L1 0.015 m, sunflowers and vermeer at baseline,
+L2's background exact); its casualties are starwatcher's ground (the join law not joining a smooth ground) and, shared with
+every arm, the things hidden behind things (L2's slivers, L4's leaves behind the figure). The next item is the layer notion
+measured on L1/L4 with the reach law in place, and the join law on a smooth ground; not another closure.

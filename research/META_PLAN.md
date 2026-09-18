@@ -265,5 +265,7 @@ fragment as far as its whole (ground pieces, S15's crown). `--reach` (own extent
 troll (gap 3.4 %) but destroys every fragmented background on the photographs (starwatcher 19 → 92 % sky-valued); the
 join-group extent (`--reach-group`) keeps the troll (6 %), holds the sunflowers and vermeer at baseline, half-loses
 starwatcher (the join law does not join its smooth ground — the next question). Hidden things behind things (L2's 15 %)
-remain hedged; two closures without re-emergence were falsified and removed. L1/L4 truths still rendering; scored
-automatically when they land (`kitL_after.sh`).
+remain hedged; two closures without re-emergence were falsified and removed. L1 (dense layer): comp 0.092 m, reach 0.0115 m (the app's level), reach-group 0.015 m; L4 (sparse layer): every arm 0.000
+median but the leaves behind the figure 0.098 m under all of them — the layer's things are filled only when the background
+happens to be fragmented (the troll's accident). Carry `--reach-group`; next: the layer notion on L1/L4 with the reach in
+place, and why the join law does not join a smooth ground.
