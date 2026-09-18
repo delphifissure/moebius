@@ -1126,7 +1126,7 @@ beyond the median. Measured:
 | surround | 3.1 / 83.6 | 0 | 12 819 | 18 170 | 1.93 | same | 0.000 | 0.083 |
 | surround + reach on things | — | — | — | — | 1.91 | — | 0.000 | 0.055 |
 | steps classifier + comp | 1.1 / 84.4 | 0 | 942 | 3 339 | 5.33 | 0.000 / 0.000 / 0.028 | 0.000 | — |
-| steps classifier + surround | 0.8 / 84.7 | 0 | 18 307 | pending | 1.22 | pending | 0.000 | — |
+| steps classifier + surround | 0.8 / 84.7 | 0 | 18 307 | 16 075 | 1.22 | 0.000 / 0.000 / 0.028 | 0.000 | — |
 | steps + comp + slope budget | 0.7 / 88.8 | 0 | 889 | 3 312 | 5.59 | same | 0.000 | 0.43 |
 | app's per-row law (kit check) | — | — | — | — | — | — | — | 0.000 |
 
