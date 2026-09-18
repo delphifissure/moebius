@@ -307,3 +307,9 @@ skies are surfaces and figures, heads, jugs are things on every input (starwatch
 the group reach it exposes the defect the old rule hid: pieces of a joined surface carry their own planes over the group's
 extent (L2 background 0 → 0.51 m, the sunflowers' band filled to the sky rows). Next construction: the group's plane or plate
 for fragments beyond their own extent; then `wrap + reach-group` measured again. Two alternative direction sets falsified.
+
+**S35 §36 (2026-09-18).** Group strip for fragments (`--group-strip`): the plane fitted on the join group's texels in the reach
+window. L2's background 0.514 → 0.000 m under the wrap classifier (exact); breaks at vermeer's wall-floor crease (a join group
+is a continuous surface, not a plane; wall band 0.008 → 0.11). Growth and consensus repairs falsified. Next: the §32 clamped
+plate per join group as the fragment's value beyond its own extent; then wrap + reach-group re-measured. The sunflowers' sky
+joined to its field by the rim law's affine rescue is a separate, older item.

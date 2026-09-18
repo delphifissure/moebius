@@ -1473,3 +1473,39 @@ surface should carry the group's plane, or its plate, beyond its own extent — 
 **Standing.** `wrap` is the classifier to carry, and it cannot be adopted until fragments of a joined surface stop carrying
 their own planes across the group; with that construction in place `wrap + reach-group` is the arm to measure against the
 kit again. The measured arm stays `comp + reach-group` today.
+
+## 36. The group plane for fragments (user: "build the group plane for fragments", 2026-09-18)
+
+**The construction** (`--group-strip`). A sheet's strip — the texels its plane is fitted on — is its own visible component's
+texels within its reach window. A fragment of a ground therefore extrapolates its own strip's slope across the group's
+domain (§35). With the flag the strip is the join group's texels in the same window together with the fragment's own: the
+surface's plane, fitted on the surface's texels out to the distance the plane must be extrapolated; the thin-evidence rule
+sees the larger strip too. Under `wrap + reach-group` **L2's background goes from 0.514 m to 0.000 m** (mean −0.001), the
+exact answer, with the heads' slivers back in the hedge tier where the closure question leaves them (thing class 0.511,
+§30). L1 0.0156 (things 0.046 → 0.024), L3 0.000, L4 0.000 (its leaves back to 0.098: §35's 0.038 was the fragments'
+accident), S9 0.000, S26 0.027, S15 0.071 median; S2 0.036 (the floor+box halves, §35). Starwatcher's field the smoothest
+yet (v 878), the troll's gap 0.4 % with forest 98.7 %.
+
+**Where it breaks, and why.** Vermeer: the wall's band goes from 72 % sky-valued (the wall, right) to 0.4 % at d 0.11. The
+join law joins the wall to the floor at the crease — by design, a crease is continuous in eye distance — so the group is
+one continuous surface and NOT one plane, and a least-squares plane through wall and floor is neither. Starwatcher 51 → 64
+% sky-valued for the same reason (its plains and their ramps), the sunflowers unchanged at the sky rows (their group is sky
++ field + ramp-joined plants, 512 k texels, 67 % sky: the join law's horizon problem, not the strip's). Two repairs measured
+and falsified (rule 7, recorded in the code): growth from the fragment's own plane (inliers within three MADs, three rounds
+— it never grows from a bad seed, L2 background 0.50 m again) and a sampled consensus plane over the window that carries the
+fragment (L2 0.32 m, vermeer's wall band 0.30).
+
+| arm | L1 | L2 bg / thing | L3 | L4 thing | S2 | S15 med | starwatcher sky % / v | troll gap % | sunflowers sky rows / v | vermeer sky % / v |
+|---|---|---|---|---|---|---|---|---|---|---|
+| comp + reach-group (RG, measured arm) | 0.015 | −0.000 / +0.476 | 0.000 | 0.098 | 0.000 | 8.12 | 51 / 1 995 | 6.0 | 197 / 1 029 | 72.6 / 3 110 |
+| wrap + reach-group (WG) | 0.015 | −0.421 / +0.008 | 0.000 | 0.038 | 0.012 | 0.076 | 48 / 731 | 1.5 | 0 / 15 724 | 72.6 / 2 819 |
+| wrap + reach-group + group strip (WGS) | 0.0156 | −0.001 / +0.475 | 0.000 | 0.098 | 0.036 | 0.071 | 64 / 878 | 0.4 | 0 / 25 859 | 0.4 / 2 043 |
+
+**What the day's chain of items says together.** The reach law needs the whole a fragment belongs to (§30); the whole is the
+join group (§35 makes the classifier honest about grounds and fields); a fragment then needs the whole's SURFACE for its
+plane (§36) — and the join group is a continuous surface with creases and curvature, which one plane cannot carry. The
+construction that carries it exists in this repo: the 2-D clamped plate per join group (§22, `sheetfield3.py`, adopted
+behind a select in §32), which respects creases because it interpolates the surface rather than fitting a plane through it.
+Wiring the plate as the fragment's value beyond its own extent is the next item; with it, `wrap + reach-group` can be
+measured fairly on vermeer and starwatcher. The join law's horizon problem (sky joined to field on the sunflowers) is a
+separate item and older. Measured arm today: still `comp + reach-group`.
