@@ -1121,14 +1121,16 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
         return B
     inS_ = np.zeros(N, bool); inS_[st] = True; wD_ = inS_[om].astype(float)
     B = assemble()
-    weakUnk_ = np.zeros(n, bool)
-    if hE_ is not None:
-        # with the membrane tie-break in place the operator's kernel on each connected piece of the unknowns is the constants alone,
-        # and one data texel fixes it; a piece that holds no data at all (disc texels no data touches) stays singular and is left out
-        # of the direct solve -- it comes back NaN, which the layered order reads as 'no value'
-        from scipy.sparse.csgraph import connected_components as _ccH
-        Pat_ = (B.T @ B).tocsr(); Pat_.data[:] = 1.0; nc_, lab_ = _ccH(Pat_, directed=False)
-        weakUnk_ = (np.bincount(lab_, weights=wD_, minlength=nc_) == 0)[lab_]
+    # PIECES WITHOUT DATA (S35 §39). A piece of the unknowns that no data touches (disc texels the group's visible texels never
+    # reach through the operator) has no value: its constant mode is free, the system is singular there, CG's minimum-norm answer
+    # was 0 -- the far end of the range, silently claimed as sky -- and on the sunflowers' field plate the multigrid built on the
+    # singular operator diverged outright (relative residual 1e19, the discrepancy search then walked to lambda 1e-9 on garbage).
+    # Such pieces are left out of every solve, hinged or not, and come back NaN, which the layered order reads as 'no value'.
+    from scipy.sparse.csgraph import connected_components as _ccH
+    def _dataFree(Bx):
+        Pat_ = (Bx.T @ Bx).tocsr(); Pat_.data[:] = 1.0; nc_, lab_ = _ccH(Pat_, directed=False)
+        return (np.bincount(lab_, weights=wD_, minlength=nc_) == 0)[lab_]
+    weakUnk_ = _dataFree(B)
     tps_sheet.hingesGiven = 0
     # data rows
     kS = kOf[st]; d = DISP.ravel()[st]
@@ -1146,6 +1148,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     hinged_ = hE_ is not None and bool(hE_.any() or vE_.any())
     B1 = B if hinged_ else None; B = assemble(useH=False) if hinged_ else B
     BtB = (B.T @ B).tocsr(); BtB1 = (B1.T @ B1).tocsr() if hinged_ else None; DtD = (Dm.T @ Dm).tocsr(); Dtb = Dm.T @ b
+    weakF_ = weakUnk_ if hinged_ else weakUnk_; weakS_ = _dataFree(B) if hinged_ else weakUnk_   # the hinged operator's pieces (final) and the un-hinged operator's (search)
     if A.planeprior and prior:
         # THE PLATE'S FREE BOUNDARY (S35 §17). With nothing to hold it, the plate bulges over the hole and a small face wins the
         # layered order far from its own data (S15: a 165-texel face took 11 930 band texels at 2.2 m error; the same face's
@@ -1188,6 +1191,21 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     _pc = {'lam': None, 'M': None}
     def solve(lam, x0=None, final=False):
         M_ = (DtD + lam * (BtB1 if (hinged_ and final) else BtB)).tocsr()
+        weakX_ = weakF_ if (hinged_ and final) else weakS_
+        if weakX_.any() or (M_.diagonal() == 0).any():
+            # solve the kept unknowns only; the rest come back NaN
+            keepR_ = ~weakX_ & (M_.diagonal() != 0); Mr_ = M_[keepR_][:, keepR_].tocsr(); br_ = Dtb[keepR_]
+            if n <= 200000:
+                try:
+                    lu_ = splu(Mr_.tocsc(), permc_spec='MMD_AT_PLUS_A'); xr_ = lu_.solve(br_)
+                except RuntimeError:
+                    xr_, _ = cg(Mr_, br_, x0=None if x0 is None else np.nan_to_num(x0[keepR_]), rtol=1e-8, maxiter=4000, M=sparse.diags(1.0 / np.maximum(Mr_.diagonal(), 1e-30)))
+            else:
+                Mp_ = pyamg.smoothed_aggregation_solver(Mr_, B=(BnullF if (hinged_ and final) else Bnull)[keepR_], symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V') if pyamg is not None else sparse.diags(1.0 / np.maximum(Mr_.diagonal(), 1e-30))
+                xr_, _ = cg(Mr_, br_, x0=None if x0 is None else np.nan_to_num(x0[keepR_]), rtol=1e-10 if (hinged_ and final) else 1e-8, maxiter=4000, M=Mp_)
+            r_ = float(np.linalg.norm(Mr_ @ xr_ - br_) / max(1e-300, np.linalg.norm(br_))); solve.worst = max(getattr(solve, 'worst', 0.0), r_)
+            x = np.full(n, np.nan); x[keepR_] = xr_; solve.pruned = int((~keepR_).sum())
+            return x
         if hinged_ and final and n <= 200000:   # a 360 k-unknown plate on a regular grid factors in 1.5 GB; an irregular domain of 400 k took a worker to 10 GB
             # THE HINGED PLATE IS SOLVED DIRECTLY (S35 §39). With hinges the bending operator's kernel holds one piecewise-affine mode
             # per crease, which the affine-candidate multigrid does not represent: CG hit its iteration cap on every solve of the
