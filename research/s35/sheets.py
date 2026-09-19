@@ -262,6 +262,8 @@ if A.things:
             if b_ - a_ < 2: continue
             g_ = np.diff(aA[a_:b_]); gap = max(float(g_.max()), float(2 * np.pi - (aA[b_ - 1] - aA[a_])))
             wrapGap[uA[a_]] = gap; thing[uA[a_]] = gap < np.pi
+        if os.environ.get('WRAP_DUMP'):   # S35 §43: the front-boundary texels and their directions, per unit, for the instrument
+            np.savez_compressed(f'{OUT}/wrap_front.npz', unit=uT[frontTex], tex=T_[frontTex], ang=ang_[frontTex], cx=cx_, cy=cy_, px=px_, gap=wrapGap, thing=thing, unitMap=unit.astype(np.int32))
     if A.thingrule == 'steps':
         # S35 §29: the vote is by boundary LENGTH over the stepped pairs only. F = the length along which the unit is in front of
         # neighbours that are also behind it by medians; B = the length along which it is behind neighbours that are also in

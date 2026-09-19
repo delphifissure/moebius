@@ -360,3 +360,9 @@ there (§17's budget); the unweighted form is falsified on S2 and removed. Kit: 
 1.30 → 0.27 m, C2/C3 exact. Vermeer's wall behind the milkmaid 56 → 99 % at the wall (plate 0.007), the plane arm's level.
 Starwatcher, troll and sunflowers mixed (the prior brings the plane arm's behaviour, right and wrong, into the plate).
 Measured arm unchanged; the plate arm now matches it on vermeer and beats it on the kit.
+
+**S35 §43 (2026-09-19).** Starwatcher's far plain explained: its unit is plain + hills, its horizon runs through its centroid,
+ten texels below it make the wrap gap 178°. Two other forms of the wrap test probed: outward normals (falsified, noise flips
+every horizon) and the front's net turning along the contour (right on the kit: figures +180 to +307°, backgrounds 0°; not yet
+a construction on the pictures -- needs all contours, holes and pieces: the discrete Gauss-Bonnet of the front). Next: build
+that form. Classifier unchanged; instruments kept (`WRAP_DUMP`, `bleed/wrap_normals.py`, `bleed/wrap_turn.py`).

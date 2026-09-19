@@ -1855,3 +1855,36 @@ separates them is the same list as before, none of it the plate any more: the fa
 at 176°, §35), the forest groups' data (the troll), the field's facets beside the sunflowers' head. Measured arm today: still
 `comp + reach-group`. The prior's unweighted form is falsified and removed; the budgeted form is the rule behind
 `--group-prior`.
+
+## 43. Starwatcher's far plain: why 178°, and two forms of the wrap test probed (user: "keep going", 2026-09-19)
+
+**Why the far plain is a thing at 178°** (`WRAP_DUMP=1`, `bleed/wrap_normals.py`). The unit is the far plain AND the hills
+behind it, one join component (their depths grade into each other, d 0.005-0.026). Its stepped front is its silhouette against
+the sky: the hills' outline above, and the plain's own horizon, a nearly straight line at rows 451-455 across 490 columns.
+The unit's centroid is at row 451: half its texels are hills above the horizon, half plain below, so the horizon runs
+THROUGH the centroid, and ten of its texels lie one to four rows below it. Directions from the centroid to a line through
+the centroid span a half turn exactly; the ten texels make it 182°, gap 178°, a thing by two degrees. The near plain
+(seg 2), whose horizon lies well above its centroid, is a surface at 191°. The rule is not wrong about its own statement; the
+statement -- directions from the centroid -- is fragile when the unit's mass straddles its front.
+
+**Form 2, outward normals** (the direction from each front texel to the far-side texel across the step, 'wrapped' when two
+opposite normals exist): falsified at once. Raster normals along any sloping silhouette come in all four kinds; on
+starwatcher the near plain has 8 left and 77 right normals among 921 up and becomes a thing, so does every horizon with a
+bump in it (L2's ground, L3's floor). Counting cannot be made robust without a constant.
+
+**Form 3, the turning of the front** (`bleed/wrap_turn.py`: the unit's contour traced, the tangent's signed rotation
+accumulated along its front runs; wrapped when the net turning reaches a half turn). On the kit it is the right statement:
+L3's figure body +224°, its head +307°, the cluster's things +180 to +307°, C2's figure +199°, L2's heads +273 to +360°, the
+grounds and walls 0°. On the pictures the quick tracer is not yet the construction: it traces one outer contour per unit, so
+a unit in many pieces (vermeer's seg 2, two contour points) or whose front lies on its HOLES (the troll's forest: 0 front
+points on the outer contour, 664 k texels) reads nothing, and noise runs on a long horizon accumulate (starwatcher's near
+plain +283° over 26 runs). What it needs is the full contour set (outer and inner, per piece) and the turning summed over
+all of them, which is the discrete Gauss-Bonnet of the front: a figure's front turns +π, a disc's +2π, a horizon's 0 whatever
+its bumps, and a forest's holes each −2π. That is the next form to build, and starwatcher's far plain and near plain, with
+L2-L3 and C2 as the bar, are its measurement. Nothing in the classifier is changed in this section; the dump and the two
+instruments are kept.
+
+**Where the arm stands.** Measured arm: `comp + reach-group`. The plate arm `wrap + reach-group + group-plate + ramp +
+crease + group-prior` is exact or near it on every kit scene and equal to the measured arm on vermeer; what keeps it from
+adoption is starwatcher's far plain (this section's construction), the troll's data-poor forest groups, and the sunflowers'
+field facets beside the big head.
