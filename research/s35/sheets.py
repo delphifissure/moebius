@@ -1131,9 +1131,17 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
         # on one side of the line and grows linearly on the other (C0, slope jump across the line). CG with the affine-only hierarchy
         # crawled on the sunflowers (one group plate 18 minutes at the iteration cap). The folds with the most hinge edges enter as
         # near-nullspace candidates -- a preconditioner choice, the solution is the same; the cap keeps the coarse operators small.
-        fl_ = sorted(foldLines_, key=lambda t: -t[4])[:16]; cols_ = [Bnull]
-        for (sx_, sy_, ux_, uy_, _nh) in fl_:
-            f_ = np.maximum(0.0, (X - sx_) * uy_ - (Y - sy_) * ux_); cols_.append((f_ / max(1.0, f_.std()))[:, None])
+        # At most two folds enter, the longest first, and only if independent of the columns already there (the two entries of one
+        # crease, left and right of the hole, are the same line): smoothed aggregation coarsens by (candidates / aggregate size), and a
+        # sixteen-column B made the coarse level LARGER than the fine one (the sunflowers: a 6 400-unknown group plate took nine
+        # minutes). Short folds are local kinks that the smoother handles; long ones are the modes the coarse levels must carry.
+        Q_ = np.linalg.qr(Bnull)[0]; cols_ = [Bnull]; nF_ = 0
+        for (sx_, sy_, ux_, uy_, _nh) in sorted(foldLines_, key=lambda t: -t[4]):
+            if nF_ >= 2: break
+            f_ = np.maximum(0.0, (X - sx_) * uy_ - (Y - sy_) * ux_); f_ = f_ / max(1.0, f_.std())
+            r_ = f_ - Q_ @ (Q_.T @ f_); nr_ = float(np.linalg.norm(r_))
+            if nr_ <= 1e-6 * max(1e-300, float(np.linalg.norm(f_))): continue
+            cols_.append(f_[:, None]); Q_ = np.concatenate([Q_, (r_ / nr_)[:, None]], 1); nF_ += 1
         Bnull = np.concatenate(cols_, 1)
     # SPEED (S35 §18): the multigrid hierarchy is a PRECONDITIONER, so CG converges to the same solution whichever lambda it was
     # built at — only the iteration count changes, and the relative residual is asserted after every solve. Rebuilding it for
