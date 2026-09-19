@@ -1227,6 +1227,13 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
         if r_ > 1e-6 and pyamg is not None:   # the reused hierarchy was too far off: rebuild at this lambda and redo
             _pc['lam'] = lam; _pc['M'] = pyamg.smoothed_aggregation_solver(M_, B=Bnull, symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V')
             x, info = cg(M_, Dtb, x0=x0, rtol=1e-8, maxiter=2000, M=_pc['M']); r_ = float(np.linalg.norm(M_ @ x - Dtb) / max(1e-300, np.linalg.norm(Dtb)))
+        if r_ > 1e-6 and n <= 200000:
+            # CG diverged twice (the sunflowers' field plate: relative residual 1e19 at lambda = 1, and the discrepancy search then
+            # walked to 1e-9 on garbage); a direct factorisation is the last word where it fits in memory
+            try:
+                keep_ = M_.diagonal() != 0; lu_ = splu(M_[keep_][:, keep_].tocsc(), permc_spec='MMD_AT_PLUS_A'); x = np.zeros(n); x[keep_] = lu_.solve(Dtb[keep_])
+                r_ = float(np.linalg.norm((M_ @ x - Dtb)[keep_]) / max(1e-300, np.linalg.norm(Dtb)))
+            except Exception as e_: print(f'   plate of {n} unknowns: CG diverged and LU failed ({e_})')
         solve.worst = max(getattr(solve, 'worst', 0.0), r_)
         return x
     solve.worst = 0.0
