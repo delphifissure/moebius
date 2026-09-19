@@ -353,3 +353,10 @@ never reaches the visible step on the pictures' group plates -- the over-extrapo
 for the crease detection (DA3's bend is a fillet of 1-3-row strips, not specks; vermeer 56 → 50 %, removed). Vermeer's
 remaining misses located: rows 250-450 and 750-850 behind the milkmaid, where the wall group's data lie on one side of a
 400-600-texel band and the plate's affine continuation drifts to 0.04-0.12. Next: §17's plane prior per side of the hinge.
+
+**S35 §42 (2026-09-19).** The group plate's plane prior per sheet, budgeted (`--group-prior`): each domain texel relaxes toward
+the plane of the sheet whose entry is nearest, at weight 1/sqrt(step² + se²) with se the sheet's own fit's standard error
+there (§17's budget); the unweighted form is falsified on S2 and removed. Kit: nothing regresses beyond a millimetre, S15
+1.30 → 0.27 m, C2/C3 exact. Vermeer's wall behind the milkmaid 56 → 99 % at the wall (plate 0.007), the plane arm's level.
+Starwatcher, troll and sunflowers mixed (the prior brings the plane arm's behaviour, right and wrong, into the plate).
+Measured arm unchanged; the plate arm now matches it on vermeer and beats it on the kit.

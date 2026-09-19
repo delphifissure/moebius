@@ -1797,3 +1797,61 @@ data (the receding left wall at d 0.3 among them), is not. The construction this
 the hinge: each domain texel relaxes toward the plane of the face whose sheet reaches it, at weight 1 / visible step, which
 §37 rejected for the unhinged plate because one prior plane could not serve a wall and its floor -- with the hinge, each side
 has its own. That is the next item; the kit's curved surfaces (S2, L1's leaves) are its regression bar.
+
+## 42. The group plate's plane prior, per sheet and budgeted (user: "continue", 2026-09-19)
+
+**The construction** (`--group-prior`). §17's plane prior, brought to the group plate the way §41 pointed:
+every texel of the plate's domain relaxes toward the plane of the group's sheet whose entry is nearest to it (the sheet that
+reaches it), against the data at 1 / sigma. §37 had rejected one prior plane for a whole group -- a wall and its floor are not
+one plane -- and with the hinge (§39) that objection is gone: each side of a crease has its own sheet and its own plane. The
+weight is §17's budget: 1 / sqrt(step^2 + se^2), se the sheet's own fit's predicted standard error at the texel, which grows
+with the distance from its strip. A wide flat wall therefore holds its plane far into the hole; a facet's slab, whose fit
+supports its slope only a few texels out, lets the plate interpolate as before. The unweighted form (1 / step everywhere) was
+tried first and is falsified on S2 (0.003 → 0.020 m: the floor+box halves are facets, and slabs came back); the budgeted form
+gives S2 0.004.
+
+**On the kit** (medians of the band's error against truth, m; RWC = §40's arm, RWCP = with the budgeted prior; RG = the
+measured arm):
+
+| scene | RG | RWC (§40) | RWCP (prior) |
+|---|---|---|---|
+| C1 / C2 (bg) / C3 (p90) | 0.000 / 0.000 / 0.000 | 0.000 / 0.000 / 0.0000 (0.0005) | 0.000 / 0.000 / 0.0000 (0.0001) |
+| L1 median / hidden layer | 0.015 / 0.046 | 0.0105 / 0.008 | 0.0110 / 0.010 |
+| L2 / L3 / L4 background | 0.000 | 0.000 | 0.000 |
+| S2 / S9 / S26 | 0.000 / 0.000 / 0.028 | 0.0028 / 0.000 / 0.000 | 0.0040 / 0.000 / 0.000 |
+| S15 | 8.12 | 1.30 | **0.27** |
+
+Nothing regresses beyond a millimetre (L1's layer 0.008 → 0.010, S2 0.003 → 0.004); S15 -- the canopy behind its own trunk,
+the kit's standing casualty since §22 -- goes 1.30 → 0.27 m: the canopy's fragments hold their planes where the plate had
+drifted.
+
+**On the pictures** (RW2 = the arm without the hinge, same solver; RWC = §40; RWCP = with the prior):
+
+| picture | RG (measured arm) | RW2 | RWC (§40) | RWCP (prior) |
+|---|---|---|---|---|
+| vermeer, wall rows behind the milkmaid within 3 cm of the wall (plate median) | 99.9 % | 38 % (0.64) | 56 % (0.029) | **99.0 % (0.007)** |
+| vermeer, bend rows within 3 cm of the wall | 47 % | 0.7 % | 25 % | 44 % |
+| vermeer, whole band sky-valued % | 72.6 | 20.8 | 24.9 | 69.7 |
+| starwatcher, sky-valued % / unreached % | 50.6 / 0 | 43.2 / 10.3 | 55.1 / 2.1 | 67.9 / 2.2 |
+| troll, gap % / forest % in his footprint | 6.0 / 92.4 | 29.8 / 44.7 | 13.2 / 56.0 | 21.2 / 69.0 |
+| sunflowers, sky rows beside the head of 211 / jumps / band sky-valued % | 211 / 0 / 98.3 | 211 / 1 / 39.1 | 211 / 1 / 38.8 | 163 / 23 / 66.1 |
+
+Vermeer's wall behind the milkmaid is now the plane arm's: 99.0 % of the wall rows at the wall, the plate itself 0.007 with
+p90 0.009 where the wall is 0.006, the bend rows 44 % against the plane arm's 47 %, the whole band's sky-valued share 69.7
+against 72.6 -- the first plate arm to match `comp + reach-group` on this picture, while keeping what the plate alone gives
+the kit (L1's layer 0.010 against the planes' 0.046, S15 0.27 against 8.12). The other three pictures are mixed and say what
+the prior is: it is the plane arm's behaviour brought into the plate, so where the plane arm is wrong the prior is wrong the
+same way. Starwatcher's band goes further into the sky (68 % sky-valued: the plain's sheets' planes run to the horizon, as
+they do under RG at 51 %), which is §34-35's far-plain question and no arm's gain; the troll's footprint gets more forest
+(56 → 69 %) and more gap (13 → 21 %) as the leaves' planes take over from the interpolated layer; the sunflowers' rows beside
+the big head lose 48 of 211 to the field facets' planes at d 0.08 while the band as a whole moves toward the plane arm
+(39 → 66 % sky-valued, RG 98).
+
+**Where this leaves the arm.** `wrap + reach-group + group-plate + ramp + crease + group-prior` is now exact or near it on
+every kit scene including S15, and on vermeer it equals the measured arm behind the milkmaid. It is not adopted as the
+measured arm: on starwatcher, the troll and the sunflowers it is between the plate and the plane arms, worse than the plane
+arm on the sunflowers' head rows and than the plate on the troll's gap, and the measured arm's numbers there stand. What
+separates them is the same list as before, none of it the plate any more: the far plain behind starwatcher's figure (a thing
+at 176°, §35), the forest groups' data (the troll), the field's facets beside the sunflowers' head. Measured arm today: still
+`comp + reach-group`. The prior's unweighted form is falsified and removed; the budgeted form is the rule behind
+`--group-prior`.
