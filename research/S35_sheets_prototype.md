@@ -1593,3 +1593,120 @@ through another thing (§28's question, untouched today), and data-poor groups (
 visible texels are few against its domain). The measured arm stays `comp + reach-group`; `wrap + reach-group +
 group-plate + ramp` is the arm the kit has validated and the photographs have not. The instruments to carry: the reach
 diagnostic, the edge instrument, the wrap gap, `sheets_info.npz`, the fill and owner checks.
+
+## 39. The crease inside the hole (user: "build the crease line inside the hole", 2026-09-19)
+
+**The construction** (`--crease`). A join group is one surface with creases (§37); its plate cannot make a crease where no
+data holds it, so behind a wide occluder a wall blends into its floor. The crease is visible outside the hole: it is the
+boundary between two FACES of the group (the smoothing test kept them apart because their planes differ by more than the step
+over their extent) that both border the hole. Where that boundary meets the hole -- the entry -- the crease continues
+straight, along the principal axis of the visible boundary within the reach window of the entry, until the line leaves the
+domain; the domain edges the line crosses are HINGES. Along a hinge the plate's bending rows that straddle it keep a
+thousandth of their weight (a millionth of the energy: the slope may jump) and a first difference across it is penalised at the
+bending weight (the value may not). Two tests keep the hinge honest, both with the construction's own quantities: (1) a face
+boundary is a crease only where the two faces' local planes MEET at the entry -- the entry must lie on the planes' intersection
+line within that line's own uncertainty, the visible step over the slope jump, plus one texel of raster (a shallow crease's line
+is poorly placed, a sharp one's exact; a boundary between two of an estimator's noise facets inside a field, whose planes meet
+somewhere else entirely, is no crease: the sunflowers' field group had 696 such boundaries at its holes against 415 creases);
+(2) the hinged plate is solved by a sparse LU (the affine-candidate multigrid does not know the fold modes and CG hit its
+iteration cap: one of the sunflowers' plates ran 25 minutes unfinished), with a membrane tie-break at a millionth of the
+bending energy so that a piece of the hole that no data holds -- the discrete plate's kernel on a domain of discs is larger than
+the affine functions, a region joined to the data through a one-texel neck has a free tilt -- takes 'continue the value' instead
+of CG's silent minimum-norm zero, and a piece no data touches at all comes back NaN (no value) instead of an exactly singular
+factor. The plate fields and hinges are dumped (`group_plates.npz`); `bleed/crease_look.py` draws them, `bleed/crease_rows.py`
+scores the band by truth primitive and row band.
+
+**What the kit had to say first: the crease was not on it.** Three new scenes (`C1` a wide screen before the wall-floor crease,
+`C2` a broad figure before the S1 corner, `C3` = C1 with the wall standing at 0.8 W inside a 1.5 W room). C1 and C2 were exact
+or near it under the plain arm before any hinge, and the reasons are two facts about the kit worth recording: a room's back
+wall sits at the scene's outer depth, d = 0, which the app's depth law and the prototype treat as sky -- so in every room scene
+(L3, S2, C1, C2's back wall) the wall-floor crease is not a crease between two plates at all; and the kit's floor rides the
+app's ground plane, which is exact. C3 puts a wall at a depth of its own and is the configuration of vermeer's milkmaid: a hole
+across most of the frame's width, wall data above it and floor data below it, no data of either beside it at the crease rows.
+There the plate blends exactly as described -- the error grows from zero at the top of the hole to 25 mm at the crease rows,
+a quarter of the band over a centimetre -- and the hinge removes it entirely: median 0.0000 m, p90 0.0004 m, no texel over a
+centimetre, floor and wall alike, with or without the ground plane (`crease_C3.png`).
+
+**What C2 had to say: the classifier, again.** Under the plain arm C2's band read 0.020 m median and the hinge made it worse;
+the plate's data included the figure's own texels. The figure was a SURFACE: its wrap gap was 203°, because the §22 'by
+medians' gate compared it with the neighbour UNIT's median -- the room's wall and floor are one unlabelled unit whose median is
+set by its near floor, so the figure standing before the far corner was 'behind' the room and its whole left silhouette did
+not vote. The gate now compares the unit's median with the neighbour's depth along their SHARED BOUNDARY (where the two
+actually meet): C2's figure 203° → 50°, a thing; C1, S2, S9, S26 unchanged; L1-L4 gain a few small leaf components as things;
+on the pictures starwatcher is identical (35 things), vermeer 33 → 35, the troll 29 → 27, the sunflowers 142 → 150, no
+background flips. The unit-median form is falsified by C2 and removed (rule 7). With it C2 is exact under the plain arm, with
+and without the ground plane (0.0001 m, p90 0.005), and the hinge along its slanted wall-floor crease changes it by less than
+a millimetre either way: the figure's hole is narrow and the wall's data beside it already hold the plate.
+
+**On the kit** (medians of the band's error against truth, m; `C` = the crease scenes; things' class where it differs).
+The arm `wrap + reach-group + group-plate + ramp + crease` (RWC) beside §38's arm without the hinge (RW) and the measured arm
+`comp + reach-group` (RG). RWC and RG were run under the repaired classifier gate; the RW column is §38's table except C2 and
+C3, which were run under the repaired gate for this section:
+
+| scene | RG (measured arm) | RW (§38, hinge off) | RWC (hinge on) | what the hinge met |
+|---|---|---|---|---|
+| C3 wall at 0.8 W behind a wide screen | 0.000 (planes: no plate to blend) | 0.0016, p90 0.021; 25 % of the band over 1 cm; floor rows 0.025 | **0.0000, p90 0.0005, 0 % over 1 cm** | 2 creases, 366 hinges |
+| C3 without the ground plane | -- | 0.0022, p90 0.021 | 0.0001, p90 0.0004 | the same |
+| C2 broad figure before the corner | 0.005 (bg 0.000) | 0.0008 / no ground 0.0011 | 0.0013 / 0.0021 | 1 crease (the slanted floor crease), 137 hinges; a narrow hole the wall's data already hold |
+| C1 wide screen, wall at outer depth (sky) | 0.000 | 0.000 | 0.000 | none: two groups, no crease between plates |
+| L1 forest (hidden layer) | 0.015 / 0.046 | 0.0101 / 0.007 | 0.0105 / 0.008 | 83 creases among leaves, 57 boundaries rejected |
+| L2 / L3 / L4 background | 0.000 | 0.000 | 0.000 | 0 / 2 / 4 creases |
+| S2 / S9 / S26 | 0.000 / 0.000 / 0.028 | 0.003 / 0.000 / 0.000 | 0.0028 / 0.000 / 0.000 | 1 / 0 / 0 |
+| S15 | 8.12 | 1.32 | 1.30 | 26 creases, 19 rejected |
+
+Nothing on the kit regresses; C3, the one kit scene that has the milkmaid's configuration between two plates, goes from a
+25 mm blend across a quarter of its band to exact. The plane arm never had this problem -- C3 is exact under RG because two
+planes and the layered order make a crease by themselves; it is the price of the plate, which the kit's layers (L1) and curved
+surfaces (S2) needed, and the hinge pays it back.
+
+**On the pictures** (the standing instruments: `fillcheck` sky-valued share of the band, the troll's footprint by class,
+the sunflowers' rows beside the big head, and for vermeer the wall's plate and the fill behind the milkmaid at the rows where
+the truth is wall). RW = §38's arm without the hinge; RWC = with it; RG = the measured arm, all under the repaired gate.
+
+| picture | RG (measured arm) | RW (hinge off) | RWC (hinge on) |
+|---|---|---|---|
+| vermeer, wall plate behind the milkmaid, wall rows: median d / within 3 cm of the wall | -- (planes) | 0.638 / 22 % (saturates to the near end across her band) | **0.022 / 66 %** |
+| vermeer, FILL behind her, wall rows: median / within 3 cm of the wall / unreached | 0.008 / 99.9 % / 0 % | 0.139 / 38 % / 2.8 % | 0.022 / 66 % / 0.2 % |
+| vermeer, whole band: sky-valued % / v jumps | 72.6 / 3 110 | 20.8 / 80 929 | 28.0 / 13 412 |
+| starwatcher: sky-valued % / unreached % / v jumps | 50.6 / 0 / 1 995 | 20.9 / 18.3 / 77 615 | 7.3 / 10.8 / 52 464 |
+| troll: gap % / forest % in his footprint | 6.0 / 92.4 | 29.8 / 44.7 | 13.0 / 56.7 |
+| sunflowers: sky-valued % / sky rows beside the head of 211 / v jumps | 98.3 / 211 / 805 | 68.9 / 211 / 24 409 | 43.4 / 180 / 26 348 |
+
+**Vermeer is the item's own case, and the hinge does there what it did on C3** (`crease_vermeer.png`). Without it the wall
+group's plate over the milkmaid's band is not a blend but a runaway: pinned by the wall above her (d 0.006), by the bend and
+the far floor below her (0.02-0.10), and by the receding left wall and the near floor at the band's left, it rises to the
+near end of the range across her whole body (median 0.64, p90 1.0 at the wall rows). With the bend's creases continued
+through her band -- they enter from her right side, where the bend's facets meet the hole, and the top one at row 857 is
+not found because the wall face meets the first facet there only through three-texel specks -- the plate reads 0.022 with
+p90 0.074 where the wall is 0.006: wall, not floor, over most of her band, and the fill follows (within 3 cm of the wall on
+66 % of the wall rows, from 38 %; unreached 2.8 % → 0.2 %; the band's jumps 80 929 → 13 412). Not exact: the plane arm's
+99.9 % is the bar, and what remains is the near-floor data at the band's left pulling the lowest rows, and the creases
+the specks hide. On starwatcher the hinge cuts the sky-valued band to a third (20.9 → 7.3 %, unreached 18 → 11 %): the
+plain's group has 473 creases and its plate no longer rides its own facets' gradients into the sky. The troll's gap halves
+(29.8 → 13.0 %, forest 45 → 57 %) -- his forest groups' plates, with 643 creases among the leaves, bend less across them --
+but stays twice the measured arm's 6 %: their problem is data, not creases. The sunflowers go the other way: the field group
+(252 sheets, 213 creases kept of 722 boundaries) is DA3's noise facets, its creases are not surfaces meeting, and the band
+beside the big head loses 31 of its 211 sky rows with the jumps up (12 → 30 of 211 rows): the crease test rejects 509 of
+those boundaries but not all, and every one it keeps frees the plate a little more.
+
+**What it cost.** The hinged plate cannot use the multigrid path: lambda is found on the un-hinged plate (the same data and
+noise; the hinge changes how the plate bends inside the hole, not how it fits outside it) and the hinged plate is solved once
+at that lambda -- by sparse LU up to 200 k unknowns (a 360 k-unknown plate factors in ten seconds and 1.5 GB on a regular
+grid; an irregular 400 k one took a worker to 10 GB and the kernel killed it, which hung the pool -- the pool is now the
+futures pool, which raises, and the groups still owed are solved in-process), by CG warm-started from the un-hinged plate
+beyond. Pieces of a plate's unknowns that no data touches are now left out of EVERY solve, hinged or not (they came back 0 under
+CG -- the far end of the range, claimed as sky -- and on the sunflowers' field the multigrid built on the singular operator
+diverged); their texels are unreached instead, which is why the pictures' unreached shares move. Three forms of the hinge were tried before this one and are recorded in the code's comments: dropping the bending
+rows across the hinge (singular systems), a topological guard on the pieces the hinges cut off (three data texels, then
+non-collinear ones: the discrete plate's kernel on a cut region is larger than one affine function per piece, so no count
+certifies it), and sixteen fold modes in the multigrid's candidates (the coarse level grew larger than the fine one).
+
+**Where this leaves the item.** The crease inside the hole is built and measured: on the kit it takes the one scene that
+has the configuration (C3) from a 25 mm blend to exact and regresses nothing; on vermeer it turns the wall plate behind the
+milkmaid from a runaway into the wall. The classifier's medians gate was the day's second finding (C2) and is repaired. What
+the item leaves for the pictures is now upstream of the hinge again: on vermeer the wall face meets the bend only through
+specks at the milkmaid's right, so the top crease is not found, and the near floor at the band's left still leans on the
+lowest rows; on the troll the forest groups' plates have no data; on the sunflowers a field of noise facets should not be hinged at all -- the crease test needs the third member of the
+smoothing test's family: a crease's two faces must each be a surface of some extent, not a facet the size of the tolerance. Measured arm today:
+still `comp + reach-group`; `wrap + reach-group + group-plate + ramp + crease` is the arm the kit has validated, now
+including its own crease scene, and on vermeer it is the first plate arm that puts the wall behind the milkmaid.

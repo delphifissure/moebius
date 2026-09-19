@@ -327,3 +327,15 @@ milkmaid separate (2 426 + 2 036 runs cut); kit nothing regresses, S26 0.030 →
 (hidden layer 0.007), L2 exact, L3/L4/S9/S26 0.000, S2 0.003, S15 1.3 m. Photographs still fail under the validated arm for
 three named reasons: the crease inside a hole (a plate cannot bend there), a thing's march through another thing (§28), and
 data-poor groups (need a plane fallback). Measured arm unchanged.
+
+**S35 §39 (2026-09-19).** The crease inside the hole (`--crease`): a join group's visible creases -- boundaries between two of
+its faces that border the hole, kept only where the faces' planes meet at the entry -- are continued straight through the
+hole and the group plate is hinged along them (slope free, value continuous). Kit: three crease scenes added (C1-C3); in the
+room scenes the far wall is at the outer depth and counts as sky, so only C3 (a wall at 0.8 W in a 1.5 W room, wide screen)
+has the configuration; there the plate's 25 mm blend over a quarter of the band goes to exact (p90 0.4 mm), nothing else
+regresses (L1 0.0105 / 0.008, L2-L4 0, S2 0.003, S9/S26 0, S15 1.30). C2 exposed the classifier's medians gate (a figure before
+a corner was a surface): the gate now compares against the neighbour's depth along the shared boundary; the unit-median form
+is falsified and removed. Pictures: vermeer's wall plate behind the milkmaid 0.64 → 0.022 (66 % of the wall rows within 3 cm
+of the wall, from 38 %), starwatcher sky-valued 21 → 7 %, troll gap 30 → 13 %, the sunflowers worse (noise facets hinged).
+Solver: hinged plates by sparse LU at the un-hinged plate's lambda, warm CG beyond 200 k unknowns, data-free pieces left out.
+Measured arm unchanged (`comp + reach-group`, which is exact behind the milkmaid by planes alone).
