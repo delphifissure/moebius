@@ -1402,6 +1402,13 @@ if A.group_plate and A.patches:
                         if inD[y_ * pw + x_] or band.flat[y_ * pw + x_]: entered = True; walked[y_, x_] = inD[y_ * pw + x_]; nW += 1
                         elif entered or t > 2: break
                 if nW == 0: continue
+                # THE CREASE MUST BE VISIBLE OVER ITS RUN (S35 §40). The smoothing test's criterion, with the run's length: a slope jump
+                # that, continued over the texels the crease runs through the hole, does not amount to a visible step (jump x run <=
+                # tol) would not show in the plate either way, and hinging it only frees the plate. A shallow crease's line is also
+                # the one the meeting test places loosely (its window is tol / jump), so this is the test that keeps an estimator's
+                # noise facets out: on the sunflowers' field the plate was hinged along 213 of them and the band beside the big head
+                # lost 31 of its 211 sky rows (§39). No constant: the step is the join law's, the run is the hole's own.
+                if not (jump * nW > tolm_): nRej[0] += 1; continue
                 wd = ndimage.binary_dilation(walked, structure=np.ones((3, 3))).ravel()
                 f_ = (_xa - sx) * uy - (_ya - sy) * ux; nH = 0
                 for step_, E_ in ((1, hE), (pw, vE)):
