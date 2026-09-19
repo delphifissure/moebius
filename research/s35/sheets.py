@@ -1074,9 +1074,10 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     # dropped (each side's slope is free there) and a first difference across it is penalised at the bending weight instead
     # (the value stays continuous). The hinge lines are the visible creases continued: see fold_edges.
     hE_, vE_ = (hinges[0], hinges[1]) if hinges is not None else (None, None); foldLines_ = hinges[2] if (hinges is not None and len(hinges) > 2) else []
-    def assemble():
+    hEo_, vEo_ = hE_, vE_
+    def assemble(useH=True):
         nonlocal nr
-        nr = 0
+        nr = 0; hE_, vE_ = (hEo_, vEo_) if useH else (None, None)
         def stencil(offs, ws):
             nonlocal nr
             ok = np.ones(n, bool); ks = []; hinged = np.zeros(n, bool)
@@ -1139,7 +1140,12 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     gridSig = abs(float(disp(min(1.0, np.median(dQ.ravel()[st]) + 1 / 65535)) - disp(max(0.0, np.median(dQ.ravel()[st]) - 1 / 65535)))) / 2 / np.sqrt(12)
     sig = max(sig, gridSig)
     Dm = sparse.csr_matrix((np.ones(len(st)) / sig, (np.arange(len(st)), kS)), shape=(len(st), n)); b = d / sig
-    BtB = (B.T @ B).tocsr(); DtD = (Dm.T @ Dm).tocsr(); Dtb = Dm.T @ b
+    # THE HINGED PLATE'S LAMBDA (S35 §39). The discrepancy search costs a dozen solves; the hinge changes how the plate bends inside
+    # the hole, not how it fits the data outside it, so lambda is found on the plate WITHOUT hinges (the multigrid path measured in
+    # §14-§19) and the hinged plate is solved once at that lambda.
+    hinged_ = hE_ is not None and bool(hE_.any() or vE_.any())
+    B1 = B if hinged_ else None; B = assemble(useH=False) if hinged_ else B
+    BtB = (B.T @ B).tocsr(); BtB1 = (B1.T @ B1).tocsr() if hinged_ else None; DtD = (Dm.T @ Dm).tocsr(); Dtb = Dm.T @ b
     if A.planeprior and prior:
         # THE PLATE'S FREE BOUNDARY (S35 §17). With nothing to hold it, the plate bulges over the hole and a small face wins the
         # layered order far from its own data (S15: a 165-texel face took 11 930 band texels at 2.2 m error; the same face's
@@ -1179,10 +1185,9 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     # each of the sixteen lambdas in the discrepancy search was most of the bake: it is now rebuilt only when lambda has moved
     # more than two decades from the build point.
     _pc = {'lam': None, 'M': None}
-    hinged_ = hE_ is not None and bool(hE_.any() or vE_.any())
-    def solve(lam, x0=None):
-        M_ = (DtD + lam * BtB).tocsr()
-        if hinged_:
+    def solve(lam, x0=None, final=False):
+        M_ = (DtD + lam * (BtB1 if (hinged_ and final) else BtB)).tocsr()
+        if hinged_ and final and n <= 400000:
             # THE HINGED PLATE IS SOLVED DIRECTLY (S35 §39). With hinges the bending operator's kernel holds one piecewise-affine mode
             # per crease, which the affine-candidate multigrid does not represent: CG hit its iteration cap on every solve of the
             # sunflowers' field plate (59 creases, 169 k unknowns; 25 minutes and unfinished). A sparse LU with a minimum-degree
@@ -1202,6 +1207,15 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
                 print(f'   hinged plate of {n} unknowns: LU out of memory, back to CG')
             except RuntimeError as e_:
                 dg_ = M_.diagonal(); print(f'   hinged plate of {n} unknowns: LU failed ({e_}); zero diagonals {int((dg_ == 0).sum())}, smallest nonzero {float(np.abs(dg_[dg_ != 0]).min()) if (dg_ != 0).any() else 0:.2e}; back to CG')
+        if hinged_ and final:
+            # too large for a factorisation in this machine's memory (a 360 k-unknown plate takes 1.5 GB; the troll's forest plate
+            # killed a worker at 10 GB): CG warm-started from the un-hinged plate at the same lambda, with the fold modes in the
+            # hierarchy -- the two differ only near the folds
+            Mp_ = pyamg.smoothed_aggregation_solver(M_, B=Bnull, symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V') if pyamg is not None else sparse.diags(1.0 / np.maximum(M_.diagonal(), 1e-30))
+            x, info = cg(M_, Dtb, x0=x0, rtol=1e-8, maxiter=2000, M=Mp_)
+            r_ = float(np.linalg.norm(M_ @ x - Dtb) / max(1e-300, np.linalg.norm(Dtb))); solve.worst = max(getattr(solve, 'worst', 0.0), r_)
+            if r_ > 1e-6: print(f'   hinged plate of {n} unknowns: CG from the un-hinged plate did not converge (relative residual {r_:.1e})')
+            return x
         if pyamg is not None:
             if _pc['lam'] is None or abs(np.log10(lam) - np.log10(_pc['lam'])) > 2:
                 _pc['lam'] = lam; _pc['M'] = pyamg.smoothed_aggregation_solver(M_, B=Bnull, symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V')
@@ -1245,7 +1259,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
         if rm > sig: b = gm
         else: a = gm
     lam = 10 ** (0.5 * (a + b))
-    x = solve(lam, x)
+    x = solve(lam, x, final=True)
     tps_sheet.lastHinges = int(hE_.sum() + vE_.sum()) if hE_ is not None else 0
     return om, x, sig, lam, rms(x), solve.worst
 def _tps_job(s_):
@@ -1386,9 +1400,21 @@ if A.group_plate and A.patches:
             for t_ in sorted(info, key=lambda t: -t[8])[:3]: fl += f' [faces {t_[0]}/{t_[1]} entry ({t_[2]:.0f},{t_[3]:.0f}) dir ({t_[4]:+.2f},{t_[5]:+.2f}) boundary {t_[6]} walked {t_[7]} hinges {t_[8]} planes-line angle {t_[9]:.0f} deg, slope jump {t_[10]:.1e}]'
         print(f'   group plate {g_}: {len(ss_)} sheets, {nd} data, {ndm} domain, sigma {sig:.3e}, lambda {lam:.2e}, rms {rr:.3e}, worst residual {worst:.1e}{"  UNCONVERGED" if worst > 1e-6 else ""}{fl}  ({time.time() - tg0:.0f}s)')
     if A.jobs > 1 and len(jobs_) > 1:
+        # a worker the kernel kills (out of memory) hangs multiprocessing.Pool forever; the futures pool raises instead, and the
+        # groups still owed are then solved in this process, one at a time
         import multiprocessing as mp
-        with mp.get_context('fork').Pool(min(A.jobs, len(jobs_))) as pool:
-            for res in pool.imap_unordered(_gp_job, jobs_, chunksize=1): _gp_take(res)
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        from concurrent.futures.process import BrokenProcessPool
+        done_ = set()
+        try:
+            with ProcessPoolExecutor(max_workers=min(A.jobs, len(jobs_)), mp_context=mp.get_context('fork')) as pool:
+                futs_ = {pool.submit(_gp_job, job): job[0] for job in jobs_}
+                for fu_ in as_completed(futs_):
+                    res = fu_.result(); _gp_take(res); done_.add(res[0])
+        except BrokenProcessPool:
+            print(f'   group plates: a worker died ({len(jobs_) - len(done_)} groups left); solving the rest in this process')
+            for job in jobs_:
+                if job[0] not in done_: _gp_take(_gp_job(job))
     else:
         for job in jobs_: _gp_take(_gp_job(job))
     np.savez_compressed(f'{OUT}/group_plates.npz', hE=np.flatnonzero(_hE), vE=np.flatnonzero(_vE), folds=np.array(_foldInfo, dtype=np.float64).reshape(-1, 15), **_gpDump)   # S35 §39: the plate fields and hinges, for the crease instrument
