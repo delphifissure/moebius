@@ -339,3 +339,11 @@ is falsified and removed. Pictures: vermeer's wall plate behind the milkmaid 0.6
 of the wall, from 38 %), starwatcher sky-valued 21 → 7 %, troll gap 30 → 13 %, the sunflowers worse (noise facets hinged).
 Solver: hinged plates by sparse LU at the un-hinged plate's lambda, warm CG beyond 200 k unknowns, data-free pieces left out.
 Measured arm unchanged (`comp + reach-group`, which is exact behind the milkmaid by planes alone).
+
+**S35 §40 (2026-09-19).** Two corrections to the crease (§39), both from the sunflowers: a crease is hinged only where its slope
+jump over its run through the hole amounts to a visible step (jump x run > tol, the smoothing test's own criterion), and the
+membrane tie-break is removed (at a millionth of the bending energy it was the only term where the continuation is affine and
+flattened the sky plate far from data). Kit unchanged; sunflowers repaired (211 of 211 sky rows); vermeer's wall behind the
+milkmaid 38 → 56 % at the wall (plate 0.64 → 0.029); troll 30 → 13 %; starwatcher worse with the hinge (43 → 55 % sky-valued)
+because the plain's plate over-extrapolates affinely past the far plain -- §39's 7 % was the membrane's accidental 'constant
+beyond a thousand texels'. Next: the plate's error budget (§17's rule carried from planes to the plate). Measured arm unchanged.

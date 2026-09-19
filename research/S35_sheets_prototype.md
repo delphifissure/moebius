@@ -1710,3 +1710,57 @@ lowest rows; on the troll the forest groups' plates have no data; on the sunflow
 smoothing test's family: a crease's two faces must each be a surface of some extent, not a facet the size of the tolerance. Measured arm today:
 still `comp + reach-group`; `wrap + reach-group + group-plate + ramp + crease` is the arm the kit has validated, now
 including its own crease scene, and on vermeer it is the first plate arm that puts the wall behind the milkmaid.
+
+## 40. The crease's visibility test, and the tie-break that was not one (user: "keep going", 2026-09-19)
+
+**Two corrections to §39, both found on the sunflowers.** (1) THE VISIBILITY TEST. §39's crease test asks the two faces'
+planes to meet at the entry within the line's own uncertainty, tol / slope jump; a shallow boundary therefore passes
+trivially (its window is wide) and an estimator's noise facets inside a field were hinged by the hundred. The missing
+condition is the smoothing test's own, with the run's length in place of the facet's extent: a crease is hinged only where
+its slope jump, continued over the texels it runs through the hole, amounts to a visible step (jump x run > tol). A crease
+that would not show in the plate either way is not hinged. Sunflowers: 420 → 315 creases kept, 801 boundaries rejected;
+C3, L3 unchanged. (2) THE MEMBRANE WAS NOT A TIE-BREAK. §39 added a first difference over every edge of a hinged plate at a
+millionth of the bending energy so that pieces the hinges cut off would take 'continue the value'. But where a plate's
+continuation is affine its bending energy is exactly zero, so far from the data the millionth was the only term, and it
+flattened the continuation: the sunflowers' sky plate rose from 0.000 to 0.106 over the band beside the big head, with no
+hinge anywhere near it, and the band lost 31 of its 211 sky rows. The visibility test did not touch this (the rows were
+lost to a plate with no creases); running the arm without the hinge under the same solver did (211 rows back), which is
+what located it. The membrane is removed; the pieces no data touches are left out of every solve instead, and a factor that
+is still singular falls back to CG. With both corrections the sunflowers under the crease arm equal the arm without it
+(211 of 211 sky rows, one jump, sky-valued 38.8 vs 39.1 %), C3 and L3 stay exact.
+
+**On the kit** the final form (visibility test, no membrane) is identical to §39's on every scene: C1 0.000, C2 0.0013 (bg
+0.000), C3 0.0000 / p90 0.0005, L1 0.0105 / 0.008, L2 L3 L4 0.000, S2 0.0028, S9 0.000, S26 0.000, S15 1.30 m. The
+visibility test rejects more of the leaves' boundaries (L1 57 creases kept of 142, S15 22 of 45) and it costs nothing there.
+
+**On the pictures** (`fillcheck`, the troll's footprint, the sunflowers' head rows, vermeer's wall rows behind the milkmaid;
+RW2 = the arm without the hinge under the same solver, the fair baseline; RWC2 = §39's form with the membrane; RWC3 = the
+final form):
+
+| picture | RG (measured arm) | RW2 (hinge off) | RWC2 (§39: hinge + membrane) | RWC3 (final: hinge, visibility test) |
+|---|---|---|---|---|
+| vermeer, wall rows behind the milkmaid within 3 cm of the wall (fill = wall plate) | 99.9 % | 38 % (plate median 0.64) | 66 % (0.022) | 56 % (0.029) |
+| vermeer, bend rows behind her within 3 cm of the wall | 47 % | 0.7 % | 15 % | 25 % |
+| vermeer, whole band sky-valued % / unreached % | 72.6 / 0.3 | 20.8 / 3.9 | 28.0 / 3.7 | 24.9 / 3.4 |
+| starwatcher, sky-valued % / unreached % | 50.6 / 0 | 43.2 / 10.3 | 7.3 / 10.8 | 55.1 / 2.1 |
+| troll, gap % / forest % in his footprint | 6.0 / 92.4 | 29.8 / 44.7 (RW) | 13.0 / 56.7 | 13.2 / 56.0 |
+| sunflowers, sky rows beside the head of 211 / jumps | 211 / 0 | 211 / 1 | 180 / 30 | 211 / 1 |
+
+Vermeer keeps most of §39's gain (56 % of the wall rows at the wall, from 38 %; the plate 0.64 → 0.029; 105 creases in the
+wall group, from 146), the troll keeps all of it, the sunflowers are repaired. Starwatcher goes the other way, and the
+comparison says why: without the hinge and without the membrane its band is 43 % sky-valued (RW2), with the hinge 55 %,
+and §39's 7.3 % was the MEMBRANE's doing -- far from its data the plain's plate is an affine continuation of the plain's
+disparity gradient, which runs past the far plain into the sky (d = 0), and the membrane at a millionth of the bending energy
+had turned that continuation into 'affine near the data, constant beyond about a thousand texels', which is the far plain's
+depth to within the instrument. That was an accident with a constant in it (the crossover length is the weight ratio's square
+root), so it is not kept; but it is the same observation as vermeer's runaway plate under RW2 (0.64 where the wall is 0.006):
+the plate's affine kernel over-extrapolates beyond its data, in both directions. The construction that answers it without a
+constant is §17's error budget carried from the plane to the plate -- the slope trusted only as far as the fit supports it --
+and it is the next item.
+
+**Where this leaves the item.** The crease inside the hole stands as built in §39 with two corrections: a crease is hinged only
+where it would show (jump x run > tol), and the membrane is gone. Kit unchanged and exact where it was; vermeer's wall behind
+the milkmaid 38 → 56 % at the wall (§39's 66 % was partly the membrane); troll 30 → 13 %; sunflowers equal to the arm without
+the hinge; starwatcher worse than without it (43 → 55 % sky-valued), for a reason that is not the hinge's but the plate's
+far continuation, now isolated. Measured arm: still `comp + reach-group`. Next: the plate's error budget (affine only as far
+as the fit supports it), measured first on starwatcher's plain and vermeer's wall under RW2, where the runaway is.
