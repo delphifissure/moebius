@@ -1087,8 +1087,12 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
             okE_ = np.concatenate([~hE_[om[(X < pw - 1)]], ~vE_[om[(Y < ph - 1)]]]) & (kOf[jj_] >= 0)
             ii_ = ii_[okE_]; jj_ = jj_[okE_]
             Ag_ = sparse.coo_matrix((np.ones(len(ii_)), (kOf[ii_], kOf[jj_])), shape=(n, n))
-            nc_, lab_ = _ccH(Ag_, directed=False); nData_ = np.bincount(lab_, weights=inS_[om].astype(float), minlength=nc_)
-            weak_ = nData_ < 3
+            nc_, lab_ = _ccH(Ag_, directed=False); wD_ = inS_[om].astype(float)
+            # a plane's worth: three data texels that are not collinear (the covariance of the piece's data has rank two)
+            n0_ = np.bincount(lab_, weights=wD_, minlength=nc_); sx0 = np.bincount(lab_, weights=wD_ * X, minlength=nc_); sy0 = np.bincount(lab_, weights=wD_ * Y, minlength=nc_)
+            sxx0 = np.bincount(lab_, weights=wD_ * X * X, minlength=nc_); sxy0 = np.bincount(lab_, weights=wD_ * X * Y, minlength=nc_); syy0 = np.bincount(lab_, weights=wD_ * Y * Y, minlength=nc_)
+            nn_ = np.maximum(n0_, 1.0); cxx = sxx0 / nn_ - (sx0 / nn_) ** 2; cyy = syy0 / nn_ - (sy0 / nn_) ** 2; cxy = sxy0 / nn_ - (sx0 / nn_) * (sy0 / nn_)
+            weak_ = (n0_ < 3) | ((cxx * cyy - cxy * cxy) <= 1e-9)
             if not weak_.any(): break
             bad_ = weak_[lab_]   # unknowns in a piece without a plane's worth of data
             hi_ = np.flatnonzero(hE_); hi_ = hi_[(kOf[hi_] >= 0) & (hi_ + 1 < N)]; hi_ = hi_[kOf[hi_ + 1] >= 0]; drop_ = hi_[bad_[kOf[hi_]] | bad_[kOf[hi_ + 1]]]
@@ -1179,11 +1183,20 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
             # sunflowers' field plate (59 creases, 169 k unknowns; 25 minutes and unfinished). A sparse LU with a minimum-degree
             # ordering factors a 360 k-unknown plate in ten seconds; the un-hinged plates keep the multigrid path measured in §14-§19.
             try:
-                lu_ = splu(M_.tocsc(), permc_spec='MMD_AT_PLUS_A'); x = lu_.solve(Dtb)
-                r_ = float(np.linalg.norm(M_ @ x - Dtb) / max(1e-300, np.linalg.norm(Dtb))); solve.worst = max(getattr(solve, 'worst', 0.0), r_)
+                # an unknown touched by no row at all (a disc texel with no neighbour among the unknowns) has no value: it is left out
+                # of the factorisation and comes back NaN (the layered order then does not let the sheet claim it); under CG such
+                # texels silently took 0
+                keep_ = M_.diagonal() != 0
+                if keep_.all(): lu_ = splu(M_.tocsc(), permc_spec='MMD_AT_PLUS_A'); x = lu_.solve(Dtb)
+                else:
+                    Mk_ = M_[keep_][:, keep_].tocsc(); lu_ = splu(Mk_, permc_spec='MMD_AT_PLUS_A'); x = np.full(n, np.nan); x[keep_] = lu_.solve(Dtb[keep_])
+                    solve.pruned = int((~keep_).sum())
+                xr_ = np.nan_to_num(x); r_ = float(np.linalg.norm((M_ @ xr_ - Dtb)[keep_]) / max(1e-300, np.linalg.norm(Dtb))); solve.worst = max(getattr(solve, 'worst', 0.0), r_)
                 return x
             except MemoryError:
                 print(f'   hinged plate of {n} unknowns: LU out of memory, back to CG')
+            except RuntimeError as e_:
+                dg_ = M_.diagonal(); print(f'   hinged plate of {n} unknowns: LU failed ({e_}); zero diagonals {int((dg_ == 0).sum())}, smallest nonzero {float(np.abs(dg_[dg_ != 0]).min()) if (dg_ != 0).any() else 0:.2e}; back to CG')
         if pyamg is not None:
             if _pc['lam'] is None or abs(np.log10(lam) - np.log10(_pc['lam'])) > 2:
                 _pc['lam'] = lam; _pc['M'] = pyamg.smoothed_aggregation_solver(M_, B=Bnull, symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V')
@@ -1197,7 +1210,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
         solve.worst = max(getattr(solve, 'worst', 0.0), r_)
         return x
     solve.worst = 0.0
-    def rms(x): return float(np.sqrt(np.mean((x[kS] - d) ** 2)))
+    def rms(x): return float(np.sqrt(np.nanmean((x[kS] - d) ** 2)))
     # DISCREPANCY SEARCH (Morozov): lambda such that the strip's RMS residual equals its own noise sigma. rms(lambda) is
     # monotone, so a secant in (log lambda, log rms) finds it in a handful of solves instead of the nine-point grid plus six
     # bisections the first version used — sixteen solves per face was most of the bake. Warm-started, bracketed, and it falls
