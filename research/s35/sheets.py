@@ -1106,17 +1106,11 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
                 if m == 0: continue
                 rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_]); vals.append(np.full(m, -1.0))
                 rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_ + step_]); vals.append(np.full(m, 1.0)); nr += m
-            # THE TIE-BREAK FOR THE DIRECT SOLVE. The discrete plate's kernel on a domain of discs is larger than the affine functions:
-            # a region joined to the data through a one-texel neck has a free tilt across the neck (no cross stencil spans it), and a
-            # disc no data touches is free altogether. CG returned its minimum-norm value there (0, the far end of the range); a
-            # direct factorisation is exactly singular. A first difference over every edge of the unknowns at a thousandth of the
-            # bending weight (a millionth of the energy) settles every free direction by 'continue the value' -- flat where nothing
-            # is known -- and moves the determined parts by that millionth. A tie-break, not a model constant.
-            for step_, lim_ in ((1, X < pw - 1), (pw, Y < ph - 1)):
-                i_ = om[lim_]; i_ = i_[kOf[i_ + step_] >= 0]; m = len(i_)
-                if m == 0: continue
-                rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_]); vals.append(np.full(m, -1e-3))
-                rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_ + step_]); vals.append(np.full(m, 1e-3)); nr += m
+            # (A membrane term over every edge at a millionth of the bending energy was tried here as the tie-break for the direct
+            # solve and is REMOVED: where the plate's continuation is affine its bending energy is exactly zero, so far from the data
+            # the millionth was the only term and it flattened the continuation -- the sunflowers' sky plate rose from 0.000 to 0.106
+            # over the band beside the big head with no hinge anywhere near. The pieces no data touches are left out instead (below),
+            # and a factor that is still singular falls back to CG.)
         B = sparse.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(nr, n))
         return B
     inS_ = np.zeros(N, bool); inS_[st] = True; wD_ = inS_[om].astype(float)
