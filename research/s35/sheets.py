@@ -1259,8 +1259,8 @@ if A.group_plate and A.patches:
         Ih = idx[:, :-1].ravel(); Iv = idx[:-1, :].ravel()
         ph_ = vis_[Ih] & vis_[Ih + 1] & (comp[Ih] != comp[Ih + 1]); pv_ = vis_[Iv] & vis_[Iv + pw] & (comp[Iv] != comp[Iv + pw])
         bi = np.concatenate([Ih[ph_], Iv[pv_]]); bj = np.concatenate([Ih[ph_] + 1, Iv[pv_] + pw])
-        hE = np.zeros(N, bool); vE = np.zeros(N, bool); info = []
-        if len(bi) == 0: return hE, vE, info
+        hE = np.zeros(N, bool); vE = np.zeros(N, bool); info = []; nRej = [0]
+        if len(bi) == 0: return hE, vE, info, 0
         fa = np.minimum(comp[bi], comp[bj]); fb = np.maximum(comp[bi], comp[bj]); key = fa * nComp + fb
         mx = 0.5 * (_xa[bi] + _xa[bj]); my = 0.5 * (_ya[bi] + _ya[bj])
         adjD = ndimage.binary_dilation(inD.reshape(ph, pw), structure=[[0, 1, 0], [1, 1, 1], [0, 1, 0]]).ravel(); ent = adjD[bi] | adjD[bj]
@@ -1280,6 +1280,22 @@ if A.group_plate and A.patches:
                 cx, cy = px.mean(), py.mean(); Cm = np.cov(np.stack([px - cx, py - cy])) if len(px) > 2 else np.outer([px[1] - px[0], py[1] - py[0]], [px[1] - px[0], py[1] - py[0]])
                 evals, evecs = np.linalg.eigh(Cm); ux, uy = float(evecs[0, 1]), float(evecs[1, 1])
                 t0 = (ex - cx) * ux + (ey - cy) * uy; sx, sy = cx + t0 * ux, cy + t0 * uy   # the entry projected onto the line
+                # THE CREASE TEST. A crease is where two planes MEET: the two faces' local planes (fitted in the reach window of the
+                # entry) intersect along a line, and the entry must lie on it within that line's own uncertainty -- the visible step
+                # over the slope jump (a shallow crease's line is poorly placed; a sharp one's is exact), plus the raster's texel.
+                # A boundary between two facets whose planes do not meet where the boundary is (an estimator's noise facet inside a
+                # field: the sunflowers' field group had 514 such boundaries) is no crease, and hinging the plate along it would
+                # only free the plate. No constant: the tolerance is the join law's, the texel is the grid's.
+                pA, pB = _pl(fa_k, ex, ey), _pl(fb_k, ex, ey); ang = np.nan; jump = np.nan; off = np.nan; okC = False
+                if pA is not None and pB is not None:
+                    gx, gy = pA[1] - pB[1], pA[2] - pB[2]; jump = float(np.hypot(gx, gy))
+                    if jump > 0:
+                        ang = float(np.degrees(np.arccos(min(1.0, abs(ux * (-gy) + uy * gx) / jump))))
+                        off = abs((pA[0] - pB[0]) + gx * ex + gy * ey) / jump     # the entry's distance from the planes' crease line, texels
+                        tolm_ = float(np.median(np.concatenate([TOL.ravel()[bi[w_]], TOL.ravel()[bj[w_]]])))
+                        okC = off <= tolm_ / jump + 1.0
+                nRej[0] += 0 if okC else 1
+                if not okC: continue
                 walked = np.zeros((ph, pw), bool); nW = 0
                 for sgn in (1, -1):
                     entered = False
@@ -1296,29 +1312,23 @@ if A.group_plate and A.patches:
                     if step_ == 1: i_ = i_[(i_ % pw) < pw - 1]
                     j_ = i_ + step_; ok_ = inD[j_] & (f_[i_] * f_[j_] <= 0) & ((f_[i_] != 0) | (f_[j_] != 0))
                     E_[i_[ok_]] = True; nH += int(ok_.sum())
-                # diagnostic: the two faces' local planes -- the angle between their intersection line and the visible boundary's axis,
-                # and the slope jump across the crease (disparity per texel)
-                pA, pB = _pl(fa_k, ex, ey), _pl(fb_k, ex, ey); ang = np.nan; jump = np.nan
-                if pA is not None and pB is not None:
-                    gx, gy = pA[1] - pB[1], pA[2] - pB[2]; jump = float(np.hypot(gx, gy))
-                    if jump > 0: ang = float(np.degrees(np.arccos(min(1.0, abs(ux * (-gy) + uy * gx) / jump))))
-                info.append((fa_k, fb_k, ex, ey, ux, uy, len(px), nW, nH, ang, jump, sx, sy))
-        return hE, vE, info
+                info.append((fa_k, fb_k, ex, ey, ux, uy, len(px), nW, nH, ang, jump, sx, sy, off))
+        return hE, vE, info, nRej[0]
     def _gp_job(job):
         g_, ss_, data_, dom_, Rm_, win_ = job
         hin = fold_edges(g_, ss_, dom_, Rm_, win_) if A.crease else None
         om, x, sig, lam, rr, worst = tps_sheet(ss_[0], data_, dom_, prior=False, hinges=(hin[0], hin[1], [(t_[11], t_[12], t_[4], t_[5], t_[8]) for t_ in hin[2]]) if hin is not None else None)
         return (g_, ss_, np.asarray(om, dtype=np.int64), np.asarray(x, dtype=np.float64), sig, lam, rr, worst, len(data_), len(dom_), hin)
-    _gpDump = {}; _foldInfo = []; _hE = np.zeros(N, bool); _vE = np.zeros(N, bool)
+    _gpDump = {}; _foldInfo = []; _hE = np.zeros(N, bool); _vE = np.zeros(N, bool); _nRej = [0]
     def _gp_take(res):
         g_, ss_, om, x, sig, lam, rr, worst, nd, ndm, hin = res
         for s_ in ss_: groupU[s_] = (om, x)
         _gpDump[f'g{g_}_om'] = om; _gpDump[f'g{g_}_x'] = x.astype(np.float32)
         fl = ''
         if hin is not None:
-            hE, vE, info = hin; _hE[:] |= hE; _vE[:] |= vE
+            hE, vE, info, nRej_ = hin; _hE[:] |= hE; _vE[:] |= vE; _nRej[0] += nRej_
             for t_ in info: _foldInfo.append((g_,) + tuple(t_))
-            fl = f', creases {len(info)} ({int(hE.sum() + vE.sum())} hinge edges)'
+            fl = f', creases {len(info)} ({int(hE.sum() + vE.sum())} hinge edges; {nRej_} boundaries not creases)'
             for t_ in sorted(info, key=lambda t: -t[8])[:3]: fl += f' [faces {t_[0]}/{t_[1]} entry ({t_[2]:.0f},{t_[3]:.0f}) dir ({t_[4]:+.2f},{t_[5]:+.2f}) boundary {t_[6]} walked {t_[7]} hinges {t_[8]} planes-line angle {t_[9]:.0f} deg, slope jump {t_[10]:.1e}]'
         print(f'   group plate {g_}: {len(ss_)} sheets, {nd} data, {ndm} domain, sigma {sig:.3e}, lambda {lam:.2e}, rms {rr:.3e}, worst residual {worst:.1e}{"  UNCONVERGED" if worst > 1e-6 else ""}{fl}  ({time.time() - tg0:.0f}s)')
     if A.jobs > 1 and len(jobs_) > 1:
@@ -1327,8 +1337,8 @@ if A.group_plate and A.patches:
             for res in pool.imap_unordered(_gp_job, jobs_, chunksize=1): _gp_take(res)
     else:
         for job in jobs_: _gp_take(_gp_job(job))
-    np.savez_compressed(f'{OUT}/group_plates.npz', hE=np.flatnonzero(_hE), vE=np.flatnonzero(_vE), folds=np.array(_foldInfo, dtype=np.float64).reshape(-1, 14), **_gpDump)   # S35 §39: the plate fields and hinges, for the crease instrument
-    print(f'group plates: {len(jobs_)} groups, {len(groupU)} sheets served' + (f', {len(_foldInfo)} creases continued into holes, {int(_hE.sum() + _vE.sum())} hinge edges' if A.crease else '') + f'  ({time.time() - tg0:.1f}s)')
+    np.savez_compressed(f'{OUT}/group_plates.npz', hE=np.flatnonzero(_hE), vE=np.flatnonzero(_vE), folds=np.array(_foldInfo, dtype=np.float64).reshape(-1, 15), **_gpDump)   # S35 §39: the plate fields and hinges, for the crease instrument
+    print(f'group plates: {len(jobs_)} groups, {len(groupU)} sheets served' + (f', {len(_foldInfo)} creases continued into holes ({_nRej[0]} face boundaries at holes were not creases), {int(_hE.sum() + _vE.sum())} hinge edges' if A.crease else '') + f'  ({time.time() - tg0:.1f}s)')
 def harmonic_ext_fixed(dom, fixed):
     """Laplace on dom; texels in `fixed` (subset of dom) hold their value; zero flux elsewhere."""
     if len(dom) == 0: return np.zeros(0)
