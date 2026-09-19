@@ -42,6 +42,8 @@ ap.add_argument('--color', action='store_true', help="per-sheet colour (S35 §25
 ap.add_argument('--rgb', help='the source colour image (defaults to <dump>/color.png)')
 ap.add_argument('--closure', default='comp', choices=['comp', 'layer', 'surround'], help="two-sided closure test for a THING's march. 'comp' (the §18 rule, adopted): the march skips the band texel's own id and is closed when it exits onto the sheet's own join-law component. 'layer' (S35 §28, NOT adopted): closed on own component or ANY thing, plus the rim-behind-band test, any-closed-march fits, the same-thing lift and the per-march exposure bound; fixes the troll and S15 and breaks three pictures (§28). 'surround' (S35 §29, item C): closed on own component or own THING (self-occlusion); otherwise a thing's sheet is fitted behind an occluder only if it is not nearer than the MEDIAN depth of that occluder's own far-side surroundings (the rim of its band, its own texels and what is nearer than it excluded) -- the majority of what surrounds an occluder is what most likely continues behind it; nearer minority clutter is a hedge. Per-texel exposure trim on things' sheets. No layer grouping (falsified twice in §29: chaining by depth overlap and by step-relative difference).")
 ap.add_argument('--thingrule', default='neighbour', choices=['neighbour', 'steps', 'wrap'], help="S35 §29: which units are things. 'neighbour' (§22): in front of at least one neighbour along the majority of their shared boundary and by medians; with hundreds of tiny neighbours the median shared boundary is two texels and a three-texel fragment can make a whole far field a thing (the sunflowers' field before a sky fragment, S15's ground). 'steps': over the unit's whole boundary, only pairs with a depth STEP vote (joined pairs, a part beside its sibling part, do not); the unit is a thing when the boundary length along which it is in front exceeds the length along which it is behind, both counted only against neighbours whose median depth agrees. (A plain majority of the whole boundary, frame included, was tried and falsified: SAM's part segments are bounded mostly by their own siblings, starwatcher's figure stopped being a thing, v jumps 2 249 -> 45 700; removed.)"); ap.add_argument('--things', action='store_true', help='things/surfaces classifier (S35 §22, opt-in): every visible unit (mask segment or depth component) that is in front of a neighbour becomes a two-sided thing, the rest background. Fixes the sunflower staircase, S9 and S2; wrong on the troll (x-ray to the deepest surface behind him), on vermeer with the automatic mask (the floor voted a thing) and on S15 (a canopy behind its own trunk) -- see the note'); ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
+ap.add_argument('--group-prior-budget', action='store_true', help="S35 §42: the group plate's plane prior weighted by §17's budget -- a sheet's plane is a prior only as far as its own fit supports it: the prior's weight at a texel is 1 / sqrt(step^2 + se^2), se the fit's predicted standard error there (grows with the distance from the strip), so a wide flat wall holds its plane far into the hole and a facet's slab lets the plate interpolate (S2's floor+box halves went 0.003 -> 0.020 m under the unweighted prior).")
+ap.add_argument('--group-prior', action='store_true', help="S35 §42: §17's plane prior for the GROUP plate, per sheet: every domain texel relaxes toward the plane of the group's sheet whose entry is nearest to it, at weight 1 / visible step (against the data at 1 / sigma), so the plate follows the data where it has them and each face's own plane where it does not -- with the hinge (§39) each side of a crease has its own. §37 rejected one prior plane for the whole group (a wall and its floor are not one plane); vermeer's wall plate drifted to 0.04-0.12 behind the milkmaid's head where the group's data lie on one side of a 600-texel band (§41).")
 ap.add_argument('--crease', action='store_true', help="S35 §39: the crease inside the hole. A join group's visible creases (boundaries between two of its faces that both have sheets on the hole) are continued straight into the hole along their own axis, and the group plate is HINGED along them: the bending rows that straddle a hinge edge are dropped and a first difference across it is penalised at the bending weight instead, so the slope may jump where the value may not. Without it a plate pinned by the wall above a wide occluder and the floor below it interpolates a blend where the truth is wall down to a crease line (vermeer's milkmaid).")
 ap.add_argument('--no-smooth', action='store_true'); ap.add_argument('--no-tps', action='store_true'); ap.add_argument('--no-prior', action='store_true'); ap.add_argument('--no-patches', action='store_true')
 ap.add_argument('--no-evidence', action='store_true'); ap.add_argument('--no-geo', action='store_true'); ap.add_argument('--no-fused', action='store_true'); ap.add_argument('--no-twosided', action='store_true'); ap.add_argument('--no-drop-thin2', action='store_true')
@@ -1058,7 +1060,7 @@ def _exposure_trim(seen, entries, R, rimD):
 # noise grid/√12; λ by the discrepancy principle (Morozov 1966): the strip's RMS residual equals σ. Free boundary elsewhere:
 # the sheet continues the strip's shape into the hole with least bending and relaxes to an affine continuation far from it.
 tpsU = {}
-def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --planeprior uses planes[s_]; hinges = (hE, vE) over N (S35 §39)
+def tps_sheet(s_, st, dom, prior=True, hinges=None, priorField=None):   # priorField = (texels, plane values, steps): a per-texel prior (S35 §42)   # s_ is the face; --planeprior uses planes[s_]; hinges = (hE, vE) over N (S35 §39)
     om = np.unique(np.concatenate([st, dom])); n = len(om); pos = {int(i): k for k, i in enumerate(om)}
     inO = np.zeros(N, bool); inO[om] = True; kOf = np.full(N, -1, np.int64); kOf[om] = np.arange(n)
     X = om % pw; Y = om // pw
@@ -1143,6 +1145,10 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     B1 = B if hinged_ else None; B = assemble(useH=False) if hinged_ else B
     BtB = (B.T @ B).tocsr(); BtB1 = (B1.T @ B1).tocsr() if hinged_ else None; DtD = (Dm.T @ Dm).tocsr(); Dtb = Dm.T @ b
     weakF_ = weakUnk_ if hinged_ else weakUnk_; weakS_ = _dataFree(B) if hinged_ else weakUnk_   # the hinged operator's pieces (final) and the un-hinged operator's (search)
+    if priorField is not None:
+        pI_, pV_, pS_ = priorField; kP_ = kOf[pI_]; okP_ = kP_ >= 0
+        Pm = sparse.csr_matrix((1.0 / pS_[okP_], (np.arange(int(okP_.sum())), kP_[okP_])), shape=(int(okP_.sum()), n))
+        DtD = (DtD + (Pm.T @ Pm)).tocsr(); Dtb = Dtb + Pm.T @ (pV_[okP_] / pS_[okP_])
     if A.planeprior and prior:
         # THE PLATE'S FREE BOUNDARY (S35 §17). With nothing to hold it, the plate bulges over the hole and a small face wins the
         # layered order far from its own data (S15: a 165-texel face took 11 930 band texels at 2.2 m error; the same face's
@@ -1417,10 +1423,42 @@ if A.group_plate and A.patches:
                     E_[i_[ok_]] = True; nH += int(ok_.sum())
                 info.append((fa_k, fb_k, ex, ey, ux, uy, len(px), nW, nH, ang, jump, sx, sy, off))
         return hE, vE, info, nRej[0]
+    def _gp_prior(ss_, dom_):
+        # S35 §42: each domain texel takes the plane of the group's sheet whose entry is nearest (the sheet that reaches it), at the
+        # visible step of that sheet's rims as its weight
+        from scipy.spatial import cKDTree
+        ents = []; labs = []
+        for k_, s_ in enumerate(ss_):
+            e_ = geoInfo[s_][0]
+            if len(e_): ents.append(e_); labs.append(np.full(len(e_), k_))
+        if not ents: return None
+        ents = np.concatenate(ents); labs = np.concatenate(labs)
+        tr_ = cKDTree(np.stack([ents % pw, ents // pw], 1)); _, j_ = tr_.query(np.stack([dom_ % pw, dom_ // pw], 1))
+        sh_ = np.array(ss_)[labs[j_]]
+        pv_ = planes[sh_, 0] + planes[sh_, 1] * (dom_ % pw) + planes[sh_, 2] * (dom_ // pw)
+        stepS = np.array([float(np.median(TOL.ravel()[np.array(members[s_])])) for s_ in ss_]); ps_ = stepS[labs[j_]]
+        if A.group_prior_budget:
+            # the plane's predicted standard error at each texel from its own strip fit (S35 §17's budget): sigma^2 [1 x y] (A'A)^-1 [1 x y]'
+            se2_ = np.zeros(len(dom_))
+            for k_, s_ in enumerate(ss_):
+                sel_ = labs[j_] == k_
+                if not sel_.any(): continue
+                st_ = strip_of(s_)
+                if len(st_) < 4: se2_[sel_] = np.inf; continue
+                Xs = (st_ % pw).astype(float); Ys = (st_ // pw).astype(float); Vs = DISP.ravel()[st_]
+                Am_ = np.stack([np.ones(len(st_)), Xs, Ys], 1); c_, *_ = np.linalg.lstsq(Am_, Vs, rcond=None); r_ = Vs - Am_ @ c_
+                sg2_ = float(np.mean(r_ ** 2)) if len(st_) > 3 else 0.0
+                try: Ci_ = np.linalg.pinv(Am_.T @ Am_)
+                except Exception: Ci_ = np.zeros((3, 3))
+                Ad_ = np.stack([np.ones(int(sel_.sum())), (dom_[sel_] % pw).astype(float), (dom_[sel_] // pw).astype(float)], 1)
+                se2_[sel_] = sg2_ * np.einsum('ij,jk,ik->i', Ad_, Ci_, Ad_)
+            ps_ = np.sqrt(ps_ ** 2 + se2_)
+        return (dom_, pv_, ps_)
     def _gp_job(job):
         g_, ss_, data_, dom_, Rm_, win_ = job
         hin = fold_edges(g_, ss_, dom_, Rm_, win_) if A.crease else None
-        om, x, sig, lam, rr, worst = tps_sheet(ss_[0], data_, dom_, prior=False, hinges=(hin[0], hin[1], [(t_[11], t_[12], t_[4], t_[5], t_[8]) for t_ in hin[2]]) if hin is not None else None)
+        pf_ = _gp_prior(ss_, dom_) if A.group_prior else None
+        om, x, sig, lam, rr, worst = tps_sheet(ss_[0], data_, dom_, prior=False, hinges=(hin[0], hin[1], [(t_[11], t_[12], t_[4], t_[5], t_[8]) for t_ in hin[2]]) if hin is not None else None, priorField=pf_)
         if hin is not None: hin = (hin[0], hin[1], hin[2], hin[3], getattr(tps_sheet, 'lastHinges', 0))
         return (g_, ss_, np.asarray(om, dtype=np.int64), np.asarray(x, dtype=np.float64), sig, lam, rr, worst, len(data_), len(dom_), hin)
     _gpDump = {}; _foldInfo = []; _hE = np.zeros(N, bool); _vE = np.zeros(N, bool); _nRej = [0]
