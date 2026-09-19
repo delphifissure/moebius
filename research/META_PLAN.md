@@ -347,3 +347,9 @@ flattened the sky plate far from data). Kit unchanged; sunflowers repaired (211 
 milkmaid 38 → 56 % at the wall (plate 0.64 → 0.029); troll 30 → 13 %; starwatcher worse with the hinge (43 → 55 % sky-valued)
 because the plain's plate over-extrapolates affinely past the far plain -- §39's 7 % was the membrane's accidental 'constant
 beyond a thousand texels'. Next: the plate's error budget (§17's rule carried from planes to the plate). Measured arm unchanged.
+
+**S35 §41 (2026-09-19).** Two remedies falsified before adoption: the plate's error budget (the fitted slope's standard error
+never reaches the visible step on the pictures' group plates -- the over-extrapolation is a model error) and speck absorption
+for the crease detection (DA3's bend is a fillet of 1-3-row strips, not specks; vermeer 56 → 50 %, removed). Vermeer's
+remaining misses located: rows 250-450 and 750-850 behind the milkmaid, where the wall group's data lie on one side of a
+400-600-texel band and the plate's affine continuation drifts to 0.04-0.12. Next: §17's plane prior per side of the hinge.

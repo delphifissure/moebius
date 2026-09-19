@@ -1773,3 +1773,27 @@ statistically certain everywhere the plate goes; what is wrong with it is the mo
 horizon, the wall group is not one plane -- and the data's residual says so (RMS 9e-3 against a noise of 2e-3 on starwatcher,
 7e-2 against 4e-2 on vermeer). A budget cannot fix a certain slope. Falsified as a remedy without being wired in; the plate's
 far continuation stays an open question of the model, and the reach law (§30) is the bound that exists for it.
+
+## 41. Two remedies checked and falsified, and where vermeer's wall plate still misses (user: "continue", 2026-09-19)
+
+**The plate's error budget** (§40's next item) was checked before it was built and would not bite: with hundreds of thousands
+of data texels the fitted slope's standard error over the whole domain is at most a tenth of the visible step on starwatcher's
+plain and 0.88 of it on vermeer's wall group, 800 texels out. The affine continuation is statistically certain; the model is
+what is wrong (the data's residual is four to five times the noise). Falsified without being wired in.
+
+**Speck absorption** (the bend's top crease, hidden by slivers, §39): for the crease detection a speck face took the
+qualifying neighbour it touched most. C3 and L3 unchanged; on vermeer 13 more creases in the wall group, none of them the
+one wanted, and the wall rows behind the milkmaid 56 → 50 % at the wall. The wall meets the bend through strips one to three
+rows tall and hundreds of columns long -- facets of DA3's fillet, not specks -- whose planes cannot be placed, so no meeting
+test can pass them. Removed (rule 7).
+
+**Where the wall plate still misses** (RWC3, 44 % of the wall rows behind her off by more than 3 cm): not at the bend. The
+misses sit at rows 250-450, her head and shoulders (60-65 % of those rows off, plate 0.04-0.12 where the wall is 0.006), and
+at rows 750-850 (77 %). At those rows the band spans the frame from its left edge to column 657, and the wall group's data
+lie to the right of it and above the head only: the plate is an affine continuation across 400-600 texels from one side,
+and it drifts -- the same over-extrapolation as §40's, seen now inside the item that was meant to be about creases. The
+plane arm is exact there because a face's PLANE, fitted on the whole wall, is flat; the plate, a spline through the group's
+data (the receding left wall at d 0.3 among them), is not. The construction this points at is §17's plane prior, per side of
+the hinge: each domain texel relaxes toward the plane of the face whose sheet reaches it, at weight 1 / visible step, which
+§37 rejected for the unhinged plate because one prior plane could not serve a wall and its floor -- with the hinge, each side
+has its own. That is the next item; the kit's curved surfaces (S2, L1's leaves) are its regression bar.

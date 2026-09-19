@@ -1342,28 +1342,12 @@ if A.group_plate and A.patches:
         vis0 = (cjF == g_) & (dQ.ravel() >= skyQ) & ~band.ravel() & win_
         cand_ = np.unique(comp[adj0 & vis0])
         faces_ = np.array([int(c_) for c_ in cand_ if compSize[c_] >= 3 and _boxes[c_] is not None and (_boxes[c_][0].stop - _boxes[c_][0].start) >= 2 and (_boxes[c_][1].stop - _boxes[c_][1].start) >= 2], dtype=np.int64)
-        # SPECKS BETWEEN FACES (S35 §41). Two faces of a group often meet through a sliver of texels the patch grower left as faces
-        # of their own (under three texels, or one wide -- the pre-drop rule's specks): on vermeer the wall meets the first facet of
-        # its bend only through such slivers at the milkmaid's right, so the bend's top crease was never a boundary between two
-        # faces and was not found (§39). For the crease's purposes only, a speck takes the face of the qualifying neighbour it
-        # touches most, so the faces' boundary runs through it. The face map itself is unchanged.
-        compC = comp.copy(); qual_ = np.zeros(nComp, bool); qual_[faces_] = True
-        for _p in range(3):
-            spk_ = np.flatnonzero(vis0 & ~qual_[compC])
-            if len(spk_) == 0: break
-            votes_ = []
-            for step_ in (1, -1, pw, -pw):
-                nb_ = spk_ + step_; okn_ = (nb_ >= 0) & (nb_ < N)
-                if step_ == 1: okn_ &= (spk_ % pw) < pw - 1
-                if step_ == -1: okn_ &= (spk_ % pw) > 0
-                f_ = np.full(len(spk_), -1, np.int64); f_[okn_] = np.where(vis0[nb_[okn_]] & qual_[compC[nb_[okn_]]], compC[nb_[okn_]], -1); votes_.append(f_)
-            Vt = np.stack(votes_, 1); best_ = np.full(len(spk_), -1, np.int64); bestN_ = np.zeros(len(spk_), int)
-            for k_ in range(4):
-                cnt_ = (Vt == Vt[:, k_][:, None]).sum(1) * (Vt[:, k_] >= 0); upd_ = cnt_ > bestN_; best_[upd_] = Vt[upd_, k_]; bestN_[upd_] = cnt_[upd_]
-            got_ = best_ >= 0
-            if not got_.any(): break
-            compC[spk_[got_]] = best_[got_]
-        vis_ = vis0 & qual_[compC]   # compC: the crease's face map, local to fold_edges
+        # SPECK ABSORPTION, tried and FALSIFIED (S35 §41, rule 7): for the crease's purposes a speck face (the pre-drop rule's: under
+        # three texels or one wide) took the qualifying neighbour it touched most, so that a crease meeting the hole through slivers
+        # would be found. On vermeer it found 13 more creases in the wall group and none of them the bend's top one -- the wall meets
+        # the bend through strips one to three rows tall and hundreds of columns long, which are not specks but facets of DA3's
+        # fillet, too thin for their planes to be placed -- and the wall rows behind the milkmaid went 56 -> 50 % at the wall.
+        compC = comp; vis_ = vis0 & np.isin(comp, faces_)
         Ih = idx[:, :-1].ravel(); Iv = idx[:-1, :].ravel()
         ph_ = vis_[Ih] & vis_[Ih + 1] & (compC[Ih] != compC[Ih + 1]); pv_ = vis_[Iv] & vis_[Iv + pw] & (compC[Iv] != compC[Iv + pw])
         bi = np.concatenate([Ih[ph_], Iv[pv_]]); bj = np.concatenate([Ih[ph_] + 1, Iv[pv_] + pw])
