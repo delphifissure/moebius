@@ -1105,10 +1105,29 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
                 if m == 0: continue
                 rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_]); vals.append(np.full(m, -1.0))
                 rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_ + step_]); vals.append(np.full(m, 1.0)); nr += m
+            # THE TIE-BREAK FOR THE DIRECT SOLVE. The discrete plate's kernel on a domain of discs is larger than the affine functions:
+            # a region joined to the data through a one-texel neck has a free tilt across the neck (no cross stencil spans it), and a
+            # disc no data touches is free altogether. CG returned its minimum-norm value there (0, the far end of the range); a
+            # direct factorisation is exactly singular. A first difference over every edge of the unknowns at a thousandth of the
+            # bending weight (a millionth of the energy) settles every free direction by 'continue the value' -- flat where nothing
+            # is known -- and moves the determined parts by that millionth. A tie-break, not a model constant.
+            for step_, lim_ in ((1, X < pw - 1), (pw, Y < ph - 1)):
+                i_ = om[lim_]; i_ = i_[kOf[i_ + step_] >= 0]; m = len(i_)
+                if m == 0: continue
+                rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_]); vals.append(np.full(m, -1e-3))
+                rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_ + step_]); vals.append(np.full(m, 1e-3)); nr += m
         B = sparse.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(nr, n))
         return B
     inS_ = np.zeros(N, bool); inS_[st] = True; wD_ = inS_[om].astype(float)
     B = assemble()
+    weakUnk_ = np.zeros(n, bool)
+    if hE_ is not None:
+        # with the membrane tie-break in place the operator's kernel on each connected piece of the unknowns is the constants alone,
+        # and one data texel fixes it; a piece that holds no data at all (disc texels no data touches) stays singular and is left out
+        # of the direct solve -- it comes back NaN, which the layered order reads as 'no value'
+        from scipy.sparse.csgraph import connected_components as _ccH
+        Pat_ = (B.T @ B).tocsr(); Pat_.data[:] = 1.0; nc_, lab_ = _ccH(Pat_, directed=False)
+        weakUnk_ = (np.bincount(lab_, weights=wD_, minlength=nc_) == 0)[lab_]
     tps_sheet.hingesGiven = 0
     # data rows
     kS = kOf[st]; d = DISP.ravel()[st]
@@ -1161,7 +1180,6 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     # more than two decades from the build point.
     _pc = {'lam': None, 'M': None}
     hinged_ = hE_ is not None and bool(hE_.any() or vE_.any())
-    weakUnk_ = np.zeros(n, bool)
     def solve(lam, x0=None):
         M_ = (DtD + lam * BtB).tocsr()
         if hinged_:
