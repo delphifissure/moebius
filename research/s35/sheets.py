@@ -1163,6 +1163,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     try: import pyamg
     except Exception: pyamg = None
     Bnull = np.stack([np.ones(n), (X - X.mean()) / max(1, X.std()), (Y - Y.mean()) / max(1, Y.std())], 1)
+    BnullF = Bnull
     if foldLines_:
         # THE FOLD MODE (S35 §39). With hinges the bending energy's kernel gains, per fold, the piecewise-affine function that is zero
         # on one side of the line and grows linearly on the other (C0, slope jump across the line). CG with the affine-only hierarchy
@@ -1179,7 +1180,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
             r_ = f_ - Q_ @ (Q_.T @ f_); nr_ = float(np.linalg.norm(r_))
             if nr_ <= 1e-6 * max(1e-300, float(np.linalg.norm(f_))): continue
             cols_.append(f_[:, None]); Q_ = np.concatenate([Q_, (r_ / nr_)[:, None]], 1); nF_ += 1
-        Bnull = np.concatenate(cols_, 1)
+        BnullF = np.concatenate(cols_, 1)   # for the hinged operator only: on the un-hinged search they are not near-null and slowed the multigrid (the sunflowers 190 s -> 1 770 s)
     # SPEED (S35 §18): the multigrid hierarchy is a PRECONDITIONER, so CG converges to the same solution whichever lambda it was
     # built at — only the iteration count changes, and the relative residual is asserted after every solve. Rebuilding it for
     # each of the sixteen lambdas in the discrepancy search was most of the bake: it is now rebuilt only when lambda has moved
@@ -1187,7 +1188,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     _pc = {'lam': None, 'M': None}
     def solve(lam, x0=None, final=False):
         M_ = (DtD + lam * (BtB1 if (hinged_ and final) else BtB)).tocsr()
-        if hinged_ and final and n <= 400000:
+        if hinged_ and final and n <= 200000:   # a 360 k-unknown plate on a regular grid factors in 1.5 GB; an irregular domain of 400 k took a worker to 10 GB
             # THE HINGED PLATE IS SOLVED DIRECTLY (S35 §39). With hinges the bending operator's kernel holds one piecewise-affine mode
             # per crease, which the affine-candidate multigrid does not represent: CG hit its iteration cap on every solve of the
             # sunflowers' field plate (59 creases, 169 k unknowns; 25 minutes and unfinished). A sparse LU with a minimum-degree
@@ -1211,8 +1212,8 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
             # too large for a factorisation in this machine's memory (a 360 k-unknown plate takes 1.5 GB; the troll's forest plate
             # killed a worker at 10 GB): CG warm-started from the un-hinged plate at the same lambda, with the fold modes in the
             # hierarchy -- the two differ only near the folds
-            Mp_ = pyamg.smoothed_aggregation_solver(M_, B=Bnull, symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V') if pyamg is not None else sparse.diags(1.0 / np.maximum(M_.diagonal(), 1e-30))
-            x, info = cg(M_, Dtb, x0=x0, rtol=1e-8, maxiter=2000, M=Mp_)
+            Mp_ = pyamg.smoothed_aggregation_solver(M_, B=BnullF, symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V') if pyamg is not None else sparse.diags(1.0 / np.maximum(M_.diagonal(), 1e-30))
+            x, info = cg(M_, Dtb, x0=x0, rtol=1e-10, maxiter=4000, M=Mp_)   # one solve, so it may be tight: at 1e-8 C3's plate was 2 mm off its LU solution
             r_ = float(np.linalg.norm(M_ @ x - Dtb) / max(1e-300, np.linalg.norm(Dtb))); solve.worst = max(getattr(solve, 'worst', 0.0), r_)
             if r_ > 1e-6: print(f'   hinged plate of {n} unknowns: CG from the un-hinged plate did not converge (relative residual {r_:.1e})')
             return x
@@ -1369,7 +1370,11 @@ if A.group_plate and A.patches:
                     for t in range(0, 2 * (pw + ph)):
                         x_ = int(round(sx + sgn * t * ux)); y_ = int(round(sy + sgn * t * uy))
                         if not (0 <= x_ < pw and 0 <= y_ < ph): break
-                        if inD[y_ * pw + x_]: entered = True; walked[y_, x_] = True; nW += 1
+                        # the crease runs through the HOLE: across band texels no disc of this group reached (another sheet's ground, a gap
+                        # between discs) as well as the plate's own domain, and it ends where the surface is visible again. A first
+                        # form stopped at the first texel outside the domain: on vermeer the bend's creases entered from the
+                        # milkmaid's right side and ended after 50-110 texels of her 350-texel band.
+                        if inD[y_ * pw + x_] or band.flat[y_ * pw + x_]: entered = True; walked[y_, x_] = inD[y_ * pw + x_]; nW += 1
                         elif entered or t > 2: break
                 if nW == 0: continue
                 wd = ndimage.binary_dilation(walked, structure=np.ones((3, 3))).ravel()
