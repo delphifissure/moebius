@@ -43,7 +43,6 @@ ap.add_argument('--rgb', help='the source colour image (defaults to <dump>/color
 ap.add_argument('--closure', default='comp', choices=['comp', 'layer', 'surround'], help="two-sided closure test for a THING's march. 'comp' (the §18 rule, adopted): the march skips the band texel's own id and is closed when it exits onto the sheet's own join-law component. 'layer' (S35 §28, NOT adopted): closed on own component or ANY thing, plus the rim-behind-band test, any-closed-march fits, the same-thing lift and the per-march exposure bound; fixes the troll and S15 and breaks three pictures (§28). 'surround' (S35 §29, item C): closed on own component or own THING (self-occlusion); otherwise a thing's sheet is fitted behind an occluder only if it is not nearer than the MEDIAN depth of that occluder's own far-side surroundings (the rim of its band, its own texels and what is nearer than it excluded) -- the majority of what surrounds an occluder is what most likely continues behind it; nearer minority clutter is a hedge. Per-texel exposure trim on things' sheets. No layer grouping (falsified twice in §29: chaining by depth overlap and by step-relative difference).")
 ap.add_argument('--thingrule', default='neighbour', choices=['neighbour', 'steps', 'wrap'], help="S35 §29: which units are things. 'neighbour' (§22): in front of at least one neighbour along the majority of their shared boundary and by medians; with hundreds of tiny neighbours the median shared boundary is two texels and a three-texel fragment can make a whole far field a thing (the sunflowers' field before a sky fragment, S15's ground). 'steps': over the unit's whole boundary, only pairs with a depth STEP vote (joined pairs, a part beside its sibling part, do not); the unit is a thing when the boundary length along which it is in front exceeds the length along which it is behind, both counted only against neighbours whose median depth agrees. (A plain majority of the whole boundary, frame included, was tried and falsified: SAM's part segments are bounded mostly by their own siblings, starwatcher's figure stopped being a thing, v jumps 2 249 -> 45 700; removed.)"); ap.add_argument('--things', action='store_true', help='things/surfaces classifier (S35 §22, opt-in): every visible unit (mask segment or depth component) that is in front of a neighbour becomes a two-sided thing, the rest background. Fixes the sunflower staircase, S9 and S2; wrong on the troll (x-ray to the deepest surface behind him), on vermeer with the automatic mask (the floor voted a thing) and on S15 (a canopy behind its own trunk) -- see the note'); ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
 ap.add_argument('--crease', action='store_true', help="S35 §39: the crease inside the hole. A join group's visible creases (boundaries between two of its faces that both have sheets on the hole) are continued straight into the hole along their own axis, and the group plate is HINGED along them: the bending rows that straddle a hinge edge are dropped and a first difference across it is penalised at the bending weight instead, so the slope may jump where the value may not. Without it a plate pinned by the wall above a wide occluder and the floor below it interpolates a blend where the truth is wall down to a crease line (vermeer's milkmaid).")
-ap.add_argument('--front-gate', default='unit', choices=['unit', 'boundary'], help="S35 §39: the 'by medians' gate on a unit's stepped front (the global verdict that must agree with the local step). 'unit': the unit's median depth against the NEIGHBOUR UNIT's median (§22). 'boundary': against the median depth of the neighbour's texels along their SHARED BOUNDARY -- a room's wall+floor is one unlabelled unit whose median is set by its near floor, so a figure standing before the far corner (C2) was 'behind' the room by medians and its whole left silhouette did not vote (wrap gap 203 deg, a surface), while along its silhouette the room is far behind it everywhere.")
 ap.add_argument('--no-smooth', action='store_true'); ap.add_argument('--no-tps', action='store_true'); ap.add_argument('--no-prior', action='store_true'); ap.add_argument('--no-patches', action='store_true')
 ap.add_argument('--no-evidence', action='store_true'); ap.add_argument('--no-geo', action='store_true'); ap.add_argument('--no-fused', action='store_true'); ap.add_argument('--no-twosided', action='store_true'); ap.add_argument('--no-drop-thin2', action='store_true')
 A = ap.parse_args()
@@ -182,9 +181,12 @@ if A.things:
     medD = np.full(nU, np.nan); medT = np.full(nU, np.nan); px_ = np.zeros(nU, np.int64)
     dso = DISP.ravel()[order_]; tso = TOL.ravel()[order_]
     for a_, b_ in zip(starts_, ends_): medD[us_[a_]] = np.median(dso[a_:b_]); medT[us_[a_]] = np.median(tso[a_:b_]); px_[us_[a_]] = b_ - a_
-    gFront = medD[ua_] > medD[ub_] + np.maximum(medT[ua_], medT[ub_])
-    if A.front_gate == 'boundary':
-        # S35 §39: the neighbour's depth where the two units MEET, not its median over all of it (see --front-gate)
+    # THE MEDIANS GATE (S35 §39): the unit's median against the neighbour's depth along their SHARED BOUNDARY. The first form (§22-§38)
+    # used the neighbour UNIT's median: a room's wall+floor is one unlabelled unit whose median is set by its near floor, so a figure
+    # standing before the far corner (kit C2) was 'behind' the room by medians, its whole left silhouette did not vote, wrap gap
+    # 203 deg, a surface -- and its own texels became the wall plate's data. FALSIFIED and removed (rule 7). On the pictures the two
+    # forms differ by a handful of small segments (vermeer 33 -> 35 things, troll 29 -> 27, sunflowers 142 -> 150, starwatcher 35 = 35).
+    if True:
         ordB_ = np.argsort(inv_, kind='stable'); invS_ = inv_[ordB_]; dUs_ = dU[ordB_]
         stB_ = np.r_[0, np.flatnonzero(invS_[1:] != invS_[:-1]) + 1]; enB_ = np.r_[stB_[1:], len(invS_)]
         medUb = np.full(len(uk_), np.nan)
@@ -1071,7 +1073,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     # (vermeer's wall blends into its floor behind the milkmaid). Along a hinge edge the second differences that straddle it are
     # dropped (each side's slope is free there) and a first difference across it is penalised at the bending weight instead
     # (the value stays continuous). The hinge lines are the visible creases continued: see fold_edges.
-    hE_, vE_ = hinges if hinges is not None else (None, None)
+    hE_, vE_ = (hinges[0], hinges[1]) if hinges is not None else (None, None); foldLines_ = hinges[2] if (hinges is not None and len(hinges) > 2) else []
     def stencil(offs, ws):
         nonlocal nr
         ok = np.ones(n, bool); ks = []
@@ -1124,6 +1126,15 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     try: import pyamg
     except Exception: pyamg = None
     Bnull = np.stack([np.ones(n), (X - X.mean()) / max(1, X.std()), (Y - Y.mean()) / max(1, Y.std())], 1)
+    if foldLines_:
+        # THE FOLD MODE (S35 §39). With hinges the bending energy's kernel gains, per fold, the piecewise-affine function that is zero
+        # on one side of the line and grows linearly on the other (C0, slope jump across the line). CG with the affine-only hierarchy
+        # crawled on the sunflowers (one group plate 18 minutes at the iteration cap). The folds with the most hinge edges enter as
+        # near-nullspace candidates -- a preconditioner choice, the solution is the same; the cap keeps the coarse operators small.
+        fl_ = sorted(foldLines_, key=lambda t: -t[4])[:16]; cols_ = [Bnull]
+        for (sx_, sy_, ux_, uy_, _nh) in fl_:
+            f_ = np.maximum(0.0, (X - sx_) * uy_ - (Y - sy_) * ux_); cols_.append((f_ / max(1.0, f_.std()))[:, None])
+        Bnull = np.concatenate(cols_, 1)
     # SPEED (S35 §18): the multigrid hierarchy is a PRECONDITIONER, so CG converges to the same solution whichever lambda it was
     # built at — only the iteration count changes, and the relative residual is asserted after every solve. Rebuilding it for
     # each of the sixteen lambdas in the discrepancy search was most of the bake: it is now rebuilt only when lambda has moved
@@ -1228,8 +1239,15 @@ if A.group_plate and A.patches:
         the reach window of the entry, until the line leaves the domain. The domain edges the line crosses are hinges (tps_sheet).
         No constant: the window is the plate's own reach, the line is the boundary's own direction."""
         inD = np.zeros(N, bool); inD[dom_] = True
-        faces_ = np.array(sorted(set(int(compOfSurf[s_]) for s_ in ss_)), dtype=np.int64)
-        vis_ = (cjF == g_) & (dQ.ravel() >= skyQ) & ~band.ravel() & win_ & np.isin(comp, faces_)
+        # the faces that border the hole: any face of the group with a texel 4-adjacent to the domain and enough of a face to carry
+        # a plane (the pre-drop rule: three texels, two wide in both axes). A first form took only the faces whose sheets the plate
+        # serves, and missed the wall-floor crease whenever the floor's sheet rode the app's ground plane (C3 with the ground on:
+        # the wall's plate blended toward the floor's data with no hinge to bend at).
+        adj0 = ndimage.binary_dilation(inD.reshape(ph, pw), structure=[[0, 1, 0], [1, 1, 1], [0, 1, 0]]).ravel()
+        vis0 = (cjF == g_) & (dQ.ravel() >= skyQ) & ~band.ravel() & win_
+        cand_ = np.unique(comp[adj0 & vis0])
+        faces_ = np.array([int(c_) for c_ in cand_ if compSize[c_] >= 3 and _boxes[c_] is not None and (_boxes[c_][0].stop - _boxes[c_][0].start) >= 2 and (_boxes[c_][1].stop - _boxes[c_][1].start) >= 2], dtype=np.int64)
+        vis_ = vis0 & np.isin(comp, faces_)
         Ih = idx[:, :-1].ravel(); Iv = idx[:-1, :].ravel()
         ph_ = vis_[Ih] & vis_[Ih + 1] & (comp[Ih] != comp[Ih + 1]); pv_ = vis_[Iv] & vis_[Iv + pw] & (comp[Iv] != comp[Iv + pw])
         bi = np.concatenate([Ih[ph_], Iv[pv_]]); bj = np.concatenate([Ih[ph_] + 1, Iv[pv_] + pw])
@@ -1276,12 +1294,12 @@ if A.group_plate and A.patches:
                 if pA is not None and pB is not None:
                     gx, gy = pA[1] - pB[1], pA[2] - pB[2]; jump = float(np.hypot(gx, gy))
                     if jump > 0: ang = float(np.degrees(np.arccos(min(1.0, abs(ux * (-gy) + uy * gx) / jump))))
-                info.append((fa_k, fb_k, ex, ey, ux, uy, len(px), nW, nH, ang, jump))
+                info.append((fa_k, fb_k, ex, ey, ux, uy, len(px), nW, nH, ang, jump, sx, sy))
         return hE, vE, info
     def _gp_job(job):
         g_, ss_, data_, dom_, Rm_, win_ = job
         hin = fold_edges(g_, ss_, dom_, Rm_, win_) if A.crease else None
-        om, x, sig, lam, rr, worst = tps_sheet(ss_[0], data_, dom_, prior=False, hinges=(hin[0], hin[1]) if hin is not None else None)
+        om, x, sig, lam, rr, worst = tps_sheet(ss_[0], data_, dom_, prior=False, hinges=(hin[0], hin[1], [(t_[11], t_[12], t_[4], t_[5], t_[8]) for t_ in hin[2]]) if hin is not None else None)
         return (g_, ss_, np.asarray(om, dtype=np.int64), np.asarray(x, dtype=np.float64), sig, lam, rr, worst, len(data_), len(dom_), hin)
     _gpDump = {}; _foldInfo = []; _hE = np.zeros(N, bool); _vE = np.zeros(N, bool)
     def _gp_take(res):
@@ -1301,7 +1319,7 @@ if A.group_plate and A.patches:
             for res in pool.imap_unordered(_gp_job, jobs_, chunksize=1): _gp_take(res)
     else:
         for job in jobs_: _gp_take(_gp_job(job))
-    np.savez_compressed(f'{OUT}/group_plates.npz', hE=np.flatnonzero(_hE), vE=np.flatnonzero(_vE), folds=np.array(_foldInfo, dtype=np.float64).reshape(-1, 12), **_gpDump)   # S35 §39: the plate fields and hinges, for the crease instrument
+    np.savez_compressed(f'{OUT}/group_plates.npz', hE=np.flatnonzero(_hE), vE=np.flatnonzero(_vE), folds=np.array(_foldInfo, dtype=np.float64).reshape(-1, 14), **_gpDump)   # S35 §39: the plate fields and hinges, for the crease instrument
     print(f'group plates: {len(jobs_)} groups, {len(groupU)} sheets served' + (f', {len(_foldInfo)} creases continued into holes, {int(_hE.sum() + _vE.sum())} hinge edges' if A.crease else '') + f'  ({time.time() - tg0:.1f}s)')
 def harmonic_ext_fixed(dom, fixed):
     """Laplace on dom; texels in `fixed` (subset of dom) hold their value; zero flux elsewhere."""
