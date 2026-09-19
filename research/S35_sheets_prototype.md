@@ -1764,3 +1764,12 @@ the milkmaid 38 → 56 % at the wall (§39's 66 % was partly the membrane); trol
 the hinge; starwatcher worse than without it (43 → 55 % sky-valued), for a reason that is not the hinge's but the plate's
 far continuation, now isolated. Measured arm: still `comp + reach-group`. Next: the plate's error budget (affine only as far
 as the fit supports it), measured first on starwatcher's plain and vermeer's wall under RW2, where the runaway is.
+
+**The error budget, checked before it was built: it would not bite.** The §17 budget rests on the fitted slope's standard
+error against the visible step. For a group plate the fit has hundreds of thousands of data texels: on starwatcher's plain
+(403 k data, the band up to 710 texels from the data's centroid) the predicted standard error over the whole domain is at
+most a tenth of the step; on vermeer's wall group (486 k data, 822 texels) at most 0.88 of it. The affine continuation is
+statistically certain everywhere the plate goes; what is wrong with it is the model -- the plain is not a plane out to the
+horizon, the wall group is not one plane -- and the data's residual says so (RMS 9e-3 against a noise of 2e-3 on starwatcher,
+7e-2 against 4e-2 on vermeer). A budget cannot fix a certain slope. Falsified as a remedy without being wired in; the plate's
+far continuation stays an open question of the model, and the reach law (§30) is the bound that exists for it.
