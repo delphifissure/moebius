@@ -32,7 +32,7 @@ import sys, os, json, time, argparse
 for _v in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS'): os.environ.setdefault(_v, '1')   # S35 §19: forked plate workers oversubscribed BLAS threads (S15: 29 s serial -> 336 s with 3 workers)
 import numpy as np
 from scipy import ndimage, sparse
-from scipy.sparse.linalg import spsolve, cg
+from scipy.sparse.linalg import spsolve, cg, splu
 from PIL import Image
 
 ap = argparse.ArgumentParser()
@@ -1074,6 +1074,28 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     # dropped (each side's slope is free there) and a first difference across it is penalised at the bending weight instead
     # (the value stays continuous). The hinge lines are the visible creases continued: see fold_edges.
     hE_, vE_ = (hinges[0], hinges[1]) if hinges is not None else (None, None); foldLines_ = hinges[2] if (hinges is not None and len(hinges) > 2) else []
+    if hE_ is not None and (hE_.any() or vE_.any()):
+        # A HINGE NEEDS BOTH SIDES HELD (S35 §39). Across a hinge the plate's tilt is free; a region of the unknowns that the hinge
+        # lines cut off from all data (a facet's crease run into a hole whose far side holds none of that facet's texels) has an
+        # undetermined tilt and the system is singular (SuperLU: 'factor is exactly singular' on the sunflowers). The unknowns are
+        # split into pieces by the hinge edges; a piece with fewer than three data texels -- not a plane's worth -- gives its hinge
+        # edges back to the plate, which then bends there as it did before.
+        from scipy.sparse.csgraph import connected_components as _ccH
+        hE_ = hE_.copy(); vE_ = vE_.copy(); inS_ = np.zeros(N, bool); inS_[st] = True
+        for _it in range(4):
+            ii_ = np.concatenate([om[(X < pw - 1)], om[(Y < ph - 1)]]); jj_ = np.concatenate([om[(X < pw - 1)] + 1, om[(Y < ph - 1)] + pw])
+            okE_ = np.concatenate([~hE_[om[(X < pw - 1)]], ~vE_[om[(Y < ph - 1)]]]) & (kOf[jj_] >= 0)
+            ii_ = ii_[okE_]; jj_ = jj_[okE_]
+            Ag_ = sparse.coo_matrix((np.ones(len(ii_)), (kOf[ii_], kOf[jj_])), shape=(n, n))
+            nc_, lab_ = _ccH(Ag_, directed=False); nData_ = np.bincount(lab_, weights=inS_[om].astype(float), minlength=nc_)
+            weak_ = nData_ < 3
+            if not weak_.any(): break
+            bad_ = weak_[lab_]   # unknowns in a piece without a plane's worth of data
+            hi_ = np.flatnonzero(hE_); hi_ = hi_[(kOf[hi_] >= 0) & (hi_ + 1 < N)]; hi_ = hi_[kOf[hi_ + 1] >= 0]; drop_ = hi_[bad_[kOf[hi_]] | bad_[kOf[hi_ + 1]]]
+            vi_ = np.flatnonzero(vE_); vi_ = vi_[(kOf[vi_] >= 0) & (vi_ + pw < N)]; vi_ = vi_[kOf[vi_ + pw] >= 0]; dropv_ = vi_[bad_[kOf[vi_]] | bad_[kOf[vi_ + pw]]]
+            if len(drop_) == 0 and len(dropv_) == 0: break
+            hE_[drop_] = False; vE_[dropv_] = False
+        tps_sheet.hingesUsed = int(hE_.sum() + vE_.sum())
     def stencil(offs, ws):
         nonlocal nr
         ok = np.ones(n, bool); ks = []
@@ -1148,8 +1170,20 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     # each of the sixteen lambdas in the discrepancy search was most of the bake: it is now rebuilt only when lambda has moved
     # more than two decades from the build point.
     _pc = {'lam': None, 'M': None}
+    hinged_ = hE_ is not None and bool(hE_.any() or vE_.any())
     def solve(lam, x0=None):
         M_ = (DtD + lam * BtB).tocsr()
+        if hinged_:
+            # THE HINGED PLATE IS SOLVED DIRECTLY (S35 §39). With hinges the bending operator's kernel holds one piecewise-affine mode
+            # per crease, which the affine-candidate multigrid does not represent: CG hit its iteration cap on every solve of the
+            # sunflowers' field plate (59 creases, 169 k unknowns; 25 minutes and unfinished). A sparse LU with a minimum-degree
+            # ordering factors a 360 k-unknown plate in ten seconds; the un-hinged plates keep the multigrid path measured in §14-§19.
+            try:
+                lu_ = splu(M_.tocsc(), permc_spec='MMD_AT_PLUS_A'); x = lu_.solve(Dtb)
+                r_ = float(np.linalg.norm(M_ @ x - Dtb) / max(1e-300, np.linalg.norm(Dtb))); solve.worst = max(getattr(solve, 'worst', 0.0), r_)
+                return x
+            except MemoryError:
+                print(f'   hinged plate of {n} unknowns: LU out of memory, back to CG')
         if pyamg is not None:
             if _pc['lam'] is None or abs(np.log10(lam) - np.log10(_pc['lam'])) > 2:
                 _pc['lam'] = lam; _pc['M'] = pyamg.smoothed_aggregation_solver(M_, B=Bnull, symmetry='symmetric', max_coarse=500).aspreconditioner(cycle='V')
@@ -1194,6 +1228,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
         else: a = gm
     lam = 10 ** (0.5 * (a + b))
     x = solve(lam, x)
+    tps_sheet.lastHinges = int(hE_.sum() + vE_.sum()) if hE_ is not None else 0
     return om, x, sig, lam, rms(x), solve.worst
 def _tps_job(s_):
     st = strip_of(s_); dom = geo_domain(s_)[0]
@@ -1318,6 +1353,7 @@ if A.group_plate and A.patches:
         g_, ss_, data_, dom_, Rm_, win_ = job
         hin = fold_edges(g_, ss_, dom_, Rm_, win_) if A.crease else None
         om, x, sig, lam, rr, worst = tps_sheet(ss_[0], data_, dom_, prior=False, hinges=(hin[0], hin[1], [(t_[11], t_[12], t_[4], t_[5], t_[8]) for t_ in hin[2]]) if hin is not None else None)
+        if hin is not None: hin = (hin[0], hin[1], hin[2], hin[3], getattr(tps_sheet, 'lastHinges', 0))
         return (g_, ss_, np.asarray(om, dtype=np.int64), np.asarray(x, dtype=np.float64), sig, lam, rr, worst, len(data_), len(dom_), hin)
     _gpDump = {}; _foldInfo = []; _hE = np.zeros(N, bool); _vE = np.zeros(N, bool); _nRej = [0]
     def _gp_take(res):
@@ -1326,9 +1362,9 @@ if A.group_plate and A.patches:
         _gpDump[f'g{g_}_om'] = om; _gpDump[f'g{g_}_x'] = x.astype(np.float32)
         fl = ''
         if hin is not None:
-            hE, vE, info, nRej_ = hin; _hE[:] |= hE; _vE[:] |= vE; _nRej[0] += nRej_
+            hE, vE, info, nRej_, nUsed_ = hin; _hE[:] |= hE; _vE[:] |= vE; _nRej[0] += nRej_
             for t_ in info: _foldInfo.append((g_,) + tuple(t_))
-            fl = f', creases {len(info)} ({int(hE.sum() + vE.sum())} hinge edges; {nRej_} boundaries not creases)'
+            fl = f', creases {len(info)} ({int(hE.sum() + vE.sum())} hinge edges, {nUsed_} held on both sides; {nRej_} boundaries not creases)'
             for t_ in sorted(info, key=lambda t: -t[8])[:3]: fl += f' [faces {t_[0]}/{t_[1]} entry ({t_[2]:.0f},{t_[3]:.0f}) dir ({t_[4]:+.2f},{t_[5]:+.2f}) boundary {t_[6]} walked {t_[7]} hinges {t_[8]} planes-line angle {t_[9]:.0f} deg, slope jump {t_[10]:.1e}]'
         print(f'   group plate {g_}: {len(ss_)} sheets, {nd} data, {ndm} domain, sigma {sig:.3e}, lambda {lam:.2e}, rms {rr:.3e}, worst residual {worst:.1e}{"  UNCONVERGED" if worst > 1e-6 else ""}{fl}  ({time.time() - tg0:.0f}s)')
     if A.jobs > 1 and len(jobs_) > 1:
