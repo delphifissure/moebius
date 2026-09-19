@@ -1074,56 +1074,67 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     # dropped (each side's slope is free there) and a first difference across it is penalised at the bending weight instead
     # (the value stays continuous). The hinge lines are the visible creases continued: see fold_edges.
     hE_, vE_ = (hinges[0], hinges[1]) if hinges is not None else (None, None); foldLines_ = hinges[2] if (hinges is not None and len(hinges) > 2) else []
+    def assemble():
+        nonlocal nr
+        nr = 0
+        def stencil(offs, ws):
+            nonlocal nr
+            ok = np.ones(n, bool); ks = []
+            for (dx, dy) in offs:
+                xn = X + dx; yn = Y + dy; inside = (xn >= 0) & (xn < pw) & (yn >= 0) & (yn < ph)
+                kk = np.full(n, -1, np.int64); kk[inside] = kOf[(yn[inside] * pw + xn[inside])]; ok &= kk >= 0; ks.append(kk)
+            if hE_ is not None:
+                for a_ in range(len(offs)):   # a stencil that straddles a hinge edge (any 4-adjacent pair of its texels) is dropped
+                    for b_ in range(len(offs)):
+                        ddx = offs[b_][0] - offs[a_][0]; ddy = offs[b_][1] - offs[a_][1]
+                        if (ddx, ddy) == (1, 0): ok &= ~hE_[np.clip((Y + offs[a_][1]) * pw + (X + offs[a_][0]), 0, N - 1)]
+                        elif (ddx, ddy) == (0, 1): ok &= ~vE_[np.clip((Y + offs[a_][1]) * pw + (X + offs[a_][0]), 0, N - 1)]
+            idxs = np.flatnonzero(ok); m = len(idxs)
+            for kk, w in zip(ks, ws): rows.append(np.arange(nr, nr + m)); cols.append(kk[idxs]); vals.append(np.full(m, float(w)))
+            nr += m
+        rows = []; cols = []; vals = []
+        stencil([(-1, 0), (0, 0), (1, 0)], [1, -2, 1]); stencil([(0, -1), (0, 0), (0, 1)], [1, -2, 1]); stencil([(0, 0), (1, 0), (0, 1), (1, 1)], [np.sqrt(2), -np.sqrt(2), -np.sqrt(2), np.sqrt(2)])
+        if hE_ is not None:   # continuity across every hinge edge whose two texels are unknowns
+            for E_, step_ in ((hE_, 1), (vE_, pw)):
+                i_ = np.flatnonzero(E_); i_ = i_[(kOf[i_] >= 0) & (i_ + step_ < N)]; i_ = i_[kOf[i_ + step_] >= 0]; m = len(i_)
+                if m == 0: continue
+                rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_]); vals.append(np.full(m, -1.0))
+                rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_ + step_]); vals.append(np.full(m, 1.0)); nr += m
+        B = sparse.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(nr, n))
+        return B
+    # A HINGE NEEDS BOTH SIDES HELD (S35 §39). Across a hinge the plate's tilt is free; a region of the unknowns that the hinges cut
+    # off from all data (a facet's crease run into a hole whose far side holds none of that facet's texels; two hinge lines a few
+    # texels apart, whose corridor no bending row spans) has an undetermined tilt and the system is singular (SuperLU: 'factor is
+    # exactly singular' on the sunflowers). The pieces are read off the assembled operator itself -- the unknowns a bending, hinge or
+    # data row couples -- and a piece whose data are fewer than three or collinear (no plane's worth) gives back the hinge edges
+    # within its stencils' reach; the plate then bends there as it did before. Assembled again until every piece is held.
+    inS_ = np.zeros(N, bool); inS_[st] = True; wD_ = inS_[om].astype(float); nGiven_ = 0
+    if hE_ is not None: hE_ = hE_.copy(); vE_ = vE_.copy()
+    B = assemble()
     if hE_ is not None and (hE_.any() or vE_.any()):
-        # A HINGE NEEDS BOTH SIDES HELD (S35 §39). Across a hinge the plate's tilt is free; a region of the unknowns that the hinge
-        # lines cut off from all data (a facet's crease run into a hole whose far side holds none of that facet's texels) has an
-        # undetermined tilt and the system is singular (SuperLU: 'factor is exactly singular' on the sunflowers). The unknowns are
-        # split into pieces by the hinge edges; a piece with fewer than three data texels -- not a plane's worth -- gives its hinge
-        # edges back to the plate, which then bends there as it did before.
         from scipy.sparse.csgraph import connected_components as _ccH
-        hE_ = hE_.copy(); vE_ = vE_.copy(); inS_ = np.zeros(N, bool); inS_[st] = True
-        for _it in range(4):
-            ii_ = np.concatenate([om[(X < pw - 1)], om[(Y < ph - 1)]]); jj_ = np.concatenate([om[(X < pw - 1)] + 1, om[(Y < ph - 1)] + pw])
-            okE_ = np.concatenate([~hE_[om[(X < pw - 1)]], ~vE_[om[(Y < ph - 1)]]]) & (kOf[jj_] >= 0)
-            ii_ = ii_[okE_]; jj_ = jj_[okE_]
-            Ag_ = sparse.coo_matrix((np.ones(len(ii_)), (kOf[ii_], kOf[jj_])), shape=(n, n))
-            nc_, lab_ = _ccH(Ag_, directed=False); wD_ = inS_[om].astype(float)
-            # a plane's worth: three data texels that are not collinear (the covariance of the piece's data has rank two)
+        for _it in range(6):
+            Pat_ = (B.T @ B).tocsr(); Pat_.data[:] = 1.0
+            nc_, lab_ = _ccH(Pat_, directed=False)
             n0_ = np.bincount(lab_, weights=wD_, minlength=nc_); sx0 = np.bincount(lab_, weights=wD_ * X, minlength=nc_); sy0 = np.bincount(lab_, weights=wD_ * Y, minlength=nc_)
             sxx0 = np.bincount(lab_, weights=wD_ * X * X, minlength=nc_); sxy0 = np.bincount(lab_, weights=wD_ * X * Y, minlength=nc_); syy0 = np.bincount(lab_, weights=wD_ * Y * Y, minlength=nc_)
             nn_ = np.maximum(n0_, 1.0); cxx = sxx0 / nn_ - (sx0 / nn_) ** 2; cyy = syy0 / nn_ - (sy0 / nn_) ** 2; cxy = sxy0 / nn_ - (sx0 / nn_) * (sy0 / nn_)
             weak_ = (n0_ < 3) | ((cxx * cyy - cxy * cxy) <= 1e-9)
             if not weak_.any(): break
-            bad_ = weak_[lab_]   # unknowns in a piece without a plane's worth of data
-            hi_ = np.flatnonzero(hE_); hi_ = hi_[(kOf[hi_] >= 0) & (hi_ + 1 < N)]; hi_ = hi_[kOf[hi_ + 1] >= 0]; drop_ = hi_[bad_[kOf[hi_]] | bad_[kOf[hi_ + 1]]]
-            vi_ = np.flatnonzero(vE_); vi_ = vi_[(kOf[vi_] >= 0) & (vi_ + pw < N)]; vi_ = vi_[kOf[vi_ + pw] >= 0]; dropv_ = vi_[bad_[kOf[vi_]] | bad_[kOf[vi_ + pw]]]
-            if len(drop_) == 0 and len(dropv_) == 0: break
-            hE_[drop_] = False; vE_[dropv_] = False
-        tps_sheet.hingesUsed = int(hE_.sum() + vE_.sum())
-    def stencil(offs, ws):
-        nonlocal nr
-        ok = np.ones(n, bool); ks = []
-        for (dx, dy) in offs:
-            xn = X + dx; yn = Y + dy; inside = (xn >= 0) & (xn < pw) & (yn >= 0) & (yn < ph)
-            kk = np.full(n, -1, np.int64); kk[inside] = kOf[(yn[inside] * pw + xn[inside])]; ok &= kk >= 0; ks.append(kk)
-        if hE_ is not None:
-            for a_ in range(len(offs)):   # a stencil that straddles a hinge edge (any 4-adjacent pair of its texels) is dropped
-                for b_ in range(len(offs)):
-                    ddx = offs[b_][0] - offs[a_][0]; ddy = offs[b_][1] - offs[a_][1]
-                    if (ddx, ddy) == (1, 0): ok &= ~hE_[np.clip((Y + offs[a_][1]) * pw + (X + offs[a_][0]), 0, N - 1)]
-                    elif (ddx, ddy) == (0, 1): ok &= ~vE_[np.clip((Y + offs[a_][1]) * pw + (X + offs[a_][0]), 0, N - 1)]
-        idxs = np.flatnonzero(ok); m = len(idxs)
-        for kk, w in zip(ks, ws): rows.append(np.arange(nr, nr + m)); cols.append(kk[idxs]); vals.append(np.full(m, float(w)))
-        nr += m
-    rows = []; cols = []; vals = []
-    stencil([(-1, 0), (0, 0), (1, 0)], [1, -2, 1]); stencil([(0, -1), (0, 0), (0, 1)], [1, -2, 1]); stencil([(0, 0), (1, 0), (0, 1), (1, 1)], [np.sqrt(2), -np.sqrt(2), -np.sqrt(2), np.sqrt(2)])
-    if hE_ is not None:   # continuity across every hinge edge whose two texels are unknowns
-        for E_, step_ in ((hE_, 1), (vE_, pw)):
-            i_ = np.flatnonzero(E_); i_ = i_[(kOf[i_] >= 0) & (i_ + step_ < N)]; i_ = i_[kOf[i_ + step_] >= 0]; m = len(i_)
-            if m == 0: continue
-            rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_]); vals.append(np.full(m, -1.0))
-            rows.append(np.arange(nr, nr + m)); cols.append(kOf[i_ + step_]); vals.append(np.full(m, 1.0)); nr += m
-    B = sparse.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(nr, n))
+            bad_ = np.zeros((ph, pw), bool); bad_.reshape(-1)[om[weak_[lab_]]] = True
+            near_ = ndimage.binary_dilation(bad_, structure=np.ones((5, 5))).ravel()   # the stencils' reach: two texels
+            drop_ = near_ & (hE_ | vE_)
+            if not drop_.any(): break
+            nGiven_ += int((hE_ & near_).sum() + (vE_ & near_).sum()); hE_ &= ~near_; vE_ &= ~near_
+            B = assemble()
+        # pieces still without a plane's worth of data (no hinge near them to give back: uncoupled disc texels) are left out of the
+        # direct solve and come back NaN, which the layered order treats as 'no value'
+        Pat_ = (B.T @ B).tocsr(); Pat_.data[:] = 1.0; nc_, lab_ = _ccH(Pat_, directed=False)
+        n0_ = np.bincount(lab_, weights=wD_, minlength=nc_); sx0 = np.bincount(lab_, weights=wD_ * X, minlength=nc_); sy0 = np.bincount(lab_, weights=wD_ * Y, minlength=nc_)
+        sxx0 = np.bincount(lab_, weights=wD_ * X * X, minlength=nc_); sxy0 = np.bincount(lab_, weights=wD_ * X * Y, minlength=nc_); syy0 = np.bincount(lab_, weights=wD_ * Y * Y, minlength=nc_)
+        nn_ = np.maximum(n0_, 1.0); cxx = sxx0 / nn_ - (sx0 / nn_) ** 2; cyy = syy0 / nn_ - (sy0 / nn_) ** 2; cxy = sxy0 / nn_ - (sx0 / nn_) * (sy0 / nn_)
+        weakUnk_ = ((n0_ < 3) | ((cxx * cyy - cxy * cxy) <= 1e-9))[lab_]
+    tps_sheet.hingesGiven = nGiven_
     # data rows
     kS = kOf[st]; d = DISP.ravel()[st]
     # noise of the strip: third differences along x within the strip
@@ -1175,6 +1186,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
     # more than two decades from the build point.
     _pc = {'lam': None, 'M': None}
     hinged_ = hE_ is not None and bool(hE_.any() or vE_.any())
+    if not hinged_: weakUnk_ = np.zeros(n, bool)
     def solve(lam, x0=None):
         M_ = (DtD + lam * BtB).tocsr()
         if hinged_:
@@ -1186,7 +1198,7 @@ def tps_sheet(s_, st, dom, prior=True, hinges=None):   # s_ is the face; --plane
                 # an unknown touched by no row at all (a disc texel with no neighbour among the unknowns) has no value: it is left out
                 # of the factorisation and comes back NaN (the layered order then does not let the sheet claim it); under CG such
                 # texels silently took 0
-                keep_ = M_.diagonal() != 0
+                keep_ = (M_.diagonal() != 0) & ~weakUnk_
                 if keep_.all(): lu_ = splu(M_.tocsc(), permc_spec='MMD_AT_PLUS_A'); x = lu_.solve(Dtb)
                 else:
                     Mk_ = M_[keep_][:, keep_].tocsc(); lu_ = splu(Mk_, permc_spec='MMD_AT_PLUS_A'); x = np.full(n, np.nan); x[keep_] = lu_.solve(Dtb[keep_])
