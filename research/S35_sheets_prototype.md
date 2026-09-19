@@ -1884,6 +1884,17 @@ its bumps, and a forest's holes each −2π. That is the next form to build, and
 L2-L3 and C2 as the bar, are its measurement. Nothing in the classifier is changed in this section; the dump and the two
 instruments are kept.
 
+**Form 3 over all contours** (`bleed/wrap_turn2.py`, cv2's contours, outer and holes, every piece, tangent over five
+texels): built and falsified as it stands. The kit's figures and discs stay right (L3 −233 to −298°, C2 −217 / −307°, L2's
+heads −278 to −360°, L3's floor −114°, grounds and walls 0°), but on the pictures a ROUGH horizon turns: starwatcher's near
+plain −263° over 26 front runs, its far plain −306° over 32. The reason is the run structure itself: on a rough edge the
+front texels are the convex parts (the bumps that stand in front of the far side by a step) and the valleys between them
+are joined or below the step, so summing the turning inside the front runs alone keeps every convex arc and drops every
+concave one -- a bias, not noise, and it grows with the roughness. The corrected form must integrate the turning across
+the non-front gaps between front runs as well (from the first front point to the last around each contour), where a
+horizon's bumps cancel and a figure's foot-to-foot arc does not; the ends of that span carry the raster's ±90° corner turns,
+which are the size of the decision, so the tangent's smoothing length at the ends is where its care goes. Left there.
+
 **Where the arm stands.** Measured arm: `comp + reach-group`. The plate arm `wrap + reach-group + group-plate + ramp +
 crease + group-prior` is exact or near it on every kit scene and equal to the measured arm on vermeer; what keeps it from
 adoption is starwatcher's far plain (this section's construction), the troll's data-poor forest groups, and the sunflowers'
