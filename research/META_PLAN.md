@@ -404,3 +404,9 @@ band texel keeps the occluder's depth (a clone by construction; L1 48 % of the b
 `wrap + reach-group + group-plate + ramp + crease + group-prior` is the measured arm (kit: equal or better everywhere but S2
 +0.004 m; S15 0.275 m against 8.12). Next: the unowned texel's fall-back = the far lip, not the occluder; S2's sky-side pull;
 the sunflowers' 7 % surface clone.
+
+**S35 §48 (2026-09-20).** The unowned texel's fall-back: `--lip-fallback` (the far line lip) and an offline neighbour
+fall-back against the occluder's depth. L1 truth: the lip is right for the hidden background (0.093 → 0.009 m) and wrong for
+the occluder's own body behind itself (0.007 → 0.02–0.06 m), whole band 0.0110 → 0.0118; the neighbour is the occluder again.
+On the troll the lip removes the clones (21 → 4.5 %). Not in the measured arm; the question (background or the occluder's own
+body) is the object layer's, not the far field's. Next: S2's sky-side pull under the prior; the sunflowers' 7 % surface clone.

@@ -49,10 +49,10 @@ for d in args:
     except FileNotFoundError: print(f'  {d:12s}: missing'); continue
     try: who = np.fromfile(f'{D}/who_stop.i32', np.int32).reshape(ph, pw)[by, bx]
     except FileNotFoundError: who = np.zeros(len(by), np.int32)
-    unr = who < 0; empty = unr & ~(ff > 0); m = scored & ~empty   # no owner but a value: filled by the fall-back (L1: 48 % of the band, truth |e| 0.014 m -- not holes); empty = a hole
+    unr = who < 0; kept = unr & (ff == occ); m = scored   # unowned texels hold the fall-back (the occluder's depth by default: a clone by construction; there are no holes)
     cont = (ff >= lo) & (ff <= hi) & m; bey = (ff < lo) & m; near = (ff > hi) & m; clone = (np.abs(ff - occ) <= 3 * step) & m
     err = np.abs(ff - p50) / step
-    line = f'  {d:12s}: holes {100 * (empty & scored).sum() / max(1, scored.sum()):4.1f} % (no owner {100 * (unr & scored).sum() / max(1, scored.sum()):4.1f} %) |'
+    line = f'  {d:12s}: unowned {100 * (unr & scored).sum() / max(1, scored.sum()):4.1f} % (kept the occluder {100 * (kept & scored).sum() / max(1, scored.sum()):4.1f} %) |'
     for nm, sel in (('surface lips', m & ~skyR), ('sky lips', m & skyR)):
         if sel.sum() == 0: continue
         line += f' {nm}: cont {100 * cont[sel].mean():5.1f} % beyond {100 * bey[sel].mean():5.1f} % nearer {100 * near[sel].mean():5.1f} % (clone {100 * clone[sel].mean():4.1f} %), |fill-lip| {np.median(err[sel]):5.1f} steps |'

@@ -2184,3 +2184,36 @@ depth by construction — the fall-back for an unowned texel should be the far l
 occluder's depth is the one value a band texel cannot have), measured on L1 (48 % unowned) and the troll; (2) S2's sky-side
 pull under the prior, 0.037 m on half its sky texels; (3) the sunflowers' 7 % clone on surface lips. The instrument stands as
 the pictures' description; the kit alone decides.
+
+## 48. The unowned texel's fall-back: the lip, the neighbour, and what L1 says about both (user: "continue", 2026-09-20)
+
+**The construction.** `--lip-fallback` in `sheets.py`: a band texel no sheet owns takes the median of its far line lips
+(§47's lips: the first visible texel along its row and column in each direction, behind the occluder by more than two
+steps) instead of the occluder's depth; a texel with no lip keeps the occluder. L1: 119 213 unowned texels, 69 % given a lip;
+the troll: 48 071, 92 %. A second fall-back, the NEIGHBOUR (the nearest owned band texel's fill — the arm's own sheets around
+the unowned region), was built offline from the plate arm's outputs and scored the same way.
+
+**L1 against the truth** (the only kit scene with a large unowned share; 37 587 unowned texels carry a first hidden layer —
+15 908 of the kit's class 2, background; 21 657 of classes 4 and 5, the occluder's OWN primitive behind itself, its back face
+or its own continuation; the stack's planes are thin):
+
+| fall-back | whole band median / p90 | unowned median / signed | class 2 (background) | classes 4 + 5 (the occluder's own body) |
+|---|---|---|---|---|
+| occluder's depth (the plate arm as measured) | **0.0110** / 0.095 | 0.0137 / −0.0137 | 0.093 | 0.0077 / 0.0069 |
+| far lip | 0.0118 / 0.092 | 0.0232 / +0.0000 | **0.009** | 0.021 / 0.060 |
+| neighbour | 0.0112 / 0.097 | 0.0143 / −0.0096 | 0.093 | 0.0079 / 0.0080 |
+
+The lip is right where the hidden surface is the background (0.093 → 0.009 m) and wrong where it is the occluder's own body
+seven millimetres behind its front (0.007 → 0.02–0.06 m); the occluder's depth is the reverse; and the neighbour is the
+occluder's depth again (the sheets around an unowned region are mostly the occluder's own). The signed error tells the same:
+the occluder's depth is 14 mm too near in the median, the lip is unbiased, and neither is right per texel. The whole-band
+median moves 0.0110 → 0.0118 under the lip, so it does not enter the measured arm. **On the troll** the lip removes the
+clones (surface lips: clone 21 → 4.5 %, continuation 21 → 38 %; his own depth in his footprint 55 → 40 %) and the neighbour
+does not (clone 9 %, own depth 52 %) — read as §47 says, a description, and the clone column is the hypothesis-free one.
+
+**Where the question goes.** Which of the two a texel wants is whether the first hidden surface is the background or the
+occluder's own body — the §28 question (a thing's march up through her body), which no far-lip rule answers and the kit's L1
+poses in its purest form. It belongs to the object layer (Sprint 19: the object at its own depth, its back face its own
+sheet), not to the far field's fall-back. `--lip-fallback` stands as an option with these numbers; the neighbour is
+falsified (rule 7) and not kept. Next: S2's sky-side pull under the prior (0.037 m on 46 % of its sky texels), then the
+sunflowers' 7 % surface clone.

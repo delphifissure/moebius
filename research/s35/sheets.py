@@ -42,6 +42,7 @@ ap.add_argument('--color', action='store_true', help="per-sheet colour (S35 §25
 ap.add_argument('--rgb', help='the source colour image (defaults to <dump>/color.png)')
 ap.add_argument('--closure', default='comp', choices=['comp', 'layer', 'surround'], help="two-sided closure test for a THING's march. 'comp' (the §18 rule, adopted): the march skips the band texel's own id and is closed when it exits onto the sheet's own join-law component. 'layer' (S35 §28, NOT adopted): closed on own component or ANY thing, plus the rim-behind-band test, any-closed-march fits, the same-thing lift and the per-march exposure bound; fixes the troll and S15 and breaks three pictures (§28). 'surround' (S35 §29, item C): closed on own component or own THING (self-occlusion); otherwise a thing's sheet is fitted behind an occluder only if it is not nearer than the MEDIAN depth of that occluder's own far-side surroundings (the rim of its band, its own texels and what is nearer than it excluded) -- the majority of what surrounds an occluder is what most likely continues behind it; nearer minority clutter is a hedge. Per-texel exposure trim on things' sheets. No layer grouping (falsified twice in §29: chaining by depth overlap and by step-relative difference).")
 ap.add_argument('--thingrule', default='neighbour', choices=['neighbour', 'steps', 'wrap'], help="S35 §29: which units are things. 'neighbour' (§22): in front of at least one neighbour along the majority of their shared boundary and by medians; with hundreds of tiny neighbours the median shared boundary is two texels and a three-texel fragment can make a whole far field a thing (the sunflowers' field before a sky fragment, S15's ground). 'steps': over the unit's whole boundary, only pairs with a depth STEP vote (joined pairs, a part beside its sibling part, do not); the unit is a thing when the boundary length along which it is in front exceeds the length along which it is behind, both counted only against neighbours whose median depth agrees. (A plain majority of the whole boundary, frame included, was tried and falsified: SAM's part segments are bounded mostly by their own siblings, starwatcher's figure stopped being a thing, v jumps 2 249 -> 45 700; removed.)"); ap.add_argument('--things', action='store_true', help='things/surfaces classifier (S35 §22, opt-in): every visible unit (mask segment or depth component) that is in front of a neighbour becomes a two-sided thing, the rest background. Fixes the sunflower staircase, S9 and S2; wrong on the troll (x-ray to the deepest surface behind him), on vermeer with the automatic mask (the floor voted a thing) and on S15 (a canopy behind its own trunk) -- see the note'); ap.add_argument('--jobs', type=int, default=3, help='parallel workers for the thin-plate solves (forked; the parent holds ~4 GB on vermeer and each worker adds the matrices of one face)'); ap.add_argument('--plain', action='store_true', help='turn the adopted construction off and run the bare per-surface plane arm (for A/B against the old arms)')
+ap.add_argument('--lip-fallback', action='store_true', help="S35 §47: a band texel no sheet owns kept the OCCLUDER's depth (ff = dQ) -- a clone by construction, 48 %% of L1's band and 17 %% of the troll's footprint under the plate arm. With this flag it takes its far LIP instead: the median of the first visible texels along its row and column in each direction that lie behind the occluder by more than two steps (the same lips bleed/ringfill.py reads); texels with no lip keep the occluder's depth.")
 ap.add_argument('--group-prior', action='store_true', help="S35 §42: §17's plane prior for the GROUP plate, per sheet: every domain texel relaxes toward the plane of the group's sheet whose entry is nearest to it, at weight 1 / visible step (against the data at 1 / sigma), so the plate follows the data where it has them and each face's own plane where it does not -- with the hinge (§39) each side of a crease has its own. §37 rejected one prior plane for the whole group (a wall and its floor are not one plane); vermeer's wall plate drifted to 0.04-0.12 behind the milkmaid's head where the group's data lie on one side of a 600-texel band (§41).")
 ap.add_argument('--crease', action='store_true', help="S35 §39: the crease inside the hole. A join group's visible creases (boundaries between two of its faces that both have sheets on the hole) are continued straight into the hole along their own axis, and the group plate is HINGED along them: the bending rows that straddle a hinge edge are dropped and a first difference across it is penalised at the bending weight instead, so the slope may jump where the value may not. Without it a plate pinned by the wall above a wide occluder and the floor below it interpolates a blend where the truth is wall down to a crease line (vermeer's milkmaid).")
 ap.add_argument('--no-smooth', action='store_true'); ap.add_argument('--no-tps', action='store_true'); ap.add_argument('--no-prior', action='store_true'); ap.add_argument('--no-patches', action='store_true')
@@ -1665,10 +1666,30 @@ def depth_of_disp(v): return np.interp(v, disptab[order], dtab[order])
 # moves the eye distance by 0.2 % against a 3.7 % ratio tolerance): the band on a plain or a figure is the area the near
 # content vacates over the envelope, and what shows there is what is behind it. On vermeer and the sunflowers the construction
 # claimed 98 % and 57 % of the band because DA3's silhouette ramps are joined to the figure by the rim law's affine rescue.
+# S35 §47: the far LINE LIPS of every band texel (one to four values), for the unowned texel's fall-back under --lip-fallback.
+def line_lips():
+    vis_ = ~band; yy_, xx_ = np.mgrid[0:ph, 0:pw]; out = []
+    for axis, rev in ((1, False), (1, True), (0, False), (0, True)):
+        a = np.where(vis_, xx_ if axis == 1 else yy_, -1)
+        if rev: a = a[:, ::-1] if axis == 1 else a[::-1]
+        a = np.maximum.accumulate(a, axis=axis)
+        if rev: a = a[:, ::-1] if axis == 1 else a[::-1]; a = np.where(a < 0, -1, (pw - 1 - a) if axis == 1 else (ph - 1 - a))
+        out.append(np.where(a >= 0, dQ[yy_, np.clip(a, 0, pw - 1)] if axis == 1 else dQ[np.clip(a, 0, ph - 1), xx_], np.nan))
+    L_ = np.stack(out, -1); L_ = np.where(np.isfinite(L_) & (L_ < dQ[..., None] - 2 * A.step), L_, np.nan)
+    with np.errstate(all='ignore'):
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore'); return np.nanmedian(L_, -1).ravel()
+lipMed = line_lips() if A.lip_fallback else None
+
 results = {}
 for label, doms in ([('stop', domStop)] + ([] if A.no_extend else [('extend', domExt)])):
     best, second, who, reached = build(doms, label)
-    ff = dQ.ravel().copy(); ff[reached] = np.clip(depth_of_disp(best[reached]), 0, 1); ff = ff.reshape(ph, pw)
+    ff = dQ.ravel().copy(); ff[reached] = np.clip(depth_of_disp(best[reached]), 0, 1)
+    if lipMed is not None:
+        u_ = band.ravel() & ~reached; hasL = u_ & np.isfinite(lipMed); ff[hasL] = lipMed[hasL]
+        print(f'[{label}] lip fall-back: {int(u_.sum())} unowned band texels, {int(hasL.sum())} given their far lip ({100 * hasL.sum() / max(1, u_.sum()):.1f} %), {int((u_ & ~hasL).sum())} keep the occluder')
+    ff = ff.reshape(ph, pw)
     ff2 = np.full(N, -1.0); m2 = np.isfinite(second) & band.ravel(); ff2[m2] = np.clip(depth_of_disp(second[m2]), 0, 1); ff2 = ff2.reshape(ph, pw)
     results[label] = dict(ff=ff, ff2=ff2, who=who.reshape(ph, pw), reached=reached.reshape(ph, pw))
     ff.astype(np.float32).tofile(f'{OUT}/farField_{label}.f32'); ff2.astype(np.float32).tofile(f'{OUT}/farField2_{label}.f32'); who.astype(np.int32).tofile(f'{OUT}/who_{label}.i32')
