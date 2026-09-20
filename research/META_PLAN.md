@@ -542,3 +542,23 @@ function of the quantities we have been looking at, and a sixth scene will not c
 step is to let the gate be learned rather than found -- the kit is a generator, and a model trained on DEPTH AND THE BAND
 MASK ALONE has almost no domain gap for this project's pictures, which are paintings; the cheap decisive precursor is to feed
 the current model a flat grey image with the real depth and see how much it loses. Phases A and B still come first.
+
+**S40 (2026-09-20).** S39's precursor run (`research/S40_colour_ablation.md`; `bleed/amodal_probe.py --image rgb|grey|depth`).
+The question was whether the colour is carrying the amodal model's work, because if it is not, a depth-only model trained on
+our own kit has no domain gap for this project's pictures, which are paintings. **It is not.** On the hidden-thing class
+under the occluder mask -- the one mask arm S39 found stable -- a flat grey frame beats the real picture in ALL FIVE field
+scenes: L5 0.0734 -> 0.0685, L6 0.1215 -> 0.0960, L7 0.0937 -> 0.0405, L8 0.0404 -> 0.0391, L9 0.0408 -> 0.0387. The `rgb`
+arm reproduces S36/S39 exactly, so the baseline is the same one. Three consequences. (a) **The information the model uses to
+place the band is the observation depth and the mask, not the image**, which is the strong answer to the precursor and
+removes the main objection to a depth-only model. (b) **Showing the depth map as a picture is not the way**: the `depth` arm
+is no better than grey anywhere and much worse on L7 (0.108 vs 0.041) -- the model already has the depth in its observation
+channel and a second copy competes with it, so a depth-only model should delete the image branch rather than repurpose it.
+(c) **S36's headline L5 number (0.034 whole band) is a colour effect of the `frame` mask** and collapses to sky depth when
+the image is blanked (thing 0.061 -> 0.389); under the stable occluder mask L5 reads 0.073 against our arm's 0.346, so the
+sunflowers verdict stands at four to five times rather than ten. Where the colour DOES help is the background class (L6
+0.185 -> 0.267 without it), which is exactly the class our own construction already has at 0.000-0.020. **The configuration
+to train from is therefore: occluder mask, image blanked** -- thing-class spread 0.0387-0.0960 across the five scenes (2.5x,
+against the arm's 23x), no colour dependence, no mask choice left to get wrong, and it beats the arm on three of five rather
+than two, because L6 flips (0.096 vs 0.112). It still loses on L7 and L9, so the gate question is not answered. Not
+measured: a model actually trained without colour, L1 and S15 from S36's safety check, and anything on screen. Phases A and
+B still come first.
