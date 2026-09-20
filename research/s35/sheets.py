@@ -1442,8 +1442,16 @@ if A.group_plate and A.patches:
         # S35 §42: each domain texel takes the plane of the group's sheet whose entry is nearest (the sheet that reaches it), at the
         # visible step of that sheet's rims as its weight
         from scipy.spatial import cKDTree
+        # S35 §49: a HEDGE (constant along an axis, or a fused surface; not sky) is not a measurement (rule 1) and gives no prior. On S2 the
+        # nearest entries beside the box were a hedge's (52 rims, one constant plane) and 4 212 background texels were pulled 0.04 m
+        # nearer (S2 0.0040 -> 0.0000 m; S15 0.275 -> 0.264; L1 0.0110 -> 0.0112; the rest 0). On the sunflowers the §42 prior's one
+        # visible gain -- the field partly continued beside the big head's lowest rows -- came from a two-texel hedge tilted toward the
+        # viewer (sheet 1113: 44 rims, E 2, rim depth 0.151, prior 0.168) on 1 154 of the 1 881 texels; without it the sky sheet's plane
+        # is the nearest fitted entry there and the rows read as the measured arm's (the x-ray). GP_PRIOR_HEDGE=1 restores the old rule.
+        noHedge_ = not os.environ.get('GP_PRIOR_HEDGE')
         ents = []; labs = []
         for k_, s_ in enumerate(ss_):
+            if noHedge_ and (hedge[s_] or fusedS[s_]) and not isSky[s_]: continue
             e_ = geoInfo[s_][0]
             if len(e_): ents.append(e_); labs.append(np.full(len(e_), k_))
         if not ents: return None

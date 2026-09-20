@@ -2217,3 +2217,40 @@ poses in its purest form. It belongs to the object layer (Sprint 19: the object 
 sheet), not to the far field's fall-back. `--lip-fallback` stands as an option with these numbers; the neighbour is
 falsified (rule 7) and not kept. Next: S2's sky-side pull under the prior (0.037 m on 46 % of its sky texels), then the
 sunflowers' 7 % surface clone.
+
+## 49. S2's sky-side pull: hedges gave the prior; they no longer do (user: "continue", 2026-09-20)
+
+**The fault.** On S2 the plate arm's prior spoiled 4 212 background texels beside the box (|e| > 2 cm under the prior, ≤ 2 cm
+without it; fill d 0.21 where the truth is d 0.000 and the occluder 0.237 — ten steps behind the box). The per-texel dump says
+where their prior came from: 4 095 of them took the plane of sheet 2, a HEDGE — 52 rims, one constant plane, rim depth
+0.178 — because its entries were the nearest. The same appeared in §46's dump of the sunflowers' sky group, where two hedges'
+tilted planes stood among the nearest entries. A hedge is not a measurement (rule 1: constant along a thin axis, it fills
+only what no fitted sheet reaches); it should give no prior.
+
+**The change.** `_gp_prior` skips hedges and fused surfaces (not sky) when it collects entries; a domain texel takes the
+plane of the nearest FITTED sheet's entry; a group with no fitted entries gets no prior. This is now the rule
+(`GP_PRIOR_HEDGE=1` restores the old one). Measured as arm RWCPh against the plate arm as decided in §47 (RWCPb):
+
+| | RWCPb | RWCPh (hedge-free prior) |
+|---|---|---|
+| S2 | 0.0040 m | **0.0000** |
+| S15 | 0.275 | **0.264** (sky lips 0.456 → 0.437, surface 0.210 → 0.207) |
+| L1 | 0.0110 (bg 0.061, thing 0.010) | 0.0112 (bg 0.059, thing 0.010) |
+| C1 C2 C3 L2 L3 L4 S9 S26 | 0.000 | 0.000 |
+| starwatcher: surface cont / sky cont / unowned | 64.1 / 80.8 / 2.1 % | 64.3 / 78.6 / 2.0 % |
+| vermeer: surface cont / the wall cont / unowned | 42.2 / 66.6 / 3.3 % | 44.5 / 71.3 / 2.9 % |
+| troll: surface cont (clone) / own depth in his footprint / unowned | 20.8 (21.3) / 55.1 / 16.9 % | 23.5 (21.2) / 56.7 / 17.2 % |
+| sunflowers: surface cont (clone) / sky cont / lowest head rows, fill − ring | 58.8 (7.1) / 78.4 / 26 steps | 59.1 (6.9) / 82.3 / 50 steps |
+
+**The sunflowers' lowest head rows, once more.** The §42 prior's one visible gain on the pictures — the field partly continued
+beside the big head's lowest sixty rows (§46: 26 steps short against the measured arm's 50) — is gone under the hedge-free
+prior, and the dump says why it was there: in the sky group that owns those rows, 1 154 of the 1 881 prior texels took the
+plane of sheet 1113, a hedge of two texels' extent (44 rims, rim depth 0.151, tilted −0.0016 per row toward the viewer,
+prior 0.168). It was right for the wrong reason. Without it the nearest fitted entry there is the sky sheet's (2 661 rims,
+extent 283), and the rows read as the measured arm's — the x-ray. The field's own fitted sheets do not have entries nearer
+than the sky's beside the head; continuing the field there is a reach question (§30), not the prior's.
+
+**Standing.** The measured arm is `wrap + reach-group + group-plate + ramp + crease + group-prior` with the hedge-free prior
+(RWCPh): kit S2 0.000, S15 0.264, L1 0.0112, the rest 0.000; vermeer's wall and starwatcher's plain continued; the troll's
+17 % unowned footprint (§48) and the sunflowers' 7 % surface clone remain its named costs. Next: the sunflowers' surface
+clone — which sheets own the 7 %, and whether they are the field's own fragments marching into the flowers' band.

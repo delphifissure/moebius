@@ -410,3 +410,9 @@ fall-back against the occluder's depth. L1 truth: the lip is right for the hidde
 the occluder's own body behind itself (0.007 → 0.02–0.06 m), whole band 0.0110 → 0.0118; the neighbour is the occluder again.
 On the troll the lip removes the clones (21 → 4.5 %). Not in the measured arm; the question (background or the occluder's own
 body) is the object layer's, not the far field's. Next: S2's sky-side pull under the prior; the sunflowers' 7 % surface clone.
+
+**S35 §49 (2026-09-20).** S2's sky-side pull came from a hedge's plane as the prior (52 rims, one constant); hedges and fused
+surfaces now give no prior (rule 1). Kit: S2 0.004 → 0.000, S15 0.275 → 0.264, L1 flat, the rest 0; vermeer's wall 67 → 71 %
+continued, starwatcher and the troll flat. The sunflowers' partial field beside the big head (§46) was a two-texel hedge's
+tilted plane and is gone; the rows read as the measured arm's. Measured arm: the plate arm with the hedge-free prior (RWCPh).
+Next: the sunflowers' 7 % surface clone, by owner.
