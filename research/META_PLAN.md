@@ -495,4 +495,10 @@ class depending on the object map, while the model sits at 0.061 and 0.122 with 
 actually produce, it fixes the sunflowers' configuration (L5 heads-only band 0.238 → 0.034 m) and it should be kept away from
 the troll's, where our arm is better and arbitration degrades it (L6 contested texels 67.9 % correct today → 45.9 %). As an
 ARBITER between our two existing candidates it is the best of all on L5 (93.2 % correct, |e| 0.397 → 0.022 m), better than its
-own direct prediction. §57 is not overturned: the regime test that separates L5 from L6 without truth is still missing.
+own direct prediction. §57 is not overturned. **Safety check added the same day: the model helps one scene in four** — it is worse on L1 (0.0112 →
+0.0177), much worse on L6 (0.0154 → 0.145) and destroyed on S15 (0.264 → 2.57 m, a relative prediction cannot carry a hidden
+range 8.64 m outside the visible one, which is S26's finding again). So it cannot be turned on generally. What the test did
+establish is a **truth-free confidence for the model**: its median disagreement with the observed depth over the visible
+region orders all five runs by whether to trust it, and per texel (in windows of the band's own half-width) the model's true
+error rises monotonically with it in every scene. What is still missing is the same confidence for the ARM, which is what
+would let either be chosen; that is §57's question one level up.

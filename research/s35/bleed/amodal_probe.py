@@ -31,7 +31,8 @@ band = np.fromfile(f'{A.probe}/disocc.u8', np.uint8).reshape(ph, pw) > 0
 rgb = np.asarray(Image.open(f'{K}/{S}/rest_rgb.png').convert('RGB'))
 dep16 = np.asarray(Image.open(f'{K}/{S}/rest_depth16.png'))
 if dep16.ndim == 3: dep16 = dep16[..., 0]
-occ = np.asarray(Image.open(A.occ)); occ = occ[..., 0] if occ.ndim == 3 else occ
+occ = np.zeros((ph, pw), np.uint8) if A.occ == 'none' else np.asarray(Image.open(A.occ))
+occ = occ[..., 0] if occ.ndim == 3 else occ   # 'none': no occluder map for this scene, frame arm only
 assert rgb.shape[:2] == (ph, pw) and dep16.shape == (ph, pw) and occ.shape == (ph, pw), (rgb.shape, dep16.shape, occ.shape, (ph, pw))
 d_obs = dep16.astype(np.float64) / 65535.0                      # the app's normalised d: 0 far, higher nearer -- the same polarity the model expects
 dmin, dmax = float(d_obs.min()), float(d_obs.max()); rng = max(1e-9, dmax - dmin)

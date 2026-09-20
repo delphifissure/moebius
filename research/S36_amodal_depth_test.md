@@ -58,7 +58,8 @@ Put the two scenes together and the pattern is not "the model is better" or "wor
 | L5 thing class | 0.061 | 0.346 | 0.061 |
 
 **Our construction swings by a factor of four to six with the object map; the model does not move.** It sits at the good-map
-number in both scenes without a map. That is the honest statement of what a learned amodal prior buys us here: not accuracy
+number in both scenes without a map. (On the two scenes added below it is a different story, so read this with the safety
+check.) That is the honest statement of what a learned amodal prior buys us here: not accuracy
 beyond our ceiling, but **independence from the one input we do not control on a photograph**. §52 and §56 established that
 the map decides and that both over- and under-labelling cost us; this is a construction that does not care.
 
@@ -78,14 +79,73 @@ On L5 arbitration beats both fixed rules and, at 0.022 m, beats the model's own 
 times in three, it makes things worse. So this is not yet a rule; it is a measured pair of regimes, and which regime a
 picture is in is §57's question one level up.
 
+## The safety check: it must not be applied blanket
+
+S36 was first written on L5 and L6 alone. Running the two scenes our construction already handles well changes the
+recommendation, which is why the check was made before proposing anything:
+
+| scene | our measured arm | amodal, best mask | verdict |
+|---|---|---|---|
+| L5, heads-only map | 0.238 m | **0.034 m** | the model fixes it |
+| L1, the dense leaf layer | **0.0112 m** | 0.0177 m | the model is worse |
+| L6, figure-only map | **0.0154 m** | 0.145 m (fitted) | the model is much worse |
+| S15, the crown against sky | **0.264 m** | **2.57 m** | the model is destroyed |
+
+**The model helps one scene in four.** S15's collapse is not a surprise once seen: its scene depth runs to 8.64 m against
+0.19–0.64 m for the others, and a *relative* depth prediction cannot carry a hidden range that far outside the visible one.
+That is the same limitation S26 already recorded for the depth models on background layers, re-confirmed here from the other
+direction. Any use of this model has to exclude the wide-range case.
+
+## A truth-free confidence for the model, which does work
+
+If the model is to be used selectively, we need to know when to believe it without having truth. One observable does it:
+**the model's own median disagreement with the observed depth over the VISIBLE region**, as a fraction of the visible range.
+Across the five runs it orders them exactly:
+
+| run | visible disagreement | model \|e\| in the band | against our arm |
+|---|---|---|---|
+| L5, heads-only | **0.013** | 0.034 | model wins |
+| L1 | 0.028 | 0.018 | arm wins (narrowly) |
+| S15 | 0.071 | 2.57 | arm wins (hugely) |
+| L6 | 0.096 | 0.170 | arm wins |
+
+And it works *per texel*, not only per scene. Binning each scene's band texels by the local disagreement measured in a
+window the size of the band's own half-width — no truth, no tuning, the window derived from the data — the model's true
+error rises monotonically with it in every scene tested:
+
+| local disagreement quintile | L5 model \|e\| | L6 model \|e\| | L1 model \|e\| |
+|---|---|---|---|
+| lowest | 0.0004 | 0.084 | 0.017 |
+| 2nd | 0.022 | 0.143 | 0.015 |
+| 3rd | 0.026 | 0.172 | 0.018 |
+| 4th | 0.056 | 0.208 | 0.019 |
+| highest | 0.135 | 0.211 | 0.023 |
+
+**So we can tell how much to believe the model, from data we already have.** This is worth having on its own: it is the
+missing ingredient in any scheme that mixes a learned prior into the bake, and it needs neither truth nor a tuned constant.
+
+## What is still missing, and it is the same thing as before
+
+The confidence above predicts **the model's** error, not **which of the two** is better. In the same quintiles our arm's
+error is flat and low on L6 and L1 and rises steeply on L5, so the comparison turns on the arm's reliability, which we have
+not made observable. Picking the better source therefore still needs an arm-side confidence, and the obvious candidates —
+the sky-owned share of the band, the unowned share — do not separate the five runs cleanly (L6 with every tree labelled has
+74 % of its band sky-owned and the model still loses there; L5 has 94.5 % and it wins). **This is §57's question again,
+one level up, and it is still open.** I stopped rather than fit a two-signal threshold to five scenes, which is the kind of
+construction this project has falsified six times already.
+
 ## What I would conclude
 
-1. **For the sunflowers, this is the first thing measured that actually fixes them.** A field whose pieces merge into the
-   ground cannot be labelled by clicking, our construction therefore fails, and the model is indifferent to that.
-2. **For the troll, leave it alone.** Our arm is already at or better than the model, and arbitration degrades it.
-3. **The model is better used as an arbiter than as a source** where our candidates exist, on the L5 evidence.
-4. **This does not overturn §57.** The far field still cannot tell an occluder from the far side; we have added an outside
-   signal that can, in one of the two regimes, and the regime test is still missing.
+1. **For the sunflowers, this is the first thing measured that improves them** — L5's heads-only band from 0.238 to
+   0.034 m, matching our own fully-labelled best without being given a map.
+2. **It cannot be turned on generally.** It is worse on L1, much worse on L6 and catastrophic on S15.
+3. **Exclude wide-range scenes outright.** Relative depth cannot express a hidden range far outside the visible one (S15,
+   8.64 m), which S26 found independently.
+4. **The model is better as an arbiter than as a source** where our candidates exist, on the L5 evidence (0.397 → 0.022 m),
+   and harmful as an arbiter where our choice is already right (L6).
+5. **We now have a truth-free confidence for the model** that is monotone in its real error. We do not have one for the arm,
+   and that is what blocks a rule.
+6. **§57 is not overturned.**
 
 ## Caveats, stated plainly
 
