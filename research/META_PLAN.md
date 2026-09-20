@@ -435,3 +435,8 @@ near flowers; not an item for the far field.
 segments) behaves like the curated map: the near flowers are not auto segments; without the field patches' labels DA3's ramps
 join them to the field. Both picture failures are one dependence on labels the maps do not provide. Measured arm unchanged;
 the sunflowers recorded as out of the far field's reach; an L5 graded field would hold the auto-map failure in the kit.
+
+**S35 §53 (2026-09-20).** Where S35 stands: the measured arm (wrap + reach-group + group-plate + ramp + crease + hedge-free
+group-prior) against the old one on the kit (S15 8.12 → 0.264 m, S26 0.028 → 0, L4 0.031 → 0.002, L1 0.015 → 0.011, the rest
+0) and the pictures described by ringfill. Open and assigned: the unowned fall-back to the object layer's bundle import; the
+sunflowers to labels upstream; an L5 graded-field kit scene. The "16-bit standing item" was Sprint 6's finished work, not open.

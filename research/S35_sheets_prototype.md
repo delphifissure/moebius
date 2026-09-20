@@ -2355,3 +2355,43 @@ reason the kit measures; what would move it is upstream of the far field — a l
 boxes were 91 segments and still missed them) or a join law that does not carry a near object into the ground's surface
 along a ramp (the S33/S34 silhouette-ramp question). Neither is this note's construction. Recorded; the next items are the
 unowned fall-back as the object layer's question (§48) and the standing 16-bit item.
+
+## 53. Where S35 stands (2026-09-20)
+
+**The measured arm** is `--closure comp --thingrule wrap --reach-group --group-plate --ramp --crease --group-prior` with the
+hedge-free prior (§49) — one continuation sheet per visible surface, the layered order with the two-sided rule for things,
+the reach bounded by the join group's extent, one clamped plate per group with creases continued into the hole and each
+domain texel relaxed toward the plane of the nearest fitted sheet's entry. Against the arm that held the title through §46
+(`comp + reach-group`):
+
+| kit scene | comp + reach-group | measured arm |
+|---|---|---|
+| C1, C2, C3 | 0.000 / 0.005 / 0.000 | 0.000 / 0.000 / 0.000 |
+| L1 (all / hidden layer) | 0.015 / 0.046 | 0.0112 / 0.010 |
+| L2, L3 | 0.000 | 0.000 |
+| L4 (surface lips) | 0.031 | 0.002 |
+| S2, S9 | 0.000 | 0.000 |
+| S26 | 0.028 | 0.000 |
+| S15 | 8.12 | **0.264** |
+
+**The pictures**, described by `bleed/ringfill.py` (surface lips: continuation / beyond / nearer, clone in brackets; the
+sky-lip continuation; unowned — a description, not a bar, §47): sunflowers 59 / 20 / 21 (7), sky 82 %, unowned 6.5 %;
+vermeer 44 / 47 / 8 (6), the wall 71 %, 2.9 %; troll 23 / 18 / 58 (21), 17 %; starwatcher 64 / 20 / 16 (2), the plain 79 %,
+2 %. The measured arm continues vermeer's wall and starwatcher's plain, which the old arm x-rayed and cloned; it fills the
+troll's footprint with his own depth as the old arm did (by the unowned fall-back rather than the skin sheet); and it x-rays
+the sunflowers' field behind the heads for the reason §51–52 give.
+
+**What this pass settled.** Three picture instruments (§45 depth bands, §46 the sky bar, §47 the lip) were found to encode
+the measured arm's behaviour or a hypothesis about what is behind; the kit alone decides, and the pictures are described.
+"Unreached" has always been unowned, the occluder's depth by construction (§47). Falsified and removed under rule 7 in this
+pass: the layered order's prior in two forms (§46), the neighbour fall-back (§48), sky-last (§51); kept as options with
+their numbers: `--lip-fallback` (§48). Adopted: the hedge-free prior (§49). Instruments added: `ringfill.py`, `headfill2.py`,
+`skylast.py`, `TRACE_TEXEL`, `TIER_DUMP`, and `sheets_info.npz` now carries each sheet's component and rim texels.
+
+**Open, and whose they are.** (1) The unowned texel's fall-back (§48): the occluder's depth is right where the hidden surface
+is the occluder's own body and the far lip where it is the background; the object layer (S27) is the construction that
+supplies an object's own body, and when it does the far field should give its unowned texels the far lip — an integration
+in the bundle import, not this prototype. (2) The sunflowers (§51–52): a dependence on labels the maps do not provide;
+upstream of the far field. (3) An L5 kit scene, a graded clumpy field, to hold the auto-map failure with exact truth. (4)
+The "standing 16-bit item" carried in §50–52 was the task list's wording for Sprint 6's 16-bit work, which is done
+(LIVE_PASS: the default depth is the DA3 16-bit map, read natively); it is not an open item.
