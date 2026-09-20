@@ -523,3 +523,22 @@ means the kit's METRE score varies twenty-fold in amplification across scenes an
 compare them on equal terms; and the 518² resize is not a handicap (aspect-preserving letterbox: L6 unchanged, L5 worse).
 Next for Phase D, if resumed: three or four more L5-regime scenes (~20 min of truth each) to turn the scene gate into a
 measurement. Phases A and B still come first.
+
+**S39 (2026-09-20).** S38's "three or four more L5-regime scenes" built and scored (`research/S39_l5_regime_scenes.md`;
+`truthkit/scenes.py` L7 boulders, L8 crowd, L9 tufts, mirrored in `s35/kit/`). The prediction written down before scoring --
+that all three would be L5-regime positives -- was wrong: only L8 was (thing class, arm vs model: L5 0.346/0.061 model,
+L6 0.112/0.122 arm, L7 0.033/0.094 arm, L8 0.078/0.040 model, L9 0.015/0.041 arm). **Two falsifications.** (a) The regime is
+not ground contact: L7 and L9 contact the ground exactly as L5's clumps do and the arm wins both, on L9 by twenty times, and
+L9 merges into a SINGLE component -- the most extreme collapse in the kit -- yet reads 0.015 m, because its tufts hide almost
+nothing (2 402 band thing texels against L5's 21 848). A field can merge completely and still not matter if it does not
+occlude. (b) **S38's gate candidate is dead**: the model's visible-region disagreement is 0.091 on L8 (model wins) against
+0.096 on L6 (arm wins). Sky-owned share and surviving-component count do not separate either; the unowned share happens to
+separate all five but a meaningless signal does that by luck one time in five, so it is noted and not claimed. **What
+strengthens** is S36's stability finding, now on five scenes: the model's thing-class error spans 0.040-0.122 (3x), the arm's
+0.015-0.346 (23x) -- the construction is sometimes far better and sometimes far worse, the model is always mediocre, the
+choice is worth about a factor of five, and nothing observable says which case you are in. Practical caveat: the mask arm is
+unstable (`frame` best on L5, catastrophic on L7/L8 where it puts the band at sky depth). **Conclusion: the gate is not a
+function of the quantities we have been looking at, and a sixth scene will not change that.** If Phase D is resumed the next
+step is to let the gate be learned rather than found -- the kit is a generator, and a model trained on DEPTH AND THE BAND
+MASK ALONE has almost no domain gap for this project's pictures, which are paintings; the cheap decisive precursor is to feed
+the current model a flat grey image with the real depth and see how much it loses. Phases A and B still come first.
