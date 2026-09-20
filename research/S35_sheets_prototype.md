@@ -1899,3 +1899,73 @@ which are the size of the decision, so the tangent's smoothing length at the end
 crease + group-prior` is exact or near it on every kit scene and equal to the measured arm on vermeer; what keeps it from
 adoption is starwatcher's far plain (this section's construction), the troll's data-poor forest groups, and the sunflowers'
 field facets beside the big head.
+
+## 44. The wrap test as turning and as enclosure: both built, both falsified; the centroid form stands (user: "yes continue", 2026-09-20)
+
+**What was built.** §43 ended with the turning form named: the front's span around each contour (from the first front texel
+to the last, i.e. the contour less its largest run of non-front texels), the tangent's rotation -- smoothed over five texels
+so a raster corner splits between span and gap -- summed over the span and over all of a unit's contours (outer and holes,
+every piece, cv2), a thing when the sum reaches a half turn in magnitude. It went into `sheets.py` as `--thingrule turn`
+and was run as the classifier alone (`CLASSIFY_ONLY=1`) on the kit and the four pictures beside the centroid form (`wrap`).
+
+**The turning form, falsified in one pass.** On starwatcher it does what it was built for: the far plain +171°, the near
+plain −95°, both surfaces, the figure +2228° a thing. On the kit's clean figures it is right (C2's figure −217°, its head
+−307°; L2's heads −289 to −364°; L3's figures −233/−298/−191°; grounds and walls −90 to 0°). But the half turn is EXACTLY the
+turning of a thing standing on a straight contact with vertical sides -- a box on a floor is two right-angle corners --
+so every thing that widens toward its contact falls under it, and that is most of the things there are: vermeer's milkmaid
+−179° (surface), the sunflowers' big head −180° (surface), the troll himself +78° and his stick −172° (surfaces), L3's two
+boxes −180° each, numerically under π. The centroid form has margin on exactly these (a figure's sides run below its
+centroid: milkmaid 71°, head 179°, troll 96°); the turning form has none, because its threshold sits on the common case
+instead of between the cases. Removed (rule 7); the instrument `bleed/wrap_turn2.py` stays.
+
+**The enclosure form** (`--thingrule enclose`, `bleed/wrap_enclose.py`). The same span, closed by the chord between its
+ends; the unit is a thing when more of its own texels lie inside its closed spans than outside -- a figure on the ground is
+everything above its contact, a disc all of itself, a horizon's slivers above its chord are not the plain. As the classifier
+alone it is right everywhere the turning form was wrong and where it was right: milkmaid 86.9 %, vermeer's table 54 %,
+basket 96 %; the big head 53 %, the sunflowers' labelled things 78-100 %; the troll 75 %, his stick 99.8 %; L2's heads
+94-100 %, L3's figures 87-99 %, its boxes 78 / 67 %, its table 53 %, C2's figure 97 %, head 99 %; grounds, walls, floors and
+skies 0-16 %. And starwatcher's far plain reads 35.6 % (the near plain 15.7 %): both surfaces, which is what the item was
+after. Verdicts identical to the centroid form's on C1, C2, C3, L2, L3, S2, S9, S26; changed on L1 (9 → 5 things, all small
+components), L4 (16 → 12), S15 (14 → 13), starwatcher (14 → 10), room (96 → 91), vermeer (22 → 23), troll (17 → 14), so
+the plate arm (`comp + reach-group + group-plate + ramp + crease + group-prior`) was rerun under it on those seven only.
+
+**Falsified by L4.** L4's largest far unit (144 k texels, d 0.265) is the leaf CANOPY: one connected component of leaves
+before the sky wall, porous, its front on its hundreds of holes and on its outer edge. The centroid form calls it a thing
+(gap 162°: from its centroid the sky is seen in every direction through the holes) and its band stays sky, exact
+(background median 0.000, mean −0.002, fill d median 0.000). The enclosure form calls it a surface at 43.8 %: a hole's closed
+span encloses the hole -- sky, no leaves -- so the holes count for nothing, and the outer contour, cut by the frame on both
+sides, has a diagonal chord. As a surface its sheet spreads over the sky band: background median still 0.000 but mean
+−0.031, fill d median 0.077, the error map red under every leaf, the band's truth median 0.000 → 0.006 m. A porous thing is a
+thing precisely because the far side is seen THROUGH it, and enclosure by the unit's own mass cannot see that; the centroid
+form can. L1 (the forest, its big component 70.8 %, a thing either way) and S15 are unchanged to the texel.
+
+**On the pictures** (fillcheck / trollfill / headfill; RG2 the measured arm, RWCPb the plate arm under the centroid form,
+RECPb the same arm under enclosure):
+
+| picture | RG2 (measured arm) | RWCPb (plate arm, centroid form) | RECPb (plate arm, enclosure) |
+|---|---|---|---|
+| starwatcher: sky-valued % / unreached % / fill median d | 50.6 / 0.0 / 0.020 | 67.9 / 2.2 / 0.002 | **16.4 / 34.7 / 0.316** |
+| troll: gap % / forest % in his footprint | 6.0 / 92.4 | 21.2 / 69.0 | **37.3 / 51.4** |
+| sunflowers: sky-valued % / unreached % / sky rows beside the big head of 211 / row jumps > 1 step | 98.3 / 0.1 / 211 / 0 | 66.1 / 7.4 / 163 / 23 | **38.4 / 9.1 / 166 / 36** |
+| vermeer: sky-valued % / unreached % / fill median | 72.6 / 0.3 / 0.009 | 69.7 / 3.6 / 0.009 | 69.9 / 3.7 / 0.009 |
+
+Vermeer, whose verdicts changed only on small components, is the same arm to the decimal. The three pictures whose big units
+changed all go the wrong way, and starwatcher -- the item's own case -- goes the worst: with the far plain a SURFACE its band
+is not filled by the plain, it is a third unreached and near-valued where it is reached (fill median 0.316 against the plain's
+0.03: the plain's group plate, now asked to serve a band the size of its own front, is held by data on one side only and runs
+off, and the pieces no data touches are left out). The classifier's verdict was the item's premise -- "the far plain is a
+surface, so its sheet will fill the band" -- and the measurement says the verdict alone does not do that; the measured arm
+fills the same band at 50.6 % sky-valued with a different rule for things (`neighbour`) and no group plate. The troll loses
+because his forest component (668 k texels, a thing by the centroid form at 143°, 0.5 % enclosed) becomes one surface whose
+plate has no data in his footprint (gap 21 → 37 %); the sunflowers because their far field's holes onto the sky are the same
+porous case as L4's canopy.
+
+**Where this leaves the item.** Three statements of "the front wraps the unit" have now been measured against the centroid
+form: turning within the front runs (§43: a rough horizon keeps its convex arcs), turning over the span with the half turn
+(this section: the threshold sits on the standing thing), and enclosure of the unit's mass by the closed span (this section:
+blind to a porous thing, L4). Each fixes starwatcher's far plain and each loses something the centroid form holds, on the kit
+or on the pictures' own things. The centroid form stands as the classifier of the plate arm; starwatcher's far plain --
+a unit of plain and hills whose horizon runs through its centroid -- stays its one known miss, and the record says the
+remedy is not another statement of wrapping at the unit level but a unit that is not plain-and-hills in the first place
+(the join law puts them together because they meet without a step). Both rules are out of the code (rule 7); the two
+instruments stay. Measured arm: `comp + reach-group`, unchanged.

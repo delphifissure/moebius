@@ -366,3 +366,13 @@ ten texels below it make the wrap gap 178°. Two other forms of the wrap test pr
 every horizon) and the front's net turning along the contour (right on the kit: figures +180 to +307°, backgrounds 0°; not yet
 a construction on the pictures -- needs all contours, holes and pieces: the discrete Gauss-Bonnet of the front). Next: build
 that form. Classifier unchanged; instruments kept (`WRAP_DUMP`, `bleed/wrap_normals.py`, `bleed/wrap_turn.py`).
+
+**S35 §44 (2026-09-20).** The wrap test built two more ways and both falsified against the centroid form: the front's TURNING
+over its span (a thing at a half turn -- which is exactly the turning of a thing standing on a straight contact, so the
+milkmaid −179°, the big sunflower head −180°, the troll +78° became surfaces) and ENCLOSURE of the unit's mass by the closed
+span (right on every figure and on starwatcher's plains, but blind to a porous thing: L4's leaf canopy 44 % → surface, its
+sheet over the sky band, bg mean −0.002 → −0.031 m; on the pictures starwatcher unreached 2 → 35 %, troll gap 21 → 37 %,
+sunflowers sky-valued 66 → 38 %). Both removed (rule 7), instruments kept (`bleed/wrap_turn2.py`, `bleed/wrap_enclose.py`).
+The centroid form stands; starwatcher's far plain stays its known miss, and making it a surface does not fill its band anyway.
+Measured arm unchanged. Next: the troll's data-poor forest groups (when a group plate should yield to the hedge tier), then
+the sunflowers' field facets beside the big head.
