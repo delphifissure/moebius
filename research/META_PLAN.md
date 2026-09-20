@@ -487,3 +487,12 @@ which diagnoses our failure as applying the test per COMPONENT when no single cr
 (d) the amodal literature is object-centric and explicitly leaves stuff visible-only, so transfer to a forest or a field is
 untested and is exactly what L5/L6 can measure. Recommended order: group-level two-sided rule (cheap, ours, no dependency),
 then Amodal Depth Anything scored on the kit, then depth in the inpainting contract.
+
+**S36 (2026-09-20).** R6's item 2 run end to end (`research/S36_amodal_depth_test.md`, `bleed/amodal_probe.py`): Amodal
+Depth Anything (0.36 B, MIT) on CPU against L5 and L6 truth. R6's item 1 was dropped on inspection as a repeat of §32's
+falsified group closure. The result: our construction swings 0.061 → 0.346 (L5) and 0.112 → 0.441 (L6) on the hidden-thing
+class depending on the object map, while the model sits at 0.061 and 0.122 with no map at all. On the map a person can
+actually produce, it fixes the sunflowers' configuration (L5 heads-only band 0.238 → 0.034 m) and it should be kept away from
+the troll's, where our arm is better and arbitration degrades it (L6 contested texels 67.9 % correct today → 45.9 %). As an
+ARBITER between our two existing candidates it is the best of all on L5 (93.2 % correct, |e| 0.397 → 0.022 m), better than its
+own direct prediction. §57 is not overturned: the regime test that separates L5 from L6 without truth is still missing.

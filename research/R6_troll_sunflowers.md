@@ -185,13 +185,16 @@ Each of these is measurable on truth we already have. L6 (a figure before a rece
 built for exactly this and bracket the question from both sides; the bar is the measured arm's **L6 thing class 0.112 m,
 L5 whole band 0.000 / 0.238 m**, and nothing may regress S15 (0.264 m) or the ten scenes at 0.000.
 
-1. **Group-level two-sided rule** (Family D). No new dependency, uses `groupOf`, a day's work. Decides whether the
-   sunflowers' and L6-labelled failures are a unit-of-test error. Must not break L5. *This is the one I would do first,
-   because it is cheap, it is ours, and the literature says the cue is really there.*
-2. **Amodal Depth Anything on the kit** (Family A). MIT weights, 0.4 B, `infer.py`; feed it the rest image, our DA3 depth
-   and a mask per background region (visible component ∪ its band), and score the returned depth against L5/L6/L1/S15 truth
-   with the scorer we already have. This is the test that tells us whether object-trained amodal depth transfers to stuff —
-   a question the literature does not answer. Needs a GPU, as the RevealLayer item already does.
+1. ~~**Group-level two-sided rule** (Family D).~~ **Spent — see S36.** On checking §32, closing on an exit onto the
+   sheet's own join group is exactly the construction measured and removed there (29 k of 794 k marches closed; starwatcher
+   sky-valued 50.6 → 47.0 %, jumps 1 967 → 5 662). The border-ownership *diagnosis* stands — a per-component test cannot see
+   a cue the field carries as a class — but this form of the fix is not available. Any reopening needs a criterion that
+   separates a forest continuing behind a figure from starwatcher's near plain exiting onto its far plain.
+2. **Amodal Depth Anything on the kit** (Family A). **Done — S36**, on CPU (0.36 B; no GPU needed for a handful of kit
+   images). The transfer question the literature does not answer is answered for our two cases: the model sits at our
+   *good-map* accuracy in both scenes without being given a map, so it buys independence from the object map rather than
+   accuracy beyond our ceiling. It fixes the sunflowers' configuration (L5 heads-only: 0.238 → 0.034 m over the band) and
+   should be kept away from the troll's, where our arm is already better.
 3. **Depth in the inpainting contract** (Family B). Not a research question but a contract change: ask for depth back from
    the SD round trip, with the asymmetric-mask option. It is the same sprint as the reimport already on the queue, and it is
    the version of Family A that needs no extra model because the inpainter is already in the plan.
