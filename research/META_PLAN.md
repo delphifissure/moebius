@@ -469,3 +469,9 @@ the forest is porous and the lines escape to sky) and the number of agreeing dem
 overlap 36-77 %). With sky-last (§51) that is three constructions against the same question. The far field's part is finished;
 the answer must come from the object layer, which §48, §52 and §56 all ask for. Colour is the one untested avenue and belongs
 to the plate.
+
+**S35 §58 (2026-09-20).** Standing summary, second edition (supersedes §53). The measured arm is the plate arm with the
+hedge-free prior; the kit reads 0.000 on ten scenes, L1 0.0112, S15 0.264, and L5/L6 carry the object-map question with both
+answers. Four of the seven photographs are scored; the other three lack a map, a truth and a recorded step, and are named as
+not scored rather than guessed. S35 as a depth-field prototype is finished: the one open question (occluder or far side)
+belongs to the object layer, and colour belongs to the plate.

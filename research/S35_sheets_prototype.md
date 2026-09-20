@@ -2578,3 +2578,50 @@ occluder, which is exactly what a completed object layer supplies (S27: the obje
 one untested avenue inside the far field is colour — the forest behind the figure looks like forest — and colour belongs to
 the plate, not to this prototype. **The far field's part of this question is finished; the answer has to come from the object
 layer, and §48's fall-back, §52's labels and §56's demotion are all the same request to it.**
+
+## 58. Where S35 stands, second edition (supersedes §53; 2026-09-20)
+
+**The measured arm** is `--closure comp --thingrule wrap --reach-group --group-plate --ramp --crease --group-prior`, the
+prior hedge-free (§49): one continuation sheet per visible surface, the layered order with the two-sided rule for things, the
+reach bounded by the join group's extent, one clamped plate per group with creases continued into the hole and each domain
+texel relaxed toward the plane of the nearest FITTED sheet's entry.
+
+**The kit**, band depth error against the first hidden layer (metres, median):
+
+| scene | measured arm | note |
+|---|---|---|
+| C1, C2, C3 | 0.000 | the crease family |
+| L1 | 0.0112 | the dense leaf layer; its hidden layer 0.010 |
+| L2, L3, L4 | 0.000 | discs, figure cluster, sparse layer |
+| L5 (every clump labelled / heads only) | **0.000 / 0.238** | the graded field, §54 |
+| L6 (labelled / figure only) | 0.000 / 0.016 whole band; **thing class 0.441 / 0.112** | the receding forest, §56 |
+| S2, S9, S26 | 0.000 | |
+| S15 | **0.264** | was 8.12 under the old arm |
+
+**The pictures** (`bleed/ringfill.py`, surface lips: continuation / beyond / nearer, clone in brackets; then the sky-lip
+continuation and the unowned share — a description, not a bar, §47): sunflowers 59 / 20 / 21 (7), sky 82 %, unowned 6.5 %;
+vermeer 44 / 47 / 8 (6), the wall 71 %, 2.9 %; troll 23 / 18 / 58 (21), 17 %; starwatcher 64 / 20 / 16 (2), the plain 79 %,
+2 %. **Coverage is four of the project's seven photographs.** Silverwarrior, bristlecone and octopus have DA3 probes from
+S19 but no object map, no truth, and no recorded visible step, so they are not scored here; scoring them would mean baking a
+step and inventing a map, and neither would be measurement.
+
+**What this pass established.** (1) The arm changed: three picture instruments (§45 depth bands, §46 the sky bar, §47 the
+lip) were found to have the old arm's own behaviour or a hypothesis about what is behind written into their pass criteria,
+and with the kit as the only bar the plate arm won. (2) "Unreached" has always meant *unowned*, and an unowned band texel
+keeps the occluder's depth — a clone by construction (§47). (3) Most far rims are band texels, not visible ones, 40–97 % by
+scene, so the sheet model is founded on the app's plate stretch as much as on data — and that stretch is load-bearing (§55).
+(4) The kit now brackets the object-map question from both sides: labelling every clump is right on L5, labelling every tree
+is wrong on L6, and the wrap test is correct in both (§54, §56).
+
+**Falsified and removed in this pass** (rule 7): the layered order's prior in two forms (§46), the neighbour fall-back (§48),
+sky-last on four scenes (§51, §56), the visible-rim requirement (§55), the far lip as a tie-break and the agreement count
+(§57). **Adopted:** the hedge-free prior (§49). **Kept as an option with its numbers:** `--lip-fallback` (§48). **New
+instruments:** `ringfill.py`, `headfill2.py`, `skylast.py`, `bandrims.py`, `TRACE_TEXEL`, `TIER_DUMP` (with `nH`), and
+`sheets_info.npz` now carries each sheet's component and rim texels. **New kit scenes:** L5 and L6, with their recipes
+mirrored in `s35/kit/`.
+
+**What is left, and whose it is.** One question remains and it is not the far field's: whether a thing in front of a hole is
+an occluder or is itself the far side. Three constructions have been measured against it and the contested population stays a
+coin toss (§57). The information lives in a completed object layer — the object at its own depth with its own back (S27) —
+and §48's fall-back, §52's labels and §56's demotion are three faces of that one request. Inside the far field the only
+untested avenue is colour, which belongs to the plate. **S35 as a depth-field prototype is finished.**
