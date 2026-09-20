@@ -475,3 +475,15 @@ hedge-free prior; the kit reads 0.000 on ten scenes, L1 0.0112, S15 0.264, and L
 answers. Four of the seven photographs are scored; the other three lack a map, a truth and a recorded step, and are named as
 not scored rather than guessed. S35 as a depth-field prototype is finished: the one open question (occluder or far side)
 belongs to the object layer, and colour belongs to the plate.
+
+**R6 (2026-09-20).** Targeted literature review for the troll and the sunflowers (`research/R6_troll_sunflowers.md`), after
+S35 §57 closed the far field's own part of the question. Six families read (abstracts and repository pages only; arXiv, CVF
+and the project pages are blocked). The finds: (a) *counterfactual / amodal depth* states our problem exactly — image +
+observed depth + amodal mask → depth behind the occluder, scale-and-shift aligned to the observed map — and Amodal Depth
+Anything (ICCV 2025) ships MIT weights and an infer script; (b) *diminished reality* says to inpaint colour and depth in one
+pass with asymmetric masks, which is a change to our hole contract rather than a new construction, and the reimport sprint is
+already queued; (c) *border ownership* is the perceptual name for our two-sided rule, and T-junction context is the cue —
+which diagnoses our failure as applying the test per COMPONENT when no single crown wraps a figure though the forest does;
+(d) the amodal literature is object-centric and explicitly leaves stuff visible-only, so transfer to a forest or a field is
+untested and is exactly what L5/L6 can measure. Recommended order: group-level two-sided rule (cheap, ours, no dependency),
+then Amodal Depth Anything scored on the kit, then depth in the inpainting contract.
