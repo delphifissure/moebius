@@ -91,10 +91,10 @@ recommendation, which is why the check was made before proposing anything:
 | L6, figure-only map | **0.0154 m** | 0.145 m (fitted) | the model is much worse |
 | S15, the crown against sky | **0.264 m** | **2.57 m** | the model is destroyed |
 
-**The model helps one scene in four.** S15's collapse is not a surprise once seen: its scene depth runs to 8.64 m against
-0.19–0.64 m for the others, and a *relative* depth prediction cannot carry a hidden range that far outside the visible one.
-That is the same limitation S26 already recorded for the depth models on background layers, re-confirmed here from the other
-direction. Any use of this model has to exclude the wide-range case.
+**The model helps one scene in four.** *(S15's reading here was corrected in S38: measured in d units its error is 0.109,
+smaller than L6's 0.143, and the 2.57 m is that error multiplied by a depth-law gain of 19.7 m per unit d. The model is not
+uniquely bad on S15; the scene's law amplifies everyone by twenty. Our arm is still eight times better there in d units, so
+the verdict stands, but the "wide-range exclusion" proposed below was aimed at the wrong thing — see S38 §3.)*
 
 ## A truth-free confidence for the model, which does work
 
@@ -149,8 +149,9 @@ construction this project has falsified six times already.
 
 ## Caveats, stated plainly
 
-- 800×450 is resized to 518² and back, which costs exactly the texel-scale detail our band is measured at. Every number
-  above handicaps the model.
+- 800×450 is resized to 518² and back. *(S38 §4 tested this and it is not a handicap: an aspect-preserving letterbox
+  changes L6 by nothing and makes L5 worse. The horizontal downsample is only 1.54× and vertically it is an upsample. This
+  caveat was overstated.)*
 - The kit is synthetic and the model was trained on real photographs composited with real objects.
 - One model, one encoder, CPU, three hand-built mask arms. The generative variant (Amodal-DepthFM) was not run.
 - No picture was run, because the pictures have no truth; the instrument works on them and would be descriptive only.

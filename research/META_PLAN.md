@@ -511,3 +511,15 @@ the single next sprint, because eleven sprints of measurement have passed since 
 reimport plus one real inpaint round trip, taking R6's contract change (ask for depth back as well as colour, asymmetric
 masks); **Phase C** decide the sheet model's port by an on-screen A/B on four pictures, one day to decide a weeks-long port;
 **Phase D** the amodal prior for the sunflowers only, blocked on an arm-side confidence and gated behind A and B.
+
+**S38 (2026-09-20).** Phase D run (`research/S38_phase_d.md`, `bleed/armconf.py`). **Delivered:** an arm-side confidence.
+`reach` -- the texel's distance from its owning sheet's own visible patch over that sheet's extent E, the ratio §30 uses as a
+gate, here as a degree -- is monotone in the arm's error in both scenes (L5 0.000 → 0.549, L6 0.000 → 0.091), needs no truth
+and no constant. **Not delivered:** a rule. The crossing against the model sits in a different place per scene (L5 swaps from
+the second quintile, L6 never), so choosing needs a scene-level gate, and that would be two thresholds fitted to five scenes
+with one positive example; stopped rather than fit it. **Two corrections to S36:** S15's 2.57 m is the depth law amplifying a
+normal error (0.109 in d units, smaller than L6's 0.143, times a gain of 19.7), not a distinctive model failure -- which also
+means the kit's METRE score varies twenty-fold in amplification across scenes and a score in d units or visible steps would
+compare them on equal terms; and the 518² resize is not a handicap (aspect-preserving letterbox: L6 unchanged, L5 worse).
+Next for Phase D, if resumed: three or four more L5-regime scenes (~20 min of truth each) to turn the scene gate into a
+measurement. Phases A and B still come first.
