@@ -24,7 +24,14 @@ from scipy import ndimage
 
 ADA = '/tmp/claude-0/-home-user-moebius/989b3965-28fd-58c7-96b5-b4b22c709919/scratchpad/ada'
 ap = argparse.ArgumentParser(); ap.add_argument('scene'); ap.add_argument('probe'); ap.add_argument('occ')
-ap.add_argument('--arms', default='occ,collar,frame'); A = ap.parse_args()
+ap.add_argument('--arms', default='occ,collar,frame')
+# S39's precursor: how much of the model's work is the COLOUR doing? If little, a depth-only model trained on the kit is
+# viable for this project's pictures (paintings, where a colour-trained network has a domain gap and a depth map does not).
+#   rgb    the scene's own colour (the S36 arm)
+#   grey   a flat mid-grey frame: the model keeps the observation depth and the mask and loses the image entirely
+#   depth  the observation depth replicated into three channels: what a depth-only model would see in place of a photograph
+ap.add_argument('--image', default='rgb', choices=['rgb', 'grey', 'depth'])
+A = ap.parse_args()
 K = '/home/user/moebiusv2/harness/truthkit/out'; S = A.scene
 meta = json.load(open(f'{A.probe}/meta.json')); pw, ph = meta['pw'], meta['ph']; outer, pn = meta['outer'], meta['pn']
 band = np.fromfile(f'{A.probe}/disocc.u8', np.uint8).reshape(ph, pw) > 0
@@ -61,6 +68,8 @@ from src.models.amodalsynthdrive.dav2 import AmodalDAv2
 torch.set_grad_enabled(False)
 model = AmodalDAv2(encoder='vitl', pretrained=False).from_pretrained('Zhyever/Amodal-Depth-Anything-DAV2', strict=True).eval()
 rs = Resize(size=(518, 518), interpolation=InterpolationMode.NEAREST)
+if A.image == 'grey': rgb = np.full_like(rgb, 128)
+elif A.image == 'depth': rgb = np.repeat((obs_n * 255).round().astype(np.uint8)[..., None], 3, -1)
 rgb_ts = rs(torch.tensor(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255)
 obs_ts = rs(torch.tensor(obs_n).unsqueeze(0).unsqueeze(0).float())
 t = band & np.isfinite(dT)
@@ -71,10 +80,10 @@ for name, m in masks.items():
     p = F.interpolate(pred.squeeze().unsqueeze(0).unsqueeze(0), (ph, pw), mode='bilinear', align_corners=False).squeeze().numpy()
     d_pred = np.clip(p, 0, 1) * rng + dmin                       # back into the app's d by the observation's own scale and shift
     e = np.abs(depth_of_d(d_pred) - dT)
-    row = f'  mask={name:6s}: whole band |e| median {np.nanmedian(e[t]):.4f} m'
+    row = f'  image={A.image:5s} mask={name:6s}: whole band |e| median {np.nanmedian(e[t]):.4f} m'
     for c, nm in ((2, 'bg'), (3, 'thing'), (4, 'own side'), (5, 'own interior')):
         mm = t & (cT == c)
         if mm.sum() >= 200: row += f' | {nm} {np.nanmedian(e[mm]):.4f} (n {int(mm.sum())})'
     print(row)
     print(f'     predicted d in the band p10/50/90 {np.percentile(d_pred[band], [10, 50, 90]).round(3)}; the truth there, as d p50 {np.nanmedian(d_obs[band]):.3f} (occluder) ')
-    np.save(f'{A.probe}/amodal_{name}.npy', d_pred.astype(np.float32))
+    np.save(f'{A.probe}/amodal_{name}{"" if A.image == "rgb" else "_" + A.image}.npy', d_pred.astype(np.float32))
