@@ -395,3 +395,12 @@ order's tiers) built and falsified: a maximum over hundreds of facet planes is b
 band 55.6 → 3.5 % sky-valued, the troll 77 % at his own depth. The §42 nearest-entry prior stands. Both picture instruments
 that held the measured arm (troll, head rows) are retired; next: the plate arm against the data-relative instruments on all
 pictures with the kit as the bar, and the arm decision.
+
+**S35 §47 (2026-09-20).** One generic instrument for the pictures (`bleed/ringfill.py`: the fill against the hole's own
+line lips), calibrated on the kit: where the hidden surface is the lip's continuation it orders the arms as the truth does,
+and on S15 it inverts (continuation texels carry 6.7–8.6 m of error; the arm with the lowest continuation share is nearest
+the truth). No picture instrument is a bar; the kit alone is. Found on the way: "unreached" has meant unowned, and an unowned
+band texel keeps the occluder's depth (a clone by construction; L1 48 % of the band, the troll 17 %). Decision: the plate arm
+`wrap + reach-group + group-plate + ramp + crease + group-prior` is the measured arm (kit: equal or better everywhere but S2
++0.004 m; S15 0.275 m against 8.12). Next: the unowned texel's fall-back = the far lip, not the occluder; S2's sky-side pull;
+the sunflowers' 7 % surface clone.

@@ -2112,3 +2112,75 @@ reach-group` -- but the two instruments that kept it there are retired, and the 
 the data beside the hole: `trollfill2`, `headfill2`, and vermeer's wall rows (§39). The arm to measure against them across
 the pictures, with the kit as the bar, is `wrap + reach-group + group-plate + ramp + crease + group-prior`; that
 measurement, and the arm decision it supports, is the next item.
+
+## 47. One instrument for the pictures, calibrated on the kit: the lip has no authority either; the arm decision (user: "continue", 2026-09-20)
+
+**The instrument.** `bleed/ringfill.py`: per band texel, the first visible texel along its row and its column in each
+direction; those behind the texel's occluder (dQ at a band texel is the occluder's stretched depth; behind = d < dQ − 2 steps)
+are its far LIPS, one to four values, and a fill is CONTINUATION within [min lip − step, max lip + step], BEYOND when deeper,
+NEARER when nearer, CLONE within three steps of the occluder (a subset of nearer); lips whose median is sky (d < 0.02) are
+reported apart. A first form took the 64 nearest visible texels behind the occluder within 120 texels as a two-dimensional
+ring: on vermeer that ring's median was d 0.345 where the wall behind the milkmaid is 0.005–0.009 — the table and the
+foreground, behind her but not behind the hole, filled it, and 90 % of every arm's fill read as "beyond". The ring must be the
+hole's own far lip, along the line, as the band is drawn.
+
+**Two facts the instrument turned up on the way.** (1) "Unreached" (`who` = −1) has meant, since §38, *no sheet owns the
+texel*, not a hole: `ff = dQ.copy()` before the reached texels are written, so an unowned band texel keeps the OCCLUDER's
+depth — a clone by construction. Holes are 0.0 % on every picture and arm; on L1 48 % of the band under every sheet arm is
+unowned (truth |e| there 0.014 m against 0.010 m on the owned texels: L1's layers are close), and on the troll the 17 %
+unowned under the plate arm is 16 points of his own depth. (2) Owned-and-nearer is the sheet arms' picture fault, unowned-
+and-clone the construction's; the two were one number before.
+
+**Calibration against the kit.** The instrument's own bar — the lip itself as the fill, scored against the first hidden
+layer — and each arm's truth error beside its continuation share:
+
+| scene | lip as fill, surface / sky lips | RG2: cont % → truth | RW → truth | RWC3 → truth | RWCPb → truth |
+|---|---|---|---|---|---|
+| C3 | 0.000 / – | 100 → 0.000 | – | 100 → 0.000 | 99 → 0.000 |
+| C2 | 0.008 / 0.000 | 17 → 0.005 | 57 → 0.025 | 99.5 → 0.001 | 99.5 → **0.000** |
+| L2 | 0.204 (surface, 29 % of it) / 0.000 | 100 → 0.000 | 99 → 0.000 | 100 → 0.000 | 100 → 0.000 |
+| L4 | 0.011 / 0.000 | 72 → 0.031 (surface) | 86 → 0.004 | 86 → 0.004 | 88 → **0.002** |
+| L1 | 0.017 / 0.087 | 22 → 0.014 | 27 → 0.010 | 28 → 0.010 | 28 → 0.011 |
+| S2 | 0.000 / 0.000 | 100 → 0.000 | 22 → 0.003 | 23 → 0.003 | 70 → 0.004 (sky side 0.037 on 46 %) |
+| S9 | – / 0.000 | 100 → 0.000 | = | = | = |
+| S26 | 0.000 / 0.000 | 99 → 0.000 | = | = | = |
+| S15 | **4.67 / 8.56** | 95 → 8.12 (cont texels 8.55) | 59 → 1.35 | 59 → 1.33 | 46 → **0.275** (cont texels 6.66, nearer 0.16) |
+
+Where the hidden surface is the lip's continuation (C2, C3, L2's sky, L4, S2, S9, S26: lip-as-fill 0.000 m) the instrument
+orders the arms as the truth does. Where it is not (S15: the lip is the sky or the near wall and the truth is the ground and
+the far wall, 4.7–8.6 m away; L1 to a lesser degree) it INVERTS: S15's continuation texels carry 8.55 m of error under the
+measured arm and 6.66 m under the plate arm, its nearer texels 0.08–0.16 m, and the arm with the LOWEST continuation share is
+the one nearest the truth. The instrument reads the lip hypothesis, and only the kit says which scenes obey it. This is the
+third instrument in three sections (§45 depth bands, §46 the sky bar, now the lip) found to encode a hypothesis about what is
+behind; there is no fourth to try, because any picture instrument must assume what the truth would show. On the pictures the
+instrument is a description, and its hypothesis-free columns are two: holes (none) and clones.
+
+**The pictures under it** (surface lips: cont / beyond / nearer (clone); sky lips: cont / beyond / nearer; unowned):
+
+| picture | RG2 (measured arm) | RW | RWC3 | RWCPb (plate arm) |
+|---|---|---|---|---|
+| sunflowers, surface | 73 / 26 / 0.5 (0) | 16 / 61 / 23 (3) | 36 / 26 / 38 (8) | 59 / 20 / 21 (7) |
+| sunflowers, sky · unowned | 99.9 / 0 / 0 · 0 % | 16 / 71 / 13 · 1 % | 14 / 55 / 31 · 8 % | 78 / 3 / 19 · 6.5 % |
+| vermeer, surface | 47 / 45 / 8 (1) | 33 / 31 / 36 (6) | 51 / 41 / 8 (6) | 42 / 48 / 10 (7) |
+| vermeer, sky (the wall) · unowned | 93 / 1 / 6 · 0 % | 18 / 24 / 58 · 3 % | 22 / 29 / 49 · 3 % | 67 / 23 (by 0.8 step) / 10 · 3 % |
+| troll, surface | 18 / 6 / 76 (18) | 22 / 28 / 50 (15) | 30 / 18 / 53 (23) | 21 / 17 / 62 (21) |
+| troll, unowned | 0.2 % | 12 % | 20 % | 17 % |
+| starwatcher, surface | 62 / 38 / 0.3 (0) | 21 / 6 / 74 (24) | 61 / 16 / 23 (2) | 64 / 19 / 17 (2) |
+| starwatcher, sky (the plain) · unowned | 25 / 0 / 75 · 0 % | 67 / 0 / 33 · 18 % | 42 / 0 / 58 · 2 % | 81 / 0 / 19 · 2 % |
+
+Read with the kit's calibration in mind: the measured arm's "beyond" on the sunflowers' surface lips (26 %) is the x-ray
+§46 measured beside the head, and its "nearer" on the troll (76 %, 18 % clone) is the skin; the plate arm's "beyond" on
+vermeer's wall is 0.8 step deep, within the quantum; on starwatcher the plate arm is the only one that continues the plain
+(81 % against 25 %). On the troll neither arm continues the forest: the measured arm fills him with his own surface's sheet,
+the plate arm with the fall-back on 17 % of his footprint it leaves unowned.
+
+**The arm decision.** The kit is the bar, and on the kit the plate arm `wrap + reach-group + group-plate + ramp + crease +
+group-prior` is equal to or better than `comp + reach-group` on every scene but S2 (0.004 m against 0.000: the prior pulls the
+sky-side fill 0.037 m nearer on 46 % of it), and on S15 it is the only arm within a metre of the truth (0.275 m against 8.12).
+The two picture instruments that kept the measured arm in place were the measured arm's own behaviour written into a bar
+(§45, §46), and the instrument that replaces them has no authority where the arms disagree. **The plate arm is the measured
+arm from here.** Its named costs, in the order to take them: (1) the troll's 17 % unowned footprint, filled with his own
+depth by construction — the fall-back for an unowned texel should be the far lip, not the occluder (hypothesis-free: an
+occluder's depth is the one value a band texel cannot have), measured on L1 (48 % unowned) and the troll; (2) S2's sky-side
+pull under the prior, 0.037 m on half its sky texels; (3) the sunflowers' 7 % clone on surface lips. The instrument stands as
+the pictures' description; the kit alone decides.
