@@ -428,3 +428,10 @@ measured offline and falsified: L4 changed texels 0.000 → 0.064 m (background 
 one), L1 the same split. The curated nine-object map fails the other way (unowned 28 %, the head's band at the head's depth:
 the group plate spans the near flowers). The sunflowers need a person's object map and a background group that excludes the
 near flowers; not an item for the far field.
+
+**S35 §52 (2026-09-20).** The object map measured on the kit: L2 (the sunflowers' twin) reads 0.000 m with its truth map,
+0.180 m with three near heads unlabelled (an unlabelled head is the ground's own surface, its plane wins behind the big head),
+0.000 m with the ground over-segmented (flat cells do not wrap). On the sunflowers a click stand-in (curated heads + near auto
+segments) behaves like the curated map: the near flowers are not auto segments; without the field patches' labels DA3's ramps
+join them to the field. Both picture failures are one dependence on labels the maps do not provide. Measured arm unchanged;
+the sunflowers recorded as out of the far field's reach; an L5 graded field would hold the auto-map failure in the kit.

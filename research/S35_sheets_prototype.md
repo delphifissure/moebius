@@ -2320,3 +2320,38 @@ more often than wrong. What the picture needs is the object map the app already 
 heads, leave the field), and then a background group whose plate does not span the near flowers — the join law's business
 (§38's runs, §39's creases), measured on that map. The tier dump and `skylast.py` stay as the instrument; `sheets_info.npz`
 now carries `comp` (each sheet's component) and the rim texels (`rimIdx`/`rimPtr`), which §50's first analysis lacked.
+
+## 52. The object map, measured on the kit: L2 under three maps, and why no map the sunflowers have fixes them (user: "continue", 2026-09-20)
+
+**L2 is the sunflowers' kit twin** (§29: thin disc heads on stems, a big near head, a ground, a sky wall) and the measured arm
+reads 0.000 m on it with its truth object map. The map hypothesis of §51 was tested there with no new bake — three maps into
+the same probe (`--mask`):
+
+| L2 object map | things | truth median | surface lips cont / nearer | what went wrong |
+|---|---|---|---|---|
+| truth (every head, stem and leaf labelled) | 28 | **0.000 m** | 100 / 0 % | – |
+| incomplete: plants 1, 2, 5 (the heads nearest the big one) unlabelled | 20 | **0.180 m** | 25 / 75 % | an unlabelled head joins the ground's group (its stem is a continuous path to the ground); its sheet is a background SURFACE, not weak; its plane at d 0.38 wins behind the big head over the ground and sky wall (34 160 texels, fill 0.11 m where the truth is 0.64 m) |
+| over-segmented: the ground cut into twelve cells, each labelled a thing | 36 → 27 | 0.000 m | 100 / 0 % | none: a cell of a smooth ground has no stepped front, the wrap test rejects it as a thing, and the labels cut nothing that matters |
+
+Labelled, the same head is a thing, its march behind the big head is open, it goes to the hedge tier and the ground and sky
+show: right. Unlabelled, it is the ground's own surface continued: wrong by 0.18 m in the median over the whole band. The
+two-sided rule that §51 found under the sunflowers' x-ray is the rule that makes L2 exact, and its price is that every near
+object must carry a label. The over-segmented map was harmless on L2 because a flat ground's pieces do not wrap; the
+sunflowers' field pieces wrap because the field is graded (a piece stands 0.05 in front of the field behind it), so the
+picture's auto-map failure has no twin in the kit yet — a graded, clumpy field (an L5) would hold it.
+
+**The sunflowers under a person's map, stood in for.** The curated nine heads plus every SAM auto segment nearer than d 0.25
+(the near flowers; a construction for this test only): eleven objects, and the result is the curated map's (unowned 27.5 %,
+the head's band at the head's depth, surface lips clone 27 %). The near flowers around the big head (rims at d 0.36–0.45 in
+the §51 trace) are not SAM auto segments at all. Under the auto map they were things because the field pieces' LABELS cut
+the field into components and left them as depth components of their own, which wrap; without those cuts DA3's silhouette
+ramps join them to the field, and they are the field's own surface — L2's unlabelled head, with a ramp for a stem. So: the
+auto map labels the field's patches (things that should be surface: the x-ray, §51), and any map a person makes by clicking
+heads leaves the near flowers as surface (things that should be things: clones and 27 % unowned). The two failures are one
+dependence, and the kit puts a number on the second (0.180 m for three missing labels out of seven).
+
+**Standing.** The measured arm is unchanged. The sunflowers are the picture the arm cannot do with any map it has, for a
+reason the kit measures; what would move it is upstream of the far field — a label for every near flower (SAM auto's
+boxes were 91 segments and still missed them) or a join law that does not carry a near object into the ground's surface
+along a ramp (the S33/S34 silhouette-ramp question). Neither is this note's construction. Recorded; the next items are the
+unowned fall-back as the object layer's question (§48) and the standing 16-bit item.
