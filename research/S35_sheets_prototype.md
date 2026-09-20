@@ -2528,3 +2528,53 @@ full map: right for the things (class 3 0.52 → 0.04, class 4 0.59 → 0.01, cl
 the kit table with its two maps. The open problem is now stated as sharply as the kit can state it: the two-sided rule needs to
 know whether a thing is an occluder or the far side, and neither the wrap test (which is right about both) nor the far field
 can tell. That is the same question as §48's fall-back and §52's labels, and it belongs to the object layer.
+
+## 57. Can the far field tell an occluder from the far side? Two discriminators measured, both refuted (user: "keep going", 2026-09-20)
+
+§56 left the problem stated: the two-sided rule sends a thing's open march to the hedge tier, which is right when the thing is
+an occluder standing in front of what is revealed (L5's clumps) and wrong when the thing IS what is revealed (L6's forest,
+the sunflowers' field). Sky-last — always prefer the demoted thing over the sky — is falsified on four scenes. Before handing
+the question to the object layer for a fourth time, two observables that might separate the cases were measured.
+
+**How big the contested population is.** Per band texel, the main tier's winner against the best tier-two candidate that is
+nearer than it; with the kit's truth, whether taking the tier-two candidate would HELP (its error smaller by more than 5 mm)
+or HURT. It is close to a coin toss on every scene:
+
+| scene / map | contested texels | tier two helps | tier two hurts |
+|---|---|---|---|
+| L6, figure only | 29 280 | 9 323 (32 %) | 19 752 (68 %) |
+| L6, every tree labelled | 36 708 | 17 662 (48 %) | 18 983 (52 %) |
+| L5, every clump labelled | 32 878 | 13 449 (41 %) | 18 937 (58 %) |
+| L4 | 59 758 | 28 661 (48 %) | 30 529 (51 %) |
+
+So neither the present rule (always the main tier) nor sky-last (always tier two) can do better than about half; the question
+is whether anything visible tells the halves apart.
+
+**Discriminator 1: the hole's own far lip.** If the lip beside the hole is forest, trust the demoted forest; if it is sky,
+trust the sky. Refuted before building: on L6's thing class — the hidden forest, the exact population at issue — the lip
+itself as the answer is **0.450 m** against a truth depth of 0.183 m, no better than the arm's own 0.441 m, because the
+forest is porous and the lines escape between the crowns to the sky wall. On L5's thing class the lip is 0.247 m. The lip is
+sky precisely where the problem is.
+
+**Discriminator 2: how many demoted things agree.** A forest behind a figure should have many independent tree sheets
+reaching the same texel; a speck behind a head should have one. Counted in the solver (`nH` in the tier dump: distinct
+tier-two candidates per texel) and compared between the help and hurt populations:
+
+| scene / map | nH where tier two helps, p25/50/75 | where it hurts | hurt texels at or above the help median |
+|---|---|---|---|
+| L6, figure only | 3 / 5 / 7 | 2 / 4 / 5 | 36 % |
+| L6, all labelled | 2 / 3 / 5 | 2 / 2 / 4 | 48 % |
+| L5 | 2 / 3 / 5 | 3 / 3 / 5 | **77 %** |
+| L4 | 7 / 9 / 11 | 5 / 8 / 10 | 39 % |
+
+The medians differ by at most two candidates and the distributions overlap by a third to three quarters — on L5 the hurt
+population is if anything the denser one. No threshold on this count separates the cases. Refuted (rule 7); the counter stays
+as instrumentation in the tier dump, the rule is not built.
+
+**Where this closes.** Three constructions have now been measured against the kit for this one question — sky-last (§51, four
+scenes), the far lip (here), the agreement count (here) — and the contested population stays a coin toss. The information that
+would settle it is not in the depth field: it is whether the thing in front of the hole has anything of its own behind the
+occluder, which is exactly what a completed object layer supplies (S27: the object at its own depth with its own back). The
+one untested avenue inside the far field is colour — the forest behind the figure looks like forest — and colour belongs to
+the plate, not to this prototype. **The far field's part of this question is finished; the answer has to come from the object
+layer, and §48's fall-back, §52's labels and §56's demotion are all the same request to it.**

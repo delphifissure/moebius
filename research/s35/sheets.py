@@ -1577,7 +1577,8 @@ _traceT = (lambda t: int(t[0]) * pw + int(t[1]))(os.environ['TRACE_TEXEL'].split
 def build(domains, label):
     tb = time.time(); _prof = {'geo': 0.0, 'val': 0.0, 'gate': 0.0, 'order': 0.0}
     best = np.full(N, -np.inf); second = np.full(N, -np.inf); who = np.full(N, -1, np.int32)
-    bestH = np.full(N, -np.inf); whoH = np.full(N, -1, np.int32)   # --evidence: the hedges' own order, used only where no fitted sheet reaches
+    bestH = np.full(N, -np.inf); whoH = np.full(N, -1, np.int32)
+    nH = np.zeros(N, np.int32)   # S35 §57: how many DISTINCT tier-two candidates reach each texel (a forest agrees, a speck does not)   # --evidence: the hedges' own order, used only where no fitted sheet reaches
     ownD = DISP.ravel(); ownT = TOL.ravel()
     for s in (np.argsort(groupOf, kind='stable') if A.faces else range(nS)):
         s = int(s); dom = domains[s]
@@ -1638,15 +1639,15 @@ def build(domains, label):
                     # petals and the dress behind the milkmaid: sunflowers 0/211 rows sky, vermeer v jumps 3 339 -> 36 754; removed)
                     same &= ~np.isin(d, domSame[s])
                 if same.any():
-                    ds = d[same]; vs = v[same]; bh = bestH[ds]; updh = vs > bh; bestH[ds[updh]] = vs[updh]; whoH[ds[updh]] = s
+                    ds = d[same]; vs = v[same]; bh = bestH[ds]; updh = vs > bh; bestH[ds[updh]] = vs[updh]; whoH[ds[updh]] = s; nH[ds] += 1
                     d = d[~same]; v = v[~same]
         if (A.twosided or A.twosided_all) and (weakArr is not None or len(weakSet)):
             wk = weakArr[d] if weakArr is not None else np.isin(d, weakSet)
             if wk.any():
-                dw = d[wk]; vw = v[wk]; bh = bestH[dw]; updh = vw > bh; bestH[dw[updh]] = vw[updh]; whoH[dw[updh]] = s
+                dw = d[wk]; vw = v[wk]; bh = bestH[dw]; updh = vw > bh; bestH[dw[updh]] = vw[updh]; whoH[dw[updh]] = s; nH[dw] += 1
                 d = d[~wk]; v = v[~wk]
         if isHedge:
-            bh = bestH[d]; updh = v > bh; bestH[d[updh]] = v[updh]; whoH[d[updh]] = s; continue
+            bh = bestH[d]; updh = v > bh; bestH[d[updh]] = v[updh]; whoH[d[updh]] = s; nH[d] += 1; continue
         # nearest shows: update best / second
         _prof['gate'] += time.time() - _t0; _t0 = time.time()
         b = best[d]; upd = v > b
@@ -1666,7 +1667,7 @@ def build(domains, label):
     print('   build profile: ' + ', '.join(f'{k} {v:.1f}s' for k, v in _prof.items()))
     reached = np.isfinite(best) & band.ravel()
     if os.environ.get('TIER_DUMP'):   # S35 §51: the hedge/weak tier's winner per texel, for the sky-over-weak instrument
-        whoH.astype(np.int32).tofile(f'{OUT}/whoH_{label}.i32'); np.where(np.isfinite(bestH), np.clip(depth_of_disp(np.where(np.isfinite(bestH), bestH, 0.0)), 0, 1), -1.0).astype(np.float32).tofile(f'{OUT}/bestHd_{label}.f32')
+        whoH.astype(np.int32).tofile(f'{OUT}/whoH_{label}.i32'); nH.astype(np.int32).tofile(f'{OUT}/nH_{label}.i32'); np.where(np.isfinite(bestH), np.clip(depth_of_disp(np.where(np.isfinite(bestH), bestH, 0.0)), 0, 1), -1.0).astype(np.float32).tofile(f'{OUT}/bestHd_{label}.f32')
     print(f'[{label}] reached {int(reached.sum())} of {int(band.sum())} band texels ({100 * reached.mean() / max(1e-9, band.mean()):.1f} %); layer 2 on {int((np.isfinite(second) & band.ravel()).sum())}  ({time.time() - tb:.1f}s)')
     return best, second, who, reached
 

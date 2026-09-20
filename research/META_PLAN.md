@@ -461,3 +461,11 @@ demotes the trees that ARE the far side and sky fills), labelling every clump wa
 sheets own 16.3 % of L6's band under the click map and are the whole of the 0.112-vs-0.441 gap, so the troll's 37 % is
 evidence, not clones. Sky-last falsified on a fourth scene. The open problem: the two-sided rule cannot tell an occluder from
 the far side, and the wrap test is right about both.
+
+**S35 §57 (2026-09-20).** Can the far field tell an occluder from the far side? The contested population (main tier vs a
+nearer demoted candidate) is a coin toss on every kit scene: tier two helps 32-48 %, hurts 51-68 %. Two discriminators
+measured and refuted — the hole's far lip (on L6's hidden forest the lip itself is 0.450 m, no better than the arm, because
+the forest is porous and the lines escape to sky) and the number of agreeing demoted candidates (help and hurt distributions
+overlap 36-77 %). With sky-last (§51) that is three constructions against the same question. The far field's part is finished;
+the answer must come from the object layer, which §48, §52 and §56 all ask for. Colour is the one untested avenue and belongs
+to the plate.
