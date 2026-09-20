@@ -416,3 +416,7 @@ surfaces now give no prior (rule 1). Kit: S2 0.004 → 0.000, S15 0.275 → 0.26
 continued, starwatcher and the troll flat. The sunflowers' partial field beside the big head (§46) was a two-texel hedge's
 tilted plane and is gone; the rows read as the measured arm's. Measured arm: the plate arm with the hedge-free prior (RWCPh).
 Next: the sunflowers' 7 % surface clone, by owner.
+
+**S35 §50 (2026-09-20).** The sunflowers' 7 % surface clone by owner: 71 % is the unowned fall-back (§48, the near flowers'
+band at the frame's foot), the rest the flowers' own small fragments (1.9 %, sheets of 23–80 rims). Not an item. Open in
+order: the unowned fall-back as the object layer's question; the field beside the big head as a reach question; 16-bit.

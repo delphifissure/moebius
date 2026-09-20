@@ -2254,3 +2254,19 @@ than the sky's beside the head; continuing the field there is a reach question (
 (RWCPh): kit S2 0.000, S15 0.264, L1 0.0112, the rest 0.000; vermeer's wall and starwatcher's plain continued; the troll's
 17 % unowned footprint (§48) and the sunflowers' 7 % surface clone remain its named costs. Next: the sunflowers' surface
 clone — which sheets own the 7 %, and whether they are the field's own fragments marching into the flowers' band.
+
+## 50. The sunflowers' surface clone, by owner (user: "continue", 2026-09-20)
+
+Under the measured arm (RWCPh) the sunflowers' band has 91 283 texels with a surface lip; 6 276 (6.9 %) are clones (within
+three steps of the occluder). **71 % of them are unowned** — the fall-back of §48, the occluder's depth by construction —
+and they sit in the lowest rows of the frame (rows 502–667, the near flowers' band; occluder d 0.175, far lip 0.085; 87 %
+of them have a lip). Of the "nearer" texels (20.6 %), 24 % are unowned. The owned clones (1 800, 1.9 % of the surface-lip
+texels) are spread over small fitted thing sheets — 23 to 80 rims each, rim depths 0.23–0.41, the flowers' own fragments —
+none above 262 texels. There is no single construction behind the 7 %: five points of it are §48's question (background or
+the occluder's own body, the object layer's to answer) and two points are the flowers' fragments marching a few texels into
+their own band, below the size at which a rule would be measurable. Recorded; not an item.
+
+**Where the day ends.** The measured arm is `wrap + reach-group + group-plate + ramp + crease + group-prior` with the
+hedge-free prior; the kit reads S2 0.000, S15 0.264, L1 0.0112, the rest 0.000; the pictures are described by
+`bleed/ringfill.py` (no authority; the kit decides). Open, in order: the unowned texel's fall-back as the object layer's
+question (§48); the sunflowers' field beside the big head as a reach question (§30, §49); and the standing 16-bit item.
