@@ -376,3 +376,13 @@ sunflowers sky-valued 66 → 38 %). Both removed (rule 7), instruments kept (`bl
 The centroid form stands; starwatcher's far plain stays its known miss, and making it a surface does not fill its band anyway.
 Measured arm unchanged. Next: the troll's data-poor forest groups (when a group plate should yield to the hedge tier), then
 the sunflowers' field facets beside the big head.
+
+**S35 §45 (2026-09-20).** The troll's "data-poor forest groups" measured: the forest plate has 522 k data, a well-posed
+lambda, data 8-69 texels from his footprint, and DA3's forest beside him is a smooth ramp (no step above 0.7 quantum) -- the
+plate continues it behind him. The old troll instrument read the troll's own depth as "forest" and the forest's continuation
+as "gap": the measured arm fills 70 % of his footprint at his own depth (his own sheets in the hedge tier), the crease arm
+without the prior 54 % within the forest's range beside him, 1 % beyond. New instrument `bleed/trollfill2.py`; every earlier
+troll column is to be read accordingly. The §42 prior's below-range values located (facet planes near the far end; not
+zero-residual strips, not over-extrapolation); the plane's reach measured on the group's data built and falsified (vermeer:
+the crease reads as model error; a curved field's facets are creases too). Prior stands as §42; measured arm unchanged.
+Next: the sunflowers' field facets beside the big head (the same plane-versus-field question, from the plate's side).

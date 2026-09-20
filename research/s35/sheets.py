@@ -1464,11 +1464,28 @@ if A.group_plate and A.patches:
                 Xs = (st_ % pw).astype(float); Ys = (st_ // pw).astype(float); Vs = DISP.ravel()[st_]
                 Am_ = np.stack([np.ones(len(st_)), Xs, Ys], 1); c_, *_ = np.linalg.lstsq(Am_, Vs, rcond=None); r_ = Vs - Am_ @ c_
                 sg2_ = float(np.mean(r_ ** 2)) if len(st_) > 3 else 0.0
+                # (S35 §45: flooring this residual at the grid's quantisation noise, as tps_sheet floors sigma, was tried for the
+                # troll's forest plate, which ran below the far end of the range behind him; it changed nothing -- the 16-bit quantum
+                # is a hundredth of the run's step -- and the below-range values come from steep facet planes near data that lie 25
+                # quanta above the far end, a dozen texels from their entries, not from zero-residual strips. Removed.)
                 try: Ci_ = np.linalg.pinv(Am_.T @ Am_)
                 except Exception: Ci_ = np.zeros((3, 3))
                 Ad_ = np.stack([np.ones(int(sel_.sum())), (dom_[sel_] % pw).astype(float), (dom_[sel_] // pw).astype(float)], 1)
                 se2_[sel_] = sg2_ * np.einsum('ij,jk,ik->i', Ad_, Ci_, Ad_)
             ps_ = np.sqrt(ps_ ** 2 + se2_)
+        dEnt_ = np.hypot(dom_ % pw - ents[j_] % pw, dom_ // pw - ents[j_] // pw)
+        # THE PLANE'S REACH MEASURED ON THE GROUP'S DATA, tried and FALSIFIED (S35 §45, rule 7). The se above is the plane's NOISE error
+        # and on a 16-bit estimator's map it is a fraction of a step everywhere (se / step median 0.5 across the troll's footprint), so
+        # the budget never bites: behind the troll the prior held the forest plate to facet planes that cross the far end of the range a
+        # dozen texels from their entries (27 % of his footprint below the far end). The plane's MODEL error was then measured on the
+        # group's other visible texels (|error| growing with the distance from the sheet's entries at a rate a, least squares through
+        # the origin; (a r) added to the budget). Troll: continuation 38.6 -> 45.0 %, beyond 15.7 -> 7.3 % (the arm without the prior:
+        # 53.8 / 1.1). Vermeer: the wall's plane is measured against the FLOOR's texels -- the group is wall + floor by design -- so the
+        # crease reads as the wall plane's model error and the prior that put the wall behind the milkmaid is weakened (sky-valued
+        # 69.7 -> 52.4 %, lower third 55.6 -> 30.7 %). A curved field's facets pass the meeting test as creases too (the troll's forest:
+        # 405 creases), so no face-level test tells a wall from a facet without a constant. Removed; the §42 budget stands as it was.
+        if os.environ.get('GP_PRIOR_DUMP'):   # S35 §45: the prior per domain texel, for the instrument
+            np.savez_compressed(f'{OUT}/gp_prior_g{int(cjF[members[ss_[0]][0]])}.npz', dom=dom_, pv=pv_, ps=ps_, sheet=sh_, dEnt=dEnt_, se2=se2_, E=np.array([reachOwn[s_] for s_ in ss_]), sheets=np.array(ss_), stripN=np.array([len(strip_of(s_)) for s_ in ss_]), planes=planes[np.array(ss_)])
         return (dom_, pv_, ps_)
     def _gp_job(job):
         g_, ss_, data_, dom_, Rm_, win_ = job

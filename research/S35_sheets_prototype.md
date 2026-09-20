@@ -1969,3 +1969,88 @@ a unit of plain and hills whose horizon runs through its centroid -- stays its o
 remedy is not another statement of wrapping at the unit level but a unit that is not plain-and-hills in the first place
 (the join law puts them together because they meet without a step). Both rules are out of the code (rule 7); the two
 instruments stay. Measured arm: `comp + reach-group`, unchanged.
+
+## 45. The troll's forest groups: the premise was wrong, the instrument was wrong, and the prior's fault is the plane hypothesis (user: "ok continue", 2026-09-20)
+
+**The premise.** Since §37 the troll's plate-arm failure has been carried as "the forest groups' plates have no data", and
+the item was framed as "when a group plate should yield to the hedge tier". Measured today, neither half holds. Under the
+plate arm the troll's footprint (77 074 band texels of his silhouette) is served by the forest's group plate -- group 0:
+198 sheets, 521 844 data texels, 260 800 domain, sigma 7.6e-6, lambda found by the discrepancy principle at rms = sigma,
+no divergence -- and its data are not far: the footprint's texels lie 8 / 31 / 69 texels (p10 / p50 / p90) from the group's
+nearest visible texel. The plate is pinned on every side of him. And the map beside him is not trunks and gaps: along a row
+through the visible forest at his right (row 300, columns 600-800) DA3 reads a smooth monotone ramp from d 0.031 to 0.146
+with no adjacent difference above 0.7 of a quantum (row 420: 1.7). The forest group is one smooth field in the map, and its
+plate is the honest interpolation of that field. The kit's plates read the same way (L1's hidden layer: 98 483 data,
+lambda 1.0e6, rms = sigma; C3 and S2 likewise): the discrepancy principle is not where a forest and a wall differ.
+
+**The instrument.** `trollfill.py` read the footprint's fill in fixed bands: "gap" below d 0.05, "forest" 0.12-0.45,
+"own/near" above 0.45. But the troll's own depth is 0.19-0.35 (p10-p90), inside the "forest" band, and the visible forest
+that touches his silhouette -- the ring of visible texels within six of his footprint, not his, not band -- is d 0.002-0.12
+between his arms (rows 200-400; medians 0.02-0.04), 0.03-0.26 at his waist, 0.13-0.22 at his feet. So a fill at HIS OWN depth
+counted as forest and the continuation of the forest beside him counted as gap. The measured arm's "92 % forest" was that:
+53.5 % of the footprint is owned by his own sheets (thing id 1, join group 7, rim depths 0.13-0.28) -- the same-id guard
+sends them to the hedge tier, and the hedge tier fills wherever no fitted sheet reaches, which under `comp + reach-group` is
+most of him, because the forest's sheets are fragments whose reach law stops them short -- and the rest by a second thing's
+sheets at 0.21-0.28. Seventy per cent of the measured arm's fill behind the troll lies within his own depth range: a clone of
+the occluder, arriving through the tier the guard demoted it to. The new instrument (`bleed/trollfill2.py`) reads the fill
+against the data beside it: per hundred rows, the ring's p10-p90 widened by a step is CONTINUATION, deeper is BEYOND, nearer
+is NEARER, and separately AT HIS OWN DEPTH (within his p10-p90). `bleed/troll_fill_s45.png` shows the five fills.
+
+| arm | continuation | beyond | nearer | at his own depth | fill p10 / p50 / p90 | footprint owned by his own sheets |
+|---|---|---|---|---|---|---|
+| RG2 (measured arm, `comp + reach-group`) | 37.6 % | 5.6 % | 56.8 % | **70.4 %** | 0.150 / 0.250 / 0.339 | 53.5 % |
+| RW (§38 plate arm, no crease, no prior) | 46.1 % | 24.0 % | 29.9 % | 23.1 % | 0.000 / 0.107 / 0.297 | -- |
+| RWC3 (+ crease, §40) | **53.8 %** | **1.1 %** | 45.1 % | 36.1 % | 0.047 / 0.156 / 0.305 | 11.9 % (24 % reached by no sheet) |
+| RWCPb (+ crease + prior, §42) | 38.6 % | 15.7 % | 45.7 % | 55.1 % | 0.000 / 0.213 / 0.317 | 33.0 % |
+| RWCPd (prior with its reach measured, below; removed) | 45.0 % | 7.3 % | 47.7 % | 57.3 % | 0.040 / 0.215 / 0.304 | -- |
+
+Under the crease arm without the prior the forest's plate owns 64 % of the footprint at a median of 0.081 -- the ring
+beside him is 0.02-0.12 -- with 1.1 % beyond it. That is the continuation, and the old instrument called it 13 % gap. Every
+troll column in §37-§43 should be read with this: "gap" was mostly the forest continued, "forest" was mostly the troll.
+
+**The prior's fault, located.** With the §42 prior the forest plate had 27.5 % of the footprint's prior values, and 29 % of
+its plate values, BELOW THE FAR END of the disparity range (3.48 at p10 against a range of 4.55-6.25; those texels come back
+d = 0, the outer depth), and the crease arm without it had none. Two explanations were tested with a dump of the prior per
+texel (`GP_PRIOR_DUMP=1`, `gp_prior_g<group>.npz`). (1) Zero-residual strips: a short strip of quantised values fits its plane
+exactly, se = 0, full weight -- flooring the residual at the grid's quantisation noise as `tps_sheet` floors sigma changed
+nothing to the texel (the 16-bit quantum is a hundredth of the run's step). (2) Over-extrapolation beyond the sheet's extent:
+no -- the below-range texels lie a median of 13 texels from their entries, 0.12 of their sheets' own extent, and the sheets
+are large (strips of 174-11 390 texels). What they are is steep facet planes near data that lie 25 quanta above the far end:
+sheet 3966 (extent 225, strip 10 771) has a slope of 0.0055 disparity per texel, four quanta per texel, and crosses the floor
+in six; the big forest sheet 0 (47 004 texels) sits at the far end already and its slope of 1e-4 takes it under within its
+own window. The budget's se is a fraction of a step everywhere (se / step median 0.5 across the footprint) because on a
+16-bit estimator's map a face's plane fits its strip to well under a step: the budget measures the plane's NOISE error and
+the harm is its MODEL error -- a facet of a curved field is a tangent, valid only locally -- which the strip's own residual
+cannot see.
+
+**The plane's reach, measured on the group's data: built and falsified.** For each sheet the plane's absolute error on the
+group's other visible texels was regressed on the distance from the sheet's entries (least squares through the origin,
+rate a; (a r) added to the budget at a domain texel r from its entry): a wall's plane predicts the wall at any distance, a
+facet of a curved field does not. On the troll it helped (continuation 38.6 → 45.0 %, beyond 15.7 → 7.3 %, the fill's p10
+back above the far end) without reaching the arm without the prior. On vermeer it broke the prior's own case: the wall group
+is wall + floor by design (§37), so the wall's plane is measured against the floor's texels, the crease reads as the wall
+plane's model error, and the prior that put the wall behind the milkmaid is weakened -- sky-valued 69.7 → 52.4 %, the lower
+third 55.6 → 30.7 %, fill median 0.009 → 0.017. Measuring only across boundaries the meeting test (§39) does not call
+creases would not repair it: a curved field's facets pass that test as creases too (the troll's forest group has 405), which
+is what a curved surface is at the step's resolution. No face-level test tells a wall from a forest facet without a
+constant. Removed (rule 7); the §42 budget stands as it was, with its record now correct: right where the nearest sheet is a
+plane (vermeer's wall, S15's ground), wrong where it is a facet of a curved field (the troll's forest: continuation 53.8 →
+38.6 %; the sunflowers' field: 211 → 163 sky rows beside the big head).
+
+**On the other pictures**, the same three arms under the standing instruments, for the record beside the troll's:
+
+| picture | RG2 (measured arm) | RWC3 (crease, no prior) | RWCPb (crease + prior) |
+|---|---|---|---|
+| starwatcher: sky-valued % / unreached % / fill median | 50.6 / 0.0 / 0.020 | 55.1 / 2.1 / 0.000 | 67.9 / 2.2 / 0.002 |
+| sunflowers: sky-valued % / unreached % / sky rows beside the head of 211 / row jumps > 1 step | 98.3 / 0.1 / 211 / 0 | 38.8 / 8.2 / **211 / 1** | 66.1 / 7.4 / 163 / 23 |
+| vermeer: sky-valued % / lower third % / fill median | 72.6 / 57.6 / 0.009 | 24.9 / 7.4 / 0.065 | **69.7 / 55.6 / 0.009** |
+
+**Where this leaves the item.** The troll is not a data-poor group and the plate need not yield to the hedge tier: the
+forest is one smooth field in DA3's map, the crease arm's plate continues it behind him (54 % of his footprint within the
+range of the forest touching him, 1 % beyond it), and the measured arm does not -- it clones his own depth from his own
+sheets in the hedge tier over 70 % of him. The old troll instrument is retired (kept in `bleed/` for the record). The prior's
+harm on the troll is the plane hypothesis on a curved field, and today's attempt to budget it from the data is falsified by
+the crease; the prior stays as §42 built it, gaining vermeer and S15 and costing the troll and the sunflowers' head rows. The
+measured arm stays `comp + reach-group`, with the note that its troll column was never what it read. What the troll still
+shows of the plate arm is the reach law's cost -- 24 % of his footprint reached by no fitted sheet -- and, for the prior, an
+open question whose answer is not at the face level: whether a group is planes with creases or a curved field.
