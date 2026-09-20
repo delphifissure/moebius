@@ -446,3 +446,10 @@ memory-safe; probe recipe verified on L2). Measured arm: 0.000 m with every clum
 heads 0.061 m short — the picture's x-ray with the ground standing in for the sky), 0.238 m with heads only (clumps merge into
 the ground, the sky wall fills 94 %; the old arm 0.274). Sky-last is wrong on the full map and right on the poor one: the map
 decides, no far-field rule can. Kit changes committed locally in moebiusv2 (not pushed: out of scope).
+
+**S35 §55 (2026-09-20).** Checking §52's near-flower claim (it stands) turned up an unmeasured property: most far rims are
+BAND texels, not visible ones — 40 % sunflowers, 54 % troll, 78 % vermeer, 87–97 % on the kit — sitting a median of 1–11 texels
+inside the band, so most sheets are founded on the app's plate stretch. The clone hypothesis is refuted (such sheets own 0–5.7 %
+of the band except the troll's 37 %, and on L5's poor map they are the better sheets). Requiring a visible rim (SHEETS_VISRIM)
+is falsified: S15 0.264 → 3.26 m, everything else flat. New instrument bleed/bandrims.py. Open: a troll-like kit scene to judge
+the troll's 37 %.

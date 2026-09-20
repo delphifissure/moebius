@@ -365,7 +365,8 @@ print(f'runs: rows {int((np.diff(rsX, axis=1) != 0).sum() + ph)}, columns {int((
 gtex = None
 # ---- 1 far rims (the app's cand(): march along the line beyond the texel's own run; runs that are not behind the texel by more
 # than tol are the occluder's own parts and are skipped; the first run that IS behind (or sky) is the far side, its first texel
-# the rim). A rim may be a band texel (the reveal set holds one texel of the background at the silhouette).
+# the rim). A rim may be a band texel -- and usually IS one (S35 §55: 40 % of rim slots on the sunflowers, 54 % troll, 78 %
+# vermeer, 87-97 % on the kit, a median of 1-11 texels inside the band), so most sheets are founded on the plate's stretch.
 DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 rimOf = {}   # rim -> set of (band texel b, dir)
 def scan_lines(axis):
@@ -645,6 +646,12 @@ preDrop = np.zeros(nS, bool)
 for s in range(nS):
     c_ = compOfSurf[s]; bx = _boxes[c_] if c_ < len(_boxes) else None
     if compSize[c_] < 3 or bx is None or (bx[0].stop - bx[0].start) < 2 or (bx[1].stop - bx[1].start) < 2: preDrop[s] = True
+# S35 §55, FALSIFIED and removed (rule 7): requiring a surface to have at least one VISIBLE rim. A far rim may be a band texel
+# (the scan's comment: "the reveal set holds one texel of the background at the silhouette"), and measurement shows band rims
+# are not the exception but the norm -- 40 % of rim slots on the sunflowers, 54 % troll, 78 % vermeer, 87-97 % on the kit --
+# sitting a median of 1-11 texels inside the band, so most sheets are founded on the app's plate stretch rather than on visible
+# data. Dropping the all-band surfaces (76 of them on S15) costs S15 its canopy behind its own trunk: 0.264 -> 3.26 m, with
+# every other scene flat (S2, C2, L2, L4, L5 0.000; L1 0.0112 -> 0.0113). The stretch at those rims is load-bearing evidence.
 print(f'pre-dropped surfaces (face under three texels or one texel wide): {int(preDrop.sum())} of {nS}')
 expoOf = {}   # S35 §29: per-texel exposure trim for things' sheets under --closure surround (rim depth per sheet)
 _mark = np.zeros((ph, pw), bool); _wmark = np.zeros((ph, pw), bool); _cmark = np.zeros((ph, pw), bool); _smark = np.zeros((ph, pw), bool); domSame = {}

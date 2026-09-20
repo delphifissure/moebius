@@ -2434,3 +2434,46 @@ the named price of the two-sided rule on a field of things. The measured arm is 
 map (0.238 against 0.274). The sunflowers' picture remains what §52 said: a labels question upstream of the far field, and
 L5 is where a candidate answer (a segmentation that labels the heads and every near clump, or a join law that does not carry
 a clump into the ground) can be measured against exact truth before it is tried on the picture.
+
+## 55. Rims that are band texels: the norm, not the silhouette's exception; the visible-rim rule falsified (user: "keep going", 2026-09-20)
+
+**Where this came from.** §52 said the sunflowers' near flowers "are not SAM auto segments at all" and joined the field along
+DA3's ramps. Checking that claim properly: the trace's `sid` is the run's own classifier id, not the SAM png id, and the unit
+that owns most of the head's band — classifier oid 73, rim depths 0.39–0.46 — is indeed unlabelled by SAM auto (0 %), so §52's
+conclusion stands. But the same check turned up a property of the construction that had never been measured: **oid 73 is
+15 530 texels of which 18 are visible and 15 512 are BAND**, and every one of its sheets' rims is a band texel.
+
+**The fact.** Rule 1 takes the far rim to be the first texel of the run behind the band texel along its line, and the scan's
+comment allows that texel to be in the band — "the reveal set holds one texel of the background at the silhouette". That reads
+as a rare edge case. It is the common case (`bleed/bandrims.py`, measured arm):
+
+| scene | rim slots that are BAND texels | their depth into the band, p50 / p90 | surfaces with no visible rim | band texels those own |
+|---|---|---|---|---|
+| sunflowers | 40 % | 3 / 13 | 55 % | 5.7 % |
+| starwatcher | 41 % | 3 / 10 | 65 % | 0.0 % |
+| troll | 54 % | 4 / 11 | 72 % | **37 %** |
+| vermeer | 78 % | 11 / 51 | 81 % | 1.1 % |
+| L4 / C2 / L1 / L2 / L5 | 87 / 91 / 95 / 95 / 96 % | 2–5 / 7–22 | 75–84 % | 0.2 / 0 / 3.4 / 0.2 / 0 % |
+
+A rim eleven texels inside the band is not one background texel at a silhouette; it is the app's plate stretch. **Most of the
+sheet model is founded on the plate's own interpolation rather than on visible data.**
+
+**The hypothesis, refuted.** The natural reading — those sheets are clones and the source of the pictures' clone counts — is
+wrong on the numbers. Surfaces with no visible rim own 0–5.7 % of the band everywhere but the troll, and of what they own only
+1–8 % is within three steps of the occluder. Where the kit can judge them they are not systematically worse: L1 0.042 m against
+0.010 m on 3.4 % of the owned band, L2 0.000 against 0.000, and on L5's heads-only map they are the BETTER sheets — 0.011 m
+against 0.244 m. The troll is the one picture where they carry real weight (37 % of the owned band, fill d 0.257 under an
+occluder at 0.341), and no truth exists there to judge it.
+
+**The rule, built and falsified** (`SHEETS_VISRIM=1`, a surface needs one visible rim or it is dropped): S15 **0.264 → 3.26 m**
+(76 surfaces dropped, and with them the canopy behind its own trunk, which is exactly the configuration whose evidence lives in
+the band); every other scene flat — S2, C2, L2, L4, L5 0.000, L1 0.0112 → 0.0113. Removed under rule 7. The plate's stretch at
+those rims is load-bearing evidence, not noise: a band rim must by construction lie behind the texel it serves, so what it
+carries is the app's own reading of what is behind, and on the kit that reading is right often enough to be worth more than
+the visible-data purity of the sheets it founds.
+
+**Standing.** Nothing changes in the measured arm. Two things are now on the record that were not: most rims are band texels
+(so "one texel at a silhouette" in the scan's comment understates it by two orders of magnitude, and the comment is corrected
+in place), and the troll's band is 37 % owned by sheets with no visible rim — the one place where this property is load-bearing
+on a picture and the kit is silent. A troll-like kit scene (a figure before a forest at graded depths, which L1 approximates
+but with a flat wall behind) would let that 37 % be judged; L5's recipe makes it cheap to build.
