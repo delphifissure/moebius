@@ -502,3 +502,12 @@ establish is a **truth-free confidence for the model**: its median disagreement 
 region orders all five runs by whether to trust it, and per texel (in windows of the band's own half-width) the model's true
 error rises monotonically with it in every scene. What is still missing is the same confidence for the ARM, which is what
 would let either be chosen; that is §57's question one level up.
+
+**S37 plan (2026-09-20).** `research/S37_plan.md`. Item 0, urgent: three commits (L5, L6, the renderer top-K fix) are
+unpushed on moebiusv2 and the rendered truth is gitignored, so ~90 minutes of ray-casting and S36's reproducibility die with
+the container; push to moebiusv2 or vendor into moebius. Then: **Phase A the live pass** (consolidate the measured arms as
+defaults, strip dead arms, the depth-map polarity/range check, S7's ceiling and the sky margin on screen) -- recommended as
+the single next sprint, because eleven sprints of measurement have passed since anything changed on screen; **Phase B** the
+reimport plus one real inpaint round trip, taking R6's contract change (ask for depth back as well as colour, asymmetric
+masks); **Phase C** decide the sheet model's port by an on-screen A/B on four pictures, one day to decide a weeks-long port;
+**Phase D** the amodal prior for the sunflowers only, blocked on an arm-side confidence and gated behind A and B.
