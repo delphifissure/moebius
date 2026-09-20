@@ -2395,3 +2395,42 @@ in the bundle import, not this prototype. (2) The sunflowers (§51–52): a depe
 upstream of the far field. (3) An L5 kit scene, a graded clumpy field, to hold the auto-map failure with exact truth. (4)
 The "standing 16-bit item" carried in §50–52 was the task list's wording for Sprint 6's 16-bit work, which is done
 (LIVE_PASS: the default depth is the DA3 16-bit map, read natively); it is not an open item.
+
+## 54. L5, the graded field with exact truth: the picture's x-ray held in the kit, and what the map does to it (user: "continue", 2026-09-20)
+
+**The scene** (`truthkit/scenes.py` L5, mirrored in `s35/kit/L5_field.py` with the full recipe): L2's heads and stems in a
+field of 161 round clumps resting on the ground in fourteen rows from 0.18 W to 2.5 W back, a sky wall at 4 W; 800 × 450,
+env45 truth (95 eyes, 22 min), probe `L5_16plane` (band 41.6 % of the frame, visible step 1.312e-3). Two object maps from
+the truth: every clump a thing (SAM auto's map) and heads only (`--unlabelled clump`: a person's clicks). The probe recipe
+was first checked on L2 — it reproduces `L2_16plane` texel for texel — and the kit renderer had to be changed to a running
+top-K of hits (L5's 180 primitives stacked over the canvas were 14 GB; the output is identical on L2). Both kit changes
+are committed locally in `moebiusv2` (main), not pushed: that repository is outside this session's scope.
+
+| L5 | map | truth median | background class (66 393) | thing class (21 848) | sky-valued | the sky over a nearer tier-two candidate |
+|---|---|---|---|---|---|---|
+| measured arm | every clump a thing | **0.000 m** | 0.000 | 0.061 (fill d 0.20, truth 0.29) | 56 % | 17 % of the band (72 % things' open marches) |
+| old arm (comp + reach-group) | every clump a thing | 0.000 | 0.000 | 0.062 | 56 % | 21 % |
+| measured arm | heads only | 0.238 | 0.020 (fill d 0.000) | 0.346 | 94 % | 46 % |
+| old arm | heads only | 0.274 | 0.057 | 0.389 | 96 % | 70 % |
+
+**With every clump labelled** the arm is exact on the background — the ground between the clumps continues behind the heads,
+which is the truth there — and six centimetres short on the things behind the heads: the farther clumps' sheets are things
+with open marches, the hedge tier, and the ground's plane shows instead (fill d 0.20 for a truth of 0.29). That is the
+sunflowers' x-ray held in the kit with the ground standing in for the sky: the picture's field has no continuous ground
+between its heads, so what the two-sided rule demotes there leaves nothing but the sky. Sky-last on this map: whole band
+0.000 → 0.000, but the changed texels go from 0.000 to 0.52–0.55 m, because 79–91 % of them have the SKY as their truth
+(L4's verdict again).
+
+**With heads only** the clumps are unlabelled; some become depth components and things by the wrap test (53), the rest join
+the ground through their contact, the ground is no longer one background surface, and the sky wall fills 94 % of the band:
+0.238 m, the background class itself 0.020 m off, the things 0.35 m. Here sky-last would be right — 0.238 → 0.016 m, only
+11 % of the changed texels have sky truth. The same rule the kit rejected on L4, L1 and L5's full map it accepts on L5's
+poor map. There is no ordering of sky and weak sheets that is right on both; the map decides which is right, and a far-field
+rule cannot know which map it was given. This is §52's dependence on labels, now with the auto-map side measured: over- and
+under-labelling each cost the far field what the other saved.
+
+**Standing.** L5 enters the kit table at 0.000 m under the measured arm (its truth map), with the thing class at 0.061 m as
+the named price of the two-sided rule on a field of things. The measured arm is unchanged and beats the old arm on the poor
+map (0.238 against 0.274). The sunflowers' picture remains what §52 said: a labels question upstream of the far field, and
+L5 is where a candidate answer (a segmentation that labels the heads and every near clump, or a join law that does not carry
+a clump into the ground) can be measured against exact truth before it is tried on the picture.

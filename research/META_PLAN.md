@@ -440,3 +440,9 @@ the sunflowers recorded as out of the far field's reach; an L5 graded field woul
 group-prior) against the old one on the kit (S15 8.12 → 0.264 m, S26 0.028 → 0, L4 0.031 → 0.002, L1 0.015 → 0.011, the rest
 0) and the pictures described by ringfill. Open and assigned: the unowned fall-back to the object layer's bundle import; the
 sunflowers to labels upstream; an L5 graded-field kit scene. The "16-bit standing item" was Sprint 6's finished work, not open.
+
+**S35 §54 (2026-09-20).** L5, a graded clumpy field with heads in front, added to the kit with env45 truth (renderer made
+memory-safe; probe recipe verified on L2). Measured arm: 0.000 m with every clump labelled (background exact, things behind
+heads 0.061 m short — the picture's x-ray with the ground standing in for the sky), 0.238 m with heads only (clumps merge into
+the ground, the sky wall fills 94 %; the old arm 0.274). Sky-last is wrong on the full map and right on the poor one: the map
+decides, no far-field rule can. Kit changes committed locally in moebiusv2 (not pushed: out of scope).
