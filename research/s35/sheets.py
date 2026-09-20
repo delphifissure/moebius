@@ -1448,16 +1448,24 @@ if A.group_plate and A.patches:
         if not ents: return None
         ents = np.concatenate(ents); labs = np.concatenate(labs)
         tr_ = cKDTree(np.stack([ents % pw, ents // pw], 1)); _, j_ = tr_.query(np.stack([dom_ % pw, dom_ // pw], 1))
-        sh_ = np.array(ss_)[labs[j_]]
+        # THE LAYERED ORDER'S PRIOR, tried and FALSIFIED (S35 §46, rule 7): a domain texel takes the plane of the group's sheet that would
+        # show there under the layered order -- the nearest plane among the sheets whose discs reach it, fitted sheets before hedges --
+        # instead of the nearest entry's. Meant as the C3 construction (the floor's plane continued upward recedes behind the wall).
+        # Without the tiers the sky group beside the sunflowers' big head took two hedges' planes tilted toward the viewer (211 -> 141
+        # rows under the old head instrument); with the tiers 167. On vermeer the maximum over many facet planes is biased toward the
+        # viewer and a floor facet beats the wall behind the milkmaid (sky-valued 69.7 -> 40.5 %, the band's lower third 55.6 -> 3.5 %);
+        # on the troll the nearest facets are at his own depth (77 % of his footprint at his own depth, from 55 %). Removed.
+        labs_j = labs[j_]
+        sh_ = np.array(ss_)[labs_j]
         pv_ = planes[sh_, 0] + planes[sh_, 1] * (dom_ % pw) + planes[sh_, 2] * (dom_ // pw)
-        stepS = np.array([float(np.median(TOL.ravel()[np.array(members[s_])])) for s_ in ss_]); ps_ = stepS[labs[j_]]
+        stepS = np.array([float(np.median(TOL.ravel()[np.array(members[s_])])) for s_ in ss_]); ps_ = stepS[labs_j]
         if True:
             # THE BUDGET (S35 §42): the prior's weight is 1 / sqrt(step^2 + se^2), se the plane's predicted standard error at the texel from
             # its own strip fit (§17), sigma^2 [1 x y] (A'A)^-1 [1 x y]'. The unweighted form (1 / step everywhere) was tried first and is
             # FALSIFIED (rule 7): S2's floor+box halves are facets and their slabs came back (0.003 -> 0.020 m); budgeted, S2 is 0.004.
             se2_ = np.zeros(len(dom_))
             for k_, s_ in enumerate(ss_):
-                sel_ = labs[j_] == k_
+                sel_ = labs_j == k_
                 if not sel_.any(): continue
                 st_ = strip_of(s_)
                 if len(st_) < 4: se2_[sel_] = np.inf; continue

@@ -2054,3 +2054,61 @@ the crease; the prior stays as §42 built it, gaining vermeer and S15 and costin
 measured arm stays `comp + reach-group`, with the note that its troll column was never what it read. What the troll still
 shows of the plate arm is the reach law's cost -- 24 % of his footprint reached by no fitted sheet -- and, for the prior, an
 open question whose answer is not at the face level: whether a group is planes with creases or a curved field.
+
+## 46. The sunflowers' field facets beside the big head: the instrument again, and two more priors falsified (user: "keep going", 2026-09-20)
+
+**The item as carried.** Since §39 the plate arm's sunflowers column has read "sky rows beside the big head of 211": the
+prior arm (§42) 163, the crease arm without it 211, the measured arm 211 -- so the prior "loses 48 rows", and the loss was
+carried as the field's noise facets reaching into the sky beside the head. The room's plates were checked first (the
+discrepancy principle is not the difference here either: the sky+field group 322 084 data, rms = sigma), and two of its
+groups ARE data-poor in §38's sense -- group 174: 45 sheets, 18 data texels, 78 863 domain; group 4627: 20 sheets, 54 data,
+76 799 domain; their visible texels are 100 % band, the near flowers that are themselves occluders -- but neither owns a
+texel beside the head (they are nearer than it and fail the candidate test), so they are not this item.
+
+**The instrument.** `headfill.py` scored a row as right when its median fill was sky (d < 0.02), a bar taken from the
+measured arm's own fill. The visible texels within six of the scored band region are sky (0.009) from the head's top down
+to row 329 and the FIELD's flowers at d 0.139-0.157 from row 329 to the head's base at 389 -- sixty of the 211 rows. A sky
+fill there is the x-ray to the sky, and the measured arm (0.009) and the crease arm without the prior (0.000) both give it;
+the prior arm fills the lowest band at 0.088, the field's continuation, and was scored as wrong for it. Read against the
+ring (`bleed/headfill2.py`: per 30 rows, the ring's p10-p90 widened by a step; |fill − ring median| in steps;
+`bleed/head_fill_s46.png`):
+
+| arm | rows 179-329 (ring: sky 0.009), median fill by 30-row band | rows 329-389 (ring: field 0.139 / 0.143) | fill − ring, rows 329+, median steps |
+|---|---|---|---|
+| RG2 (measured arm) | 0.009 throughout | 0.009 / 0.009 | 50.0 |
+| RW (§38, no crease, no prior) | 0.009, then 0.000 | 0.000 / 0.000 | 53.5 |
+| RWC3 (+ crease) | 0.008, then 0.000 | 0.000 / 0.000 | 53.5 |
+| RWCPb (+ crease + prior, §42) | 0.009 throughout | 0.012 / **0.088** | **26.0** |
+
+Above row 329 the four arms agree to within three quanta (the prior-less plates sit at the outer depth 0.000 where the sky
+reads 0.009); below it the prior arm is the only one that moves toward the field beside the head, and it is still 26 steps
+short of it. The "48 lost rows" were the instrument's; the prior was going the right way. As with the troll (§45), the
+measured arm's behaviour had been written into the bar.
+
+**The mechanism, and two priors built on it, both falsified.** The §42 prior gives each domain texel the plane of the
+sheet whose ENTRY is nearest. Its dump beside the head shows the sky group's prior taking, in the lowest rows, the plane of a
+field sheet at the head's base (85 rims, rim depth 0.063, own extent 11 texels, reaching 283 by the group's extent) -- the
+right sheet for those rows, as it turns out. The physically motivated alternative was built and measured: the LAYERED
+ORDER's prior, each texel taking the plane of the group's sheet that would show there -- the nearest plane among the sheets
+whose discs reach it -- as the C3 construction says (the floor's plane continued upward recedes behind the wall, the field's
+behind the sky). (1) Without the order's tiers it took, over 43 % of the sky group's band beside the head, the planes of two
+HEDGE sheets (constant along one axis, tilted toward the viewer up the picture: rim depth 0.15, prior 0.23): 141 rows under
+the old bar. (2) With the tiers as `build()` has them (fitted sheets first, hedges only where no fitted disc reaches): 167
+rows beside the head, |fill − ring| 33.8 steps in the lowest rows against the nearest-entry rule's 26.0; on VERMEER the
+prior's own case collapses -- sky-valued 69.7 → 40.5 %, the band's lower third 55.6 → 3.5 %, fill median 0.009 → 0.051 -- and
+on the TROLL 77 % of his footprint fills at his own depth (from 55 %). The reason is statistical and not repairable at this
+level: the nearest plane among many fitted facets is a MAXIMUM over noisy planes, biased toward the viewer by as much as the
+facets' planes scatter, and a group on an estimator's map has hundreds of them (vermeer's wall group: the bend's facets, the
+near floor at the band's left); a floor facet's plane continued upward stays nearer than the wall all the way up her band.
+The C3 construction holds for two planes; it does not survive two hundred. Both forms removed (rule 7); the nearest-entry
+rule of §42 stands.
+
+**Where this leaves the item.** The sunflowers' facets beside the big head were not a failure of the prior; they were the
+instrument's assumption, and the corrected instrument places the prior arm nearest the data beside the head, 26 steps short
+of the field's depth in the lowest sixty rows where the prior-less arms are 50 short. The two open pictures (troll, §45;
+sunflowers, this section) now read the same way: the plate arm continues the field beside the occluder, the measured arm
+does not, and the columns that said otherwise were built on the measured arm's own fill. Measured arm: still `comp +
+reach-group` -- but the two instruments that kept it there are retired, and the standing comparison for the pictures is now
+the data beside the hole: `trollfill2`, `headfill2`, and vermeer's wall rows (§39). The arm to measure against them across
+the pictures, with the kit as the bar, is `wrap + reach-group + group-plate + ramp + crease + group-prior`; that
+measurement, and the arm decision it supports, is the next item.

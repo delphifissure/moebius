@@ -386,3 +386,12 @@ troll column is to be read accordingly. The §42 prior's below-range values loca
 zero-residual strips, not over-extrapolation); the plane's reach measured on the group's data built and falsified (vermeer:
 the crease reads as model error; a curved field's facets are creases too). Prior stands as §42; measured arm unchanged.
 Next: the sunflowers' field facets beside the big head (the same plane-versus-field question, from the plate's side).
+
+**S35 §46 (2026-09-20).** The sunflowers' "48 lost sky rows beside the big head" were the instrument's: the visible texels
+beside the lowest sixty rows are the field at d 0.14, not sky, and the prior arm's 0.088 there is the continuation (26 steps
+short) where the measured arm's 0.009 is the x-ray (50 short). New instrument `bleed/headfill2.py` (fill against the ring
+beside the band). The layered order's prior (nearest plane among the group's sheets reaching a texel, with and without the
+order's tiers) built and falsified: a maximum over hundreds of facet planes is biased toward the viewer -- vermeer's lower
+band 55.6 → 3.5 % sky-valued, the troll 77 % at his own depth. The §42 nearest-entry prior stands. Both picture instruments
+that held the measured arm (troll, head rows) are retired; next: the plate arm against the data-relative instruments on all
+pictures with the kit as the bar, and the arm decision.
