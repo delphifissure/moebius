@@ -2477,3 +2477,54 @@ the visible-data purity of the sheets it founds.
 in place), and the troll's band is 37 % owned by sheets with no visible rim — the one place where this property is load-bearing
 on a picture and the kit is silent. A troll-like kit scene (a figure before a forest at graded depths, which L1 approximates
 but with a flat wall behind) would let that 37 % be judged; L5's recipe makes it cheap to build.
+
+## 56. L6, a figure before a receding forest: the troll's configuration in truth, and the map lesson reversed (user: "yes continue", 2026-09-20)
+
+**The scene** (`truthkit/scenes.py` L6, mirrored in `s35/kit/L6_forest.py` with its recipe): a figure at 0.3 W, then forty
+trees — a trunk and a porous crown each — in ten ranks from 0.5 W to 3.2 W, shrinking with distance and dense enough to close
+the canopy, over a ground plane with a sky wall at 4 W. L1 and L4 put their leaves in one narrow slab with a flat wall 1.2 W
+behind; the troll stands before a forest that recedes continuously, so behind him the truth is foliage, trunks, ground and sky
+at many depths and never one plane. 800 × 450, env45 truth (95 eyes, 71 min), probe band 35.2 % of the frame, visible step
+1.312e-3. Two maps from the truth: every tree labelled, and the figure alone (`--unlabelled tree`) — the map the troll has
+under a click mask.
+
+**The band is mostly easy and the answer is in one class.** 78 % of L6's scored band has a sky lip, and every arm fills the
+background class (72 227 texels, truth the sky wall) at 0.000 m. The discriminating population is the THING class — the forest
+hidden behind the figure, 20 773 texels:
+
+| arm and map | background class | **thing class** | whole band |
+|---|---|---|---|
+| old arm (comp + reach-group), forest labelled | 0.000 m | 0.444 m | 0.000 |
+| old arm, figure only (the troll's map) | 0.000 | 0.445 | 0.000 |
+| measured arm, forest labelled | 0.000 | 0.441 | 0.000 |
+| **measured arm, figure only** | 0.000 | **0.112** | 0.016 |
+
+**The map lesson is the reverse of L5's.** On L5 labelling every clump gave 0.000 m and leaving them out gave 0.238; here
+labelling every tree gives 0.441 and leaving them out gives 0.112. The mechanism is the one §51 traced on the sunflowers: a
+labelled tree is a thing, its march behind the figure is open, the two-sided rule sends its sheet to the hedge tier, and the
+sky fills (fill d 0.000 where the truth is forest at d 0.35). Unlabelled, the trees are depth components, the wrap test leaves
+them as background surfaces, their sheets sit in the main tier, and they fill at d 0.352 against a truth of 0.381. The wrap
+test is not wrong in either scene — a tree does stand in front of the trees behind it, exactly as a clump does in front of the
+ground. What differs is whether the labelled thing IS the far side: L5's clumps are occluders in front of a ground that
+continues behind them, L6's trees are themselves what is behind the figure. **The two-sided rule reads "thing" as "not to be
+trusted as a far side", and that reading is right in L5 and wrong in L6.** The kit now brackets the problem from both sides
+with exact truth, which the sunflowers alone could not do.
+
+**§55's question answered.** The sheets with no visible rim — founded entirely on the app's plate stretch — own 16.3 % of the
+owned band under L6's click map (19 726 texels, fill d 0.352 under an occluder at 0.393, clone rate 1 %), the same profile as
+the troll's 37 % (fill 0.257 under 0.341, clone 5 %). On the texels they own, the truth mix is 11 568 background, 4 193 other
+thing, 3 525 the figure's own body; their fill reads 0.123 m median against 0.000 for what the labelled map puts there, but
+that median is carried by the background majority, and on the thing class they are the whole of the 0.112-against-0.441 gap.
+So they are not clones and not noise: **they are the only evidence the construction has about the hidden forest**, and their
+fault is overreach onto the sky behind it, not invention. The troll's 37 % is the same population, and the picture instruments
+that called it a clone were reading the background majority the same way.
+
+**Sky-last retested and still falsified.** Lifting weak sheets above the sky on L6 splits exactly as it did on L4, L1 and L5's
+full map: right for the things (class 3 0.52 → 0.04, class 4 0.59 → 0.01, class 5 0.56 → 0.003) and wrong for the background
+(class 2 0.000 → 0.56 on 12 784 texels, the majority of what it changes), whole band 0.000 → 0.000 on the labelled map and
+0.0154 → 0.0286 on the click map. Four scenes now say the same thing; the rule stays out (rule 7).
+
+**Standing.** The measured arm is unchanged and is the only arm that reads L6's hidden forest at better than 0.44 m. L6 enters
+the kit table with its two maps. The open problem is now stated as sharply as the kit can state it: the two-sided rule needs to
+know whether a thing is an occluder or the far side, and neither the wrap test (which is right about both) nor the far field
+can tell. That is the same question as §48's fall-back and §52's labels, and it belongs to the object layer.

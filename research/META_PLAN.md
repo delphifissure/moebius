@@ -453,3 +453,11 @@ inside the band, so most sheets are founded on the app's plate stretch. The clon
 of the band except the troll's 37 %, and on L5's poor map they are the better sheets). Requiring a visible rim (SHEETS_VISRIM)
 is falsified: S15 0.264 → 3.26 m, everything else flat. New instrument bleed/bandrims.py. Open: a troll-like kit scene to judge
 the troll's 37 %.
+
+**S35 §56 (2026-09-20).** L6, a figure before a forest receding continuously (the troll's configuration), added to the kit
+with env45 truth and two maps. The thing class (the hidden forest, 20 773 texels): measured arm with the figure-only map
+0.112 m, every other arm/map 0.441-0.445. The map lesson reverses L5's — labelling every tree is WRONG (the two-sided rule
+demotes the trees that ARE the far side and sky fills), labelling every clump was right. §55 answered: the no-visible-rim
+sheets own 16.3 % of L6's band under the click map and are the whole of the 0.112-vs-0.441 gap, so the troll's 37 % is
+evidence, not clones. Sky-last falsified on a fourth scene. The open problem: the two-sided rule cannot tell an occluder from
+the far side, and the wrap test is right about both.
