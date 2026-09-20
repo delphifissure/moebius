@@ -936,7 +936,7 @@ try:
     near = dS > np.percentile(dR, 90) + 20 * tR
     print(f'strip check, largest surface {sBig}: {len(stB)} strip texels, {len(rr)} rims; rim disparity median {np.median(dR):.3f} (p10 {np.percentile(dR,10):.3f}, p90 {np.percentile(dR,90):.3f}); strip texels nearer than the rims by > 20 tol: {int(near.sum())} ({100*near.mean():.1f} %), their disparity median {np.median(dS[near]) if near.any() else 0:.3f}; band texels own disparity median {np.median(DISP[band]):.3f}')
 except Exception as e: print('strip check failed', e)
-np.savez_compressed(f'{OUT}/sheets_info.npz', rims=np.array([len(m) for m in members]), compSize=compSize[compOfSurf], E=reachOwn, R=reachMax, group=np.asarray(groupOf), hedge=hedge, thin=isThin, sky=isSky, dropped=isGround, groundSurf=isGroundSurf, rimDepth=np.array([float(np.median(dQ.ravel()[np.array(m)])) if len(m) else np.nan for m in members]), sid=np.array([int(np.median(oid.ravel()[np.array(m)])) if (A.mask and len(m)) else -1 for m in members]), thing=np.array([bool(np.median(oid.ravel()[np.array(m)]) > 0) if len(m) else False for m in members]))   # S35 §30: per-sheet facts for the offline instruments
+np.savez_compressed(f'{OUT}/sheets_info.npz', comp=np.asarray(compOfSurf), rimIdx=np.concatenate([np.asarray(m, dtype=np.int64) for m in members]) if nS else np.zeros(0, np.int64), rimPtr=np.r_[0, np.cumsum([len(m) for m in members])], rims=np.array([len(m) for m in members]), compSize=compSize[compOfSurf], E=reachOwn, R=reachMax, group=np.asarray(groupOf), hedge=hedge, thin=isThin, sky=isSky, dropped=isGround, groundSurf=isGroundSurf, rimDepth=np.array([float(np.median(dQ.ravel()[np.array(m)])) if len(m) else np.nan for m in members]), sid=np.array([int(np.median(oid.ravel()[np.array(m)])) if (A.mask and len(m)) else -1 for m in members]), thing=np.array([bool(np.median(oid.ravel()[np.array(m)]) > 0) if len(m) else False for m in members]))   # S35 §30: per-sheet facts for the offline instruments
 print(f'planes fitted: {int((~isSky & ~isThin & ~isGround & ~isGroundSurf).sum())} full, {int(isThin.sum())} thin (constant), {int(isSky.sum())} sky, {int(isGroundSurf.sum())} on the ground plane, {int(isGround.sum())} dropped (strip under three texels); strip texels median {int(np.median(stripN[~isSky & ~isGround])) if (~isSky & ~isGround).any() else 0}  ({time.time() - T0:.1f}s)')
 
 # ---- 4b residual extension per surface over its domain (harmonic, Dirichlet at the surface's rim texels) ----
@@ -1658,6 +1658,8 @@ def build(domains, label):
         print(f'[{label}] evidence order: hedges fill {int((fill & band.ravel()).sum())} band texels no fitted sheet reached')
     print('   build profile: ' + ', '.join(f'{k} {v:.1f}s' for k, v in _prof.items()))
     reached = np.isfinite(best) & band.ravel()
+    if os.environ.get('TIER_DUMP'):   # S35 §51: the hedge/weak tier's winner per texel, for the sky-over-weak instrument
+        whoH.astype(np.int32).tofile(f'{OUT}/whoH_{label}.i32'); np.where(np.isfinite(bestH), np.clip(depth_of_disp(np.where(np.isfinite(bestH), bestH, 0.0)), 0, 1), -1.0).astype(np.float32).tofile(f'{OUT}/bestHd_{label}.f32')
     print(f'[{label}] reached {int(reached.sum())} of {int(band.sum())} band texels ({100 * reached.mean() / max(1e-9, band.mean()):.1f} %); layer 2 on {int((np.isfinite(second) & band.ravel()).sum())}  ({time.time() - tb:.1f}s)')
     return best, second, who, reached
 

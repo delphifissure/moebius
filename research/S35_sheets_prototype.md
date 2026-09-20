@@ -2270,3 +2270,53 @@ their own band, below the size at which a rule would be measurable. Recorded; no
 hedge-free prior; the kit reads S2 0.000, S15 0.264, L1 0.0112, the rest 0.000; the pictures are described by
 `bleed/ringfill.py` (no authority; the kit decides). Open, in order: the unowned texel's fall-back as the object layer's
 question (§48); the sunflowers' field beside the big head as a reach question (§30, §49); and the standing 16-bit item.
+
+## 51. The sunflowers' x-ray traced: the two-sided rule on a field cut into things; sky-last falsified by L4 and L1; the object map decides (user: "continue", 2026-09-20)
+
+**The trace.** `TRACE_TEXEL=row,col` follows one band texel through the layered order. Row 370, three texels beside the big
+head (own d 0.39–0.45; the visible field to the right at d 0.155): the field piece's sheet 425 (354 rims, rim depth 0.139,
+plane value 0.141 at the texel) IS a candidate at the mid-band and far-lip texels — behind the occluder, in the domain,
+reach enough — and is marked **weak**: its march behind the head is open (not closed on its own component, `closed/open
+1/48 737`), and under the §18 two-sided rule a THING's open march goes to the hedge tier, used only where no main-tier sheet
+reaches. The sky's background sheet 0 (2 661 rims, extent 283) reaches everything; it wins. The field piece is a thing
+because SAM auto's segment 8 (6 654 texels, d 0.130–0.143, a flat patch) has a stepped front on all sides — 199 of its 202
+adjacent band texels are its own (it stands 0.05 in front of the field behind it) — and the wrap test is right that it is an
+occluder; it is also the far side of the head, and the rule does not trust a thing behind another occluder. Not reach (§49's
+guess), not the prior (§46's): classification and the two-sided rule.
+
+**How much of the picture this is.** `bleed/skylast.py` on a `TIER_DUMP=1` run (the hedge tier's winner per texel):
+
+| | sky owns | of that, over a nearer tier-two candidate | the candidate is: hedge / the occluder's own object / a thing's open march |
+|---|---|---|---|
+| sunflowers (SAM auto map) | 65.4 % of the band | 70 % (45.9 % of the band) | 32 / 24 / 42 % |
+| L4 | 70.0 % | 50 % (34.8 %) | 3 / 53 / 44 % |
+| L1 | 15.7 % | 46 % (7.2 %) | 3 / 96 / 1 % |
+| S15 | 24.0 % | 0.1 % | – |
+
+**Sky last, measured and falsified.** The rule "the sky shows only where nothing else reaches" (weak sheets above the sky),
+evaluated offline from the dump — the tier-two value wherever the sky won over it — against the kit:
+
+| | whole band | changed texels with a hidden surface | class 2 (background) | classes 3/4/5 (things, the occluder's own body) | changed texels whose truth IS sky |
+|---|---|---|---|---|---|
+| L4 | 0.0000 → 0.0062 m | 0.0000 → 0.0642 (n 44 025) | 0.000 → **0.092** (n 25 558) | 0.09 → **0.005–0.012** (n 18 467) | 10 570 (19 % of the changed) |
+| L1 | 0.0112 → 0.0108 | 0.0870 → 0.0183 (n 8 890) | 0.000 → **0.085** (n 3 762) | 0.09 → **0.007** (n 5 128) | 8 849 (50 %) |
+
+The same split as §48's fall-back: right where the hidden surface is a thing (a leaf behind a leaf, the occluder's own body),
+wrong where it is the background or the sky — and on L4 the wrong outnumber the right two to one. The two-sided rule is
+doing on the sunflowers exactly what L4 says it must: with SAM auto's pieces as things, the field behind a head is not
+trusted without being seen on both sides. Sky-last is falsified (rule 7); nothing built.
+
+**The other map.** The same arm with the curated object map (`view_sunflowers`: nine objects, the big head among them)
+instead of SAM auto's 91: things 150 → 47, and the picture fails the other way — unowned 7 → 28.5 %, the head's band filled
+at the HEAD's depth (rows 329+ median fill 0.36–0.42, |fill − ring| 90 steps; surface lips: clone 7 → 29 %), band jumps
+13 k → 74 k. The trace says why: the near flowers around the head that SAM auto had as things are now background, the join
+law puts them in the field's group, and the GROUP plate — one field over the whole background group, relaxed to rims from
+d 0.009 to 0.45 — reads 0.379 at the texel for every background sheet. With too many things the field is not trusted behind
+the head; with too few the near flowers are blended into it. The sunflowers are a field of many similar objects at graded
+depths, and neither an automatic nor a nine-object map makes it a background with things in front of it.
+
+**Standing.** The sunflowers' 46 % x-ray is the two-sided rule on SAM auto's segmentation, and the kit says the rule is right
+more often than wrong. What the picture needs is the object map the app already lets a person make (Sprint 21: click the
+heads, leave the field), and then a background group whose plate does not span the near flowers — the join law's business
+(§38's runs, §39's creases), measured on that map. The tier dump and `skylast.py` stay as the instrument; `sheets_info.npz`
+now carries `comp` (each sheet's component) and the rim texels (`rimIdx`/`rimPtr`), which §50's first analysis lacked.

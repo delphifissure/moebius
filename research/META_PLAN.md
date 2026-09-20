@@ -420,3 +420,11 @@ Next: the sunflowers' 7 % surface clone, by owner.
 **S35 §50 (2026-09-20).** The sunflowers' 7 % surface clone by owner: 71 % is the unowned fall-back (§48, the near flowers'
 band at the frame's foot), the rest the flowers' own small fragments (1.9 %, sheets of 23–80 rims). Not an item. Open in
 order: the unowned fall-back as the object layer's question; the field beside the big head as a reach question; 16-bit.
+
+**S35 §51 (2026-09-20).** The sunflowers' x-ray traced (TRACE_TEXEL): the field piece beside the big head is a candidate at
+d 0.141 but WEAK — SAM auto's segment is a thing by the wrap test and its march behind the head is open (the §18 two-sided
+rule), so the sky wins; 46 % of the band is the sky over a nearer tier-two candidate (skylast.py on TIER_DUMP=1). Sky-last
+measured offline and falsified: L4 changed texels 0.000 → 0.064 m (background 0 → 0.092, things 0.09 → 0.01; wrong two to
+one), L1 the same split. The curated nine-object map fails the other way (unowned 28 %, the head's band at the head's depth:
+the group plate spans the near flowers). The sunflowers need a person's object map and a background group that excludes the
+near flowers; not an item for the far field.
