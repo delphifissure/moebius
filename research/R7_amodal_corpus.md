@@ -375,3 +375,59 @@ run alongside.
   contracts, masking schemes, losses and data recipes. **The one exception is InpaintFusion, which needs no weights at all and
   whose inpainting core ran at 4.4 seconds per keyframe on a 2016 dual-core CPU** — which is why a six-year-old paper with no
   neural network in it is the most actionable item in the pile.
+
+---
+
+# ERRATA (2026-09-21) — how this note was produced, and what it does not cover
+
+**This note was not written from a reading.** The 21 papers were read by four subagents in parallel and this note is a
+synthesis of their reports. It was presented as a reading and it was not one. Recorded here because the note has been
+load-bearing: S37, S41 and S49 were all organised around it.
+
+## 1. What the second-hand reading got wrong
+
+**InpaintFusion.** R7 §Phase B item 3 says the paper's "central decision" is to *ask for the depth gradient rather than
+the depth* and integrate it Poisson-wise. Read first-hand, that is not what the paper does. Its depth method is
+patch-based: *"since we cannot simply copy view-dependent depth values, we use the **normal map** for inpainting 3D
+structure"*, the depth gradient enters as a **cost term modulating texture similarity** so that copied patches agree
+geometrically, and the Poisson step (Pérez, Gangnet & Blake) integrates the gradients of the **sampled/copied** patches.
+
+The distinction matters for the reason the adaptation works at all. InpaintFusion's gradient field is integrable and
+locally consistent *because it was copied off a real surface in the same scene*. A gradient field returned by a
+generative model carries independent per-texel noise and has neither property.
+
+In fairness: the adapted recommendation was the **best-performing arm** on the photograph (S48: pure gradient 0.0118
+against a raw return of 0.0304, 2.57× better). What failed in the round trip was the per-component shift, which came
+from S45's kit measurement and my implementation, not from this paper. So the misreading cost a correct attribution,
+not a sprint.
+
+## 2. What the corpus does not contain, which matters more
+
+Counted across all 21 papers:
+
+| term | papers containing it |
+|---|---|
+| graph cut / graph-cut | **0** |
+| belief propagation | **0** |
+| alpha expansion | **0** |
+| smoothness term | **0** |
+| scanline / scan-line | **0** |
+| Markov random field / MRF | 1 (a passing related-work citation in Counterfactual Depth, listing MRF as an *early* monocular-depth approach) |
+
+**The corpus is about the fill stage** — amodal completion, deocclusion, RGB-D inpainting, and the synthetic data to
+train them. Our blocking defect, localised in S33 and confirmed in S50, is upstream of the fill: **74 % of the troll's
+visible streak length is the far field giving adjacent rows of one surface two different depths.** That is a discrete
+labelling / surface-reconstruction problem, and **this literature does not address it.**
+
+This is the substantive cost of the second-hand reading. Not a misquoted number — a plan (S37 → S41 → S49) organised
+around the stage the corpus covers, while the dominant visible defect was in the stage it does not.
+
+## 3. Standing
+
+- The synthesis's *factual* claims about the fill stage have not been re-verified first-hand and should be treated as
+  second-hand until they are. The papers that drive Sprint 28's contract — PACO / Object-level Scene Deocclusion,
+  Amodal Depth Anything, DeepDR, Pano3DComposer, Gen3R, SynergyAmodal, Open-World Amodal Appearance Completion — are to
+  be read first-hand **before** that sprint, not summarised.
+- The literature for the actual blocker is the stereo / discrete-labelling line (Boykov–Veksler–Zabih and successors),
+  which is not in what was sent. Sprint 27's formulation does not depend on it — a binary MRF with a submodularity
+  check is standard — but the prior art should be checked before anything is shipped.
