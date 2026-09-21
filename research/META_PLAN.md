@@ -692,3 +692,25 @@ the picture, assumed for the whole project and never measured); 45 deg right 8.9
 touches the canvas top, margin is off) but the asymmetry is the first thing to look at. **Still needs eyes** (frames on
 disk): the down-left corner, seams='all' at 52/56 deg on silverwarrior, and S7's ceiling over-claim plus the sky margin edge.
 Next: Sprint 25, the end-to-end loop.
+
+**S47 (2026-09-21).** The sub-pixel gap measurement, to decide the splat proposal with a measurement rather than a renderer
+(`research/S47_subpixel_gaps.md`, `bleed/subpixel.py`). Per adjacent texel pair, the gap that opens at the envelope rim is
+reveal = |ex|*|Z_far/(D+Z_far) - Z_near/(D+Z_near)|*pxPerWorld, so spacing goes 1 -> 1+reveal and a splat of size 1+T closes
+every gap below T. **(1) The kit's depth law is not the app's** -- the kit renders at outer 0.64 / D 0.2 (relief 3.2) and the
+app ships outer 0.02 (relief 0.1), so the law was overridden to control for it. The relief turns out to matter very little
+(L6 area-below-2 0.79 % at relief 0.1 vs 1.13 % at 3.2), which **falsifies the proposal's bas-relief recommendation: we
+already ship one.** **(2) What does matter is the depth MAP.** Exact ray-traced geometry puts 96-99 % of cells below 1 px
+but only 0.6-4.1 % of the revealed AREA; the troll's Depth Anything estimate puts 84 % of cells and 29.8 % of area there,
+because an estimated map is smooth where real geometry has cliffs. The kit therefore systematically understates what splats
+buy on the actual product. **(3) The decisive number, corrected.** A torn mesh and a splat cloud are identical except on
+cells above T -- below T the mesh keeps the quad and covers the gap exactly -- so splats buy only T pixels per torn cell. (A
+first version credited them with the whole sub-T area as well, which double-counts.) Bracketed by two denominators: 1-33 %
+across the kit, **17-33 % at T=1 on the troll**, which is the real case. **Splats shave the edge of the hole; they do not
+fill it.** What they genuinely buy is the structural guarantee that a ramp can never be kept and the collapse of four
+thresholds into one -- codebase health, not pixels -- against two risks that land on our content: point sprites write one
+depth per sprite so silhouettes fatten by T/2 (and S20's one-texel poles needed a dedicated despeckle to survive), and the
+soft-edge matting problem is first-order on paintings. **Recommendation: do not rewrite the renderer.** Take instead the
+diagnostic assertion (no pixel both unpainted and surrounded by painted neighbours closer than T, which separates a gap we
+should have covered from a genuine disocclusion and which we cannot do today) and the reveal-per-cell field as a cliff
+criterion in the units the artefact appears in. Standing conclusion unchanged: at 45 deg the ramps are 3.7 % of the picture
+against 10.5 % invented colour, so two thirds of what reads as messy is the placeholder, which no representation reaches.
