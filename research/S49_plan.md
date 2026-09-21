@@ -125,7 +125,16 @@ The plumbing landed this turn, so this sprint is a run and a look, not a build:
 4. **Score with the instruments that exist**: rest-versus-envelope delta, the assertion split, the seam, and the retear
    count (the honest limitation — a returned depth that moves a cliff does not re-tear the bake's triangle index, and the
    reimport reports how many decisions the rim law would now make differently).
-5. **Whatever it looks like is the finding.**
+5. **Settle the anchor, which S48 left open on purpose.** On six kit scenes the screened combination wins every row; on
+   the one photograph tested the pure gradient form wins by 3× and both absolute forms are *worse than pasting the raw
+   return*. The mechanism is measured, not guessed: a band opens onto background that recedes from its rim, so the far
+   field at the rim is the shallowest part of a component and a constant estimated there is biased by construction — the
+   shift comes out +0.016 where −0.020 was wanted. The default was left at λ = 1 because one picture does not outweigh
+   six scenes and flipping it would be per-image tuning. This sprint runs on real pictures, so it is the tie-breaker.
+   If the photographs agree with the troll, the follow-up is specified and introduces no constant: **gate the anchor per
+   component on whether its rim determines anything** (100 of 261 components on the troll have no legal far-side rim at
+   all), or drop the anchor and keep the gradient contract, whose Dirichlet boundary already meets the rim pointwise.
+6. **Whatever it looks like is the finding.**
 
 ---
 

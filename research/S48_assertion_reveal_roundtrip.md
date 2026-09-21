@@ -202,7 +202,66 @@ the plumbing, not a model**: the bake's own band depth is the target, it is corr
 (a constant bias plus per-texel noise), and the corrupted values are handed back. A contract that cannot recover a field
 it was handed a noisy copy of cannot recover one it was handed a guess.
 
-*(Measurement running at this commit. Filled in the follow-up commit.)*
+The troll at the shipped defaults. 347 177 band texels in 261 components; the return is the bake's own band depth plus a
+constant bias of 0.020 and uniform noise of half-width 0.040, giving a **raw return RMSE of 0.0304 in d**. Lower is
+better, and the interesting column is the ratio: below 1.0 the contract made the return *worse* than pasting it.
+
+| form | band RMSE | vs raw | seam max &#124;Δd&#124; | retear decisions changed |
+|---|---|---|---|---|
+| **gradient** (pure, λ = 0) | **0.01184** | **2.57×** | 0 | 4 360 / 715 009 |
+| both (screened λ = 1), far-side rim | 0.03486 | 0.87× | 0 | 9 962 |
+| absolute + shift, far-side rim | 0.04311 | 0.70× | 0 | 64 582 |
+| both, every visible neighbour *(the first build)* | 0.17762 | 0.17× | 0 | 35 320 |
+| absolute, every visible neighbour *(the first build)* | 0.18611 | 0.16× | 0 | 140 258 |
+| absolute → membrane *(the mistaken call, kept as a baseline)* | 0.24444 | 0.12× | 0 | 45 052 |
+
+**The seam is exactly zero in all six**, which is the one thing the formulation promised by construction, and the colour
+path wrote 347 177 texels inside the mask and **0 outside** in all six.
+
+### This contradicts S45's kit result, and the round trip found three defects doing it
+
+On six kit scenes the screened combination won every row. On the one photograph, **the gradient channel alone wins by
+3×, and both absolute forms are worse than not correcting at all.** Getting to that statement took three fixes, none of
+which the kit could have surfaced:
+
+1. **The shift anchored on the wrong rim.** A band component is bounded by the background it continues *and* by the
+   occluder that created it. Averaging over both made the correction absorb the cliff. Filtering the rim through the rim
+   law — the test the bake already uses for this question — is worth **5.1×** on the combined form (0.1776 → 0.0349) and
+   **4.3×** on the absolute form. Kept as an A/B arm, not asserted.
+2. **The degenerate form was never implemented.** With an anchor and no gradients the guidance field is zero, so the
+   screened solve is a Laplace problem: at λ = 0 it discards the return and interpolates the rim. S45's own note said the
+   degenerate case is "the per-component shift alone, no solve"; the code fell through to the solve, so the first run
+   scored a membrane (0.2444) and called it the absolute contract. Now written out, with the mistaken call kept as an
+   explicit baseline row because it is the do-nothing shape for this contract.
+3. **The anchor is measuring the wrong quantity, and the shift statistics say so outright.** The true bias is +0.020, so
+   the ideal shift is −0.020. The measured shift is **+0.016** (pixel-weighted mean; p50 +0.015, range −0.055 to +0.087).
+   Wrong sign: it roughly doubles the bias rather than removing it, and 0.020 + 0.016 = 0.036 is exactly the observed MAE
+   of 0.0361.
+
+### Why the rim is a biased estimator, which is the finding
+
+Working back from that number: the observed depth at a far-side rim neighbour is on average **0.036 in d nearer** than
+the plate's far field at the band texel beside it. That is not noise. It is the geometry — a band opens onto background
+that *recedes* from the rim, so the far field at the rim is systematically the shallowest part of the component. **A
+constant estimated from the rim is therefore biased by construction, not by sampling.** And the median component has only
+**10 rim pairs** to estimate it from, so even an unbiased version would be noisy.
+
+The kit never showed this because its components are small, numerous and well-rimmed. The photograph's are not: **100 of
+261 components have no legal far-side rim at all** — they touch only their own occluder, so nothing in the picture says
+where they sit.
+
+**The fix follows without introducing a constant.** Do not estimate an offset from the rim. The screened solve's
+Dirichlet boundary already *is* the rim, applied pointwise rather than averaged, so it meets the observed depth
+everywhere without assuming the offset is constant across a component. That is exactly what the pure gradient form does,
+and it is why it wins.
+
+### What is not being changed on this evidence
+
+**The default stays λ = 1 with the absolute channel accepted.** One photograph against six kit scenes is not grounds to
+flip a default, and doing so would be the per-image tuning this project forbids. What has changed is that
+`meta.plane.returnContract` now carries the measured caveat, so anyone reading the contract sees both results and the
+mechanism. Sprint 27 runs on real pictures and is the natural tie-breaker; `S49_plan.md` carries the specified follow-up
+— gate the anchor per component on whether its rim determines anything, or drop it.
 
 ---
 
