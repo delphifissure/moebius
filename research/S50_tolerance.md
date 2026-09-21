@@ -74,7 +74,60 @@ appears in motion" — so does the cost of fixing it.
 
 ## The sweep
 
-<!--TABLE-TROLL-->
+### The cost curve (troll, rest-pose rectangle, three poses)
+
+The first run, `off` through `px4` and `q8` — the `fold` rows from it are void, see above. Every figure is a share of
+the **rest-pose** content rectangle (86 296 px); leak counts are pixels.
+
+| arm | rest bounded | 45° h bounded | 45° h leak T=1 | leak share | corner bounded | corner leak |
+|---|---|---|---|---|---|---|
+| off (shipped) | 1 px | 15 px | 15 | — | 825 px | 30 |
+| px0.5 | 2 px | 607 px | 322 | 53 % | 2 182 px | 234 |
+| px1 | 2 px | 423 px | 208 | 49 % | 2 003 px | 191 |
+| px2 | 2 px | 280 px | 123 | 44 % | 1 739 px | 218 |
+| **px4** | 1 px | **154 px** | **56** | **36 %** | **1 423 px** | 148 |
+| q8 (S46) | 2 px | 298 px | 147 | 49 % | 1 736 px | 256 |
+
+**P1 and P2 hold.** Hole area is monotone in T, and the knee is at T = 4 where the field predicted it — past four screen
+pixels only 1.06 % of texels still exceed the tolerance, falling to 0.75 % at T = 8, so there is almost nothing left to
+bite. **Rest costs nothing**: one unpainted pixel, every arm, same as shipping.
+
+**The leak share is strongly pose-dependent and the mechanism is plain.** At 45° horizontal it is 36–53 %; at the corner
+it is 8–13 %. At the corner both axes sit at the rim so the removed ramp tails are wide and land in *genuine*; at 45°
+horizontal only the horizontal axis is at the rim (the vertical envelope is 30°), so the tails are narrow slivers and
+land in *leak*. **The rule is at its worst in the pose that happens most**, since pure horizontal head movement is the
+dominant motion. This is the single strongest argument against a tight tolerance, and no instrument before the assertion
+could have stated it.
+
+### The trade (troll, 45°, all five arms, one rectangle)
+
+Streak removal needs the placeholder column, which needs the SD check view, so this is a second pass at the 45° pose
+only — **its rectangle is that pose's bbox (141 358 px), not the rest pose's, so these absolutes are not comparable with
+the table above.** Internally they are one measurement, which is what the comparison needs. All five arms diverged.
+
+| arm | placeholder | bounded hole | leak | streak removed | hole added | **removed per added** | leaks added |
+|---|---|---|---|---|---|---|---|
+| off | 34.882 % | 0.0113 % | 16 | — | — | — | — |
+| px2 | 34.582 % | 0.1988 % | 124 | 0.300 | 0.1875 | 1.60 | +108 |
+| **px4** | 34.705 % | **0.1097 %** | **57** | 0.177 | **0.0984** | **1.80** | **+41** |
+| q8 | 34.674 % | 0.2115 % | 148 | 0.208 | 0.2002 | 1.04 | +132 |
+| fold | 34.553 % | 0.5079 % | 291 | 0.329 | 0.4966 | **0.66** | +275 |
+
+**The middle path beats both extremes.** `fold` removes 1.9× as much streak as `px4` but pays 5× the hole and 6.7× the
+leaks — a ratio of 0.66 against 1.80. Keeping every ramp (`off`) is free of holes but keeps the whole streak.
+
+**The pixel form dominates the quantum form.** `px2` beats `q8` on every column at once: more streak removed (0.300
+against 0.208), less hole (0.199 against 0.212), fewer leaks (124 against 148). That is the evidence for retiring
+`u_plateNearOnly` rather than an argument from units.
+
+### A caveat that changes what the benefit is
+
+`fold` discards **every** ramp and reduces placeholder by only 0.329 points. S46 measured the ramps at 3.7 % of the
+picture at 45°. The gap is not a contradiction — plate 2 exists on this bake, so discarding a ramp frequently reveals
+**plate 2, which is also placeholder-tinted**. Removing ramps therefore does not mostly reduce invented colour; it
+replaces one invention with a better one. The benefit is qualitative — a second-surface estimate instead of a rubber
+band that tunnels between foreground and background, which was the user's original report — and the cost, hole and
+leaks, is the part that is quantitative.
 
 ## Generality: a second picture
 
