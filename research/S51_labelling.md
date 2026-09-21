@@ -100,3 +100,44 @@ been checked with this bound *before* it was written, not after.
 the smaller), the pairwise term |v_i − v_j| satisfies the Monge condition and the binary energy is **submodular**, so a
 single s–t min-cut gives the **global** optimum rather than a local one. That converts "ICM got 33 %, the bound allows
 80.7 %" into a number, and it is the difference between shelving this construction and porting it.
+
+## The verdict: measured improvement, no visible improvement
+
+Ported behind `window._farLabel` (off by default, ~40 lines at a clean integration point) and rendered on the troll at
+45 degrees against the shipped per-line field.
+
+| | per-line (shipped) | cross-line labelling |
+|---|---|---|
+| placeholder | 34.882 % | 34.461 % |
+| hole | 30.652 % | 30.651 % |
+| bounded hole | 0.0113 % | 0.0106 % |
+| leaks (T=1) | 16 | 15 |
+| **pixels differing between the two frames** | — | **1.39 %** |
+
+**The frames are indistinguishable.** A 21 % cut in total wall length and a halving of the long-wall class produce a
+0.42-point change in placeholder, no change in hole, and nothing the eye can find. `research/s51_ab.png`.
+
+**Why, and it is the sprint's real output.** The visible hatching is **class 1**, and class 1 is precisely what a
+consistent axis choice does not fix in practice (-4.6 %). The class the labelling does halve, class 3, was not what was
+visible. And the area instruments cannot see the change at all, because wall length is a property of the plate's
+*shape* while placeholder and hole are properties of its *coverage*.
+
+## This reverses the sprint order, and the reversal is evidence-driven
+
+S49 put the geometry ahead of the inpaint on the argument that "painting content into a band whose geometry still combs
+leaves the outline ragged". **That argument is not testable in the current state.** Invented colour is smooth enough to
+hide a 21 % change in the plate's shape, so a geometry fix cannot be judged on screen while the band is a wash.
+
+**Content first.** Not because the geometry does not matter — class 1 will shear visibly once there is real texture on
+that surface, and the fix becomes judgeable then — but because right now it is unfalsifiable by the only authority the
+project recognises.
+
+## Standing
+
+- `window._farLabel` stays, off, with its numbers in the code comment. It did not earn a default on this evidence and
+  may earn one once the band carries content.
+- **S22's stated blocker is retired**: lambda is inert from 0.25 to infinity, so the construction never needed the
+  weight S22 said nothing in the scene supplies.
+- **Class 1 remains open after three constructions** (S22 parameter smoothing, S32 field smoothing, S51 labelling). The
+  label set holds 60.8 % of headroom on it that consistent labelling cannot realise, so the next attempt must change
+  what the candidates *are* — that is, stop extrapolating per line — which is what S33 said a week before this sprint.
