@@ -562,3 +562,45 @@ against the arm's 23x), no colour dependence, no mask choice left to get wrong, 
 than two, because L6 flips (0.096 vs 0.112). It still loses on L7 and L9, so the gate question is not answered. Not
 measured: a model actually trained without colour, L1 and S15 from S36's safety check, and anything on screen. Phases A and
 B still come first.
+
+**R7 (2026-09-21).** Twenty papers supplied as markdown and read in full against our open questions
+(`research/R7_amodal_corpus.md`): amodal depth (Amodal Depth Anything, Counterfactual Depth, Amodal Panoptic Segmentation,
+the amodal-completion survey, Semantic Amodal Segmentation), deocclusion (PACO, SynergyAmodal, Open-World, Amodal3R),
+synthetic data (Infinigen, Infinigen Indoors, AmodalSynthDrive, PatchRefiner, Syn2Real-Depth, Depth Anything V2) and RGB-D
+inpainting (DeepDR, InpaintFusion, MLGS, Gen3R, Pano3DComposer). **Four findings that change what we do.**
+**(1) The gate has an untried family and we already hold two members of it.** Counterfactual Depth (2019) is the only paper
+whose target is ours -- the surface behind a mask, not a completed object -- and the only one that studied WHEN a geometric
+continuation fails. Its factorial design (72 real before/after captures, 5 factors, main effects plus all 10 interactions)
+predicts a LEARNED model's error from scene attributes at adjusted R^2 0.882 but a Poisson baseline's at only 0.632, because
+"more important is the pool of depths around the object", and it names the failure: smoothing "fails in the obvious way when
+one side of the background is closer than the other". Every predictor we falsified in §57/S38/S39 is scene- or model-level;
+none is a COLLAR statistic -- yet S38's `lipsp` and `reach` are collar statistics and both were monotone in our error. Next:
+per-component opposing-side collar disagreement, collar bimodality, single-plane residual, aggregated per scene. Second lead:
+Amodal3R's negative result that independently completed views disagree (4 views FID 65.69 vs 1 view 58.82) -- we have the
+envelope, so cross-pose disagreement is a free truth-free confidence nobody has used. **(2) Our metre score is non-standard,
+not merely incomparable**: every depth paper reports log error and delta at 1.25^i alongside RMSE and both are exactly
+gain-invariant. Also adopt the interior/exterior/whole split, a do-nothing baseline, Gen3R's accuracy-vs-completeness split
+(our two failure modes, which one aggregate hides), and InpaintFusion's still-vs-motion DIFFERENCE, the only parallax-specific
+metric in the corpus. **(3) Depth-only training is better supported than S40 claimed**: PatchRefiner decomposes the
+synthetic-to-real gap and it is a SCALE gap, not a structure gap (synthetic-only zero-shot: delta1 5.7 % but the best boundary
+F1 in the table, 36.3 vs 19.3), and our band lives in an already-normalised space; Syn2Real found raw-feature distillation
+across a gap WORSE than none while filtered-geometric-space distillation helped; Infinigen Indoors beat Hypersim's 77 k images
+with 1 464 domain-matched ones. Target 1-3 k scenes, spend on VARIETY not volume (DAv2: diversity cannot be bought with
+epochs), predict a RESIDUAL off the frozen sheet model (so the analytic work becomes the base predictor, not waste), use
+scale-shift-invariant plus ranking losses -- masking a conventional loss to the region is the one thing tried and FAILED --
+supervise band plus collar, and take normals analytically for a normal loss worth 15-27 %. Risk: every synthetic-to-real
+mechanism in the corpus needs a real-domain signal we do not have, so the defence is entirely generator diversity; run
+Infinigen's degrees-of-freedom audit on our kit first. Adverse: Semantic Amodal found composited synthetic training lagged
+real (0.395 vs 0.434 AR), and AmodalSynthDrive, the only paper formalising amodal depth, EXCLUDES occluded background as
+unpredictable. **(4) The meadow may be self-inflicted.** Counterfactual Depth takes one mask over any number of objects and
+predicts the surface behind, and reports the hidden region is the EASY region (interior 0.310 vs whole-image 0.425) because
+"the masked scene tends to be walls, floors, etc.". Behind a field of tufts is terrain: stop trying to click the clumps.
+**For Phase B:** joint colour+depth not cascade (Gen3R same-architecture ablation 1.62 -> 1.10 Chamfer; Pano3DComposer's
+background path IS our current cascade and is in their failure figure); ask for the depth GRADIENT and integrate Poisson-wise
+against the observed depth at the band boundary (InpaintFusion), which makes the seam exact by construction, the score
+scale-free and the solve a 97 ms sparse Laplacian; asymmetric masks via a zero-init conv; pass the arrival-order contextual
+mask as the legal source region. Warning: PACO tried three inpainter contracts WITH the ground-truth amodal mask and all
+three failed -- a hole does not tell the model whose surface it is. **Do not** hunt for a confidence mechanism to adopt (none
+of the twenty has one; the survey lists it as future work), do not revisit the visible-region residual or occlusion fraction
+as gates (the latter nearly flat: Amodal-DAV2-L RMSE 3.324 easy -> 3.476 hard), and do not adopt any of their layer orderings
+-- ours is exact. Phases A and B still come first; items 1 and 2 are small enough to run alongside.
