@@ -43,7 +43,38 @@ adjacent", 2 and 4 for the splat sizes S47 priced.
 
 ### Measured, at the shipped defaults
 
-*(Measurement running at this commit — the troll at the shipped defaults, 4 poses. Filled in the follow-up commit.)*
+The troll, the panel's own defaults (`far plane / fill wash / margin off / band 35 / seams stretched / rules new`),
+measured inside the rest-pose content rectangle.
+
+| pose | unpainted % of frame | unbounded (beyond the frame) | leak T=1 | leak T=2 | leak T=4 |
+|---|---|---|---|---|---|
+| rest | 0.001 % | 0.0 % | 100 % of bounded (1 px) | 100 % | 100 % |
+| 45° right | 2.005 % | **99.1 %** | 100 % of bounded (15 px) | 100 % | 100 % |
+| 45° right + up | 1.498 % | **97.8 %** | 96.6 % of bounded (28 px) | 100 % | 100 % |
+| down-left corner | 21.254 % | **95.5 %** | 3.6 % of bounded (30 px) | 9.7 % (80 px) | 21.1 % (174 px) |
+
+### The first measurement corrects the headline it was added to
+
+S44's result for this picture was "at the worst envelope corner, 27.7 % placeholder and **21.3 % dark**", and the second
+of those numbers has been carried since as the size of the hole the fill stage owes content for. **It is not.** At that
+corner 95.5 % of the unpainted set reaches the rectangle edge on both axes: with the margin strips off, the picture
+simply does not extend that far. The actual disocclusion hole is 21.254 % × 4.5 % ≈ **0.96 % of the frame**, and 3.6 % to
+21.1 % of *that* is a crack a spanning rule of reach 1 to 4 px would have closed.
+
+The horizontal poses are starker. At 45° right the frame is 8.900 % invented colour, 1.99 % beyond-frame, and **0.018 %
+actual hole — every pixel of which is a one-texel crack.** The covering is essentially complete there; all of the mess is
+colour.
+
+**This sharpens S47's standing conclusion rather than contradicting it.** S47 said two thirds of what reads as messy is
+the placeholder colour. Once the frame edge is taken out of the dark number, at the horizontal poses it is not two thirds
+— it is very nearly all of it. Every hole-count A/B in the project's history was scored on a quantity that is
+predominantly letterbox at off-axis poses, which is exactly the conflation the assertion was added to catch, and it
+caught it on its first run.
+
+Two things to keep honest about this. The content rectangle is the *rest* pose's bounding box, so as the picture shifts
+within it the beyond-frame share necessarily grows — "unbounded" is measuring a real thing, but it is a framing artefact,
+not a defect, and turning the margin strips on is what removes it. And 30 to 174 leaked pixels is a small absolute
+number; the value here is the *separation*, not the magnitude.
 
 Per-pose leak maps are written next to the frames (`leak_plain_*.png`): **red** = leaks at the tightest T, **amber** =
 leaks only at a wider T, **blue** = a bounded genuine disocclusion, **grey-blue** = unbounded (beyond the frame).

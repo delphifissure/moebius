@@ -11,9 +11,13 @@ sprint, and S47 added two items that did not exist when it was written. This res
   "arbitration already beat direct prediction on L5 (0.022 against 0.060 m)". In d, with a baseline, that comparison does
   not survive. The gate moves down the order and its brief changes: it is no longer "pick the better of two good answers",
   it is "notice that neither is better than doing nothing".
-- **Sprint 24 ran.** The input contract, the consolidated defaults and the rest-versus-envelope instrument all shipped
-  (S44). The instrument's headline is the one that should drive everything after it: at the worst envelope corner the
-  troll is **27.7 % placeholder colour and 21.3 % dark**, against 0.17 % and 0.001 % at rest.
+- **Sprint 24 ran, and S48's assertion has already corrected half of its headline.** The input contract, the consolidated
+  defaults and the rest-versus-envelope instrument all shipped (S44): at the worst envelope corner the troll is **27.7 %
+  placeholder colour and 21.3 % dark**, against 0.17 % and 0.001 % at rest. The placeholder figure stands. **The dark
+  figure does not mean what it has been taken to mean**: 95.5 % of it reaches the frame edge on both axes — with the
+  margin strips off the picture does not extend that far — so the real disocclusion hole is about **0.96 % of the frame**,
+  and at the horizontal poses it is **0.018 %, every pixel a one-texel crack**. The fill stage's debt is the placeholder
+  number alone; the dark number was mostly letterbox.
 - **Sprint 25's contract was measured before it was built** (S45) and is now built and round-tripped (S48). Depth comes
   back as well as colour, and it comes back as a screened Poisson solve rather than a paste.
 - **S46 answered the streak report** with the near-extent rule, and **S47 answered the splat proposal** with a
@@ -83,19 +87,28 @@ Everything needed is built; this is a sweep and a deletion.
 3. **Retire the proxies.** Once a pixel threshold is the default, `fgTearStep` and the A212 fold factor are two more
    spellings of the same decision in units that do not transfer. Rule 7: remove them from the code and record what they
    were.
-4. **Re-baseline** the standing instruments with the assertion split, so every hole number after this is two numbers.
+4. **Re-baseline** the standing instruments with the assertion split, so every hole number after this is three numbers —
+   leak, bounded genuine, unbounded — not one. **This is not bookkeeping.** The first run of the split showed the worst
+   corner's 21.3 % dark is 95.5 % beyond-frame, which means every hole-count A/B in this project's history was scored on
+   a quantity that is predominantly letterbox at off-axis poses. The historical rankings are not automatically wrong, but
+   none of them is known to be right either, and the cheapest of them are worth re-running.
+5. **Turn the margin strips on and measure again.** The beyond-frame class exists because `margin: off` is the shipped
+   default. If the strips remove it, the dark number becomes almost entirely meaningful for the first time; if they do
+   not, we have found something else.
 
 **Done means** the bake has one cliff criterion, in screen pixels at the rim, and no hole count in the project is a sum of
-two unlike things again.
+unlike things again.
 
 ---
 
 ## Sprint 27 — One real inpaint, end to end (1 sprint). Now the highest-value thing we can do.
 
-S41 put this inside Sprint 25 as item 7. It is promoted to a sprint of its own because S44 measured what it is worth:
-**at the worst envelope corner 27.7 % of the troll's frame is invented colour and 21.3 % is dark.** S47's standing
-conclusion is that at 45° the ramps are 3.7 % of the picture and the invented colour is 10.5 %, so **two thirds of what
-reads as messy is the placeholder colour**, and no change of representation reaches it. Only content does.
+S41 put this inside Sprint 25 as item 7. It is promoted to a sprint of its own because S44 measured what it is worth and
+S48 then removed its only competitor. At the worst envelope corner **27.7 % of the troll's frame is invented colour**;
+the 21.3 % dark that sat beside it turns out to be 95.5 % beyond-frame, so the hole the geometry leaves is under 1 % and
+at the horizontal poses it is 0.018 %. S47's standing conclusion was that two thirds of what reads as messy is the
+placeholder colour. With the frame edge taken out, at the horizontal poses it is **very nearly all of it** — and no
+change of representation reaches it. Only content does.
 
 The plumbing landed this turn, so this sprint is a run and a look, not a build:
 
