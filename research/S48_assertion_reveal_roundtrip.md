@@ -117,9 +117,36 @@ gap in both, by construction.
 Two currencies on purpose: the live rule is a fragment test and must be in screen pixels, which depend on the canvas; the
 exported field is a property of the bake and must not.
 
-### Cross-check against the offline measurement
+### The field, and the check that it is the right field
 
-*(Measurement running at this commit. Filled in the follow-up commit.)*
+The troll at the shipped defaults, from `meta.plane.reveal` of the bundle the round trip exported. The law it reports:
+`D = 0.2`, `exH = 0.2`, `exV = 0.1155`, layer width 0.0749 m, **11 366 plate texels per world metre** and **3 575 screen
+pixels per world metre** — so at this viewport one plate texel is **0.3145 screen pixels**, and a live threshold of 1
+screen pixel is about 3.2 plate texels. Sprint 26's sweep has to be read in that light.
+
+| | p50 | p90 | p99 | max | mean | > 1 texel | > 2 | > 4 |
+|---|---|---|---|---|---|---|---|---|
+| **app** (`meta.plane.reveal`) | 0.3700 | 1.7289 | 14.7580 | 143.605 | 1.2591 | 153 376 | 79 865 | 52 277 |
+| **independent Python**, same law, same input | 0.3700 | 1.7292 | 14.7580 | 143.605 | 1.2592 | 153 390 | 79 869 | 52 281 |
+
+The two agree to the printed precision on every percentile and exactly on the maximum. The count columns differ by 14 of
+153 376 (0.009 %), which is float32-against-float64 landing either side of the threshold on ties. The exported 16-bit PNG
+round-trips to within **0.008 texels** of the unclipped field — larger than the file's own 0.000244-texel step, and
+correctly so: the PNG's input is the *quantised* source depth, and 1/131070 in d is worth about 0.005 texels here. The
+field is what it claims to be.
+
+**The field spans three orders of magnitude on one photograph** — median 0.37 texels, p99 14.8, max 143.6. That is the
+case against a single threshold in quanta better than any argument: no fixed depth step means the same thing at both ends
+of this range, and this is one picture, before the 32× relief difference between the kit and the app is applied.
+
+### A correction to how S47's troll row should be read
+
+S47's troll numbers were computed from `harness/shots/a257probe/troll/dQ.f32`. That dump has **492 284 distinct depth
+levels**; the depth map the app ships by default conditions to **59 525**. They are not the same estimate of the same
+photograph, and they differ by a mean of 0.156 in d over 99 % of texels. So the offline and live fields can be compared
+in *shape* — medians 0.364 and 0.370 — but not in the tail, where the app reads max 143.6 and S47's row reads 238.7.
+Nothing in S47's conclusion depends on the tail, so it stands; but its troll row is the DA3 map, and should be labelled
+that way wherever it is quoted.
 
 ### Why the pair is deliberate
 
