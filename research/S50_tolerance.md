@@ -129,9 +129,33 @@ replaces one invention with a better one. The benefit is qualitative — a secon
 band that tunnels between foreground and background, which was the user's original report — and the cost, hole and
 leaks, is the part that is quantitative.
 
-## Generality: a second picture
+## Generality: a second picture, and P4 holds
 
-<!--TABLE-WARRIOR-->
+Silverwarrior at 45°, its own pose rectangle (127 190 px). The `fold` arm was killed before it finished — it had run
+over an hour on a single render and was blocking Sprint 27; the four arms below are complete.
+
+| arm | placeholder | bounded hole | leak T=1 |
+|---|---|---|---|
+| off | 29.117 % | 0.8751 % (1 113 px) | 292 |
+| px1 | 29.554 % | 1.7596 % (2 238 px) | 466 |
+| px4 | 29.506 % | 1.6990 % (2 161 px) | 430 |
+| q8 | 29.799 % | 1.7942 % (2 282 px) | 495 |
+
+**On this picture the rule removes no streak at all — it is pure cost.** Placeholder *rises* under every arm (29.117 →
+29.5–29.8), because the discarded ramp tails reveal plate 2 and other placeholder classes behind them rather than real
+content. The troll's modest benefit does not generalise even to a second photograph, which is a stronger version of the
+sprint's conclusion than the troll alone supports.
+
+**P4 holds, and it is the case for the change of units.** S46's quantum tolerance does not keep its place between
+pictures:
+
+| | troll | silverwarrior |
+|---|---|---|
+| where `q8` sits | between `px1` and `px2` (bounded 298 px against 423 and 280) | **worse than both** `px1` and `px4` (2 282 against 2 238 and 2 161) |
+
+A threshold in source quanta is a statement about the depth *file*; the same number means a different visible gap on the
+next picture. On both pictures the pixel form also **dominates** the quantum form outright — `px4` beats `q8` on every
+column here as `px2` did on the troll — so if the near-extent rule is ever turned on, the quantum form goes.
 
 ## The margin strips
 
