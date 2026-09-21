@@ -13,9 +13,12 @@ Everything below is in the app repo (`moebiusv2`) as pushed. The numbers quoted 
    + `harness/batchB/<picture>_da3_16.png` for bristlecone, octopus, room, silverwarrior, starwatcher, vermeer; the troll:
    `defaultImgColor.png` + `depth_da3mono16.png`. (The repo's old 8-bit maps lose to DA3 on every picture, S19; the
    bristlecone one is inverted — do not use it.)
-4. Open the bake panel. Since 2026-09-15 these are the **start-up defaults** (no setting needed on a fresh browser):
-   **far side = plane (rim law)**, **fill = wash**, **margin = off**, **faces = off**, **band = tier ≤ 35°**, **sky = off**
-   (turn on for bristlecone and starwatcher), **seams = stretched**, **join = off**, **rules = current**. Margin is off at
+4. Open the bake panel. Since 2026-09-21 (Sprint 24 / S44) these are the **start-up defaults** (no setting needed on a
+   fresh browser): **far side = plane (rim law)**, **fill = wash**, **margin = off**, **faces = off**,
+   **band = tier ≤ 35°**, **sky = off** (turn on for bristlecone and starwatcher), **seams = stretched**, **join = off**,
+   and **rules = + ceiling cut + line despeckle** — the last one changed from `current`, because both carry a measured win
+   and no measured cost (see §3 below; the storage key moved to `bgPlateOptions.v3` so a panel you saved earlier does not
+   shadow it). The arms with a real trade — seams, margin, tier — are still yours to set, and still need eyes. Margin is off at
    your word (the clamp-extended strips are the outpaint placeholder you did not want); `margin · picture` (clipped to the
    picture) and `margin · window` are still in the select. Click **Build** (1–4 min). The panel remembers its values under a
    new key, so a set saved before this date does not shadow the defaults.
@@ -187,3 +190,55 @@ the rest blue); −1 off.
    troll's arm against `join = off` if you want to see it before it goes.
 4. Send back: the two console lines and a screenshot at your 26.5° and 45° poses with the default; the same with `_edgeTear` if
    you try it.
+
+## 9. Sprint 24 (S44, 2026-09-21): the depth-map contract, the consolidated defaults, and the envelope instrument
+
+**A. Load a depth map and the app now checks it.** The convention is normalised disparity, 1 = near, 0 = far. Nothing used
+to check, and an inverted map does not fail loudly — it parallaxes backwards, which reads as "the 3D is broken" rather than
+"the input is upside down". On load the app now states what it saw and, if anything is off, says so in an amber banner over
+the picture and in the console under `[S44]`. It never changes or refuses the map.
+
+Five tests, each naming its assumption: **polarity** (in an ordinary picture the bottom is nearer than the top — a view
+looking down, or a ceiling, breaks this honestly), **flatness**, **range used**, **clipping at either end**, and **levels
+against the fold limit** (a133: at 1920 px one 8-bit level is 1.55× the limit and already folds the mesh; at 851 px it is
+0.69× and does not, so the warning fires on the first and not the second). Verified headlessly on five deliberately broken
+maps: `node harness/s44_contract.js`. Console flag `window._depthContractUI = false` suppresses the banner.
+
+**B. Two arms became defaults.** `rules = + ceiling cut + line despeckle`. The ceiling cut is S23 (S7 precision 0.65 → 0.86,
+S26 beams 0.46 → 0.82, P6 grille 0.50 → 0.69, and byte-identical wherever no ceiling plane is found); the line despeckle is
+S20 (S5 one-texel poles recall 0.51 → 0.98, and 270–1 070 texels kept on each picture with no visible change and no clone).
+Neither has a measured cost, which was the bar. **Nothing else was promoted**: seams `all` closes the far-pose rim holes
+(silverwarrior 1 635 → 2 px) but adds a skin between every silhouette and its background, and the margin modes are
+clamp-extended edge colour standing in for an outpaint. Those are trades only a screen can price.
+
+**C. Nothing was stripped, and that is the finding.** The falsified work already left the file at a169 ("the falsified work
+is out of the file, not behind a flag"), taking eight window flags with it. What remains in the panel is a set of live
+trades, each with a measured for and against recorded in §3. There is no arm here the record justifies removing, so none
+was removed.
+
+**D. A new instrument: the rest-versus-envelope difference.** `node harness/s44_envelope.js` bakes with whatever the panel
+ships and reports, at rest and at the envelope poses, the share of the picture whose colour the bake **invented** and the
+share that has gone **dark**, plus the difference from rest. Everything is measured inside the rest-pose content rectangle,
+because the letterbox is 47–53% of the canvas and the check view recolours it — the first version of this instrument
+reported 53% placeholder at rest and was measuring the frame around the picture.
+
+This is the axis the project has never measured. R7 found exactly one evaluation in twenty papers built for a viewer like
+ours, and its whole point was that a still and a moving sequence rank methods differently. The troll, at the shipped
+defaults:
+
+| pose | h° | placeholder % | vs rest | dark % | vs rest |
+|---|---|---|---|---|---|
+| rest | 0 | **0.17** | — | 0.00 | — |
+| half right | 26.6 | 4.90 | +4.73 | 1.41 | +1.41 |
+| full right | 45 | 8.90 | +8.73 | 2.01 | +2.00 |
+| full up | 0 | 2.28 | +2.11 | 0.04 | +0.04 |
+| up-right corner | 45 | 9.14 | +8.97 | 1.50 | +1.50 |
+| **down-left corner** | 45 | **27.74** | **+27.58** | **21.25** | **+21.25** |
+
+Rest at 0.17% is the sanity check passing: at rest the viewer is looking at the picture, not at the bake. **The down-left
+corner is three times worse than the up-right one on placeholder and fourteen times worse on dark**, which is not
+symmetrical and is the first thing to look at with eyes. Frames in `harness/shots/s44_env/troll/`.
+
+**What to send back for this sprint:** whether the amber banner reads clearly when you load a bad map; whether the two new
+defaults look right on your pictures; and what the down-left corner actually looks like, since the number says it is the
+worst place in the envelope and only you can say whether it reads as broken.

@@ -665,3 +665,30 @@ the null or it is not a result; the Phase D motivation shrinks, since the model'
 advantage of not moving far from the occluder, and Sprint 29 should be re-argued on the BACKGROUND class; S42's class-level
 finding strengthens; and the kit needs scenes whose hidden things are NOT nearly coplanar with their occluders, which is a gap
 in the kit rather than a property of the world. Order unchanged: Sprint 24, the live pass, is next.
+
+**S44 (2026-09-21).** Sprint 24, the live pass, done (`research/S44_live_pass.md`; `moebius.js` bgDepthContract + the
+default change; `harness/s44_contract.js`, `harness/s44_envelope.js`; LIVE_PASS §9). **(1) The depth-map input contract is
+closed** -- open since S19 §3.3 and the last correctness gap a user can trip over. The app wants normalised disparity (1
+near, 0 far) and half the estimators write the opposite; an inverted map parallaxes BACKWARDS rather than failing, which
+reads as broken 3D. Every load is now checked for polarity (assumption stated: the bottom of an ordinary picture is nearer
+than the top), flatness, range used, clipping, and levels against the per-texel fold limit; reported in the console and, when
+off, in a banner over the picture. It never changes or refuses the map. Verified on five broken maps; one case worth keeping
+is that at 851 px an 8-bit level is 0.69x the fold limit and must NOT warn while at 1920 px it is 1.55x and must -- a133's
+~1250 px threshold is real and the first version of the TEST was wrong, not the contract. **(2) Two arms consolidated**:
+rules now ships as ceiling cut + line despeckle, both measured wins with no measured cost (S23: S7 0.65 -> 0.86, S26 0.46 ->
+0.82, P6 0.50 -> 0.69, byte-identical where no ceiling is found; S20: S5 poles recall 0.51 -> 0.98, 270-1 070 texels kept per
+picture with no visible change and no clone). Storage key moved to v3 and the old set is not read, so a saved panel cannot
+shadow the change; both asserted in the harness. NOT promoted: seams='all' (closes silverwarrior 1 635 -> 2 px rim holes but
+adds a skin) and the margin modes -- trades only a screen can price. **(3) Nothing was stripped, and that is the finding**:
+the falsified work left the file at a169 with eight flags, and every remaining panel arm has a measured for and against in
+LIVE_PASS §3. A mechanical scan finds 65 of 293 window flags written-but-never-read, but they are the probe arrays the
+harness reads, so the scan is not evidence. **(4) A new instrument, the REST-VERSUS-ENVELOPE DIFFERENCE** -- R7's one
+evaluation built for a viewer like ours. It bakes with whatever the panel ships and reports per pose the share of the picture
+the bake INVENTED and the share gone DARK, against rest, measured inside the rest-pose content rect (the letterbox is 47 % of
+the canvas and the check view recolours it; the first version reported 53 % placeholder at rest and was measuring the frame).
+Troll at the shipped defaults: rest 0.168 % invented / 0.001 % dark (the sanity check passing -- at rest the viewer looks at
+the picture, assumed for the whole project and never measured); 45 deg right 8.900 / 2.005; **down-left corner 27.744 /
+21.254**, three times the up-right corner on placeholder and fourteen times on dark. Part is structural (the troll's content
+touches the canvas top, margin is off) but the asymmetry is the first thing to look at. **Still needs eyes** (frames on
+disk): the down-left corner, seams='all' at 52/56 deg on silverwarrior, and S7's ceiling over-claim plus the sky margin edge.
+Next: Sprint 25, the end-to-end loop.
