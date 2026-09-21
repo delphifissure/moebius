@@ -431,3 +431,35 @@ around the stage the corpus covers, while the dominant visible defect was in the
 - The literature for the actual blocker is the stereo / discrete-labelling line (Boykov–Veksler–Zabih and successors),
   which is not in what was sent. Sprint 27's formulation does not depend on it — a binary MRF with a submodularity
   check is standard — but the prior art should be checked before anything is shipped.
+
+## 4. First-hand check: PACO (2406.07706, Object-level Scene Deocclusion)
+
+Checked because R7's PACO claims are **already built into shipped code** — they are the stated justification for
+`plane_color_occluder_removed.png` and `plane_mask_context.png` in the Sprint 25 bundle.
+
+**The three claims are accurate.** §5.3 and Fig. 8: (a) inpainting the occluded region alone "leads to ambiguity,
+regarding which object the missing area belongs to"; (b) replacing the occluder with uniform grey — "the inpainting
+process is **partly influenced by the replacement color**"; (c) extending the mask over the whole occluder — "may
+create unexpected new objects". All three with the ground-truth amodal mask.
+
+**Two things the synthesis missed, both of which matter for Sprint 28.**
+
+1. **PACO's own preferred baseline is strategy (c).** Supplementary, §"additional qualitative comparisons": *"For these
+   tests, we employed the third inpainting strategy indicated in Figure 8 (c) in the main paper, as our empirical
+   findings indicated its **superiority over the other two strategies in most scenarios**."* R7 presented the three as
+   equally failed. They are not; (c) is the one the authors use.
+2. **Their task is not ours, and the difference runs the favourable way.** Every PACO failure is about completing the
+   *occludee* — the album behind the teddy bear, the front bear's hand. **Our band is the background behind the
+   occluder.** Strategy (c) — remove the occluder, fill what is behind it — *is our task*, and the authors' objection to
+   it ("creates unexpected new objects") is an objection from wanting the album completed. For a background band,
+   plausible new background is the goal, not the failure.
+
+**Consequence for the Sprint 25 export, recorded now rather than discovered later.** What was built is a hybrid: the
+occluder footprint is replaced by a harmonic continuation (better than PACO's grey, which is the right call and is
+supported), but `plane_mask_inpaint.png` covers only the placeholder classes and **does not extend over the occluder
+footprint**. PACO's own evidence favours extending it. `plane_mask_context.png` already carries the occluder footprint,
+so the (c) variant is a mask union away and should be an arm in Sprint 28 rather than a decision taken by default.
+
+**Standing correction to R7's framing.** "A hole does not tell a model whose surface it is" is true and is the useful
+lesson. "All three failed, therefore our contract must carry ownership and depth" overstated it into a prohibition on
+the strategy the authors themselves prefer.
