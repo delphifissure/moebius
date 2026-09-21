@@ -101,7 +101,53 @@ unlike things again.
 
 ---
 
-## Sprint 27 — One real inpaint, end to end (1 sprint). Now the highest-value thing we can do.
+## Sprint 27 — THE CROSS-LINE LABELLING (new; inserted ahead of the inpaint on evidence)
+
+**Sprint 26 ran, and its finding redirects the plan.** The user looked at the tolerance sheet and said all five arms are
+streaky. They are right, and S50 measured why: **74 % of the troll's streak length is the far field disagreeing with
+itself** (S33, class 1 at 77.2 % of bends by count, class 3 at 35.1 % by length), not a real step between two background
+surfaces. Every rule Sprint 26 swept chooses *how to draw a wall that should not exist*, which is why the arms differ by
+tenths of a point and look identical to the eye.
+
+Two constructions have already failed against this, both recorded:
+
+- **S22** regularised the per-line law's *parameters* across lines (slope median, value median, both). The photograph's
+  same-sheet seams fell 18 % against a bar of half, and on the kit every variant *added* seams. Its conclusion: *"the
+  same-sheet seams are not per-line slope noise… what remains are the choice disagreements — axis flips, kind flips,
+  different rims on adjacent lines."*
+- **S32** smoothed the *field* instead (2-D clamped plate per run cluster). Removed under rule 7: clusters follow the run
+  segmentation, so adjacent rows were still solved as separate plates and the visible jumps rose (troll 40 → 44 %).
+
+S22 named the construction never attempted, **and the reason it stopped**:
+
+> *"A consistent choice across lines (a labelling over candidates with a join cost) would be the next different
+> construction, and it needs a weight between arrival order and cross-line agreement that nothing in the scene
+> supplies."*
+
+**That weight now exists.** A disagreement between adjacent texels draws a wall whose length in screen pixels at the rim
+is exactly `reveal(d_i, d_j)` — S48's field. S33 already scored its classes in "visible steps" using S10's `1/k`, which
+is a *linearisation* of that same quantity; the field is its exact form under the real law, and the difference matters
+because the law spreads 40× across one picture (p50 0.116 px, p99 4.641 px). So:
+
+> **minimise  Σ_i evidence(choice_i)  +  λ · Σ_{i~j} reveal(d_i, d_j)**
+
+with **both terms in screen pixels at the rim**. No borrowed constant: the smoothness term is literally the visible wall
+length the eye integrates, and the data term converts the same way. λ = ∞ is meaningful on its own (least visible wall
+subject to the evidence), which gives a parameter-free arm to measure first.
+
+1. **Offline first, on the existing instruments.** `harness/streak_class.js` already classifies every bend; S33's counts
+   are the baseline. Score a labelling against class 1 + class 3 wall length, and against the kit's band-depth truth so a
+   construction that smooths the artefact away by also destroying real steps is caught.
+2. **The candidate set is already built** — the far-side law emits per-texel candidates with their rims (`farRimJ`, kinds
+   1–4). This changes the *choice*, not the candidates, which is why S22's parameter smoothing missed it.
+3. **Measure class 2 separately.** A real step must survive; the target is only classes 1 and 3.
+4. **The bar**, set in advance: class 1 + 3 wall length down by at least half on the troll and one other picture, with
+   the kit's band depth not worse by more than S22's bar (median +0.01 m, p90 +10 %).
+
+**Why ahead of the inpaint.** Painting correct content into a band whose geometry still combs leaves the outline ragged —
+the colour would be right and the silhouette would still hatch. This is upstream.
+
+## Sprint 28 — One real inpaint, end to end (1 sprint). Was Sprint 27.
 
 S41 put this inside Sprint 25 as item 7. It is promoted to a sprint of its own because S44 measured what it is worth and
 S48 then removed its only competitor. At the worst envelope corner **27.7 % of the troll's frame is invented colour**;
@@ -189,12 +235,18 @@ real-domain signal our task does not have.
 
 | | sprint | size | gate | why here |
 |---|---|---|---|---|
-| 1 | **26 — the tolerance in pixels, proxies retired** | half | S48 (built) | one criterion, one unit; makes every later hole number mean something |
-| 2 | **27 — one real inpaint, end to end** | 1 | 25 (built) | two thirds of the visible mess is invented colour; only content reaches it |
-| 3 | **28 — the sheet A/B** | 1 day | 23, 24 | decides a weeks-long port with a day of work |
-| 4 | **29 — the meadow reframed** | small | none | may dissolve the hardest regime rather than detect it |
-| 5 | **30 — the gate, rewritten** | varies | 29 | the baseline changed the question |
-| 6 | **31 — diversity audit, then a pilot** | open | 29 and 30 negative | front-loads the only defence we have |
+| ~~1~~ | ~~26 — the tolerance in pixels~~ | ~~half~~ | done | **closed: the tolerance is worth 0.8 points of a 5.8-point problem. Its value was the diagnosis below.** |
+| 1 | **27 — the cross-line labelling** | 1 | S48's field (built) | 74 % of the streak length is the far field disagreeing with itself; this is the first construction that attacks the cause |
+| 2 | **28 — one real inpaint, end to end** | 1 | 25 (built), 27 | the colour is invented; but painting into a combing band leaves the outline ragged, so 27 goes first |
+| 3 | **29 — the sheet A/B** | 1 day | 23, 24 | decides a weeks-long port with a day of work |
+| 4 | **30 — the meadow reframed** | small | none | may dissolve the hardest regime rather than detect it |
+| 5 | **31 — the gate, rewritten** | varies | 30 | the baseline changed the question |
+| 6 | **32 — diversity audit, then a pilot** | open | 30 and 31 negative | front-loads the only defence we have |
+
+**The reordering is on evidence, not preference.** Sprint 26 was placed first to make later hole numbers mean something;
+it did that, and then it found that the thing it was tuning is a minority contributor to what the picture actually looks
+like. The user's reading of the contact sheet — *"they are all streaky as hell"* — is the measurement that matters, and
+S33 had already localised the cause a week before this sprint started.
 
 **The single most valuable next action is Sprint 27**, and the reason has not changed since S37 said it about Phase A: the
 fastest way to learn something genuinely new is to look at a picture. What changed is that S44 put a number on how much

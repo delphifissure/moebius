@@ -137,10 +137,73 @@ leaks, is the part that is quantitative.
 
 <!--TABLE-MARGIN-->
 
-## The decision
+## The decision: none of these, and the sprint's real finding is why
 
-<!--DECISION-->
+The contact sheet went to the user. Their verdict was *"they are all streaky as hell — why in the world are we not
+getting clean outlines."* That is the correct reading and it is the most valuable result of the sprint, so the rest of
+this section is the measurement that explains it rather than a defence of the arms.
+
+**Decomposing the 45° frame by placeholder class** (content rect 439 × 322 = 141 358 px):
+
+| | off | px4 | fold |
+|---|---|---|---|
+| real source colour | 30.59 % | 30.76 % | 30.90 % |
+| **cyan — band, must paint** | **5.19 %** | 4.89 % | **4.36 %** |
+| blue — band outside tier | 0.62 % | 0.67 % | 0.69 % |
+| magenta — plate 2 | 0.11 % | 0.14 % | 0.16 % |
+| orange — beyond the frame | 28.96 % | 28.99 % | 29.19 % |
+| dark — hole / letterbox | 34.53 % | 34.53 % | 34.55 % |
+
+**About 16 % of the actual picture at 45° is invented colour, and the ramps this sprint tuned are ~0.8 points of it.**
+Discarding *every* ramp moves the band from 5.19 % to 4.36 %. Every arm looks streaky because every arm leaves the band
+untouched.
+
+**And at magnification the band's texture is horizontal tongues with a ragged edge against the figure** — which is not
+the colour fill's doing but the *geometry's*. S33 measured this on 2026-09-15 and the numbers are unambiguous. On the
+troll, 99 205 visible bends (40.5 % of all vertical band edges), classified by what the two texels continue from:
+
+| class | count | wall length (what the eye integrates) |
+|---|---|---|
+| **1 — same surface, the law disagrees with itself** | **77.2 %** | 38.8 % |
+| 2 — a real step between two background surfaces | 10.4 % | 26.1 % |
+| **3 — axis change: row/column arbitration flipping between neighbours** | 12.3 % | **35.1 %** |
+
+**74 % of the troll's streak length is the construction disagreeing with itself.** Class 1 draws short walls (median
+3.3 px) — the fine horizontal hatching that fills the band. Class 3 draws long ones (median 25 px) — two adjacent texels,
+one continued along its row and one along its column, landing a hundred pixels of parallax apart.
+
+**So the cliff tolerance is choosing how to draw a wall that should not exist.** Keep it, shave it, or discard it: the
+wall is an artefact of the far field's per-line construction either way. That is why the sweep's arms differ by tenths
+of a point and all of them look the same to the eye.
+
+**Therefore: the rule stays off, which is what ships today.** Not because a tolerance could not be chosen — `px4` is
+clearly the best of them — but because the choice is worth 0.8 points against a 5.8-point problem, and the person whose
+screen is the authority looked at all five and rejected them. Turning on a rule that trades smear for stipple, for that,
+would be motion without progress.
 
 ## What was retired, and what was not
 
-<!--RETIRED-->
+**`fgTearStep` was not retired, and S49's item was written too broadly.** It has 84 uses and most are not the renderer's
+cliff criterion: they are bake-side "are these two lips the same surface" tolerances — component segmentation in
+`_planeObjects`, band continuation, the v1 directional plate, object detection (A253). Those are pose-independent
+statements about the depth map's structure. As the *tear* criterion it is already only a fallback behind
+`window._noFoldTear`, since a160/a177 replaced it with the fold-plus-quantum law.
+
+**`window._noFoldTear` was not retired.** It restores the falsified a117 criterion and is still used as a deliberate
+control by `posesweep.js` and `restblack.js`. This project keeps such controls on purpose.
+
+**`u_plateNearOnly` (S46's quantum form) was not retired either, and the reason is worth recording.** The evidence to
+retire it is there — `px2` beats `q8` on every column at once, more streak removed, less hole, fewer leaks — and it is
+the right call *if the rule ever ships*. But the rule does not ship, so retiring one of two dormant dials is churn
+against a plan item rather than work. **The evidence is recorded here so that if the near-extent rule is ever turned on,
+the quantum form goes without re-measuring.**
+
+The genuine deliverables of this sprint are three, and none of them is a tolerance:
+
+1. **`harness/s50_tolsweep.js`** — the cliff dial swept in transferable units and scored by the assertion rather than by
+   hole area.
+2. **The inert-arm guard.** The `fold` arm rendered identically to `off` at every pose and its plausible, monotone rows
+   would have supported a conclusion. Every arm is now compared against `off`'s own frame and a match is reported
+   loudly (a134).
+3. **The diagnosis above**, which redirects the plan: the streak is 74 % self-disagreement in the far field, and that is
+   upstream of every rule this sprint measured.
