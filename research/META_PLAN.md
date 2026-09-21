@@ -639,3 +639,29 @@ the gate may be the object map wearing a different hat (§52, §56, S27). Also r
 and L6's is 0.0154 m / 0.0106 d, so **the metre score reverses a ranking between two real scenes** -- S38's warning observed
 rather than argued, and the case for Sprint 23. Recommendation: no more scene-gate notes; Sprint 28 next among the research
 items, behind Phases A and B.
+
+**S43 (2026-09-21).** Sprint 23 done (`research/S43_measurement.md`; `truthkit/tk.py` depth_scores + commit_scores,
+`check_app_band.py` s23 block, `bleed/rescore.py`). The score is now defined ONCE and reports four families: **d** the app's
+own normalised depth (PRIMARY), **steps** over the scene's visible quantisation, **m** metres (kept for continuity, no longer
+quoted) and **log10 + delta** on camera distance (the literature's metrics, so our numbers are comparable with published work
+for the first time). Added: the interior/exterior/whole split, a do-nothing baseline, accuracy/completeness, error binned by
+depth. **It was meant to be housekeeping and it is not.** **(1) The do-nothing baseline overturns five notes.** Keeping the
+occluder's own plate depth across the band is §47's clone, and its error is IDENTICALLY the median depth change there is to
+recover. On the hidden-thing class it BEATS both our construction and the model on L5 (0.0314 d vs 0.2633 and 0.0395) and L6
+(0.0641 vs 0.0732 and 0.0686); the model beats it on one scene of five, L8, by 4 %. **So the learned amodal prior never
+meaningfully beats the null on the thing class**, and S36/S39/S40/S42 all scored that class without one. The reason is in the
+baseline itself: the thing-class depth change to recover on these field scenes is only 0.031-0.046 d, because the hidden
+clumps and figures sit at nearly the occluder's depth -- Counterfactual Depth's 0.25 m test-set filter arriving late.
+**(2) The background class is where the depth change is (0.09-0.36 d) and the construction owns it**, winning all six scenes
+and exact on L6 and L9, while the model beats the null there by 1 % on L9 and loses on L5. Together: on these scenes the model
+is close to indistinguishable from leaving the occluder's depth in place. **(3) Methodological correction to S39/S40: do not
+use the spread ratio** -- when the best case is at the 16-bit floor it is division by nothing (the arm's bg spread reads
+8 600x in d, 3.7e7x in m, purely because it is exact twice). Report worst and median: whole band, arm worst 0.2070 d median
+0.0399, model 0.1500 / 0.0652, none 0.2079 / 0.0630. **(4) Completeness caught a real omission**: on L1 the construction
+leaves 32 % of the band (42 % of the bg class) at the occluder's depth -- a clone by the §47 fall-back, against "everything
+filled, wash never clone"; every other scene commits on >= 99.5 %. **(5) The unit reversal is now observed twice** (L1 vs L6
+on the whole band; L5 vs L8 on the thing-class null), so d is primary from here. **Consequences:** every future row must beat
+the null or it is not a result; the Phase D motivation shrinks, since the model's thing-class advantage was largely the
+advantage of not moving far from the occluder, and Sprint 29 should be re-argued on the BACKGROUND class; S42's class-level
+finding strengthens; and the kit needs scenes whose hidden things are NOT nearly coplanar with their occluders, which is a gap
+in the kit rather than a property of the world. Order unchanged: Sprint 24, the live pass, is next.
