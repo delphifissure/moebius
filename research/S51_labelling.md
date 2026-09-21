@@ -66,13 +66,37 @@ ICM, red-black, 25 sweeps to convergence; 17 947 texels relabelled (11.6 % of th
 3. **Class 2 fell 10.9 %, more than class 1.** λ = ∞ erodes real steps faster than it fixes same-surface disagreement.
    That is precisely the failure the class-2 column exists to catch, and it is the argument for a finite λ.
 
-**The refined diagnosis.** The streaky texture has two components with different causes:
-- **long walls** — the axis arbitration flipping between neighbours. *This labelling halves them.*
-- **fine horizontal hatching** — adjacent rows of one surface given two depths, median wall 3.3 px. **Nothing in the
-  candidate set reaches this**, because both candidates are computed per line and the disagreement is between lines.
+## CORRECTION — the conclusion above was wrong, and the oracle bound says so
 
-S22 tried to fix the second by regularising the law's parameters across lines and failed the bar; S32 tried smoothing
-the field and made it worse; this sprint tried choosing between per-line candidates and does not reach it either.
-**Three different constructions have now failed on class 1, and all three shared an assumption: that the fix can be made
-downstream of a per-line extrapolation.** S33 said this in one line and it is worth quoting exactly: *"the fix is
-upstream of any solve."*
+The paragraph that stood here concluded that **"nothing in the candidate set reaches class 1"** and that three
+constructions had now failed for the same structural reason. **That was drawn from one greedy search and it is wrong.**
+
+The check that settles it is an **oracle bound**: for each visible bend, take the best of the four label combinations
+*for that pair alone*, ignoring that neighbours share labels. That is a strict upper bound on what any labelling could
+achieve, a perfect optimiser included.
+
+| class | wall now | best possible | headroom |
+|---|---|---|---|
+| 1 — same surface, two depths | 113 720 | 44 544 | **60.8 %** |
+| 2 — real step | 223 098 | 158 611 | 28.9 % |
+| 3 — axis flip | 179 081 | 11 936 | **93.3 %** |
+| **artefact (1 + 3)** | **292 801** | **56 480** | **80.7 %** |
+
+**Class 1 has 60.8 % of headroom inside the existing candidate set**, and the ICM found 4.6 % of it. So the label set is
+not the limitation — the search is. The structural claim was a generalisation from a weak optimiser, and it should have
+been checked with this bound *before* it was written, not after.
+
+**What is established, and what is not.**
+
+- *Established*: the reveal field works as a join cost, class 3 halves under a greedy search, and λ is inert (∞, 1 and
+  0.25 give 33.0 / 32.8 / 33.0 %). **That inertness retires S22's stated blocker** — it said this construction needed a
+  weight between evidence and agreement "that nothing in the scene supplies", and the construction turns out not to
+  depend on that weight at all.
+- *Not established*: whether the construction clears the 50 % bar. ICM gives 33 %; the bound allows 80.7 %; restarts
+  from eight seeds do not improve on the law's own (energy 438 955 against 440 523 all-row, 507 839 all-column,
+  458–464 k random), so the law's choice is already the best basin found by descent.
+
+**The exact answer is available and cheap in principle.** If each texel's two candidates are ordered by value (label 0 =
+the smaller), the pairwise term |v_i − v_j| satisfies the Monge condition and the binary energy is **submodular**, so a
+single s–t min-cut gives the **global** optimum rather than a local one. That converts "ICM got 33 %, the bound allows
+80.7 %" into a number, and it is the difference between shelving this construction and porting it.
