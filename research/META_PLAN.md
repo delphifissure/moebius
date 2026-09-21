@@ -604,3 +604,38 @@ three failed -- a hole does not tell the model whose surface it is. **Do not** h
 of the twenty has one; the survey lists it as future work), do not revisit the visible-region residual or occlusion fraction
 as gates (the latter nearly flat: Amodal-DAV2-L RMSE 3.324 easy -> 3.476 hard), and do not adopt any of their layer orderings
 -- ours is exact. Phases A and B still come first; items 1 and 2 are small enough to run alongside.
+
+**S41 plan (2026-09-21).** `research/S41_plan.md`, supersedes S37. Order by dependency: **Sprint 23 the measurement fix**
+(half a sprint, first, because every later A/B is currently scored with a metric whose amplification varies 20x for reasons
+unrelated to quality): log10 + delta alongside RMSE, interior/exterior/whole split, a do-nothing baseline, accuracy and
+completeness reported separately, error binned by depth, and every S35-S40 table restated. **Sprint 24 Phase A the live pass**
+(1 sprint, still the most valuable thing we can do), now also shipping the rest-versus-envelope DIFFERENCE, the only
+parallax-specific metric in the R7 corpus. **Sprint 25 Phase B end to end** (1 sprint), with the contract the literature now
+settles: joint colour+depth not a cascade, depth returned as a GRADIENT field integrated Poisson-wise against the observed
+depth at the band boundary (seam exact by construction, scale-free, 97 ms sparse Laplacian), the arrival-order contextual mask
+as the legal source region, the occluder replaced by clean background not grey, asymmetric masks via zero-init conv.
+**Sprint 26 Phase C the sheet A/B** (1 day). **Sprint 28 the meadow reframed** (small): one mask over the whole merged field,
+ask for the surface behind, per Counterfactual Depth -- it may dissolve the L5 regime rather than gate around it.
+**Sprint 27 the gate** (gated on S42). **Sprint 29 diversity audit then a 200-scene training pilot** (only if 27 and 28 both
+fail). Not recommended: hunting a confidence mechanism to adopt (none of the twenty papers has one), revisiting the
+visible-region residual or occlusion fraction, adopting any of their layer orderings, or a layered generative plate 2.
+
+**S42 (2026-09-21).** R7 item 1 run (`research/S42_collar.md`, `bleed/collar.py`), six scenes. **The named failure is real and
+strong**: splitting the band by whether the two opposing far lips agree to within one visible step, the construction's error is
+0.0027 vs 0.4402 m on L5 (162x), 0.0000 vs 0.0492 on L6 and 0.0000 vs 0.0023 on L9 -- **exactly right wherever the collar does
+not oppose**, the first observable to separate our error by two orders of magnitude. **But it is sufficient, not necessary**:
+on L1, L7 and L8 the split does nothing (ratios 0.9, 0.9, 1.0) because the construction is already wrong where the collar
+agrees, so a second failure mode dominates there. **No scene aggregate orders the six scenes** -- best Spearman rho -0.77
+(p 0.07) for mean opposition against the whole-band error and it is in the WRONG direction; that is the FIFTH falsification of
+a scene gate (§57, S36, S38, S39, S42). S38's per-texel monotonicity also does not survive: reach 2/6, lipsp 2/6, opp 2/6.
+**The per-texel hybrid** (construction where lips agree, model where they disagree) halves the worst case 0.346 -> 0.179 and
+cuts the spread 23x -> 8.8x, a genuine gain, but loses to the model alone on mean (0.078 vs 0.057) and worst (0.179 vs 0.096),
+because opposition fires on 45 % / 32 % of L7's and L9's bands where the construction was fine; and a threshold sweep from 1 to
+128 steps is FLAT, so there is no tuned version. **The new finding is that the contest is CLASS-level, not scene-level**: on
+the WHOLE band the construction wins four scenes of five (L6 0.0154 vs 0.2052, L9 0.0005 vs 0.0763) and loses the thing class
+on three of five, so the model's advantage is confined to the hidden-thing class and "use the model everywhere" would wreck the
+background class we already get exact. The missing piece is a class discriminator, which is what the object map determines --
+the gate may be the object map wearing a different hat (§52, §56, S27). Also recorded: L1's whole band is 0.0112 m / 0.0198 d
+and L6's is 0.0154 m / 0.0106 d, so **the metre score reverses a ranking between two real scenes** -- S38's warning observed
+rather than argued, and the case for Sprint 23. Recommendation: no more scene-gate notes; Sprint 28 next among the research
+items, behind Phases A and B.
