@@ -18,6 +18,21 @@ This sprint reopens it with two things S46 did not have.
 Instrument: `moebiusv2/harness/s50_tolsweep.js`. Nothing in the bake depends on the tolerance — it is a fragment test
 evaluated every frame — so the arms are re-armed live and a sweep costs one bake and N renders rather than N bakes.
 
+## An arm that did not diverge, and the guard that now catches it
+
+The first sweep's `fold` arm — discard every ramp, the pre-existing all-or-nothing answer this whole sprint is measured
+against — returned numbers **identical to `off` at all three poses**: 15 px bounded at 45°, 30 leaks at the corner, byte
+for byte. That is not a result; it is an inert arm. The plate's fold path is gated on `u_fragTear > 0.5` and needs the
+rest of the A241 stretch law with it — the app arms four uniforms together at bake time — and the harness set one.
+
+Nothing in the numbers looked wrong. They were plausible, they were monotone, and they would have supported a
+conclusion. This codebase already carries the lesson, from a134: **an A/B arm must diverge downstream of the flag before
+its numbers are read.** So the harness now enforces it rather than relying on me noticing: every non-`off` arm is
+compared against `off`'s frame at the same pose and mode, and an identical render is reported loudly instead of
+tabulated quietly.
+
+The `fold` rows in the first run's `sweep.json` are void. They are superseded below.
+
 ## A defect found on the way in
 
 The S5 **step faces clone the plate's material**, so they inherit whatever near-extent tolerance the plate was armed
