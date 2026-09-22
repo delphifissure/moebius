@@ -1,5 +1,11 @@
 # R7 — Twenty papers read against our open questions: the gate has an untried family, depth-only training is supported, and our score is the wrong one (2026-09-21)
 
+> **SUPERSEDED (2026-09-22) by `R8_corpus_first_hand.md`.** Every paper in the corpus has since been read first-hand,
+> beginning to end. R8 records what that changed, including the framing error at the root of this note: by the amodal
+> survey's own definition (2207.02062 §2.2) our task is general inpainting, not amodal completion, and the literature
+> that addresses it — InpaintFusion, DeepDR — was in the corpus unread. **Where R7 and R8 disagree, R8 is the reading.**
+
+
 Twenty papers supplied as markdown and read in full, in four groups: amodal depth (Amodal Depth Anything, Counterfactual Depth,
 Amodal Panoptic Segmentation, the Image Amodal Completion survey, Semantic Amodal Segmentation), deocclusion (PACO/Object-level
 Scene Deocclusion, SynergyAmodal, Open-World Amodal Appearance Completion, Amodal3R), synthetic data (Infinigen, Infinigen
