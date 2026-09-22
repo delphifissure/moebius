@@ -124,3 +124,49 @@ adoption; the §V median quotations and decreasing-N order; the §VI two enhance
 s = 2, 9×9 vs 25×25 and its quotation, w_Ω 0.2 ≈ +3 dB / +0.02); the flicker, sprite and unreliable-DM
 quotations; the Table II prose verdicts and "sharper but noisier"; the conclusion's perceptual-measure quotation;
 HHI supplied Zhang & Tam's "Interview" image (checked in their paper).
+
+## 7. Criminisi, Pérez & Toyama, exemplar-based inpainting, IEEE TIP 2004 — 697 lines read
+
+(Equations (1)–(3) are blank in this file; the notes' forms are the published ones and agree with every term the
+prose defines. Now said in the notes.)
+✘ **The medial-axis prediction is stale.** The notes still proposed it as an untested Sprint 31 sub-item; it was
+tested as task 61 (S57 §5) and came out negative. Per rule 5, the prediction is replaced by the result; the
+"we lack the loop" paragraph is rewritten to match (not a gap for the depth law).
+~ "Whatever the real structure was" overstated the Fig. 20 caption, which says "tends to"; tightened.
+~ The "broken structures" quotation is about Fig. 11, not "the same figure" (Fig. 20); corrected.
+~ Ndjiki-Nya cites this paper for his §VI priority, not for his §V ordering; corrected.
++ Missed: §V limitation (iii), *"our algorithm does not handle depth ambiguities (i.e., what is in front of what
+in the occluded area?)"*, the authors' own statement of the boundary between their problem and ours; limitation
+(ii), curved structures; the concessions to Jia et al.; the remark that ground truth for inpainting is
+"non-trivial" (all comparisons are visual). Added.
+✔ Fig. 20 caption quotation; C/D behaviour quotations ("approximately enforces the desirable concentric fill
+order", "removing sharp appendices", "grow indiscriminately", "'push' … mitigated"); initialisation and freezing
+of C; the §V "necessary and sufficient" and §III no-segmentation quotations; the Jia and [24] quotations; the
+§III-2 "any further manipulation" quotation and its qualifier; 9×9 and the texel quotation; SSD over filled
+pixels in CIE Lab and footnote 3; n_p from Gaussian-filtered control points; ∇I_p as a maximum; source as a
+dilated band (Figs. 21, 24); 2 s vs 45 s on the 200×200 aerial image; 18 s vs 10 min on the bungee photograph.
+
+## 8. Shade, Gortler, He & Szeliski, Layered Depth Images, SIGGRAPH 1998 — 619 lines read
+
+✘ **"We forward-map both together; a backward colour fetch is cheap to try."** Wrong: our plates are displaced GPU
+meshes coloured by texture lookup (CODEMAP L2823, L3852, L14665), which is the paper's forward-depth /
+backward-colour scheme done by the rasteriser. Proposal withdrawn.
+✘ **"Their 90° frustum is the same order as our envelope."** The 90° is each LDI's field of view; their viewer
+region is a cube of positions. Corrected (and the envelope sentence updated to the ±90° target).
+✘ **Cosine weighting read as an importance weight.** The paper assumes all rays equally important; the cosine is
+the measure for a uniform ray density through a face. The truth-kit backlog item built on the misreading is
+withdrawn.
+~ §4.1's epsilon is a decision along a line of sight (samples from different input views); class 2 is between
+neighbouring texels. Marked as an analogy; "the cliff tolerance is our epsilon" softened to "plays the role".
+~ "Plate 2 is built from arrival order along the ray — exactly the ray-piercing construction" → the plates share
+that construction's *sampling* (source-grid, one sample per texel per layer), which is what the limitation needs.
+~ "Real multi-view input" for the 1.24 figure → synthetic renders; the "20 vs 17" inconsistency in the paper
+noted. "(up to some maximum)" restored in a quotation.
+~ The "large changes in view with only a small amount of gap filling" quotation belongs to the homography
+factoring (large zooms), not to the depth-first idea; separated.
+✔ Header; the Fig. 1 ladder and its three quotations; §4.1 and §4.2 epsilon quotations; the §4.2 sampling
+quotations; the two failure events and the ray-piercing quotation; §7 glancing-angle and "not fully understood"
+quotations; the splat-size formula as far as the garbled layout allows (d1/d2, √(cos θ2/cos θ1), resolution and
+fov terms; θ approximated by normal-to-z angles); four splat sizes, alphas 1, ½, ¼; 11-bit table (5 + 6 bits),
+2048 entries per frame; 32⁴ strata × 16 rays ≈ 16 M; chestnut 7 h, 250 MHz Indigo2, 1.1 M depth pixels, 4–10 fps;
+8-byte depth pixel, four per cache line, +25 %; the §7 displacement-map quotation; 30/21/16 Hz.
