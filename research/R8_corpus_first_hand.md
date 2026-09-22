@@ -424,8 +424,18 @@ Ordered by how much each bears on us. Full detail in `scratchpad/readnotes/notes
 
 ## 14. What to do, in order
 
-> **EXECUTED (2026-09-22) — see `S53_five_items.md`.** Items 1–5 have been run. Three of the five were stated here in
-> terms the measurements corrected, and the corrections are recorded there rather than edited away:
+> **EXECUTED (2026-09-22) — see `S53_five_items.md`.** Items 1–6 have been run, and so has everything actionable in
+> §9, §10 and the per-paper notes: fourteen ideas tested, **six negative, two of them contradicting this note**.
+> Specifically: the **simplicity prior** carried from the amodal survey's Tab. 1 **does not transfer** — it runs
+> backwards, with do-nothing scoring highest and truth lowest on 30 kit scenes; the per-paper claim that our reveal
+> field beats published occlusion-boundary practice is **not supported** (ODS 0.833 against 0.835, a tie); and this
+> section's blanket prohibition on inpaint-then-redepth is **upheld by our own measurement**, after the per-paper
+> notes correctly flagged Pano3DComposer §3.3 as a distinct, untried path. The largest measured effect of anything
+> on this list is item 4, a one-line resolution change. Item 1's re-measurement **settles S51 against this note's
+> hypothesis**: it is invisible in motion too, not a measurement failure.
+>
+> Three of items 1–5 were also stated below in terms the measurements corrected, and those corrections are recorded
+> rather than edited away:
 > **item 2** — `moebius.js` does not export gradients, it only consumes them, and its divergence form was already
 > right; the defect was in `harness/s52_depth.py` alone, and on a dense field the bi-directional mean is provably a
 > no-op, so what it fixes is the band rim specifically (median 0.0828 → 0.0004 in d on 42 586 crossing edges).
