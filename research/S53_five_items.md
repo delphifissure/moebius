@@ -213,6 +213,135 @@ between arms, so this costs resolution in the absolute numbers and nothing in th
 
 ---
 
+---
+
+# Part II — the rest of the corpus, worked through
+
+R8's §14 was the *ordered* subset. The read turned up more, in §9, §10 and the per-paper notes. This part works
+through those, and **four of the seven produced a negative result** — which is the point of testing them cheaply
+before building on them.
+
+## Tested and REFUTED: simplicity as an objective
+
+The amodal survey (Tab. 1) and AmodalSynthDrive (Tab. II) report that amodal segments are simpler than modal ones —
+`simplicity = √(4πA)/P` — on five datasets (BSDS .718→.834, COCO .746→.856, KINS .709→.830, KITTI-360-APS
+.778→.884, BDD100K-APS .697→.821), "independent of scene geometry and occlusion patterns".
+
+This mattered because **S51's entire cost function was visible wall length**, a perimeter measure with no published
+prior saying which direction is right. Simplicity is the same kind of quantity *with* a direction, so it was the
+obvious candidate to reopen S51 with. Tested first, on 30 kit scenes with exact hidden truth:
+
+| | mean simplicity | median |
+|---|---|---|
+| modal (visible only, band excluded) | 0.4276 | 0.4356 |
+| amodal: **truth** | **0.4052** | 0.3974 |
+| amodal: far field (shipped) | 0.4642 | 0.4668 |
+| amodal: **do nothing** | **0.5104** | 0.4852 |
+
+**The prior does not transfer, and the metric runs backwards.** Completing with truth *raises* simplicity on only
+10 of 30 scenes, and on average **lowers** it (−2.6%), against the papers' +16% on all five of their datasets. Worse,
+the ranking is inverted: do-nothing — the definitionally wrong answer, a flat occluder depth smeared across the
+band — scores **highest of all** (+23.2%), above the shipped construction (+11.6%), above truth.
+
+The reason is interpretable. Their segments are compact *objects* whose amodal extent is a blob; ours are
+*background surfaces revealed behind things*, and the smoothest wrong answer makes the simplest regions. It is the
+"regression produces an average" trap once more, in a third metric.
+
+**Do not reopen S51 with simplicity.** Cost of finding out: one script.
+
+## Tested and REFUTED: band fragmentation as a distribution mismatch
+
+Amodal3R builds training masks "to ensure these regions connect — thereby better simulating real-world occlusions,
+where mask regions are typically **not highly fragmented**." R8's note flagged our 261-component troll band as a
+mismatch for any off-the-shelf inpainter.
+
+By count it is fragmented; **by area it is one hole.** The largest component holds **94.6%** of the band, the top ten
+hold 97.7%, and the 223 components under 64 px hold **0.64%** between them. The context-to-fill ratio is a flat 0.08
+rim edges per band texel at every percentile. There is no mismatch to correct and no case for per-component
+inpainting.
+
+## Confirmed, but the fix is ours to find: unnamed things are the occluders
+
+2411.13019 §3.1 is the only paper in the pile treating amorphous "stuff" as a first-class occluder: "these
+unlabelled (or 'background'-labelled) regions can be occluders of a target object." Their ablation: LPIPS .333 → .320.
+
+On the troll the claim lands hard. Of the band texels with an occluding visible neighbour, **54.8% are hidden by
+something the object map never named** — SAM 2.1 was clicked on nameable things, and the cave wall, foliage and rock
+are what actually occlude.
+
+**Their fix is aimed at their problem, and my substitute failed.** They partition the unsegmented remainder by
+erode-then-dilate because their pipeline reasons per object. We need a *mask*, not units, and the geometry states
+exactly which visible texels occlude — so I built it from the geometry and grew it over the surface. It floods:
+**60% of the plate even at a 0.002 tolerance**, because a smooth monocular depth map always has a low-gradient path
+around any boundary (band |∇d| p50 0.00046, p90 0.0034, p99 0.189 — the mass is in the tail, but the connectivity is
+in the bulk). That is the same wall S35's sheets ran into.
+
+What survives: the rim **seed** (visible texels directly in front of a band texel, 3.5% of the plate) is well defined,
+and bounded dilations of it are stable. And the return guard's verdict does not depend on the question at all —
+shipped 0.38–0.65, Amodal-DAV2 1.47–1.55, under every reference tried.
+
+## Measured, and the fix already exists in the app: the frame edge
+
+2411.13019 Eq. 3 dilates the occluder mask along the image edge when the target touches it; PACO's limitation (iii)
+says the same and prescribes padding. S48 calls it the *unbounded* class.
+
+| | |
+|---|---|
+| band texels **at** the frame | 1 274 (**0.37%** of the band) |
+| within 4 texels | 4 837 (1.39%) |
+| within 16 | 15 699 (4.52%) |
+| band components touching the frame | 11 of 261, holding **96.5%** of the band area |
+| the bottom edge | **851 of 851 border texels are band** |
+
+Topologically dominant, geometrically a thin strip, and concentrated on the bottom edge where the ground runs out of
+the picture. **The app already implements the published fix** — the margin mechanism and the `plane_out_*` strips —
+and the troll bundle was baked with `plateOptions.margin: 'off'`. The action is to turn it on and measure, not to
+build anything.
+
+## Built and queued: the reveal-thresholded hybrid (R8 §14 item 6)
+
+SynergyAmodal Fig. 6: a regression wins the 0–10% occlusion bucket; generative methods take over at 10–50%, 50–90%,
+90–100%. §4.3 names the failure our construction has: "regression-based methods tend to produce results resembling
+an **average** outcome. While they often achieve **decent IoU scores**, the actual shapes do not meet the
+requirements."
+
+The split costs nothing because the threshold is a field we already export. Two tools, neither newly trained: the
+harmonic continuation (`plane_color_occluder_removed.png`) under threshold, LaMa (S52 arm A) over it.
+
+**A decoding trap, recorded because it nearly produced a silent result.** `meta.plane.reveal.pngScale: 16` is *not* a
+multiplier — it is the **cap in texels**, and the decode is `texels = value / 65535 × cap`, exactly as the file's own
+description states. Reading it as a multiplier gives a field ~375× too large, puts every band texel above every
+threshold, and degenerates the hybrid to "all generative" while looking like it ran. What caught it was the decoded
+percentiles disagreeing with the meta's own by three orders of magnitude.
+
+Decoded correctly, on the band: p50 **0.542** texels (0.170 screen px), p90 3.574, p99 16.0 — clipped, since 0.94% of
+band texels saturate the 16-texel cap and the true max is 143.6.
+
+| threshold | generative | share of band |
+|---|---|---|
+| T = 0.25 | 272 571 px | 78.5% |
+| T = 0.5 | 185 917 | 53.6% |
+| **T = 1.0** | 95 357 | **27.5%** |
+| T = 2.0 | 46 376 | 13.4% |
+| T = 4.0 | 32 482 | 9.4% |
+
+Arms written for the sweep: `H_rev1` (27.5% generative) and `H_seedonly` (pure regression, no model at all), to be
+rendered in motion beside `armA` (all generative). That is the three-point test of the paper's claim.
+
+## Not attemptable here, and why
+
+- **The occluder as its own channel, and the background as a second channel** (PACO, APSNet, Amodal3R,
+  SynergyAmodal — four papers). LaMa's first convolution is `(64, 4, 7, 7)` in a frozen TorchScript archive. Needs a
+  different inpainter and a training run; no GPU here.
+- **Global-to-local inference**, worth ~13% FID (SynergyAmodal §3.4, COCOA 10.9 → 9.5). Only applies to a latent
+  diffusion inpainter with a fixed input size. Moot while the inpainter is LaMa.
+- **A generative prior as a regulariser** (Gen3R §4.3, "corrects the errors and produces cleaner depth"). This is the
+  effect we want against speckle, but it needs the model.
+- **Shadows left by removed occluders** (PACO, SynergyAmodal Fig. 10, DeepDR). DeepDR's supplement masks the shadow
+  and reports results "often look better"; we have no shadow detector. The *other* half of their claim — that
+  under-covering masks cause "flickering between consecutive frames" — is testable now that the motion instrument
+  exists, and the dilated arms D/E/F are exactly the test.
+
 ## What is still open
 
 - **The re-bake for item 4.** The 2× map exists; the bake and rescore do not.
