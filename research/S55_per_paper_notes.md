@@ -1739,9 +1739,9 @@ same judgement expressed as **model selection**: the richer model is always avai
 `ρ_bias` extra, so it wins only where it earns its complexity. `ρ_bias = 0.5` against `ρ_max = 6`, so the
 penalty is ~8% of the maximum data cost.
 
-The honest framing of why, §3.4: *"**It may very well be that a plane fits a bush or sloping ground, at least
-within the uncertainty of the stereo reconstruction.** It is in fact the appearance of these image regions that
-indicate they are non-planar."* Fit is not the same as appropriateness — the thin-evidence rule's whole premise,
+The honest framing of why, §1 (restated in §3.4): *"**It may very well be that a plane fits a bush or sloping
+ground, at least within the uncertainty of the stereo reconstruction.** It is in fact the appearance of these
+image regions that indicate they are non-planar."* Fit is not the same as appropriateness — the thin-evidence rule's whole premise,
 stated by someone else.
 
 ### 2. THE IDEA: the discard label makes size-dependence *emerge* instead of being thresholded
@@ -1751,10 +1751,13 @@ stated by someone else.
 > surroundings due to the smoothness term, but large poorly matching regions will incur enough cost to be
 > discarded.**"*
 
-Read that mechanism carefully. Discarding a region of area `A` costs about `c·A`. *Not* discarding it costs the
-mismatch plus the smoothness penalty on its perimeter, ~`λ·P`. So discard wins when `A/P` is large — **which is
-exactly "large and compact"**, ORCA's hand-tuned rule (≥9000 px, ≥45% of bounding box, shorter side ≥64 px),
-falling out of a two-parameter energy rather than being chosen.
+Read that mechanism carefully. Over a poorly matching region every plane label costs about the truncated maximum
+`ρ_max` per pixel, and discard costs slightly less, saving some `ε` per pixel — `ε·A` over a region of area `A`.
+But labelling the region "discard" creates a label boundary, which pays the smoothness penalty along its
+perimeter, ~`λ·P`; left labelled like its surroundings, it pays none. So discard wins when `ε·A > λ·P`, i.e. when
+`A/P` is large — **which is exactly "large and compact"**, ORCA's rule (≥9000 px, ≥45% of bounding box, shorter
+side ≥64 px), falling out of the energy rather than being chosen. (Corrected on verification: I first had the
+perimeter cost on the wrong side; the conclusion was right.)
 
 **This is a better hybrid than ours.** Our reveal threshold is derived, which beats ORCA's three constants, but
 it is still a threshold on a per-texel quantity, applied per texel. Gallup's construction says: give "hand this
@@ -1763,22 +1766,31 @@ decision about *which regions* go to generation — including their size and sha
 minimisation. No size threshold, no compactness threshold, and the reveal field can set the per-texel cost so
 the derivation we already have is retained rather than replaced.
 
-That is a concrete redesign of the hybrid and it subsumes both the §2 concern I raised about ORCA (shape vs
-reveal) and Sprint 29's open hybrid decision. New task.
+That is a concrete redesign of the hybrid. Two qualifications added on verification. It does not *settle* the
+shape-versus-reveal question I raised under ORCA §2 — it takes a side: an `A/P` rule prefers compact regions, so
+a long thin band (`A/P` ≈ half its width) would rarely be handed to generation, whatever its reveal. The
+kit-truth test proposed there decides whether that side is right. And the costs `ε` and `λ` must be derived
+(rule 2) — the reveal field can supply `ε`; `λ` has no source yet. (I wrote "New task"; none was created. It is
+recorded here and belongs with the hybrid decisions in LIVE_PASS §10.)
 
 ### 3. Their smoothness has a floor as well as a cap — and the floor is anti-class-1
 
 ```
-E_smooth ∝ λ_smooth · f( clamp(d, d_min, d_max) ) · g(image gradient)
+E_smooth ∝ λ_smooth · f( clamp(d, d_min, d_max) ) · g(image gradient)      (my reconstruction — see below)
 ```
+
+(The equation is blank in the supplied file. And the stated values do not fit a clamp on one distance:
+`d_min = 2` but `d_max = 0.2 m`. So `d_min` is probably a floor on the *penalty* (or in other units), not a
+distance below `d_max`; the prose — *"d_min incurs a minimum penalty"* — fits that reading. The form above is
+uncertain beyond "a floor and a cap".)
 
 > *"where **d is the distance between the 3D neighboring points according to their labels**, and g is the image
 > gradient magnitude between the two neighbors. **`d_min` incurs a minimum penalty in order to prevent spurious
 > transitions between planes that are close in 3D.** `d_max` makes the penalty robust to discontinuities."*
 > `λ_smooth = 5`, `d_min = 2`, `d_max = 0.2 m`, `γ = 10`.
 
-`d_max` is Sprint 30's cap, confirmed for the fourth time. **`d_min` is new and it is aimed straight at class
-1.**
+`d_max` is Sprint 30's cap, confirmed for the fourth time. **`d_min` is new, and I argue below it bears on class 1
+— a hypothesis, not their claim.**
 
 Our S51 join cost is `revealPx`, which **goes to zero when the two candidates agree**. Two planes that predict
 nearly the same depth can therefore be swapped between freely, texel by texel, at no cost — and adjacent lines
@@ -1786,10 +1798,14 @@ choosing differently at no cost is the *definition* of class 1 (77.2% of cliffs,
 tiny disagreements). Gallup names this failure mode exactly — *"spurious transitions between planes that are
 close in 3D"* — and fixes it with a floor.
 
-**So Sprint 30 should clamp both ends, not one.** `V = clamp(reveal_px, floor, cap)`. The cap stops a real step
-being over-penalised (class 2); the floor stops a near-tie being under-penalised (class 1). That the same
-two-sided clamp answers both of our large classes, from one published formula, is the tidiest result of this
-reading. Sprint 30's description updated.
+**So a join cost should clamp both ends, not one.** `V = clamp(reveal_px, floor, cap)`. The cap stops a real step
+being over-penalised (class 2); the floor makes every label switch cost at least something, which discourages
+many small alternations (the combing of class 1) relative to one clean change. (Verification caveats: Gallup's
+floor targets label transitions between near-identical *planes*, which matter to them because labels become mesh
+proxies; in S51's labelling a switch between agreeing candidates changes nothing visible, so the floor can only
+act on the small-but-nonzero disagreements. Whether that reaches class 1 is untested, and S51 found class 1 "is
+not an axis-choice problem" under ICM. Floor and cap values must be derived, rule 2. Sprint 30 is on hold behind
+the sheet A/B, S57.)
 
 ### 4. The plane at infinity is a label
 
@@ -1817,13 +1833,17 @@ persistent-departure segmentation (Sprint 16) in another form.
 much difficulty. The fact that we used the same set of parameters for several diverse datasets indicates that
 the parameters are not overly sensitive.**"*
 
-Scharstein & Szeliski warned that λ and γ tuning dominates. Gallup reports the opposite on a harder, more varied
-dataset. The difference is probably that Gallup's costs are **clamped at both ends and truncated**
-(`ρ_max = 6`), which bounds how much any one parameter can matter. Another argument for the two-sided clamp:
-it should make Sprint 30 *less* tuning-sensitive, not more.
+Scharstein & Szeliski warned that λ and γ tuning dominates. Gallup reports the opposite on street-level video
+from one camera rig. Note what that claim is: an assertion from reuse across datasets, with no sensitivity
+analysis — and the parameters were still *"chosen empirically"*, i.e. by hand (rule 2). The difference may be
+that Gallup's costs are **clamped at both ends and truncated** (`ρ_max = 6`), which bounds how much any one
+parameter can matter; that is my guess, not theirs. One self-calibration they do offer: without GPS scale,
+*"distances can be defined relative to the median value in the depthmap"* — the rule-2 form.
 
 Accuracy of the final labelling against 22,700 hand-labelled segments in 28 images: **94.7% of planar and 97.2%
-of non-planar segments correct.**
+of non-planar segments correct.** (That is planar-vs-non-planar classification by majority vote, not depth
+accuracy; no depth error is reported.) And from §1, a sentence for our aesthetics: *"simplified geometry can
+often look better, even if the overall surface accuracy is lower."*
 
 ### 7. The appearance classifier — noted, not scheduled
 
@@ -1847,10 +1867,12 @@ to our advantage… rectify [the image] so that the horizontal and vertical vani
 and y axes. Then the Manhattan distance metrication actually helps to enforce that label boundaries follow
 vertical and horizontal lines."*
 
-Worth knowing that a 4-connected grid MRF has an inherent axis bias that produces staircases. **We are on a
-4-connected texel grid and our class 3 is literally "axis change".** Whether any part of class 3 is metrication
-artefact rather than real geometry is a question I cannot answer from here, but it is now a question — and it
-argues for checking class 3 against Sinha's straightness prediction before building anything for it.
+Worth knowing that a 4-connected grid MRF has an inherent axis bias that produces staircases. (Corrected on
+verification: I first asked whether our class 3 might be metrication. It cannot be, in the shipped law —
+metrication is a property of label-boundary costs in a grid MRF, and the per-line law has no MRF; class 3 there
+is its row/column arbitration. It *would* shape the boundaries of an S51-style labelling, which is a 4-connected
+MRF: expect staircased label boundaries there, unless the cost is made direction-aware.) Checking class 3
+against Sinha's straightness prediction before building anything for it still stands.
 
 ---
 

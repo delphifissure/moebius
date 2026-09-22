@@ -261,3 +261,28 @@ Added.
 behind; S3; λ 1000 / 1200 / 2000; the §2 "small discrete set of plane hypotheses" quotation; the §1 perceptual
 and §5 cross-fade quotations and binary α; SfM, ≥4-view lines, mean-shift VDs; 28–145 min, 2–3 Mpixel, 33–127
 planes; the ground-plane construction (95 %) and back-planes.
+
+## 13. Gallup, Frahm & Pollefeys, Piecewise planar and non-planar stereo, CVPR 2010 — 414 lines read
+
+✘ **The discard-label mechanism was argued with the perimeter cost on the wrong side** (discarding creates the
+label boundary and pays λ·P; staying pays nothing). Conclusion (discard wins when A/P is large) unchanged;
+reasoning corrected.
+✘ **"Class 3 might be metrication."** Not in the shipped law (no MRF); metrication would shape S51-style labelling
+boundaries. Corrected.
+~ The smoothness equation is blank in the file, and d_min = 2 vs d_max = 0.2 m cannot be one clamped distance;
+the notes' formula is now marked as a reconstruction and d_min read as a penalty floor.
+~ "d_min is aimed straight at class 1" → a hypothesis with its limits (S51: class 1 is not an axis-choice problem;
+a switch between agreeing candidates changes nothing visible). Floor/cap values must be derived (rule 2); Sprint
+30 on hold.
+~ "Subsumes the shape-vs-reveal concern" → takes a side (compactness) that the kit-truth test must check. "New
+task" had not been created; now pointed at LIVE_PASS §10.
+~ The bush/sloping-ground quotation is §1, not §3.4. "Harder, more varied dataset" → one rig's street video; the
+insensitivity claim is asserted, not analysed; parameters hand-chosen. The 94.7 / 97.2 % figures are
+classification, not depth accuracy.
++ Missed: relative-to-median distances as a self-calibration; §1 "simplified geometry can often look better".
+Added.
+✔ The non-plane-label quotation and ρ_bias 0.5 / ρ_max 6; the discard-label quotation; the d_min/d_max quotation
+and λ_smooth 5, d_min 2, d_max 0.2 m, γ 10; π∞ quotation; the RANSAC recipe (σ 8, M 100, MLESAC, contiguity,
+N 20) and its quotation; the §4 parameters quotation; 22 700 segments in 28 images; the classifier (16×16 grid,
+features, edge-orientation quotation, ~5 000 segments, kNN, λ_class 2, no hard decision); the metrication
+quotation.
