@@ -1662,6 +1662,23 @@ ramp with a floor** performs identically to the reciprocal on four images and tw
 parameter (they note (b) *"does not require a parameter β… This is implicitly done by adjusting γ"*), and is
 trivially cheap. Sprint 30 should use `V = clamp(γ − α·|ΔI|, floor, cap)`.
 
+**One qualification, and it is the one that matters most to us.** §3.1, on the visual comparison behind
+Table 1: *"**Using `P2,i` the small structures in Cones are retained**, otherwise there is no significant
+difference between `P2,l` and `P2,i`."*
+
+The reciprocal's only measured advantage is on **thin structures** — and thin structures are our worst
+documented failure. S5's poles (0.5–3 px wide) score **P 0.489, R 0.514**: half the hidden pixels missed, the
+one limitation recorded in S18 without a fix. Figure 6 shows why the two forms differ there: plotted together
+over `ΔI ∈ [0,100]` they are *"obvious[ly] similar"* in shape, but the reciprocal's `α/(|ΔI|+β)` falls steeply
+in the first few grey levels where the linear ramp is still near `γ`, so at a thin structure's weak, narrow
+colour edge the reciprocal has already dropped the penalty and the linear form has not.
+
+So: **sweep both**, with the linear as the default and the reciprocal as the arm to check specifically against
+the pole scenes. Also note the rank-transform rows, where *"in opposite to census, `P2,l` always outperforms
+`P2,i`; in 3 cases quite significantly"* — which form wins depends on the matching cost, and since we have no
+matching cost at all, neither result transfers cleanly. The linear default rests on parsimony and the
+census-transform tie, not on a measurement in our regime.
+
 The variance form fails, and the stated reason matters to us:
 
 > *"This could be due to the fact that **`P2,v` does not calculate penalties along the currently processed path
@@ -1758,7 +1775,9 @@ second reason to expect the sweep to be well-behaved.
 V(p,q) = clamp( γ − α·|I(p) − I(q)| ,  floor ,  cap )
 ```
 
-- **linear**, not reciprocal or exponential — Banz Table 1, equal performance, fewer parameters
+- **linear** by default, not exponential — Banz Table 1, equal performance to the reciprocal, fewer parameters —
+  but **carry the reciprocal as a second arm and judge it on the pole scenes**, where it is the only form Banz
+  found to retain small structures (§3.1), and where S5 scores P 0.489
 - **|ΔI| measured between the two joined texels**, directionally, not as a local variance — Banz §3.1
 - **floor** — against class 1's near-ties (Gallup's `d_min`: *"prevent spurious transitions between planes that
   are close in 3D"*; Banz's `P2,min`)
