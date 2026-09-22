@@ -1458,7 +1458,7 @@ despeckle in the energy rather than as a post-process.
 Read in full. I asked one question of this paper: *"I want to know whether their size threshold is **derived or
 tuned**, because ours is derived and that is the part worth defending."*
 
-### 1. The answer: tuned. Three hardcoded numbers, no derivation.
+### 1. The answer: set, not derived. Three hardcoded numbers, no derivation.
 
 §4.2, verbatim:
 
@@ -1480,8 +1480,8 @@ pxPerWorld`, converted to the cliff tolerance in screen pixels (Sprint 26), so i
 unpainted pixel here" rather than "is this blob big". That difference is real and it is now defensible against
 the one published method that arrives at the same architecture. It is the clearest win the corpus has given us.
 
-Honest caveat: their thresholds are tuned on a task with no ground truth at all (see §4 below), so "tuned"
-here does not even mean "fitted to data" — it means chosen.
+Honest caveat: the paper does not say how the three were chosen, and it has no ground truth to fit them to
+(see §4 below), so "tuned" would be my guess; "chosen" is all the text supports.
 
 ### 2. But their *shape* test is something we do not have, and it points the other way from our design
 
@@ -1504,10 +1504,12 @@ the paper:
   extrapolation can reach, while a thin one is everywhere within reach of a rim. That is a **distance-to-rim**
   criterion, not a reveal criterion, and we do not compute it.
 
-The second reading is testable and cheap: add the band's distance transform to the hybrid's decision and see
-whether it moves the measured temporal step beyond what reveal alone achieves. Worth one arm in Sprint 29's
-successor, because the two quantities genuinely differ — a wide slow ramp has large distance-to-rim and small
-reveal.
+The second reading is testable and cheap, and should be tested against kit truth rather than on the temporal
+step (Addendum 126: a smoothness-over-time metric may not gate a change on its own): on the kit scenes, does the
+far-side law's error at a band texel depend on its distance to the nearest rim once reveal is held fixed? If it
+does, distance-to-rim belongs in the hybrid's decision. The two quantities genuinely differ — a wide slow ramp
+has large distance-to-rim and small reveal. (Task 61's conditional test already measured error against
+distance from the rim and found no ridge effect; it did not condition on reveal.)
 
 ### 3. The occludee rule, for the sixth time, with a percentile
 
@@ -1516,10 +1518,11 @@ reveal.
 > the foreground surface into the missing region.** Selecting farther background samples reduces this effect and
 > places the added geometry behind the foreground object."*
 
-Six papers, six lineages, same rule — Hirschmüller's *"only from the occludee"*, PatchMatch's *"select the lower
-of the two"*, Ndjiki-Nya's k-means background centroid, Criminisi's source region, Shih's background silhouette,
-and now this. Our S45 far-side rim filter (worth 5.1×, 0.1776 → 0.0349) is the most-independently-confirmed
-thing in the project.
+Five papers, five lineages, same rule — Hirschmüller's *"only from the occludee"*, PatchMatch's *"select the
+lower of the two"*, Ndjiki-Nya's k-means-verified background value and BG-first order, Shih's background
+silhouette, and now this. (Corrected on verification: I first counted six, including Criminisi's source region;
+object removal leaves no occluder, so Criminisi does not state the rule.) Our S45 far-side rim filter (worth
+5.1×, 0.1776 → 0.0349) is the most-independently-confirmed thing in the project.
 
 Their implementation is the closest to ours and gives concrete numbers worth comparing against:
 
@@ -1531,10 +1534,11 @@ Their implementation is the closest to ours and gives concrete numbers worth com
 | fallback | nearest-neighbour fill | thin-evidence rule |
 
 **The 78th-percentile-over-a-ring is the same robustification Ndjiki-Nya reached by k-means over 32×32**, and
-both are doing what our law does not: taking a *distribution* over a neighbourhood rather than a *value* at the
-nearest texel. That is now three papers (Ndjiki-Nya, PatchMatch's weighted median, ORCA) saying the rim estimate
-should be a robust statistic of a neighbourhood. It is the same conclusion Sprint 31's re-scoping reached from
-the other end, and it raises my confidence in that sprint.
+both are doing what our law does not: consulting a *distribution* over a neighbourhood rather than trusting a
+*value* at the nearest texel. That is two papers saying the rim estimate should be checked against a robust
+statistic of a neighbourhood. (I first counted PatchMatch's weighted median as a third; that median filters the
+*filled* texels after the fill, and PatchMatch's rim estimate itself is the single nearer-of-two value.) Sprint
+31, which this once supported, is on hold behind the sheet A/B (S57).
 
 ### 4. The evidence base is weak, and this bears on how much of the above to believe
 
@@ -1545,22 +1549,31 @@ numbers measure *whether a model thinks the frame looks good*, not whether it is
 DIV2K, 99 images (one excluded because *"VistaDream failed to produce a valid reconstruction for one
 sky-dominated image"*): MUSIQ 61.60 → 68.71, CLIP-IQA 0.474 → 0.574, Quality 0.407 → 0.630.
 
-The LLaVA-IQA columns should not be trusted. Table 2's per-scene values are saturated at 0.00 and 1.00 all over
+The LLaVA-IQA columns should not be trusted (the paper concedes that *"individual LLaVA-IQA criteria occasionally
+remain unchanged or favor VistaDream"*). Table 2's per-scene values are saturated at 0.00 and 1.00 all over
 — `steampunk` scores Edge 0.00 and Structure 0.00 for **both** methods; `car` scores Structure 0.00 and Edge
 0.00 for both, and overall Quality goes **0.02 → 0.00**, i.e. ORCA is worse, on a criterion that is pinned at
 the floor. A metric that returns exactly zero for both arms is not measuring anything.
 
 The one number I do credit is **TSED** (cross-view geometric consistency, which checks correspondences against
 the known camera geometry rather than asking a model): **DIV2K 0.8265 → 0.9980**, RealmDreamer 0.9864 → 1.0000.
-That is a real, reference-free-but-geometric measurement and a large effect, and it is the same *kind* of thing
-our temporal-step metric measures. It supports the architecture — reuse the scene where you can — without
-supporting any particular threshold.
+That is a real, reference-free-but-geometric measurement and a large effect (RealmDreamer's 1.0000 is at the
+ceiling). It is *not* the same kind of thing as our temporal step, which I first wrote: TSED checks rendered
+correspondences against the camera geometry; temporal step is LPIPS between successive frames and knows nothing
+of geometry. It supports the architecture — reuse the scene where you can — without supporting any particular
+threshold.
+
+And the evaluation has one more gap that matters for how much the architecture is supported: **there is no
+ablation of the local-versus-generative split itself.** The only comparison is ORCA against VistaDream, a
+different pipeline. Nothing in the paper shows that, inside ORCA, routing small regions to local repair beats
+sending everything to Stable Diffusion.
 
 ### 5. Their depth handling, which is ours
 
 - Depth Pro for monocular depth; **inverse depth normalised between robust quantiles** `q_far`, `q_near` —
-  *"reduces the influence of extreme depth predictions"*. Same normalised-disparity convention as our law, with
-  the quantile clipping we do via the noise/effective-quantum work.
+  *"reduces the influence of extreme depth predictions"*. Same normalised-disparity convention as our law. (I
+  first likened the quantile clipping to our noise/effective-quantum work; that work estimates noise, it does
+  not clip the range, so the likeness was loose and is withdrawn.)
 - Gaussians displaced **along their original camera rays**, not in z: *"Changing only the z-coordinate would
   move a Gaussian away from its original viewing ray."* Our plate texels displace along rays for the same
   reason.
@@ -1578,10 +1591,15 @@ opacity 0.9, ≤5000 per local repair, ≤24 optimisation steps; single A40, als
 
 The covariance ×1.7 is their fold fix: *"We use **wider, overlapping Gaussians** for these local repairs to
 reduce thin gaps that can remain visible after a viewpoint change."* A splat-size fudge for the same artefact
-Shade's §5.3 formula describes and our fold alpha addresses — three different treatments of one problem, none
-principled except Shade's.
+Shade's §5.3 formula describes and our fold alpha addresses — three different treatments of one problem; Shade's
+closed form and our measured ratio (a165, no constant) are derived, ORCA's 1.7 is set.
 
 ### 7. Verdict
+
+One more mechanism, added on verification: repairs are **sequential**, and *"after each repair, the trajectory is
+rendered again before the next region is selected. This allows later repairs to take into account geometry that
+has already been added."* That is Shih's recursion in another form, and it is task #60's question (does the
+filled band make new cliffs?) answered by construction.
 
 Architecturally they land where we did, from Gaussian splatting rather than from a baked plate: **repair from
 the scene where the scene knows the answer, generate only where it cannot.** That independent arrival is worth
@@ -1614,13 +1632,16 @@ Set against S33's classes:
 | 2 — real step | 10.4% | 26.1% | 31 | **occlusion edge** (depth differs) |
 | 3 — axis change | 12.3% | **35.1%** | 25 | **crease edge** (label differs, depth **continuous**) |
 
-**Class 3 should have continuous depth.** At a crease two planes *meet*; the surface is C⁰ and only the gradient
-breaks. Our measured median jump at class 3 is **25 steps** — so our law is opening a depth gap where the
-geometry says there should be none. That is not a smoothness-penalty problem at all; it is a missing constraint.
+**If class 3 marks real creases, it should have continuous depth.** At a crease two planes *meet*; the surface is
+C⁰ and only the gradient breaks. Our measured median jump at class 3 is **25 steps**. (Verification caveat: the
+mapping is mine. Class 3 is *defined* by our law switching extrapolation axis, which is where the law *thinks*
+the orientation changes; whether the truth has a crease there is not established. Either our law opens gaps at
+real creases — a missing constraint, not a smoothness problem — or some class-3 walls are not creases at all.
+Kit truth can tell the two apart.)
 
 Sinha's contribution is precisely to add it: *"This allows us to **enforce C⁰ continuity between planes that
 meet**."* Mechanically, they precompute the crease line `L_ij` for every plane pair, collect the neighbouring
-pixel pairs straddling it into a set `S1`, and make label changes *there* cheap.
+pixel pairs straddling it into a set `S1`, and make label changes *there* cheaper than elsewhere.
 
 And the second structural fact we have never used: **a crease is always straight**, because it is the projection
 of a 3D line. Class 3 is 35.1% of wall length — the largest single share — and the literature says those walls
@@ -1637,9 +1658,13 @@ it is a better-founded target than anything else in the backlog.
 | a **crease line** (S1) | **1000** — cheapest to cross |
 | a vanishing-direction-aligned line, occluder in front (S2) | 1200 |
 | any other detected 2D line segment (S3) | 2000 |
-| nothing (implicitly) | most expensive |
+| nothing | not recoverable from this file |
 
-*"Suitable values for the λ's were chosen empirically."*
+(The smoothness equation is blank in the supplied file; the three λ values and their sets are from the prose.
+Whether a label change with no line between the pixels costs more than λ3 cannot be read here.)
+
+*"Suitable values for the λ's were chosen empirically"* — and, they add, *"it is possible to learn the optimal
+values from training data."* Set by hand, not derived (rule 2).
 
 This is a fifth form of contrast/structure modulation, and it is **structural rather than photometric** — the
 cost depends on whether a *geometric* feature runs between the two texels, not on how different their colours
@@ -1662,15 +1687,19 @@ lines** in the scene. Our approach aims at preserving such features and minimizi
 produces perceptible ghosting. **The lack of surface detail is rarely noticeable during viewpoint
 transitions.**"*
 
-That is the justification for measuring what we measure. Our temporal-step metric is an edge-motion proxy, and
-this says edge motion is the thing — while surface fidelity, which PSNR and SSIM mostly measure, is *"rarely
-noticeable"*. Another reason our aggregate-metric nulls are not damning.
+(The original ends "…during viewpoint transitions between cameras.") That supports judging in motion, on edges
+and straight lines, over surface fidelity, which PSNR and SSIM mostly measure and which is *"rarely
+noticeable"*. Another reason our aggregate-metric nulls are not damning. (I first called our temporal step "an
+edge-motion proxy"; it is LPIPS between successive frames, not an edge measure, and A126 says it may not gate a
+change on its own. The paper's claim is an argument for the user's screen, in motion, more than for any metric.)
 
 §5, on cross-fading during interpolation: *"**Cross-fading in this manner is crucial to prevent the eye from
 being drawn to disoccluded regions** of an image that are filled in by the other. With simple linear crossfades,
 the alpha values in the rendered image would have **disturbing step discontinuities at occlusion
 boundaries.**"* Their fix is binary opacities `α1, α2` so single-source pixels stay at full opacity throughout.
-We have an envelope fade; whether it steps at occlusion boundaries is worth one look.
+We render one source, so the two-source cross-fade problem does not arise as such; the analogous question is
+whether any per-layer alpha we use (the fold alpha, plate 2's coverage) steps at occlusion boundaries. Worth one
+look in the buffer.
 
 ### 5. What does not transfer
 
@@ -1679,11 +1708,16 @@ covariances, reconstructed 3D line segments verified in ≥4 views, vanishing di
 sphere. From one photograph none of it exists. Runtimes 28–145 minutes; 2–3 Mpixel images; 33–127 planes per
 dataset.
 
+And the paper disclaims our problem outright (§6): *"Currently, we do not handle occlusions in the scene and do
+not deal with large foreground objects, that clearly need their own proxies for compelling view interpolation."*
+The crease/occlusion taxonomy transfers; the method does not.
+
 The one piece that might: they compute a **ground plane** by finding the up-vector orthogonal to most cameras'
 side-vectors, then the plane with 95% of points above it, plus per-camera **back-planes** along the optical
 axis. We already have a ground plane in the bundle meta (`ground {a,b,c}`); the back-plane idea — a far
 bounding plane per view — is close to our sky-at-infinity and may be the better construction for the
-*non*-sky far field.
+*non*-sky far field. (Both come from Hoiem et al. [16], and are *"included depending on the position of the
+horizon in the image."*)
 
 ---
 

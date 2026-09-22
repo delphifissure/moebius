@@ -220,3 +220,44 @@ condition; the Venus/Penguin non-metric quotation; Penguin's zero data cost, swa
 / 2; the segmentation V_pq, λ = 50, λ₂ = 10, β and the λ₂ quotation; ICM WTA initialisation; "never … swap moves";
 LBP's poor showing, the floating people, the schedule hedge; TRW-S lower bound quotation; E = E_d + λE_s,
 4-connected; the API quotation.
+
+## 11. Jakubowska, Zięba & Spurek, ORCA, arXiv 2609.17450 (2026) — 314 lines read
+
+✘ **"Six papers, six lineages" for the occludee rule** included Criminisi (no occluder in object removal) →
+five. **"Three papers say the rim estimate should be a robust statistic"** counted PatchMatch's post-fill median
+→ two (Ndjiki-Nya, ORCA). Corrected.
+✘ **"TSED is the same kind of thing our temporal step measures."** TSED checks correspondences against camera
+geometry; temporal step is frame-to-frame LPIPS. Corrected.
+~ "Tuned" → the paper does not say how its three thresholds were chosen; "set" is what the text supports.
+~ The distance-to-rim arm was to be judged on temporal step (A126) → rewritten as a kit-truth test conditioned on
+reveal. Sprint 31 reference updated (on hold, S57). The quantile-clipping likeness to our effective-quantum work
+withdrawn. "None principled except Shade's" → our fold ratio is derived too.
++ Missed: **no ablation of the local-versus-generative split** — the only comparison is against VistaDream, so the
+paper does not show its own hybrid beats all-generative; the paper's concession that LLaVA-IQA criteria sometimes
+favour VistaDream; sequential repair with re-rendering after each (the task #60 question, answered by
+construction). Added.
+✔ Header; the 9 000 px / 45 % / 64 px quotation; the two-call budget quotation; the small-or-elongated quotation;
+the donor-ring quotation; ring 3/28, ≥32 donors, 78th percentile, nearest-neighbour fallback; no-reference
+metrics; 99 DIV2K images and the exclusion quotation; MUSIQ 61.60 → 68.71, CLIP-IQA 0.474 → 0.574, Quality
+0.407 → 0.630; the Table 2 saturation cases (steampunk, car, 0.02 → 0.00); TSED 0.8265 → 0.9980, 0.9864 → 1.0000;
+Depth Pro, robust quantiles, displacement along rays and its quotation; the affine depth alignment on the ring with
+outlier rejection and boundary blending; depth not a supervision signal; every §4.2 training/repair parameter;
+the wider-Gaussians quotation.
+
+## 12. Sinha, Steedly & Szeliski, Piecewise planar stereo for IBR, ICCV 2009 — 335 lines read
+
+~ **Class 3 = crease is my mapping, not the paper's.** Class 3 is defined by our law's axis switch; whether truth
+has a crease there is unestablished. "Class 3 should have continuous depth" → conditional, with the kit-truth check
+that separates the two readings. This bears on task #56's premise.
+~ The smoothness equation is blank in the file; the "nothing → most expensive" row was inference and is removed.
+The λ's are hand-set ("chosen empirically"; "possible to learn … from training data") — rule 2 noted.
+~ "Our temporal step is an edge-motion proxy" → it is frame-to-frame LPIPS; the paper's perceptual claim argues
+for the screen in motion (A126). The cross-fade look re-aimed: we render one source, so the question is our
+per-layer alphas.
++ Missed: §6 *"we do not handle occlusions in the scene and do not deal with large foreground objects"* — the
+taxonomy transfers, the method does not; ground and back planes are from Hoiem et al. and depend on the horizon.
+Added.
+✔ The occlusion/crease quotation; C⁰ quotation (§1.2); crease lines and S1; S2 as VD lines with the far plane
+behind; S3; λ 1000 / 1200 / 2000; the §2 "small discrete set of plane hypotheses" quotation; the §1 perceptual
+and §5 cross-fade quotations and binary α; SfM, ≥4-view lines, mean-shift VDs; 28–145 min, 2–3 Mpixel, 33–127
+planes; the ground-plane construction (95 %) and back-planes.
