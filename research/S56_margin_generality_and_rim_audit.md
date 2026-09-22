@@ -1,4 +1,12 @@
-# S56 — the margin default banked on four pictures, and an instrument found leaning on its own rim (2026-09-22)
+# S56 — the margin measured on four pictures, and an instrument found leaning on its own rim (2026-09-22)
+
+> **CORRECTION (S57, same day).** This note first said the margin default was "banked" and ended Part I with
+> "Default it on." That was not mine to decide. The margin is **off at the user's instruction** (2026-09-15: the
+> clamp-extended strips are the outpaint placeholder they did not want), and the standing rule is that defaults change
+> only in the live pass. The code default was never changed (`bgPlateOptions` still ships `margin: 'off'`). The
+> numbers below stand; what they earn is a **recommendation with frames for the user's screen**, not a default. S57 §3
+> adds a second reason for care: the temporal-step metric rewards covering a tear with smooth content whether or not
+> the cover looks right, which is exactly the property Addendum 126 said must not gate a change on its own.
 
 Two results from the same afternoon, unrelated in subject and related in kind: both are cases where a number
 that looked settled turned out to be measuring something other than what it named.
@@ -29,7 +37,8 @@ silverwarrior 0.5392 → **0.3897**.
 sFD between the off and on arms of each picture: vermeer **0.0005**, room 0.0238, silverwarrior 0.0356 — the
 size of the change tracks the size of the benefit, which is the consistency check one wants.
 
-**Margin helps on 4/4 pictures and hurts on none.** The margin default is banked.
+**By the temporal-step metric, margin helps on 4/4 pictures and hurts on none.** Whether the strips it adds look
+acceptable is the user's call (see the correction at the top).
 
 ### What it is actually fixing, which is not the band
 
@@ -45,7 +54,8 @@ a property of the **composition** — silverwarrior's subject runs to the left e
 at its edge.
 
 **Stated as a rule:** margin is worth between nothing and a great deal depending on the picture, it is never
-negative, and the amount is predictable from the frame edge rather than from the band. Default it on.
+negative on this metric, and the amount is predictable from the frame edge rather than from the band. The
+recommendation to the user is to look at silverwarrior and room at 45° with and without it; the default stays off.
 
 ### One honest wrinkle
 

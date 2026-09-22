@@ -242,3 +242,29 @@ symmetrical and is the first thing to look at with eyes. Frames in `harness/shot
 **What to send back for this sprint:** whether the amber banner reads clearly when you load a bad map; whether the two new
 defaults look right on your pictures; and what the down-left corner actually looks like, since the number says it is the
 worst place in the envelope and only you can say whether it reads as broken.
+
+## 10. Three decisions from S53/S56, for your screen (2026-09-22, S57)
+
+The harness measured these in motion (LPIPS frame-to-frame step over a 0–45° sweep). That metric rewards anything
+that covers a gap with smooth content, whether or not it looks right (REVIEW Addendum 126), and the sweep frames were
+thumbnails (268×151). So these are recommendations with numbers beside them, not defaults. **Nothing default has
+changed.** Troll unless stated; start from the §1 step 4 panel.
+
+**A. Margin (`margin · picture`), on silverwarrior and room.** Measured step −38.9 % / −11.9 % (vermeer −1.2 %, troll
+−4.8 %). What it does, from `harness/decide/1_margin_silverwarrior.png` and `1_margin_room.png`: at 22° and 45° the
+picture's left edge slides right and margin off leaves it open to black; margin on fills that strip with
+clamp-extended edge colour (the horizontal streaks at the left edge at 45°). That strip is the placeholder you turned
+down on 2026-09-15. Look at 45° on those two pictures, margin select off vs `picture`. Keep / drop?
+
+**B. The 2× depth map.** Copy `depth_da3mono16_2x.png` over `defaultImgDepth.png` (keep a copy of yours), reload, Build.
+Against the shipped map: 25 % fewer texels inside a depth transition, the largest motion effect measured (−8.4 %), but
+worse at about 22° and less steady (higher step variance). Look at about 20–25° and at 45°, especially silhouettes.
+Keep / drop?
+
+**C. The hybrid band fill** (the harmonic seed where the reveal is small, LaMa where it is large; S53).
+Build the troll as usual, then **Import plane return** and pick `harness/decide/troll_hybrid/return_band_color.png`
+(colour on the band only; nothing else changes). Against the wash: the band gets real cave texture instead of
+streaked colour. Measured −2.4 % step, the only arm better than both of its own ingredients, by small margins on one
+picture. Look at 27° and 45° behind the troll's arms. Better than the wash, or not?
+
+One line per decision is enough: keep / drop / undecided.
