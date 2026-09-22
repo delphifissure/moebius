@@ -368,6 +368,13 @@ rendered in motion beside `armA` (all generative). That is the three-point test 
   and reports results "often look better"; we have no shadow detector. The *other* half of their claim — that
   under-covering masks cause "flickering between consecutive frames" — is testable now that the motion instrument
   exists, and the dilated arms D/E/F are exactly the test.
+- **Structure conditioning as the thing that keeps colour and depth agreeing** (DeepDR §5, RGB-D SPADE: predict a
+  segmentation at every decoder scale and modulate *both* streams with shared parameters; ablation LPIPS 0.0104
+  against 0.0143, depth RMSE 0.278 against 0.374). This needs training, so it is not attemptable — but it is the
+  architectural recommendation for the next supplier, and it is worth noting that **we already have the input**:
+  the SAM 2.1 object map, currently used only for highlighting and `plane_object_ids`. DeepDR's §8.5 adds that
+  *fewer* classes segment better, which our coarse map satisfies. `harness/return_align.py` measures the symptom
+  their SPADE prevents, so the instrument and the eventual fix are already pointed at the same defect.
 
 ---
 
@@ -414,6 +421,14 @@ drawn from the background's depth family, which it is: a plausible monocular dep
 background. The guard's stated limitation is that it cannot detect a return that is merely too *average*. The
 ordinal instrument exists precisely to detect that, and it does. **The two instruments disagree, and the
 disagreement is the finding** — neither is wrong, they measure different failures, and a return needs to pass both.
+
+**And the failure reproduces the mechanism DeepDR names, which is the strongest form this result could take.**
+Their §4.4, on exactly this class of baseline: *"sequential approaches suffer from the **loss of detail and sharp
+features** in inpainted images"*, and the depth model *"fails at filling complex depth regions with sharp edges …
+in particular **for structures far away from the camera**."* Our band is the far structure behind things, and what
+the ordinal instrument measured is precisely a loss of ordering detail there while the gross arrangement (the
+occluder family, 98.6–100%) stays right. We did not merely reproduce their verdict; we reproduced their
+explanation, on our own scenes, with an instrument they did not use.
 
 Two consequences worth stating plainly:
 
