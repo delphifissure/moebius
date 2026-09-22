@@ -4,9 +4,10 @@ Companion to `S54_s33_directed_search.md`, which was search-level. These notes a
 beginning to end. Quotations are transcribed from the text; equation numbers are the papers' own. Where the
 PDF→markdown conversion mangled equations into one-symbol-per-line, I have reassembled them and say so.
 
-**Corpus supplied: 17 files.** Still missing from the request: Daribo (depth-aided inpainting), Sun et al.
-(structure propagation), the SGM penalty-function review. **Bornemann & März is truncated** — abstract plus about
-one page of twenty, ending mid-sentence in §1; its method is not readable from what is here. Hirschmüller &
+**Corpus supplied: 17 files in the first archive, 6 in the second (23 files, 22 papers).** The first archive's
+Bornemann & März was truncated (abstract plus two paragraphs); the full text came in the second archive and is §21.
+Daribo ×2, Gautier, Sun et al. and the SGM penalty-function review also came in the second archive. Every section
+below was re-checked against its paper in a verification pass (`S55_verification.md`). Hirschmüller &
 Scharstein arrived as the **CVPR 2007** "Evaluation of Cost Functions for Stereo Matching" rather than the PAMI
 2009 version, which is a fine substitute.
 
@@ -90,7 +91,13 @@ and the method, equation (18):
 >
 > *"The first case ensures that **occlusions are interpolated from the lower background by selecting the second
 > lowest value**, while the second case emphasizes the use of all information without a preference to foreground
-> or background. The median is used instead of the mean for maintaining discontinuities."*
+> or background. The median is used instead of the mean for maintaining discontinuities in cases where the
+> mismatched area is at an object border."*
+>
+> And the rule for the ring between the two classes (verification pass, missed first time): *"For interpolation
+> purposes, **mismatched pixel areas that are direct neighbors of occluded pixels are treated as occlusions**,
+> because these pixels must also be extrapolated from valid background pixels."* — i.e. the uncertain ring beside
+> a disocclusion takes the background rule too, which is what our rim-adjacent band texels should do.
 
 **This is a drop-in replacement for our far-side rule and it needs no cost volume.** Our law computes candidates
 along 2 directions (row, column) and arbitrates by a hand-built rule (kind 2 wins, then the nearer rim). His
@@ -141,6 +148,10 @@ areas."*
 
 ### 6. Numbers, for the record
 
+Constants he states: the mean-shift radiometric bandwidth is *"set to P1, which is usually 4"* (intensity levels);
+spatial bandwidth 5; intensity segments under 100 px ignored; disparity sub-segments of ≤ 12 px ignored as
+hypotheses; aerial runs raise the peak-filter threshold to 300 px. All tuned per data set, none derived.
+
 Middlebury Oct 2006: at the 1-pixel threshold C-SGM ranks 6.2 and SGM 9.3; **at 0.5 pixel C-SGM ranks 3.6 and SGM
 5.0, the top two**, which he attributes to sub-pixel performance. Runtime 1.8 s (SGM) / 2.7 s (C-SGM) on Teddy,
 2.2 GHz Opteron. HMI costs 18% over Birchfield–Tomasi; iterative MI costs 164%.
@@ -157,7 +168,10 @@ Middlebury Oct 2006: at the 1-pixel threshold C-SGM ranks 6.2 and SGM 9.3; **at 
 
 ---
 
-## 2. Scharstein & Szeliski, "A Taxonomy and Evaluation of Dense Two-Frame Stereo Correspondence Algorithms", IJCV 2002 [1014 lines] DONE
+## 2. Scharstein, Szeliski & Zabih, "A Taxonomy and Evaluation of Dense Two-Frame Stereo Correspondence Algorithms", IEEE SMBV workshop 2001 [1014 lines] DONE
+
+*(Verification pass: the supplied file is the 2001 workshop paper, three authors, 8 pages — not the IJCV 2002
+journal version, which it cites as the tech report [64]. Section numbers below are the workshop paper's.)*
 
 The field's framing document. Read in full. Three things matter to us; the rest is a taxonomy of a matching
 problem we do not have.
@@ -168,7 +182,7 @@ problem we do not have.
 the 'streaking' characteristic for scanline-based algorithms**. The graph-cut algorithm performs best, both
 quantitatively and qualitatively."*
 
-And the mechanism, §5: *"Both DP and SO algorithms suffer from the well-known difficulty of enforcing
+And the mechanism, §4: *"Both DP and SO algorithms suffer from the well-known difficulty of enforcing
 inter-scanline consistency, resulting in horizontal 'streaks' in the computed disparity map."*
 
 Three papers now, three lineages, same word. This is not a coincidence of vocabulary — it is that **any method
@@ -181,11 +195,17 @@ that solves each line independently produces our class 1**, and everyone who has
 
 That is the whole difference between the streaking method and the best method in their table: **one term**. Not
 a different model, not a data term, not a segmentation — the cross-line coupling. Table 1, bad-pixel percentages
-on their test set: SAD 12.43, SAD/MF 12.43 (their local baselines), **DP 9.52, SO 9.76, GC 6.46**. Adding the
-vertical term is worth a third of the error, and it is the only structural change.
+on Tsukuba: SAD 12.87, SAD/MF 12.43 (their local baselines), **DP 9.52, SO 9.76, GC 6.46**.
 
-For us: our far-side law is SO without the vertical term. Nothing else about it needs to change for the class-1
-fraction to be attackable.
+**Correction (verification pass).** The first version of this note said the vertical term was "worth a third of
+the error, and it is the only structural change". The table does not isolate that: it reports each algorithm's
+*best run*, and Fig. 3 gives the settings — **SO λ = 100, γ = 0; GC λ = 1000, γ = 2**. So SO → GC changes the
+vertical term, the intensity modulation (off → on) and the overall scale at once. What the paper supports is
+the qualitative statement (SO streaks, GC does not, GC scores best); the one-third figure is an upper bound on the
+vertical term's share, not its measured size.
+
+For us: our far-side law is SO-like — each line alone, no vertical term. The cross-line coupling is the missing
+structural piece; how much it is worth on its own is not answered here.
 
 ### 3. Intensity-modulated smoothness, in its original multiplicative form
 
@@ -211,8 +231,10 @@ Hirschmüller's bare division blows up on a flat patch and he has to bolt on `P2
 parameters: λ (overall scale) and γ (how much colour matters). We have exactly the same two knobs available.
 
 They are also explicit that this is a *tuning-sensitive* term: *"the algorithms are currently fairly sensitive
-to the tuning of the smoothness cost, in particular to parameters λ and γ."* Sprint 30 should sweep γ, not pick
-one.
+to the tuning of the smoothness cost, in particular to parameters λ and γ."* The first version of this note said
+"Sprint 30 should sweep γ". Under rule 2 that is the wrong conclusion (S57 C1): the sensitivity is a reason to
+DERIVE γ (e.g. from the image's own contrast statistics, as Szeliski et al. 2008 §4.3 does) and to sweep only as a
+sensitivity check on the derived value.
 
 ### 4. What does not transfer, said plainly
 
@@ -221,6 +243,15 @@ Their DP charges a fixed `opt_occst` for occluded states and enforces the orderi
 occlusion cost parameter is necessary."* Hirschmüller drops them for the same reason (non-epipolar paths). **We
 must drop them too** — our band has no second view to be occluded in. The three-state M/L/R machinery is dead
 weight for us; the smoothness term is not.
+
+### 4b. Two things missed on the first read (verification pass)
+
+- §3.4, on quantised disparity: *"for image-based rendering, such quantized maps lead to very unappealing view
+  synthesis results (**the scene appears to be made up of many thin shearing layers**)."* That is REVIEW A93's
+  8-bit terrace banding, named in 2001 — the field's reason for sub-pixel disparity is our reason for 16-bit depth.
+- §5, the evaluation regions: statistics are reported over the whole image **and** separately over textureless,
+  occluded and depth-discontinuity regions and their complements — the split S41 Sprint 23 asked for
+  (interior / exterior / whole), with the same motive: a method must not win on one region while losing another.
 
 ### 5. Their own conclusion about local methods, which is our situation
 
@@ -262,10 +293,12 @@ the construction. Three properties make it cheap for us:
 
 - **Band-only.** Valid pixels are untouched. That is our thin-evidence rule and our "never corrupt the plate"
   constraint, already satisfied by construction.
-- **Colour-weighted**, with eq (4)'s bilateral weight `w(p,q) = exp(−‖I_p − I_q‖/γ)`. Same γ as the matching
-  window — one parameter, already in the system.
-- **Median, not mean** — for exactly Hirschmüller's stated reason (maintains discontinuities), so a class-2 real
-  step inside the neighbourhood is not smeared into a ramp.
+- **Colour-weighted**, with eq (4)'s bilateral weight `w(p,q) = exp(−‖I_p − I_q‖/γ)`. Same γ **and the same
+  window size** as the matching step — two parameters, not one (verification pass). Both are tuned per data set:
+  γ = 10 and a 35 × 35 window on Middlebury, a 71 × 71 × 3 window on 1024-wide video "to account for the high
+  resolution". Under rule 2 the window must be a fraction of the frame (or derived), and γ derived.
+- **Median, not mean** — the paper gives no reason; Hirschmüller's (a median maintains discontinuities) is the
+  standard one and applies, so a class-2 real step inside the neighbourhood is not smeared into a ramp.
 
 Note what it is *not*: it is not S22. S22 median-filtered the **plane parameters** across lines and failed.
 This medians the **filled disparities** themselves, in a 2-D colour-weighted neighbourhood, after the fill. The
@@ -292,9 +325,11 @@ does, because §2.3's remedy needs only colour and the filled values.
 the 3D reconstruction of the slanted plane from the Venus set looks like a **staircase**."* Table 1, error > 0.5 px,
 Venus: fronto-parallel integer **7.57**, sub-pixel 1.73, slanted **1.00**.
 
-Our plane far rule is the slanted-window answer, already. Worth recording that the measured gain from
-"constant → plane" in their setting is 7.6× on a slanted surface at the sub-pixel threshold — which is the same
-order as S45's 5.1× — and that it is *orthogonal* to the streaking fix. They needed both. So do we.
+Our plane far rule is the slanted-window answer, already. **Correction (verification pass):** the first version
+said the gain from "constant → plane" was 7.6× on Venus. The table has three arms, and most of that is sub-pixel,
+not slant: integer fronto-parallel 7.57 → **sub-pixel** fronto-parallel 1.73 (4.4×) → slanted 1.00 (a further
+1.7×). The slant's own contribution is ~1.7× on Venus at 0.5 px (at 1 px it is 0.25 → 0.21), and larger on Teddy's
+ground plane (1 px, non-occluded: 5.52 → 2.99). Either way it is orthogonal to the streaking fix. They needed both.
 
 ### 4. What they concede about untextured regions
 
@@ -305,8 +340,18 @@ matching process and can **treat large untextured regions**."* Figure 6d/6e: the
 Plastic set; the global one succeeds.
 
 Our band is a large region with no data. On their own analysis we are in the regime where the local method is
-the wrong tool — which is a third independent statement that the cross-line coupling, not a better per-line
-estimator, is where the class-1 74% lives.
+the wrong tool. (That this is where S33's class 1 lives is our inference from their global-vs-local argument, not
+their statement.)
+
+### 5. Missed on the first read (verification pass)
+
+- **Propagation is itself directional.** Spatial propagation checks only the left and upper neighbours on even
+  iterations and the right and lower on odd ones, in row-major sweeps alternating from the top-left and the
+  bottom-right corners (three iterations). A plane travels along the sweep, so an unlucky sweep order can still
+  leave row structure; the alternation is what averages it out.
+- Their global variant (§2.4, footnote 15) failed with a *pixel-wise* data term partly because the optimiser
+  (QPBO) left a large share of pixels unlabelled — a solver effect, recorded here because Szeliski et al. 2008
+  (§10) makes the same point: the solver can dominate a comparison.
 
 ---
 
