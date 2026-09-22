@@ -260,6 +260,33 @@ hold 97.7%, and the 223 components under 64 px hold **0.64%** between them. The 
 rim edges per band texel at every percentile. There is no mismatch to correct and no case for per-component
 inpainting.
 
+## Tested and REFUTED — a claim of R8's own: the reveal field beats published practice
+
+Infinigen Indoors §4.3 makes occlusion-boundary estimation a named task with the BSDS protocol (ODS/OIS/mAP), and
+its §G.2 admits how the field builds ground truth when it has none:
+
+> "we approximate them by thresholding the gradient of the provided depth maps. **We carefully tuned this
+> threshold** on Hypersim to give the best results."
+
+That is S33's construction exactly, with a hand-tuned threshold. R8 concluded: *"on this narrow point our
+instrument is better than the published practice, and the R7 synthesis should say so."*
+
+Scored on 30 kit scenes, both rankings swept over every threshold:
+
+| | ODS (one global threshold) | per-scene mean F | scenes won |
+|---|---|---|---|
+| reveal field ranking | **0.833** (P 0.91 R 0.77) | 0.887 | 12 of 30 |
+| depth-gradient ranking | **0.835** (P 0.91 R 0.77) | 0.887 | 18 of 30 |
+
+**Indistinguishable. R8's claim is not supported.** What survives is narrower and should be stated that way: the
+reveal field gives a threshold that needs *no tuning*, in the units the artefact appears in. That is a practical
+advantage, not a detection-accuracy one, and this experiment does not test it — it sweeps both thresholds, so it
+scores ranking quality alone.
+
+*(A correction to my own first run: I labelled the reveal column "threshold derived from the envelope" while in
+fact sweeping it. Fixed. And the absolute F values here are not comparable to Infinigen's 0.29 — they detect
+boundaries from RGB with a network, we threshold a depth map whose truth comes from the same geometry.)*
+
 ## Confirmed, but the fix is ours to find: unnamed things are the occluders
 
 2411.13019 §3.1 is the only paper in the pile treating amorphous "stuff" as a first-class occluder: "these
@@ -420,9 +447,44 @@ strategy matters about half as much as the choice to inpaint at all" that S52 fo
 did not overturn S52; it confirmed it and added the one thing stills could not: inpainting measurably reduces
 temporal instability, it does not merely change the picture.
 
-The S51 arm (`_farLabel`) failed its first run — my sweep loop split the spec on `:`, which also split the JSON
-`{"_farLabel":true}`, so the arm baked with the flag unset and the return was a parse error rather than a silent
-wrong result. Re-queued; S51's verdict is still open.
+*(The S51 arm failed its first run — my sweep loop split the spec on `:`, which also split the JSON
+`{"_farLabel":true}`, so the arm baked with the flag unset. It failed loudly as a parse error rather than
+producing a silent wrong result. Re-run below.)*
+
+## S51 settled, against R8's hypothesis — and item 4 is the surprise
+
+The geometry arms, same camera path, no return imported, differing only in what the bake was given:
+
+| arm | LPIPS vs rest at 45° | temporal step, mean | sd | sFD vs wash |
+|---|---|---|---|---|
+| wash (control) | 0.2878 | 0.05161 | 0.00727 | — |
+| **farlabel** (S51's cross-line labelling) | 0.2887 | **0.05202** | 0.00753 | **0.0005** |
+| **da2x** (the 2× depth map, item 4) | 0.2833 | **0.04725** | 0.00918 | **0.0173** |
+
+**S51 is invisible in motion too, and that answers the question item 1 was built for.** R8 argued that S51's
+"measured improvement, no visible improvement" should be *reopened as a measurement failure*, on DAv2's precedent
+of "better model but worse score". The better measurement has now been made and it says the opposite: the
+cross-line labelling is **the closest arm to the wash in the entire study** — sFD 0.0005, against 0.0042 for the
+weakest inpainting arm and 0.0173 for the 2× depth — and its temporal step is fractionally *worse* (+0.8%), not
+better. A construction that cut artefact wall length by 33.5% is perceptually indistinguishable from doing nothing,
+on stills and in motion. **It was not a measurement failure.** Either the wall length it removed was not what the
+eye integrates, or the effect is genuinely below threshold; either way S51 stays off, now on perceptual evidence
+rather than on a bar it missed.
+
+**And the 2× depth map has the largest motion effect of anything tested this session.** Its frame-to-frame
+perceptual step is **8.4% below the wash** — four times the effect of any inpainting arm — and its sFD from the
+wash (0.0173) is four times any colour return's. This is the arm that changes the picture in motion. It follows
+directly from the 25% reduction in texels sitting inside a depth transition: those are the texels that get
+stretched, and fewer of them means less frame-to-frame instability.
+
+Two honest qualifications. Its step *variance* is higher (sd 0.00918 against 0.00727), so it is smoother on
+average but less uniformly so. And its degradation curve is not uniformly better — worse at 22.5° (0.1795 vs
+0.1735), better at 28.1° (0.1975 vs 0.2091). It changes the picture rather than simply improving it, and it
+deserves a look on screen before it is adopted.
+
+**The ranking of the five items by measured motion effect** is therefore the reverse of the order R8 proposed:
+item 4 (a one-line resolution change, 8.4%) ≫ item 5's inpainting arms (~2%) ≫ item 1's re-measurement of S51
+(0.8%, wrong sign).
 
 ## What is still open
 
