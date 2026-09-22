@@ -360,6 +360,11 @@ their statement.)
 Read in full. **This is the paper that decides Sprint 31, and it decides it against the version I proposed —
 but it hands over the replacement, and the replacement is cheap.**
 
+*(Verification pass: the supplied file has lost equations (1)–(7) in conversion — the lines where they stood are
+blank. Everything below that depends on an equation is read from the surrounding prose and §5.1's parameter
+values, and says so where it matters. And the Sprint 30/31 verdict in §7 is superseded by S57: both sprints are
+on hold behind the sheet A/B.)*
+
 ### 1. The warning I asked for, confirmed in the first paragraph
 
 > *"Summation of the aggregated costs from multiple directions and the final WTA strategy are both **ad-hoc steps
@@ -435,7 +440,7 @@ Compare the three forms now in hand:
 | source | form | at ΔI=0 | as ΔI→∞ | bounded? |
 |---|---|---|---|---|
 | Hirschmüller 2008 | `P2 = P2′/|ΔI|` | **∞** | 0 | no, needs the `P2 ≥ P1` bolt-on |
-| Scharstein & Szeliski 2002 | `ρ_I = 1/(1+γ|ΔI|)` | 1 | 0 | above, not below |
+| Scharstein, Szeliski & Zabih 2001 | `ρ_I = 1/(1+γ|ΔI|)` | 1 | 0 | above, not below |
 | **Schönberger 2018** | `P2 = P1(1 + α e^{−|ΔI|/β})` | `P1(1+α)` = 900 | **P1** = 100 | **both ends** |
 
 The exponential form is the one to implement for Sprint 30. It is bounded **at both ends** — a strong colour edge
@@ -447,7 +452,10 @@ plate colour on the band, and a join cost that currently ignores it entirely.
 ### 5. Their post-filter is PatchMatch's, again
 
 §4.4: neighbourhood `N_p` = pixels within `ε_p = 5` whose confidence exceeds `ε_ρ = 0.1` **and** whose intensity
-is within `ε_I = 10` of the centre; then `d̄_p = median_{q∈N_p} d̂_q`.
+is within `ε_I = 10` of the centre; then `d̄_p = median_{q∈N_p} d̂_q`. *(The defining equation is one of the lost
+ones; this reading is from the prose — "high confidence and similar color as the center pixel" — and the three
+ε values in §5.1. All four ε, including ε_d = 2, were "decided using parameter grid search and 3-fold cross
+validation on the Middlebury 2014 training scenes": tuned, not derived.)*
 
 > *"The filter essentially computes a median on the selective set of neighborhood pixels N_p which have high
 > confidence and similar color as the center pixel p."*
@@ -483,7 +491,9 @@ robust statistics across directions fail worse.
 Build instead, in this order, all of which this paper supports and none of which needs a cost volume:
 
 1. **Sprint 30 as revised** — cap the join cost, exponential contrast modulation `P2 = P1(1 + α e^{−|ΔI|/β})`,
-   sweep α and β (Scharstein & Szeliski's warning that λ/γ tuning dominates applies).
+   with α and β **derived** (β from the image's own contrast statistics) and swept only as a sensitivity check.
+   The first version said "sweep α and β"; that is rule 2's failure mode (S57 C1). Their α = 8, β = 10 are
+   Middlebury-tuned constants for 8-bit intensity.
 2. **The gated median post-filter** — colour + `_geoFarConf` gated, band-only, valid texels untouched
    (PatchMatch §2.3 ∩ Schönberger §4.4). Smallest change in the corpus with two independent endorsements.
 3. **Only then**, and only if 1–2 leave class 1 alive: revisit arbitration as *per-texel selection among
@@ -492,6 +502,20 @@ Build instead, in this order, all of which this paper supports and none of which
 Hirschmüller's §II-E.3 8-direction propagation stays on the list but **demoted and with its null hypothesis
 flipped** — measured against our 2-direction baseline, not assumed better.
 
+### 7b. Missed on the first read (verification pass): which direction is right inside an occlusion
+
+§4.1, "Occlusion": *"In this case, the unary cost is invalid and **the only pass producing a correct prediction is
+the left-to-right direction**. Here, the occluded surface is fronto-parallel and the smoothness prior is likely to
+propagate the correct disparity to the occluded region. **Typically, only a small subset of scanlines results are
+correct in occluded areas**, whereas SGM's standard cost summation is not robust and therefore produces gross
+outliers."* And §5.2 adds right-image passes because *"the left occlusion edges are usually more accurately
+recovered in the right disparity map"*.
+
+This is our band exactly (no data term inside it), and it says the correct candidate is the one propagated **in
+from the side of the surface that continues** — the far side — with the others wrong, not noisy. That is the S45
+far-side rule and Hirschmüller §II-E.3's "only from the occludee", a third time, and it is why summing or taking a
+median over all directions fails there: most arrivals come from the wrong side.
+
 ### 8. Incidental: a lead on missing paper #19
 
 Refs [13] and [14] are **Hermann & Klette**, "Iterative semi-global matching for robust driver assistance
@@ -499,7 +523,8 @@ systems" (ACCV 2012) and "Inclusion of a second-order prior into semi-global mat
 these is probably what I half-remembered as "a review and evaluation of penalty functions for SGM". Also ref [7],
 **Facciolo, de Franchis & Meinhardt, "MGM: A Significantly More Global Matching for Stereovision" (BMVC 2015)**,
 which by its title is precisely the "fix the cross-line coupling in SGM" paper and is a better #19 than the one I
-asked for.
+asked for. *(Resolved in the second archive: the penalty-function review is Banz, Pirsch & Blume, ISPRS 2012 —
+§14 below. MGM was not supplied and is not read.)*
 
 ---
 
@@ -526,7 +551,8 @@ road not taken, argued on 2005 bandwidth grounds that do not apply to us.
 the baseline distances … For the test image 'Interview,' **it is approximately one quarter of the baseline
 distance**."*
 
-A closed-form relation between the warp magnitude and the σ that kills the band. In our terms the baseline is
+An empirical relation between the warp magnitude and the σ that kills the band — measured on **one** test image
+("Interview", three baselines in Fig. 6), not derived; the verification pass tightened "closed-form" to this. In our terms the baseline is
 the reveal, and we have the reveal field per texel (S48). So the analogous rule is **σ(p) ≈ reveal(p)/4**, a
 per-texel smoothing radius rather than a global one. Their residual — the constant floor the curve flattens to
 — is *"simply due to the persistence of newly exposed areas at the image margins"*, which for us is the frame
@@ -546,7 +572,8 @@ Their entire justification for asymmetry, §IV:
 That holds for a **fixed stereo pair**: the two cameras are displaced horizontally and only horizontally, so
 vertical depth structure is never expressed as parallax and can be destroyed for free.
 
-**Our envelope is ±45° horizontal and ±30° vertical.** Vertical head motion produces real vertical parallax that
+**Our instruments run at ±45° horizontal and ±30° vertical, and the user's target is ±90° (fishtank).** Vertical
+head motion produces real vertical parallax that
 the viewer sees directly — it is not a binocular cue being discarded, it is motion parallax being rendered. So
 smoothing `σ_v = 5σ_h` (their §V-B setting) would apply their *geometric distortion* — §IV: *"vertically
 straight object boundaries now can become curved"*, the curved table leg — squarely into the axis where we
@@ -562,11 +589,15 @@ Table II, mean opinion 0–100 over ten viewers, DSCQS (ITU-R BT.500):
 
 | smoothing | None | Mild | Strong |
 |---|---|---|---|
-| symmetric | 44.8 | 52.9 | 62.1 |
-| asymmetric | 48.6 (SE 6.6) | 58.0 (SE 3.6) | 68.4 (SE 1.9) |
+| symmetric | 44.8 (SE 6.6) | 52.9 (SE 3.6) | 62.1 (SE 1.9) |
+| asymmetric | 48.6 (SE 8.1) | 58.0 (SE 4.4) | 68.4 (SE 2.5) |
 
-Two problems. First, the **"None" column should be identical** — σ_h = σ_v = 0 is the same stimulus under both
-labels — and it differs by 3.8 with SE 6.6. That sets the noise floor of the study, and the asymmetric
+*(Verification pass: the extracted table is garbled — "48.68.1 | 58.04.4) | 68.42.5" with "6.6 3.6) 19)" on a
+stray line. Untangled, the first version attached the symmetric row's standard errors to the asymmetric row.
+Corrected; the argument below is unchanged by it.)*
+
+Two problems. First, the **"None" column should be identical** — Table I gives σ = 0, window 0 in both directions
+for both conditions, the same stimulus under two labels — and it differs by 3.8 with SEs of 6.6 and 8.1. That sets the noise floor of the study, and the asymmetric
 advantage (3.8, 5.1, 6.3) never clearly exceeds it. Second, baseline was fixed at 36 px ≈ *"1° disparity or
 approximately 5% of the width"*, chosen for viewing comfort. **Our envelope is an order of magnitude more
 motion**, and monotone-in-σ quality at 1° says nothing about 45°.
@@ -587,6 +618,13 @@ is the useful part:
   between frames. It is not a trade; it is better input.
 - We ruled out the flatness confound directly (2× map sd ratio 0.982, p90−p10 ratio 1.106 — **the 2× map is not
   smoother**), so `da2x`'s win cannot be a covert instance of their effect.
+
+Their closing claim is the direct counterweight to `da2x`, and should be read as such: *"It is often thought that
+the spatial resolution of depth maps should be as high as possible, so as to obtain rendered views of the highest
+quality. The present results suggest that this need not be the case."* That is stated for a 36 px (≈1°)
+stereo baseline with a neighbour-averaging hole filler; the reconciliation above is why it does not decide our
+case, but it is the reason `da2x` must go to the user's screen rather than be banked on a metric (S57). Note also
+that the subjective study used σ_v = 3σ_h, the rendering examples 5σ_h: the ratio itself is a free choice.
 
 **Verdict: do not implement asymmetric pre-smoothing.** Record σ ≈ reveal/4 as the band-elimination relation in
 case we ever want a "comfort mode" that trades geometry for a clean image at reduced envelope, and record the
@@ -616,38 +654,63 @@ And then, of that second branch — which is Zhang & Tam's, cited here as [12], 
 > … **foreground objects can be considerably distorted by this approach, which is subjectively quite
 > disturbing** [11]–[13], [21]."*
 
-Six years later, from the institute that supplied Zhang & Tam's own test footage, the pre-smoothing branch is
-described as a known-bad option, and Table II measures against Fehn [21] (the Gaussian version) as a baseline to
-beat. **That settles §5 of my Zhang & Tam note independently**: the DIBR field did not settle on pre-smoothing.
-It settled on colour filling, with the background favoured.
+(Verified 2026-09-22: [12] is Zhang & Tam — misspelt "Tamm" in the reference list — and [13] is Lee & Effendi
+2010, a different edge-oriented smoother; the asymmetric filter is cited to both.)
+
+Six years later, from the institute that supplied Zhang & Tam's own test footage (their "Interview" image was
+"generously supplied by Fraunhofer HHI"), the pre-smoothing branch is described as a known-bad option, and Table
+II measures against Fehn [21] (the Gaussian version) as a baseline to beat. **That answers §5 of my Zhang & Tam
+note from one further, independent source**: this group, at least, did not settle on pre-smoothing; it chose
+colour filling with the background favoured. (One paper is not "the field"; the §I survey also lists hybrids,
+[11] and [14], that smooth and then fill.)
+
+One more detail from §VII-E worth having: Fehn's disocclusion elimination *"fails to close holes on the left or
+right image border"*, so they had to add Telea inpainting [6] for the frame edge. Pre-smoothing does nothing for
+what the view reveals at the frame edge — the artefact S56 found the margin actually fixes.
 
 ### 2. Line-wise filling named and condemned — and it is our far-side law
 
 > *"Another simple approach repeats the last valid background sample line-wise into the unknown area [8].
 > **Filling methods based on this approach suffer from severe artifacts when structured backgrounds and dominant
-> vertical edges are present** [cf. Fig. 2(g)]."*
+> vertical edges are present** [9] [cf. Fig. 2(g)]."*
 
 **"Dominant vertical edges."** That is class 1 stated in DIBR's vocabulary rather than stereo's: fill each row
 independently, and any structure running across rows is destroyed. Fourth lineage, fourth naming of the same
 artefact. Figure 2(g) is captioned *"Result of line-wise filling approach (see artifacts at the person's
 back)"*.
 
+**Correction (verification, 2026-09-22): what is condemned is line-wise *colour* filling, and the heading above
+over-reached.** Their own *depth* fill (§III) is line-wise too: *"Subsequently, a verified D_i value is copied
+line-wise into Ω_v"*, and *"Background–foreground clustering and subsequent line-wise filling is done for all
+i ∈ ∂Ω_v."* Our far-side law is a depth law; it is the §III procedure, not the §I one. So this paper does not
+condemn our law — it keeps a per-line depth fill and makes two changes to it: the value copied is *verified*
+against a 2-cluster k-means of the rim neighbourhood (§3 below), and the colour is not copied line-wise at all
+but synthesised in 2-D from a median initialisation (§5). The class-1 artefact they name is a colour artefact;
+whether a per-line *depth* fill streaks is not tested here.
+
 ### 3. Their fix for the rim estimate — robustify it, do not trust one texel
 
 §III. Two parts, both applicable to us.
 
 **(a) Blob removal.** *"Due to inaccuracies in depth estimation, FG object boundary samples may be warped into
-[the hole] (denoted as 'blobs')… small blobs up to τ samples are assigned to [the hole]"* — i.e. foreground
+[Ω_v] [denoted as 'blobs']… small blobs up to [τ] samples in [∂Ω_v] are assigned to Ω_v"* (brackets mine: the
+symbols and the threshold's value are lost in this file's conversion; "τ" is a placeholder, not theirs) — i.e. foreground
 fragments that land inside the band are *deleted* before they can be used as fill sources. That is our
 silhouette-fringe problem (S17), and they solve it by size threshold on connected components.
 
 **(b) k-means on the rim neighbourhood instead of the nearest value.** *"It is assumed that **relying on a
 single value of D_i can be error-prone.** Hence, the spatial neighborhood surrounding location i is clustered
 into two depth classes, whose centroids are represented by c_min and c_max. They represent FG and BG depth
-values respectively."* Window M×N = 32×32, k = 2, fill from the **background** centroid.
+values respectively."* Window M×N = 32×32, k = 2 (Bishop [33]). The selection criterion that decides which value is copied is an
+equation lost in this file's conversion; the prose says *"a verified D_i value is copied line-wise"*, so the
+k-means **verifies** the rim value against the neighbourhood's background cluster rather than simply replacing it
+— the exact rule cannot be read here. (Their text also says c_min and c_max *"represent FG and BG depth values
+respectively"*, which is backwards for their own convention, 255 = nearest, and contradicted in §IV-A, where
+depths *below* c_min are background. Take c_min as the background centroid.)
 
-This is a **robust far-side rim estimate**: not "the nearest valid texel across the rim" (one sample, which is
-what our law takes) but "the background mode of a 32×32 neighbourhood". It is the same instinct as PatchMatch's
+This is a **robust far-side rim estimate**: not "the nearest valid texel across the rim" taken on trust (one
+sample, which is what our law takes) but that texel checked against the background mode of a 32×32
+neighbourhood. It is the same instinct as PatchMatch's
 weighted median and Schönberger's gated median — *never let one texel decide* — applied at the rim rather than
 after the fill.
 
@@ -677,6 +740,10 @@ measure N is set equal to the number of known samples that are classified as BG 
 unknown samples are visited in decreasing order of N.** A 2-D median filter operates on the BG samples in the
 current window."*
 
+(This initialisation applies only to holes larger than 7 samples. Smaller holes are filled by Laplace cloning —
+*"about 10 times faster than patch-based texture synthesis"* — and *"regarded as finally filled"*: a two-tier
+rule, a smooth fill for small holes and synthesis only for large ones, with a size threshold.)
+
 So: median over background-classified neighbours only, and **process the best-supported texels first**, which
 grows the estimate inward from where the evidence is strongest. We have the ingredients — a band, a
 carrier/plate classification, and `_geoFarConf` — and no ordering at all; our fill is simultaneous. That is a
@@ -686,14 +753,18 @@ concrete gap.
 the original **as well as the initialized samples**. This leads to a better isophote direction… Second, **the
 filling order is steered such that the synthesis starts from the BG area towards the FG objects.**"*
 
+Mechanically: *"only the border sample positions located in the BG are assigned filling priorities"* (Fig. 8) —
+the front is allowed to advance only from the background side of the hole.
+
 Background-outward-to-foreground is S45's far-side rule and Hirschmüller's *"only from the occludee"* — now
 three times, from three fields.
 
 ### 6. Depth-gated source selection — the one we have already half-built
 
-*"All sample positions in A with depth values higher than d_center + δ are excluded from the source area… the
+*"All sample positions in A with depth values higher than D_center + [δ] are excluded from the source area… the
 likelihood of selecting patches with depth values much higher than the current region to be filled is
-reduced."*
+reduced."* (Higher = nearer in their 255-is-nearest convention. The tolerance symbol is garbled in this file and
+no value is given in the text or Table I.)
 
 This is the occluder-informed inpainting arm (R8 item 5, our `plane_object_ids` channel and dilated mask), but
 imposed as a *hard exclusion on the exemplar search* rather than as a hint to a learned model. If we ever run an
@@ -705,12 +776,15 @@ exemplar fill rather than LaMa, this is the gate.
 |---|---|---|
 | search area `A` | *"performance is not very sensitive to the size of the search area"* | 80×80, subsample 2 |
 | patch size `L×Q` | *"No significant difference"* objectively; subjectively 9×9 ≫ 25×25 — *"FG colors have been copied into the BG area with a patch size of 25×25"* | 9×9 |
-| init weight `w_Ω` | 0 → 0.2 gives **+3 dB PSNR, +0.02 SSIM**; *"Increasing w_Ω further does not yield further gains"* | 0.2 |
+| init weight `w_Ω` | 0 → 0.2 gives **≈ +3 dB PSNR, +0.02 SSIM** (averages; larger on Book arrival); *"Increasing w_Ω further does, however, not yield further gains"* | 0.2 |
 | k-means window | tie objectively, 32 best subjectively | 32×32 |
 
-Only one of the four moves the objective numbers at all, and it is the one that lets the coarse estimate vote in
-the patch cost — i.e. *the initialisation is what matters, not the synthesis*. For us, the initialisation is the
-far-side law. That is a useful re-weighting of where effort belongs.
+Only one of the four moves the objective numbers much (the subsampling factor s also costs quality, unquantified),
+and it is the one that lets the coarse estimate vote in the patch cost. My reading — *the initialisation matters
+more than the synthesis details* — is an inference: there is no reported number for the initialisation alone
+without synthesis (Fig. 11(f) shows it, pictorially only), and the patch-size test was run with the
+initialisation disabled. For us, the initialisation is the far-side law, so the re-weighting of effort towards
+it stands as a reading, not a measurement.
 
 ### 8. Temporal consistency: their central contribution, which we get for free
 
@@ -729,13 +803,21 @@ Their caveat applies to us though: *"If unreliable DMs are used, inappropriate i
 copied into the sprite and propagate to subsequent frames."* Baked in once = baked in forever. Our sprite's
 errors are permanent, which raises rather than lowers the bar on the bake.
 
+Their guard against it (§IV-A): *"depth estimates along background–foreground transitions and within the
+uncovered area … are considered as being unreliable. Therefore, a **two-sample-wide area** around the unreliable
+regions is not considered for sprite update."* A fixed exclusion ring at the rim — the same move as
+Hirschmüller's "direct neighbors of occluded pixels are treated as occlusions" and as the one-texel erosion we
+had to add to `return_align` (S56 Part II). Three sources, one rule: do not trust the ring at the boundary.
+
 ### 9. Where they land
 
 Table II, PSNR (local, defect area only) and SSIM (whole image) against MPEG VSRS 3.5 and Fehn: they win on
 "Book arrival" and "Mobile" (highly structured background) on both measures; VSRS wins PSNR on two "Lovebird1"
 configurations (*"the VSRS rendering is blurrier, while our results are sharper but noisier"* — the
-sharpness/PSNR trade in one sentence); and they **lose** on "Newspaper" because *"all our modules rely on the DM
-and the DM of 'Newspaper' is particularly unreliable."*
+sharpness/PSNR trade in one sentence); and they **lose** on "Newspaper" overall because *"all our modules rely on
+the DM and the DM of 'Newspaper' is particularly unreliable"* — though *"some visual and objective gains can be
+obtained"* on two of its configurations. (Table II's values are too garbled in this file to quote; only the
+prose verdicts are used here.)
 
 Sharper-but-noisier losing on PSNR, and the whole method's quality tracking depth-map quality, are both results
 we have reproduced independently.
