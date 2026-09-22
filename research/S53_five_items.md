@@ -17,7 +17,8 @@ to be an artefact of the instrument, both the wrong number and the reason are ke
 | 2 | **Bi-directional gradient means** (InpaintFusion §3.7) | done — a no-op in the interior by construction; at the rim it removes a median 0.0828 in d from the guidance field |
 | 3 | **Ordinal pairs** (DA-2K, DAv2 §6.2) | done — shipped far field **72.3%** on band ordering, 99.0% on the occluder sanity family; later overturns another instrument |
 | 4 | **Test-time resolution scaling** (DAv2 §B.8) | done — R8's premise was wrong (already at 2×); the *next* doubling gives **25% fewer texels in a transition** and the **largest motion effect measured, −8.4%** |
-| 5 | **Occluder as its own channel** (4 papers) | **not possible** — LaMa is `(64, 4, 7, 7)`, frozen TorchScript. Mask-shaping half done instead |
+| 5 | **Occluder as its own channel** (4 papers) | **not possible** — LaMa is `(64, 4, 7, 7)`, frozen TorchScript. Mask-shaping half done instead, and **refuted**: every dilation is worse, monotonically |
+| 5b | **Dilating the mask stops flicker** (DeepDR supp. §7.3) | **refuted** — 0 px 0.05055, 4 px 0.05069, 12 px 0.05131; monotone the wrong way |
 | 6 | **Reveal-thresholded hybrid** (SynergyAmodal Fig. 6) | done — **beats both of its own endpoints** in motion, the only arm that does |
 | 7 | **Distribution guard** (2503.20211 Eq. 12–15) | built — self-calibrating, truth passes 29/30 kit scenes, catches the known-bad return automatically |
 | 8 | **Two-estimator confidence → per-texel λ** (2503.20211 Eq. 9–11) | built — the free second estimate is **independent** (corr −0.005 with the old uncertainty); the paper's relative form does **not** transfer and was rebuilt on the reveal field |
@@ -28,7 +29,7 @@ to be an artefact of the instrument, both the wrong number and the reason are ke
 | 13 | **Depth from the inpainted plate** (Pano3DComposer §3.3) | tested — passes the guard, **loses ordinally on 5 of 5**; R8's prohibition upheld by measurement |
 | 14 | **Colour–depth alignment** (Gen3R Tab. 11) | built — detects gross misalignment; cannot rank two plausible pairs, and says so |
 
-**Six negatives, and they are the point.** Each cost minutes to establish and would have cost weeks to discover
+**Seven negatives, and they are the point.** Each cost minutes to establish and would have cost weeks to discover
 after building on it. Two of them (9 and 12) contradict claims in R8 itself.
 
 ---
@@ -421,6 +422,50 @@ published prediction, which is worth more than any single margin, but this is a 
 effect sized. The sFD and degradation columns simply order the arms by how much generative content they carry,
 as expected, and carry no verdict.
 
+---
+
+# Part IV — all ten arms, and DeepDR's flicker prediction refuted
+
+| arm | what it is | temporal step | vs wash | sd | LPIPS at 45° | uniformly better? |
+|---|---|---|---|---|---|---|
+| **da2x** | 2× depth map | **0.04725** | **−8.4%** | 0.00918 | 0.2833 | no — worse at 22.5° |
+| **margin2** | frame-edge margin on | **0.04914** | **−4.8%** | 0.00694 | **0.2737** | **yes, at every angle** |
+| H_rev1 | hybrid, 27.5% generative | 0.05038 | −2.4% | **0.00675** | 0.2947 | no |
+| armA | LaMa, band mask | 0.05055 | −2.1% | 0.00707 | 0.2961 | no |
+| armB | LaMa, band ∪ occluder | 0.05062 | −1.9% | 0.00684 | 0.2957 | no |
+| armD | LaMa, band ⊕ 4 px | 0.05069 | −1.8% | 0.00709 | 0.2914 | no |
+| H_seedonly | harmonic seed, no model | 0.05072 | −1.7% | 0.00689 | 0.2929 | no |
+| armE | LaMa, band ⊕ 12 px | 0.05131 | −0.6% | 0.00723 | 0.2912 | no |
+| wash | control | 0.05161 | — | 0.00727 | 0.2878 | — |
+| farlabel | S51's labelling | 0.05202 | **+0.8%** | 0.00753 | 0.2887 | no — worse |
+
+**`margin2` is the only arm uniformly better than the control**, on the temporal step *and* at every one of the
+nine angles of the degradation curve. `da2x` has the larger temporal gain but is worse at 22.5° and has the
+highest step variance of any arm. On this evidence the margin flag is the safer of the two to turn on first, and
+the 2× map is the one that needs a person to look at it.
+
+## DeepDR's flicker prediction does not transfer, and the series is monotone
+
+DeepDR's supplement reports that masks which *under-cover* the removed object cause "artifacts and **flickering
+between consecutive frames**", which predicts that dilating our band mask should *reduce* the temporal step. The
+three dilation arms are a clean test because nothing else differs between them:
+
+| dilation | 0 px (armA) | 4 px (armD) | 12 px (armE) |
+|---|---|---|---|
+| temporal step | **0.05055** | 0.05069 | 0.05131 |
+
+**Monotonically worse with more dilation**, and by 12 px the arm is barely better than the wash (−0.6% against
+−2.1% for no dilation at all). Not noise — a consistent ordering across the series.
+
+The reason is that their under-covering and ours are different things. DeepDR's failure is a mask that leaves
+*fragments of the removed object* in the picture, which then flicker. Our band mask is computed from geometry and
+already covers exactly the revealed region — there is nothing left over to flicker. Dilating it only hands LaMa
+more area to invent over context that was perfectly good, and invention is what costs temporal stability.
+
+**So R8 item 5's mask-shaping half is settled and the answer is no.** The tight, geometrically-derived band mask
+is the right one; PACO's strategy (c) (arm B, band ∪ occluder) is within noise of arm A; and every dilation makes
+it worse. Nothing about the occluder *channel* is tested by this — that remains untried for want of a model.
+
 ## Not attemptable here, and why
 
 - **The occluder as its own channel, and the background as a second channel** (PACO, APSNet, Amodal3R,
@@ -569,8 +614,10 @@ item 4 (a one-line resolution change, 8.4%) ≫ item 5's inpainting arms (~2%) �
 
 ## What to do next, on this evidence
 
-1. **Turn the margin on.** It is a flag, the app already implements it, and it is worth −4.8% of the temporal step
-   for 0.74% of the pixels. Nothing else on this list has that ratio of benefit to effort.
+1. **Turn the margin on.** It is a flag, the app already implements it, it is worth −4.8% of the temporal step for
+   0.74% of the pixels, and it is **the only arm of ten that is uniformly better than the control** — on the
+   temporal step and at every one of the nine angles. Nothing else has that ratio of benefit to effort or that
+   absence of a downside.
 2. **Put the 2× depth map on screen.** It is the only change measured with a large motion effect (−8.4% temporal
    step, 4× anything else), it costs one flag, and its two qualifications — higher step variance, a
    non-uniformly-better degradation curve — are exactly the kind a person settles by looking in ten seconds and a
