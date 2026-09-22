@@ -694,3 +694,264 @@ and the DM of 'Newspaper' is particularly unreliable."*
 
 Sharper-but-noisier losing on PSNR, and the whole method's quality tracking depth-map quality, are both results
 we have reproduced independently.
+
+---
+
+## 7. Criminisi, Pérez & Toyama, "Region Filling and Object Removal by Exemplar-Based Image Inpainting", IEEE TIP 13(9), 2004 [697 lines] DONE
+
+Read in full. I asked for this because *"our band fill has no notion of what order to fill in, and this is the
+canonical answer"*. That is right, and the paper is sharper than I expected about **why** order matters — sharp
+enough to make a falsifiable prediction about our band.
+
+### 1. The skeleton diagnosis — the most useful sentence in the paper for us
+
+Fig. 20's caption, on filling a sea-and-sky hole by concentric layers:
+
+> *"**The deformation of the horizon is caused by the fact that in the concentric-layer filling sky and sea grow
+> inwards at uniform speed. Thus, the reconstructed sky–sea boundary tends to follow the _skeleton_ of the
+> selected target region.**"*
+
+That is a complete mechanism, not a description. **Any fill that advances at uniform speed from the whole rim
+reconstructs interior structure along the hole's medial axis, whatever the real structure was.** The hole's
+shape wins over the image's content.
+
+**Prediction for us.** Our band is a long, thin, roughly rim-parallel region, and our far-side fill is
+*simultaneous* — every texel solved at once, no ordering at all. Its medial axis runs **along** the band,
+parallel to the rim. So this predicts that structure crossing the band gets bent toward the band's own
+centreline, i.e. toward rim-parallel — and rim-parallel disagreement between adjacent lines is exactly what
+class 1 looks like. I cannot claim the mechanisms are identical (ours extrapolates depth from a fitted plane,
+theirs copies colour patches), but **the prediction is testable on data we already have**: measure, for band
+texels where truth is known, whether the error's direction correlates with the local medial axis of the band.
+If it does, ordering is a lever we have never pulled. Added as a Sprint 31 sub-item.
+
+§IV, on the same figure: *"in the presence of concave target regions, the 'onion peel' filling may lead to
+visible artefacts such as unrealistically **broken structures** (see the pole in fig. 11f)."*
+
+### 2. The priority, and why it must be a product
+
+Eq (1): `P(p) = C(p) · D(p)`, with
+
+```
+C(p) = ( Σ_{q ∈ Ψp ∩ (I−Ω)} C(q) ) / |Ψp|            confidence
+D(p) = | ∇I⊥_p · n_p | / α                            data (isophote ⟂ hitting the front)
+```
+
+`C = 0` inside the hole, `1` outside, at init; frozen once a texel is filled; and after a patch is filled every
+new texel inherits `C(p̂)`, so confidence decays inward.
+
+The two terms pull opposite ways and both are needed:
+
+- `C` alone *"approximately enforces the desirable concentric fill order"* and *"smooth[s] the contour of the
+  target region by removing sharp appendices"* — i.e. degenerates to onion-peel, with the skeleton artefact.
+- `D` alone gives the **overshoot** artefact, Fig. 10: *"some edges may grow indiscriminately."*
+- Product: *"the 'push' due to image edges is mitigated by the confidence term"* — edges advance into the hole
+  first, but only while they are still well-supported.
+
+**We have both ingredients and use neither for ordering.** `_geoFarConf` is a confidence field (built on the
+reveal scale), and the plate colour gives isophotes at the rim. What we lack is the loop: we solve the band in
+one shot. Ndjiki-Nya's §V does the same thing in cheaper form (visit unknown samples in decreasing order of
+known-background-neighbour count) and cites this paper for it.
+
+### 3. The order is *necessary and sufficient* — their claim, and it bears on S51
+
+§V: *"Comparative experiments show that **a simple selection of the fill order is necessary _and_ sufficient to
+handle this task**."*
+
+And the anti-segmentation stance, §III, which is the part that speaks to S51's failure:
+
+> *"It must be stressed that our algorithm **does not use explicit nor implicit segmentation at any stage**. For
+> instance, the gradient operator in (1) is **never thresholded** and real valued numbers are employed."*
+
+They make this a selling point against Jia et al., whose method *"requires (i) an expensive segmentation step,
+and (ii) a hard decision about what constitutes a boundary between two textures"*, and against the *"automatic
+switching between 'pure texture-' and 'pure structure-mode'"* of [24].
+
+**S51 was a labelling — a hard decision about which texels join.** It came out 0.0005 sFD from wash, the
+closest arm in the study, and it made real steps 11% worse. This paper's position is that the hard decision was
+never needed: a **continuous priority** does the same work without a threshold to get wrong. That is a genuinely
+different reading of why S51 was inert than the one in S53, and a better one. Sprint 30's cap and Sprint 31's
+gated median are both continuous; that is now a point in their favour rather than an accident.
+
+### 4. One sentence that cuts against the gated median, and how I read it
+
+§III-2: *"we note that **any further manipulation of the pixel values (e.g., adding noise, smoothing etc.) that
+does not explicitly depend upon statistics of the source region, is more likely to degrade visual similarity
+between the filled region and the source region, than to improve it.**"*
+
+Taken flatly, that argues against PatchMatch §2.3's and Schönberger §4.4's post-filters. I do not think it
+does, and the qualifier is the reason: *"that does not explicitly depend upon statistics of the source
+region."* Both of those filters **are** conditioned on source statistics — the colour gate is the plate's own
+colour, the confidence gate is the estimate's own support. A blind median would be what Criminisi warns against;
+PatchMatch's is explicitly *weighted by eq (4)'s colour similarity*, and §2.3 leaves valid texels untouched.
+
+Recording the tension because it is real, and because it sets a design constraint I should not violate: **the
+band post-filter must be gated on the plate, never a plain blur.** Our own history agrees — S22 median-filtered
+plane parameters with no data gate and failed.
+
+### 5. Parameters and details worth keeping
+
+- Patch 9×9 default, *"slightly larger than the largest distinguishable texture element"* — same 9×9 that
+  Ndjiki-Nya's sweep independently landed on.
+- Match by SSD over already-filled texels only, in **CIE Lab**: *"Euclidean distances in Lab colour space are
+  more meaningful than in RGB."* Our return-path work compares in RGB.
+- `n_p` from Gaussian-smoothed contour control points; `∇I_p` = *"the maximum value of the image gradient in
+  Ψp ∩ I"* — a max, not a mean, so a single strong edge carries the patch.
+- Source region may be *"a dilated band around the target region"* rather than the whole image (Fig. 21 uses
+  this) — which is our plate-adjacent sampling, already.
+- Speed: 2 s vs Harrison's 45 s on 200×200; 18 s vs 10 min on the bungee photograph.
+
+### 6. What this paper does *not* give us
+
+Everything here fills **colour**, guided by colour. Our hard problem is **depth** in a region with no colour
+either — the colour is synthesised downstream by LaMa from the same band. The isophote data term needs an image
+gradient at the fill front, and at our band's far rim the only gradient available is the plate's, which is the
+*occluder's* colour on one side. Using it naïvely would propagate foreground structure into the band, which is
+precisely what Hirschmüller, PatchMatch and Ndjiki-Nya all forbid ("only from the occludee").
+
+So the transferable part is **the ordering principle and the product form of the priority**, with `D` built from
+the far-side (occludee) rim only. The exemplar machinery underneath it is for the colour stage, where we already
+use a learned inpainter instead.
+
+---
+
+## 8. Shade, Gortler, He & Szeliski, "Layered Depth Images", SIGGRAPH 1998 [619 lines] DONE
+
+Read in full. I asked for this because *"our plate-1/plate-2 is an LDI in all but name"*. That is correct, and
+the paper turns out to contain **the architecture we independently rebuilt, the sampling question our truth kit
+independently answers, and a stated limitation we have independently measured.** Very little to act on; a great
+deal to align with.
+
+### 1. The primitive ladder is our architecture, from 1998
+
+Figure 1 and §1 order image-based primitives by distance and internal depth variation:
+
+| their primitive | our component |
+|---|---|
+| environment map — *"invariant to translation and simply translates as a whole on the screen based on the rotation"* | the sky layer at infinity (`_skyInf`) |
+| planar sprite / image cache | — |
+| **Sprite with Depth** — *"capable of displaying internal parallax but cannot deal with disocclusions"* | plate 1 |
+| **Layered Depth Image** — *"deal[s] with both parallax and disocclusions"* | plate 1 + plate 2 |
+| polygons | — |
+
+Their stated reason for the environment map is exactly our reason for treating sky as a plane at infinity, and
+their stated *failure* of Sprite-with-Depth ("cannot deal with disocclusions") is exactly the band. The layering
+was not a novel invention on our side; it is the standard answer, and we arrived at it by the same route.
+
+### 2. §4.1: class 2 is a connectivity decision, and here is the canonical form of it
+
+> *"If, during the warp from the input camera to the LDI camera, two or more pixels map to the same layered
+> depth pixel, **their Z values are compared. If the Z values differ by more than a preset epsilon, a new layer
+> is added** to that layered depth pixel for each distinct Z value … otherwise the values are averaged resulting
+> in a single depth pixel."*
+
+That is **task #57 — "class 2 as a tear, not a ramp"** — in one sentence, from the paper that defined the
+representation. Two samples either become **two layers** (a tear: they are different surfaces) or **one averaged
+sample** (a ramp: same surface, noise). One threshold, `epsilon`, decides.
+
+We currently have no such decision in the band: every class-2 real step (median jump **31** steps, 26.1% of wall
+length) is drawn as rubber between rim and rim. The LDI answer is that it should have become a second layer.
+§4.2 repeats the rule for the ray-traced construction: *"If the new sample is within an epsilon tolerance in
+depth of an existing depth pixel, the color of the new sample is averaged … Otherwise, the color, normal, and
+distance to the sample create a new depth pixel that is inserted."*
+
+**Note the tension with Criminisi**, recorded honestly: this *is* a hard threshold, the thing Criminisi argues is
+never necessary. I think both are right and they are about different stages — a *representation* must make a
+discrete commitment (a texel is either one surface or two; there is no continuous middle), whereas a *fill
+order* need not. S51 failed because it put a hard decision in the fill. Class 2 wants one in the representation.
+That distinction is the most useful thing I have got out of putting these two papers next to each other, and it
+is the argument for doing #57 as a plate-2 question rather than another labelling of the band.
+
+Also: we have the threshold already. **The cliff tolerance in screen pixels (Sprint 26) is our `epsilon`**,
+derived rather than preset, which is better than the paper's.
+
+### 3. §4.2: the sampling question, which is our envelope — and our truth kit is their answer
+
+> *"**What set of rays should we trace to sample the scene, to best approximate the distribution of rays from
+> all possible viewpoints we are interested in?** For simplicity, we have chosen to use a **cubical region of
+> empty space surrounding the LDI center to represent the region that the viewer is able to move in.** Each face
+> of the viewing cube defines a 90 degree frustum."*
+>
+> *"Given no a priori knowledge of the geometry in the scene, we assume that every ray intersecting the cube is
+> equally important. To achieve a uniform density of rays we sample the positional coordinates uniformly. A
+> uniform distribution over the hemisphere of directions requires that the probability of choosing a direction is
+> **proportional to the projected area** in that direction. Thus, the direction is weighted by the **cosine of
+> the angle off the normal** to the cube face."*
+
+This is the truth kit's design argument, published. We declare a viewing envelope (±45° h, ±30° v — their 90°
+frustum is the same order), and we score against ground truth gathered **over that envelope** rather than at a
+single pose (`env45`). What the paper adds that we do not have is the **cosine weighting**: they argue the
+importance of a direction is proportional to its projected area, so grazing directions should be *down*-weighted
+in the sample density. Our env45 grids weight poses by the envelope's fade, not by projected area. Worth
+checking whether the two agree; if they do not, the paper's is the principled one. Small note, added to the
+truth-kit backlog rather than a sprint.
+
+### 4. The limitation they state, which is our fold problem, named in 1998
+
+§4.2 lists the two things that go wrong as the viewpoint moves:
+
+> *"(1) **disocclusions** as the viewpoint changes, and (2) **surfaces that grow in terms of screen space.** For
+> example, when a surface is edge on to the LDI, it covers no area. Later, it may face the new viewpoint and thus
+> cover some screen space."*
+
+And the honest consequence: *"We could simply allow the rays emanating from the center of the LDI to pierce
+surfaces, recording each hit along the way. **This would solve the disocclusion problem but would not
+effectively sample surfaces edge on to the LDI.**"*
+
+**Our plate 2 is built from arrival order along the ray — i.e. exactly the ray-piercing construction — so by
+their analysis it solves (1) and not (2).** That is precisely what we measured: the stretched-plate work
+(Sprint 17a, per-fragment fold alpha on the a165 ratio) exists because edge-on plate texels magnify into skins
+at far poses, and no amount of second-layer depth fixes it. Their answer is to sample *rays*, not *texels* —
+cosine-weighted over the viewing cube, 32⁴ strata × 16 rays ≈ 16 M rays per face — which we cannot do from a
+photograph, since we have one view and a monocular depth map, not a scene to trace.
+
+So this is a **structural limit of the single-view case, not a defect of our implementation**, and it is worth
+saying so plainly in S54's rewrite: the fold/skin artefact is the part of the problem that the LDI literature
+solves with more input, and we do not have more input.
+
+§7 concedes it too: *"if some surface is seen at a glancing angle in the LDI's view the depth complexity for
+that LDI increases, **while the spatial sampling resolution over that surface degrades.** The sampling and
+aliasing issues involved in our layered depth image approach are **still not fully understood**; a formal
+analysis of these issues would be helpful."* Twenty-eight years on, still the open problem, and still ours.
+
+### 5. The splat-size formula — the principled version of our fold ratio
+
+§5.3, the projected area of a warped pixel:
+
+```
+sqrt(size) ≈ (d1 / d2) · sqrt( cos(θ2) / cos(θ1) ) · sqrt(res2/res1) · ( tan(fov1/2) / tan(fov2/2) )
+```
+
+with `θ` the angle between the surface normal and the line of sight to each camera. The `cos(θ2)/cos(θ1)` factor
+is the stretch: a texel seen edge-on from the LDI camera and face-on from the output camera blows up. Our fold
+alpha uses a ratio measured from the warped positions (a165); this is the closed form of the same quantity, and
+it decomposes the stretch into *surface orientation* and *distance* terms separately. If the fold alpha ever
+needs a principled threshold rather than a tuned one, this is where it comes from.
+
+Implementation detail worth stealing if performance ever matters: four splat sizes (1×1, 3×3, 5×5, 7×7), alphas
+rounded to 1, ½, ¼ so blending is integer shifts, and an 11-bit lookup table (5 bits `d1` + 6 bits normal)
+recomputed per frame.
+
+### 6. Numbers, for the record
+
+- **Average depth complexity 1.24** for the Chicken LDI built from 3 input images — *"the use of three input
+  images only increases the rendering cost by 24 percent."* A useful sanity number: even with real multi-view
+  input, the second layer is thin. Our plate 2's coverage being small is normal, not a failure.
+- Chestnut tree: 16 M rays, 7 hours on a 250 MHz Indigo2, 1.1 M depth pixels, 4–10 fps on a 300 MHz Pentium II.
+- Depth pixel packed to 8 bytes (20-bit Z + 11-bit splat index + RGBA) to fit four per 32-byte cache line —
+  *"this seemingly small optimization yielded a 25 percent improvement in rendering speed."*
+
+### 7. One idea from the Sprites-with-Depth half worth keeping
+
+§7: *"a forward mapped **displacement map does not have to be as accurate as a forward mapped color image**. If
+the displacement map is smooth, the inaccuracies in the warped displacement map result in only sub-pixel errors
+in the final color pixel sample positions."*
+
+Hence their two-pass scheme: forward-map the *depth* (cheap, tolerant), then **backward**-map the *colour* using
+it (accurate, filtered). Gaps then arise only in the first pass, on the displacement map, where they are easy to
+fill — *"it can handle large changes in view with only a small amount of gap filling."* Frame rates on
+256×256: 30 Hz no parallax, 21 Hz crude one-pass, 16 Hz two-pass with bilinear.
+
+We forward-map both together. Whether a backward colour fetch would reduce the band's *colour* artefacts
+independently of its depth is not something this project has ever tested, and it is cheap to try. Noted, not
+scheduled — the band's problem is that there is no colour to fetch, so the gain would be confined to the
+stretched/fold region rather than the band proper.
