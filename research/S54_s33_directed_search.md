@@ -119,18 +119,17 @@ rather than by being averaged.
 
 ---
 
-## 4. The solver is probably not the bottleneck, and S51's own evidence says so
+## 4. Whether the solver is the bottleneck is open, and cheap to settle
 
-It would be natural to reach for graph cuts to replace S51's ICM. The search says the gap is real but modest in
-practice — α-expansion "is only guaranteed to return a local minimum with respect to the moves made", though
-"objective gap bounds obtained from primal-dual variants … are sometimes very close to one in practice".
+(Rewritten 2026-09-22 after reading Szeliski et al. first-hand — S55 note 10. The earlier text argued the solver
+was not the bottleneck; that rested on a misreading of S51.)
 
-More decisive is S51's own measurement: **λ is inert from 0.25 to infinity, and five structurally different seeds
-converge within a few per cent.** That is the signature of an energy whose floor is being reached. Changing the
-optimiser will not move a number that the optimiser is already finding.
-
-**So the order is: fix the energy first (§2's capped penalty, §3's label space), and only then ask whether the
-solver matters.** Reaching for graph cuts first would be the expensive mistake here.
+S51 used ICM, which Szeliski et al.'s comparison singles out as the one method far from the optimum and
+*"extremely sensitive to the initial estimate"*. S51's restarts did not converge (law 438 955, all-row 440 523,
+all-column 507 839, random 458–464 k), its oracle bound allows 80.7% on the artefact classes against ICM's 33%,
+and λ being inert says nothing about whether the minimum was found. S51's energy is two-label and submodular, so
+one s–t min-cut gives the global optimum. **Until that is run, S51's 33% is a lower bound on what the labelling
+can do.** Priority is set elsewhere: S57 puts the sheet A/B ahead of any further work on the per-line law.
 
 ---
 

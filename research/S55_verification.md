@@ -170,3 +170,53 @@ quotations; the splat-size formula as far as the garbled layout allows (d1/d2, �
 fov terms; θ approximated by normal-to-z angles); four splat sizes, alphas 1, ½, ¼; 11-bit table (5 + 6 bits),
 2048 entries per frame; 32⁴ strata × 16 rays ≈ 16 M; chestnut 7 h, 250 MHz Indigo2, 1.1 M depth pixels, 4–10 fps;
 8-byte depth pixel, four per cache line, +25 %; the §7 displacement-map quotation; 30/21/16 Hz.
+
+## 9. Shih, Su, Kopf & Huang, 3D Photography with context-aware layered depth inpainting, CVPR 2020 — 781 lines read
+
+✘ **"Their headline component … the paper's core technical novelty" is edge guidance.** The conclusion names
+context-aware layered colour-and-depth inpainting as the core novelty; edge guidance is one part of it. The
+context-region mechanism is never ablated. Corrected; the in-hole deltas added next to the whole-image ones.
+✘ **"The learned inpainter is worse than diffusion in the hole"** held only for SSIM/PSNR; on LPIPS it beats
+diffusion even without dilation (0.085 vs 0.088). Added.
+~ "Independently validates R8 item 5 … the most direct cross-validation in the corpus … upgrades armD" → consistent
+with it: our measure is temporal step (which A126 says may not gate a change on its own), theirs PSNR/SSIM
+against truth; their 5 px is a set value, not a reported sweep. The screen decides.
+~ "Plate 1 / plate 2: two layers everywhere" → plate 2 carries a coverage mask; the rigid-slot criticism still
+applies.
+~ "Every paper forbids the occluder in the context" → dropped Criminisi (object removal has no occluder left).
+~ "4 bits per texel" marked as my estimate (they store pointers); "our 2× depth arm won" → "we tried".
+~ Two quotations had words silently dropped (the LPIPS cross-validation and the training-data pool); restored or
+marked.
++ Missed: the context region *erodes* by the 5 px dilation — the fourth source for not trusting the boundary ring;
+alternating expansion; their input requirement that colour and depth discontinuities be aligned, and the
+independent-inpainting misalignment warning (the `return_align` failure); supplement failure cases (thin
+structures, over-smooth monocular depth). Added.
+✔ The LDI-connectivity and cut quotations; the rigid-layer quotation; §3.2 context quotations; 40/100 iterations
+and the "do not step back" quotation; Tables 1–3 every value; the dilation reason quotation; the recursion
+quotation and Fig. 8; disparity normalisation; bilateral median 7×7, 4.0, 0.5 and its reason; <10 px segments;
+1024 px scaling; COCO/MegaDepth training trick, 118k images, ≤3 pairs, 5/10 epochs.
+
+## 10. Szeliski et al., comparative study of MRF energy minimisation, ECCV 2006 — 327 lines read
+
+✘ **The note's verdict was backwards.** It said the paper confirms S54 §4 ("the solver is not our bottleneck").
+Checked against S51's own record: S51's solver was **ICM**, the one method the study finds far from the optimum
+and "extremely sensitive to the initial estimate"; S51's restarts did **not** converge (438 955 / 440 523 / 507 839
+/ 458–464 k — the notes said "five random seeds converging to the same answer"); S51's oracle bound (80.7 % vs 33 %)
+is the signature of a weak search, as S51 itself concluded. "Our minimisation is a per-texel closed form" described
+the far-side law, not S51. The note is rewritten; **S54 §4 is rewritten in place** (rule 5) to say the question is
+open and settled exactly by one min-cut (two-label submodular energy).
+✘ **"The cap is precisely what breaks the metric condition."** The square does; truncated L1 is a metric (Tsukuba).
+Our k = 1 cap stays expansion-compatible. Corrected.
+~ "Once past ICM everyone finds the same minimum" → the best methods do; LBP and swap moves do not always (§6
+"dramatic difference in performance"). Added; also "The exception was the Photomontage benchmarks" restored to the
+visual-quality quotation, and Teddy's 0.018 % is reached during TRW-S's oscillation.
+~ "Penguin is the only benchmark with zero data cost" → Photomontage is data-free wherever images overlap, and it
+is the other benchmark where methods differ visibly. Tightened.
+~ "Sprint 30 should sweep" and "the sweep is over a named parameter" contradict rule 2; rewritten (derive, then
+check; the self-calibrating β is the rule-2 form).
+✔ §6 "unlikely to produce significantly more accurate labelings" quotation; §5 <1 %, 0.27 %, 0.13 %, 0.78 %,
+0.018 %, LBP <0.04 %; the "more accurate models" caveat; the clipped monomial and Potts quotation; the expansion
+condition; the Venus/Penguin non-metric quotation; Penguin's zero data cost, swap problems, TRW-S winner; w_pq = 3
+/ 2; the segmentation V_pq, λ = 50, λ₂ = 10, β and the λ₂ quotation; ICM WTA initialisation; "never … swap moves";
+LBP's poor showing, the floating people, the schedule hedge; TRW-S lower bound quotation; E = E_d + λE_s,
+4-connected; the API quotation.
