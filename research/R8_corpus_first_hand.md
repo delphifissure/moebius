@@ -424,6 +424,16 @@ Ordered by how much each bears on us. Full detail in `scratchpad/readnotes/notes
 
 ## 14. What to do, in order
 
+> **EXECUTED (2026-09-22) — see `S53_five_items.md`.** Items 1–5 have been run. Three of the five were stated here in
+> terms the measurements corrected, and the corrections are recorded there rather than edited away:
+> **item 2** — `moebius.js` does not export gradients, it only consumes them, and its divergence form was already
+> right; the defect was in `harness/s52_depth.py` alone, and on a dense field the bi-directional mean is provably a
+> no-op, so what it fixes is the band rim specifically (median 0.0828 → 0.0004 in d on 42 586 crossing edges).
+> **item 4** — the premise below is wrong. The shipped troll map was already made at `process_res=1008`, twice DA3's
+> default of 504, so the open test was the next doubling; at 2016 it puts 25 % fewer texels inside a depth
+> transition. **item 5** — the occluder channel is **not possible** with LaMa: its first convolution is
+> `(64, 4, 7, 7)`, four input channels, in a frozen TorchScript archive. Only the mask-shaping half was testable.
+
 1. **Re-measure S51 and S52 properly** before building anything: LPIPS per frame, VFID over a sweep, rendered in motion. This
    is a harness change, not a construction change, and it decides whether `window._farLabel` and S52's arms were wins we
    discarded.
@@ -447,7 +457,8 @@ depth (§1).
   and numbers are in `scratchpad/readnotes/notes.md`.
 - R7 remains in the repository as the record of a second-hand synthesis and its errata. **Where R7 and R8 disagree, R8 is the
   reading.**
-- Nothing in this note has been tested. §14 items 1–5 are cheap and falsifiable; they should be run before any of §10 is built.
+- ~~Nothing in this note has been tested.~~ **§14 items 1–5 have now been run — `S53_five_items.md`.** They were cheap and
+  falsifiable as claimed, and three of the five falsified part of their own statement here. §10 remains unbuilt.
 - The blocker S33 identified — 74 % of visible streak length is the far field disagreeing with itself, a discrete labelling
   problem — still has **no prior art in this pile**. R7's errata said so and the full read confirms it. That literature
   (Boykov–Veksler–Zabih and successors) was never supplied and remains unchecked.
