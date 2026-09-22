@@ -8,6 +8,28 @@ excuse.
 Every number below was produced by running something, and where a first attempt produced a number that turned out
 to be an artefact of the instrument, both the wrong number and the reason are kept.
 
+## The whole session on one page
+
+| # | idea, and where it comes from | verdict |
+|---|---|---|
+| 1 | **Re-measure S51 and S52 in motion** (InpaintFusion §4.1) | done — and it **settles S51 against R8**: sFD 0.0005 from the wash, the closest arm in the study |
+| 2 | **Bi-directional gradient means** (InpaintFusion §3.7) | done — a no-op in the interior by construction; at the rim it removes a median 0.0828 in d from the guidance field |
+| 3 | **Ordinal pairs** (DA-2K, DAv2 §6.2) | done — shipped far field **72.3%** on band ordering, 99.0% on the occluder sanity family; later overturns another instrument |
+| 4 | **Test-time resolution scaling** (DAv2 §B.8) | done — R8's premise was wrong (already at 2×); the *next* doubling gives **25% fewer texels in a transition** and the **largest motion effect measured, −8.4%** |
+| 5 | **Occluder as its own channel** (4 papers) | **not possible** — LaMa is `(64, 4, 7, 7)`, frozen TorchScript. Mask-shaping half done instead |
+| 6 | **Reveal-thresholded hybrid** (SynergyAmodal Fig. 6) | done — **beats both of its own endpoints** in motion, the only arm that does |
+| 7 | **Distribution guard** (2503.20211 Eq. 12–15) | built — self-calibrating, truth passes 29/30 kit scenes, catches the known-bad return automatically |
+| 8 | **Two-estimator confidence → per-texel λ** (2503.20211 Eq. 9–11) | built — the free second estimate is **independent** (corr −0.005 with the old uncertainty); the paper's relative form does **not** transfer and was rebuilt on the reveal field |
+| 9 | **Simplicity as an objective** (amodal survey Tab. 1) | **refuted** — runs backwards; do-nothing scores highest, truth lowest |
+| 10 | **Unnamed regions as occluders** (2411.13019 §3.1) | **confirmed, 54.8%** of the occluded rim — but my geometric fix floods to 60% of the plate |
+| 11 | **Band fragmentation** (Amodal3R) | **refuted** — 261 components, but the largest holds 94.6% of the area |
+| 12 | **Reveal field beats published boundary practice** (R8's own claim) | **refuted** — ODS 0.833 vs 0.835, a tie |
+| 13 | **Depth from the inpainted plate** (Pano3DComposer §3.3) | tested — passes the guard, **loses ordinally on 5 of 5**; R8's prohibition upheld by measurement |
+| 14 | **Colour–depth alignment** (Gen3R Tab. 11) | built — detects gross misalignment; cannot rank two plausible pairs, and says so |
+
+**Six negatives, and they are the point.** Each cost minutes to establish and would have cost weeks to discover
+after building on it. Two of them (9 and 12) contradict claims in R8 itself.
+
 ---
 
 ## Item 2 — the exporter's one-sided gradients (`harness/return_grad.py`)
@@ -524,11 +546,47 @@ deserves a look on screen before it is adopted.
 item 4 (a one-line resolution change, 8.4%) ≫ item 5's inpainting arms (~2%) ≫ item 1's re-measurement of S51
 (0.8%, wrong sign).
 
+## What to do next, on this evidence
+
+1. **Put the 2× depth map on screen.** It is the only change measured with a large motion effect (−8.4% temporal
+   step, 4× anything else), it costs one flag, and its two qualifications — higher step variance, a
+   non-uniformly-better degradation curve — are exactly the kind a person settles by looking in ten seconds and a
+   harness cannot settle at all.
+2. **Turn the margin on and re-measure.** The published frame-edge fix is already implemented and was off for this
+   bake; the `margin2` arm is rendering.
+3. **Ship the hybrid rather than either endpoint**, if a look on screen agrees with the numbers. It beat both of
+   the things it is made of, and the threshold costs no new parameter.
+4. **Use the guard and the ordinal instrument together, never singly.** Part III is the demonstration: a return
+   can pass one and fail the other, and the one it passes is the one that cannot see over-averaging.
+
 ## What is still open
 
-- **The re-bake for item 4.** The 2× map exists; the bake and rescore do not.
-- **Item 6, deliberately deferred by R8's ordering**: the reveal-thresholded hybrid fill (regression under the
-  threshold, generative over it).
-- **The occluder channel** needs an inpainter that accepts one. Nothing here tested the idea, only the interface.
-- **S33's blocker** — 74 % of the troll's visible wall length being the field disagreeing with itself — still has no
-  prior art in the corpus.
+- **The occluder channel, the background channel, structure conditioning, global-to-local, and a generative prior
+  as a regulariser.** Five ideas with published support, all blocked on the same thing: a model we can train or
+  run. None of them has been tested here and none should be recorded as tried.
+- **Shadow masking.** DeepDR's measured win; we have no shadow detector.
+- **The 2× map on other pictures.** One photograph is not generality, and the kit cannot test this one — its depth
+  is synthetic truth, not a DA output, so there is nothing to re-run at 2×.
+- **S51 is closed, not open.** It stays off, now on perceptual evidence rather than a missed bar.
+- **S33's blocker** — 74% of the troll's visible wall length being the field disagreeing with itself — still has
+  **no prior art in the corpus**, and this session did not change that. Simplicity was the one candidate objective
+  with a published direction and it is refuted. The discrete-labelling literature (Boykov–Veksler–Zabih and
+  successors) was never supplied and remains the one unexamined direction.
+
+## What this session says about the project's method
+
+Twelve ideas tested, six negative, two of them contradicting R8 itself. That ratio is the argument for the way they
+were tested: each negative cost minutes and would have cost weeks if discovered after a construction was built on
+it. Three specific patterns are worth carrying forward.
+
+**An instrument that cannot fail its own test is not an instrument.** The distribution guard's first design used an
+absolute threshold; the kit showed truth itself spans 0.02 to 0.52 and would be rejected. The ordinal instrument's
+first design gave the do-nothing baseline a free correct endpoint and scored it 100%. Both were caught by running
+them against known answers rather than by reasoning about them.
+
+**Published findings transfer as directions, not as formulas.** 2503.20211's confidence form divides by metric
+depth; in normalised disparity it collapsed to "trust nothing". The amodal survey's simplicity prior holds on
+compact objects and inverts on background surfaces. In both cases the idea was sound and the arithmetic was not.
+
+**A verdict reached by one instrument is a hypothesis.** The cleanest result here is Part III, where two
+instruments disagree about the same return and both are right about different failures.
