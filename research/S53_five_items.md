@@ -13,6 +13,7 @@ to be an artefact of the instrument, both the wrong number and the reason are ke
 | # | idea, and where it comes from | verdict |
 |---|---|---|
 | 1 | **Re-measure S51 and S52 in motion** (InpaintFusion §4.1) | done — and it **settles S51 against R8**: sFD 0.0005 from the wash, the closest arm in the study |
+| 1b | **Frame-edge margin** (2411.13019 Eq. 3, PACO limit iii) — already in the app, switched off | done — **−4.8% temporal step from changing 0.74% of pixels**, the second-largest effect measured |
 | 2 | **Bi-directional gradient means** (InpaintFusion §3.7) | done — a no-op in the interior by construction; at the rim it removes a median 0.0828 in d from the guidance field |
 | 3 | **Ordinal pairs** (DA-2K, DAv2 §6.2) | done — shipped far field **72.3%** on band ordering, 99.0% on the occluder sanity family; later overturns another instrument |
 | 4 | **Test-time resolution scaling** (DAv2 §B.8) | done — R8's premise was wrong (already at 2×); the *next* doubling gives **25% fewer texels in a transition** and the **largest motion effect measured, −8.4%** |
@@ -347,6 +348,26 @@ the picture. **The app already implements the published fix** — the margin mec
 and the troll bundle was baked with `plateOptions.margin: 'off'`. The action is to turn it on and measure, not to
 build anything.
 
+### Turned on and measured: the second-largest motion effect of the session
+
+| arm | temporal step, mean | sd | sFD vs wash | pixels differing from the wash |
+|---|---|---|---|---|
+| wash (margin off) | 0.05161 | 0.00727 | — | — |
+| **margin2** (`_plugMargin = 2`) | **0.04914 (−4.8%)** | 0.00694 | **0.0047** | **0.74%**, max \|Δ\| 458 |
+
+**I predicted this arm would render identically to the control and it does not.** The bake reports the same plate
+size (851×1023), because the margin adds `plane_out_*` strips *outside* the plate rather than enlarging it, and I
+reasoned from that to "the viewer sees nothing different within the envelope". Wrong: 0.74% of pixels change, and
+the frame-to-frame perceptual step falls **4.8%** — second only to the 2× depth map, and larger than any colour
+return.
+
+The ratio is what makes it interesting. Three quarters of one per cent of the picture changes, and it buys nearly
+5% of temporal stability, because those pixels are precisely the frame edge where the plate tears and stretches
+under parallax. **0.37% of band texels sit at the frame and they are worth 4.8% of the motion artefact.**
+
+So the published rule is confirmed, the app already had it, and it was switched off. That is the cheapest
+available improvement in this whole note — a flag, not a construction.
+
 ## Built and queued: the reveal-thresholded hybrid (R8 §14 item 6)
 
 SynergyAmodal Fig. 6: a regression wins the 0–10% occlusion bucket; generative methods take over at 10–50%, 50–90%,
@@ -548,12 +569,12 @@ item 4 (a one-line resolution change, 8.4%) ≫ item 5's inpainting arms (~2%) �
 
 ## What to do next, on this evidence
 
-1. **Put the 2× depth map on screen.** It is the only change measured with a large motion effect (−8.4% temporal
+1. **Turn the margin on.** It is a flag, the app already implements it, and it is worth −4.8% of the temporal step
+   for 0.74% of the pixels. Nothing else on this list has that ratio of benefit to effort.
+2. **Put the 2× depth map on screen.** It is the only change measured with a large motion effect (−8.4% temporal
    step, 4× anything else), it costs one flag, and its two qualifications — higher step variance, a
    non-uniformly-better degradation curve — are exactly the kind a person settles by looking in ten seconds and a
    harness cannot settle at all.
-2. **Turn the margin on and re-measure.** The published frame-edge fix is already implemented and was off for this
-   bake; the `margin2` arm is rendering.
 3. **Ship the hybrid rather than either endpoint**, if a look on screen agrees with the numbers. It beat both of
    the things it is made of, and the threshold costs no new parameter.
 4. **Use the guard and the ordinal instrument together, never singly.** Part III is the demonstration: a return
