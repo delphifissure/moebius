@@ -1991,3 +1991,158 @@ That is the fourth paper in this corpus — after Ndjiki-Nya's k-means tie, Shih
 saturated no-reference scores — to concede that the measurements do not capture what the method is for. It is
 not an excuse for our own null results, but it is the context for them, and it is why the sheets have earned
 their place beside the metrics in this project.
+
+---
+
+## 18. Sun, Yuan, Jia & Shum, "Image Completion with Structure Propagation", SIGGRAPH 2005 [390 lines] DONE
+
+Read in full. I requested it because *"our rim law already knows where the structure is, which makes the manual
+half free."* That is confirmed — and the paper turns out to contain **the cleanest statement in the corpus of
+what it would actually cost to go from per-line to cross-line**, which is the class-1 question.
+
+### 1. DP and BP are the same update — one on a chain, one on a graph
+
+§3.3. Dynamic programming, written as a message:
+
+```
+M_{i−1,i} = min_{x_{i−1}} { E1(x_{i−1}) + E2(x_{i−1}, x_i) + M_{i−2,i−1} }        (9)
+```
+
+Belief propagation:
+
+```
+M^t_ij = min_{x_i} { E1(x_i) + E2(x_i, x_j) + Σ_{k≠j, k∈N(i)} M^{t−1}_ki }        (5)
+```
+
+> *"**Equation (9) and the message update equation (5) in belief propagation are in fact equivalent when the
+> graph is a single chain.** Therefore, in a single chain, the cumulative minimal cost is an alternative
+> interpretation of the message in belief propagation. **Belief propagation can be viewed as a 'parallel'
+> generalization of dynamic programming on a general graph.**"*
+
+**This is the third and most explicit version of the same point.** Scharstein & Szeliski: SO solves the same
+problem as graph cuts *"except that vertical smoothness terms are ignored."* Hirschmüller: streaking comes from
+*"very strong constraints in one direction… combined with none or much weaker constraints in the other."* Sun:
+the two algorithms are **the same recursion**, and the only difference is whether the neighbour set `N(i)` is
+`{i−1, i+1}` or the full graph.
+
+So the class-1 fix is not a different method. It is our existing per-line recursion with cross-line edges added
+to `N(i)` and the messages summed over all neighbours instead of one. That is a much smaller change than
+"implement belief propagation" sounds, and it is the correct way to frame whatever eventually replaces the
+per-line law.
+
+**And the cost is bounded and known.** §3.2: standard BP on a loop-free graph is `O(2T·L·N²)`, but *"each
+message can be updated only when all necessary neighboring messages are converged"*, so attaching a binary
+converged-flag to each message reduces it to **`O(2LN²)`, independent of the number of intersection nodes**.
+*"For a typical value of N = 10³, the running time of belief propagation is about a few seconds, while dynamic
+programming might take hours."* (DP on a graph with `K` intersections is `O(LN^{2+K})` — it explodes; BP does
+not.)
+
+One caution, recorded because the corpus disagrees with itself here: Sun reports loopy BP working well —
+*"belief propagation is often a very good approximation even for graphs with thousands of loops"* — while the
+Szeliski MRF study (note 10) found LBP *"performed surprisingly poorly (the only method it consistently
+outperformed was ICM)"* and producing gross errors on Photomontage. Szeliski hedges that this may be their
+message schedule. Sun's graphs are sparse and nearly loop-free, Szeliski's are dense 4-connected grids. **Ours
+would be a dense grid**, which is Szeliski's regime, not Sun's. So take the *equivalence* from Sun and the
+*performance expectation* from Szeliski: if we ever build this, TRW-S rather than LBP.
+
+### 2. Structure first, texture second — which is already our architecture
+
+> *"Note that we **completely separate structure propagation and texture propagation and perform structure
+> propagation first**. Compared with previous methods, this completion process largely reduce the breaking of
+> salient structures which human eyes are sensitive to."*
+
+Their second stated observation: *"There exists a synthesis ordering for image completion: **the regions with
+salient structures should be completed before filling in other regions.**"*
+
+We fill **depth** (structure) with the far-side law, then hand the band to LaMa for **colour** (texture). Shih
+does the same with three sub-networks (edge → colour, depth). Three independent architectures, same ordering.
+This is one of the places our pipeline is already aligned with settled practice, and it is worth saying so in
+S54's rewrite rather than only cataloguing gaps.
+
+### 3. Partitioned texture propagation — task #59, from a fourth direction
+
+§4.1: *"applying texture synthesis directly may produce poor results, as the synthesis process may **sample
+irrelevant texture information from the entire known region**."*
+
+Their fix: the user curves partition both known and unknown regions into matched subregions, and *"**each
+unknown subregion is completed only using the samples in its corresponding known subregion**."*
+
+Four mechanisms for one principle now:
+
+| paper | how the source is restricted |
+|---|---|
+| Criminisi 2004 | source region = a dilated band around the hole |
+| Sun 2005 | partition by user curves; each subregion draws only from its pair |
+| Shih 2020 | context region follows LDI connectivity links, halts at silhouettes |
+| Gautier 2011 | zero priority on the occluder side |
+
+**We hand LaMa the whole plate.** Task #59 is confirmed four times over and is the best-supported unbuilt item
+in the backlog.
+
+### 4. The energy, and a weight ratio worth noticing
+
+```
+E(X) = Σ_{i∈V} E1(x_i) + Σ_{(i,j)∈E} E2(x_i, x_j),    E1(x_i) = k_s·E_S(x_i) + k_i·E_I(x_i)
+```
+
+- `E_S` — structure similarity, a **symmetric** curve distance `d(c_i, c^x_i) + d(c^x_i, c_i)`, each term the
+  sum of squared shortest distances from every point on one segment to the other, normalised by point count.
+- `E_I` — boundary match, SSD against the known pixels, **and zero for every patch not on the boundary**.
+- `E2` — coherence, normalised SSD over the overlap of adjacent patches.
+
+§5: ***"The weights `k_s` and `k_i` are 50 and 2 respectively in all our experiments."***
+
+**Structure is weighted 25× the boundary fit.** For a method whose entire output is patches pasted into a hole,
+"match the curve the user drew" dominates "match the pixels at the edge of the hole" by a factor of 25 — and
+the same two numbers are used for every image in the paper. That is a strong prior about what a viewer notices,
+and it agrees with Sinha's *"humans are sensitive to the motion of high-contrast edges and straight lines…
+the lack of surface detail is rarely noticeable."*
+
+For us it is an argument about where to spend the join cost's budget: getting the *structure* of the band right
+(continuous at creases, torn at steps) should outrank getting the rim values to match smoothly. Our current
+`revealPx` cost is entirely the latter.
+
+### 5. The limitation, which is our architecture proposed as future work
+
+> *"**Our approach only encourages a coherent completion result but has no ability to handle depth ambiguity.**
+> The visibility order is determined by the samples that can be found. In our method, **we only treat it as a
+> planar graph without consideration of occlusions. Introducing the concept of layers is one of the possible
+> solutions to handle depth ambiguity**, as shown in Figure 10. We complete the missing region in **three
+> separate layers**: vertical trunk, horizontal trunk and background layer… The final completion results are
+> the composition of the three layers **from back to front**."*
+
+Plate 1 / plate 2 / background, composited back to front — posed as the open problem in 2005, demonstrated once
+by hand with Bayesian matting and two user-drawn curve pairs. We build it automatically from arrival order.
+Together with the LDI note (§1 of note 8) this is the second paper to independently arrive at our layer stack,
+and the first to arrive at it *as the answer to an inpainting failure* rather than as a rendering
+representation.
+
+### 6. Parameters and the rest
+
+- Patch size *"greater than the largest structure in the image"* — same rule as Criminisi's and Ndjiki-Nya's;
+  used 9 up to 27×31.
+- Anchor points sampled along the curve at **half the patch size**, *"to guarantee sufficient overlaps."*
+- Sample set = all patches centred within a **1–5 pixel band along the curve**; `N` in the hundreds to
+  thousands.
+- **Sample transformation** (§4.3), for when the image does not contain what is needed: flip, fixed 90°
+  rotation, or a per-node optimal rotation `θ* = argmin_θ {d(R(c^x_i;θ), c_i) + d(c_i, R(c^x_i;θ))}` aligning
+  the source curve to the target curve. An honest admission that exemplar methods run out of material —
+  *"if there are not enough samples in the image, it will be impossible to synthesize the desired structure or
+  texture."*
+- **Photometric correction** by Poisson reconstruction with the gradient zeroed across the patch seam, Dirichlet
+  boundary on the patch interior, channels corrected independently. *"such seams cannot be easily removed by
+  simple blending or by graph-cut."* This is the third gradient-domain seam fix in the corpus (Ndjiki-Nya's
+  covariant cloning, our own bi-directional gradient means from R8 item 2).
+- Timings: structure propagation *"fewer than 3 seconds for each curve"*, 6 s for the two-X-junction hawk;
+  texture propagation 2–20 s per subregion; 2.8 GHz PC.
+- Against Criminisi (Figure 7): *"Previously developed automatic image completion algorithms may not be able to
+  generate good quality results for the examples shown… **High-level human knowledge is required** to complete
+  these images."*
+
+### 7. What I take from it
+
+The manual half really is free for us — we compute automatically what their user draws by hand (the rim, and
+per Sinha the crease lines, which are straight by construction). But the transferable content is the
+**framing**, not the method: structure before texture (we do it), restricted source regions (we do not — task
+#59), and above all the DP↔BP equivalence, which says the per-line to cross-line step is an edge-set change to
+a recursion we already run, at `O(2LN²)`, rather than a new algorithm.
