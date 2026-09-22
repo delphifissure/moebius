@@ -64,6 +64,63 @@ output. Export → inpaint → reimport → render, with no manual step, colour 
    foreground covers the occluder's footprint. So the A-against-B comparison isolates what a larger mask does to the
    **band's own content**, which is the claim being tested.
 
-<!--ARMS-->
+## The three arms, rendered: the strategy matters half as much as the decision
 
-<!--DEPTH-->
+| arm | differs from the wash | mean abs difference |
+|---|---|---|
+| A — band mask, occluder removed | 4.24 % | 85.1 |
+| B — band + occluder (PACO c) | 4.37 % | 87.8 |
+| C — band on the raw wash (PACO a) | 4.45 % | 88.7 |
+
+And from **each other**:
+
+| | differ | mean abs |
+|---|---|---|
+| A vs B | 2.35 % | 22.9 |
+| A vs C | 2.74 % | 27.1 |
+| B vs C | 2.47 % | 26.8 |
+
+**Each arm differs from the wash about twice as much as the arms differ from one another.** PACO's three strategies do
+produce visibly different results on our data — they are not equivalent — but **the choice of strategy matters roughly
+half as much as the choice to inpaint at all**, and none of them fails the way PACO's figures do. That is consistent
+with the task mismatch recorded in the R7 errata: their distinctions are about recovering the *occludee*, and we do not
+want the occludee.
+
+On this evidence there is no reason to prefer B (PACO's own choice) over A (what Sprint 25 built). The errata's
+recommendation to make (c) an arm was right; the arm does not win.
+
+## The depth half is blocked, and the reason is a wrong model — ours, not the model's
+
+`harness/s52_depth.py` runs Amodal-DAV2 on the bundle and emits the contract's absolute and gradient encodings. It
+produced a return. **The return is worthless, and a guard in the script says so:**
+
+```
+median |model - observed occluder|   0.0832
+median |model - plane background|    0.2607     <- three times further
+!! THE PREDICTION TRACKS THE OCCLUDER, NOT THE BACKGROUND
+```
+
+The prediction is three times closer to the **occluder's own depth** than to the background the band needs. I first
+suspected the guide mask — the band rather than the occluder — and re-ran with the occluder. **Same verdict.** So it is
+not the mask, it is the model's task. From the two papers, in their own words:
+
+> **Amodal Depth Anything** (2412.02336): *"predicting the depth of **invisible parts of objects**"* — the amodal depth
+> of the *target object*, including the parts hidden behind an occluder.
+>
+> **Counterfactual Depth** (1909.00915): *"a depth map that describes the scene **when a masked object is removed** — we
+> call this 'counterfactual depth'… the depth you would see if an object had been removed."*
+
+**Counterfactual Depth is our task. Amodal-DAV2 is a different one.** It answers "how deep is the troll's hidden arm";
+we are asking "what is the depth of the cave behind the troll". No guide mask converts one into the other.
+
+**This is bigger than Sprint 28, and it is recorded rather than quietly parked.** S39, S40 and S43 all used Amodal-DAV2
+as *the learned prior for band depth* and scored it against band truth. If the model predicts the occludee's amodal
+depth, then those comparisons were not measuring what they were captioned as measuring. That does not automatically
+invalidate their rankings — on kit scenes the occluder and the surface behind it are sometimes close, and S43's
+headline was that **doing nothing often beat the model anyway**, which is what one would expect from a model answering
+a different question. But the premise needs re-examination before any of those numbers is quoted again.
+
+**What Sprint 28 can and cannot deliver.** Colour: delivered, and it is a clear visible win. Depth: blocked on a model
+we do not have — Counterfactual Depth is a 2019 paper with no cached weights here, and this environment has no GPU. The
+shipped plane far field stays, which is what arm A already renders. The contract itself is not implicated: S48 verified
+the return path against a corrupted return and it held; what failed is the supplier, not the pipe.

@@ -463,3 +463,33 @@ so the (c) variant is a mask union away and should be an arm in Sprint 28 rather
 **Standing correction to R7's framing.** "A hole does not tell a model whose surface it is" is true and is the useful
 lesson. "All three failed, therefore our contract must carry ownership and depth" overstated it into a prohibition on
 the strategy the authors themselves prefer.
+
+## 5. First-hand check: Amodal Depth Anything vs Counterfactual Depth — the corpus's two depth papers are for two different tasks, and R7 used the wrong one
+
+Checked because Sprint 28 ran Amodal-DAV2 as the band's depth supplier and the return tracked the **occluder** rather
+than the background, three times closer to the former than the latter, with the guide mask tried both ways.
+
+> **Amodal Depth Anything** (2412.02336, §5): *"predicting the depth of **invisible parts of objects** in natural
+> scenes"* — the amodal depth of the **target object**, the parts of it hidden behind an occluder.
+>
+> **Counterfactual Depth** (1909.00915, abstract): *"a depth map that describes the scene **when a masked object is
+> removed** — we call this 'counterfactual depth'… the depth you would see if an object had been removed."*
+
+**Our band is the background revealed when the occluder moves out of the way. That is counterfactual depth.**
+Amodal-DAV2 answers a different question — how deep the occluder's own hidden extent is — and no choice of guide mask
+converts one into the other.
+
+Both papers are in the corpus. **R7 treated Amodal-DAV2 as the band-depth prior and cited Counterfactual Depth only for
+the meadow reframing** (Sprint 29's "one mask over any number of objects, predict the surface behind"), which is
+precisely the formulation the depth return needed. The synthesis had the right paper in hand for the right problem and
+attached it to the wrong sprint.
+
+**Consequences to work through, recorded and not assumed away.** S39, S40 and S43 all used Amodal-DAV2 as *the learned
+prior for band depth* and scored it against band truth, so those comparisons were not measuring what their captions
+say. Their rankings are not automatically void — on kit scenes an occluder and the surface behind it are sometimes
+close, and S43's own headline was that **doing nothing often beat the model**, which is what a model answering a
+different question would produce. But **no number from S39/S40/S43 about "the model" should be quoted again until this
+is re-examined**, and the re-examination is cheap: re-run the S40 probe with the two tasks distinguished.
+
+This is the second load-bearing error found by reading first-hand (after the PACO framing), and it is the more
+expensive one: it sits under three notes and a sprint.
