@@ -1237,3 +1237,538 @@ despeckle in the energy rather than as a post-process.
 - Energy is `E = E_d + λ E_s` throughout, 4-connected grid, and the study's whole point is that the API lets one
   energy be minimised by every method — *"almost no one in vision has ever answered questions like 'how would
   your results look if you used LBP instead of graph cuts to minimize your E?'"*
+
+---
+
+## 11. Jakubowska, Zięba & Spurek, "ORCA: Occlusion-Aware Refinement and Completion for Novel View Synthesis", 2026 (arXiv 2609.17450) [314 lines] DONE
+
+Read in full. I asked one question of this paper: *"I want to know whether their size threshold is **derived or
+tuned**, because ours is derived and that is the part worth defending."*
+
+### 1. The answer: tuned. Three hardcoded numbers, no derivation.
+
+§4.2, verbatim:
+
+> *"A missing region is considered for generative completion only if it contains **at least 9,000 pixels**,
+> occupies **at least 45% of its bounding box**, and the shorter side of the bounding box is **at least 64
+> pixels**."*
+
+No justification, no ablation, no sensitivity analysis, no statement of how the three were chosen. And the
+budget is cruder still:
+
+> *"We allow **at most two generative inpainting operations per reconstructed scene**. After this budget is
+> exhausted, remaining regions are handled using the local geometry-based repair."*
+
+So the criterion is not even purely a property of the region — after two calls the same region gets a different
+treatment. That is a compute budget dressed as a decision rule.
+
+**Our hybrid's threshold is derived** — from the reveal field, `reveal = |Z_a/(D+Z_a) − Z_b/(D+Z_b)| · |ex| ·
+pxPerWorld`, converted to the cliff tolerance in screen pixels (Sprint 26), so it answers "will a viewer see an
+unpainted pixel here" rather than "is this blob big". That difference is real and it is now defensible against
+the one published method that arrives at the same architecture. It is the clearest win the corpus has given us.
+
+Honest caveat: their thresholds are tuned on a task with no ground truth at all (see §4 below), so "tuned"
+here does not even mean "fitted to data" — it means chosen.
+
+### 2. But their *shape* test is something we do not have, and it points the other way from our design
+
+> *"we select the view with the largest detected disocclusion and split its repair mask into connected
+> components. **Small or elongated components are treated as local geometric gaps, while large and compact
+> components are considered for generative completion.**"*
+
+Size **and compactness**: `area/bbox ≥ 45%`. Our hybrid thresholds on reveal magnitude alone and has no notion
+of a region's shape.
+
+This matters because **our band is, by construction, long and thin.** Under their rule almost the whole of it
+would be classed "elongated" and sent to local repair, never to the generative model — the opposite of our
+`H_rev1` arm, which sends 27.5% of the band to generation. Two readings, and I cannot settle between them from
+the paper:
+
+- Their rule is a proxy for ours done badly: an elongated region is one where both rims are close, i.e. **small
+  reveal**, so compactness is a shape-based estimate of the quantity we measure directly. On this reading their
+  test agrees with ours and we do it better.
+- Or shape carries information reveal does not: a compact hole has an interior far from *any* rim, where no
+  extrapolation can reach, while a thin one is everywhere within reach of a rim. That is a **distance-to-rim**
+  criterion, not a reveal criterion, and we do not compute it.
+
+The second reading is testable and cheap: add the band's distance transform to the hybrid's decision and see
+whether it moves the measured temporal step beyond what reveal alone achieves. Worth one arm in Sprint 29's
+successor, because the two quantities genuinely differ — a wide slow ramp has large distance-to-rim and small
+reveal.
+
+### 3. The occludee rule, for the sixth time, with a percentile
+
+> *"We first extract a **ring of valid pixels** around the repair region and **select donors from the farther
+> part of the local depth distribution. Using the nearest depth at an occlusion boundary can incorrectly extend
+> the foreground surface into the missing region.** Selecting farther background samples reduces this effect and
+> places the added geometry behind the foreground object."*
+
+Six papers, six lineages, same rule — Hirschmüller's *"only from the occludee"*, PatchMatch's *"select the lower
+of the two"*, Ndjiki-Nya's k-means background centroid, Criminisi's source region, Shih's background silhouette,
+and now this. Our S45 far-side rim filter (worth 5.1×, 0.1776 → 0.0349) is the most-independently-confirmed
+thing in the project.
+
+Their implementation is the closest to ours and gives concrete numbers worth comparing against:
+
+| | ORCA | ours |
+|---|---|---|
+| donor ring | inner radius **3**, outer **28** px | rim-adjacent, 1 texel |
+| minimum donors | **32** valid pixels | 1 (nearest valid rim texel) |
+| background selection | **78th depth percentile** of the ring | crossing rule over 4 candidates |
+| fallback | nearest-neighbour fill | thin-evidence rule |
+
+**The 78th-percentile-over-a-ring is the same robustification Ndjiki-Nya reached by k-means over 32×32**, and
+both are doing what our law does not: taking a *distribution* over a neighbourhood rather than a *value* at the
+nearest texel. That is now three papers (Ndjiki-Nya, PatchMatch's weighted median, ORCA) saying the rim estimate
+should be a robust statistic of a neighbourhood. It is the same conclusion Sprint 31's re-scoping reached from
+the other end, and it raises my confidence in that sprint.
+
+### 4. The evidence base is weak, and this bears on how much of the above to believe
+
+Every headline metric is **no-reference**: MUSIQ, CLIP-IQA, and five LLaVA-IQA criteria. There is no ground
+truth anywhere in the evaluation — the input is a single image and the novel views have no reference. So the
+numbers measure *whether a model thinks the frame looks good*, not whether it is right.
+
+DIV2K, 99 images (one excluded because *"VistaDream failed to produce a valid reconstruction for one
+sky-dominated image"*): MUSIQ 61.60 → 68.71, CLIP-IQA 0.474 → 0.574, Quality 0.407 → 0.630.
+
+The LLaVA-IQA columns should not be trusted. Table 2's per-scene values are saturated at 0.00 and 1.00 all over
+— `steampunk` scores Edge 0.00 and Structure 0.00 for **both** methods; `car` scores Structure 0.00 and Edge
+0.00 for both, and overall Quality goes **0.02 → 0.00**, i.e. ORCA is worse, on a criterion that is pinned at
+the floor. A metric that returns exactly zero for both arms is not measuring anything.
+
+The one number I do credit is **TSED** (cross-view geometric consistency, which checks correspondences against
+the known camera geometry rather than asking a model): **DIV2K 0.8265 → 0.9980**, RealmDreamer 0.9864 → 1.0000.
+That is a real, reference-free-but-geometric measurement and a large effect, and it is the same *kind* of thing
+our temporal-step metric measures. It supports the architecture — reuse the scene where you can — without
+supporting any particular threshold.
+
+### 5. Their depth handling, which is ours
+
+- Depth Pro for monocular depth; **inverse depth normalised between robust quantiles** `q_far`, `q_near` —
+  *"reduces the influence of extreme depth predictions"*. Same normalised-disparity convention as our law, with
+  the quantile clipping we do via the noise/effective-quantum work.
+- Gaussians displaced **along their original camera rays**, not in z: *"Changing only the z-coordinate would
+  move a Gaussian away from its original viewing ray."* Our plate texels displace along rays for the same
+  reason.
+- For generated regions, `d_aligned = a·d_pred + b` fitted on valid background pixels around the repair, with
+  outlier rejection, then blended with the reconstructed depth near the boundary. **That is our return path's
+  alignment step** (Sprint 25/S27's supplied-depth alignment on the visible front), same affine form, same
+  fit-on-the-ring.
+- Depth is used *only* to deform geometry before fine-tuning — *"is not used as a direct supervision signal."*
+
+### 6. Remaining parameters, for the record
+
+Initial Gaussians ≤30k iterations, early stop on smoothed PSNR (min improvement 0.03 dB, patience 4); fine-tune
+≤20k; SD 1.5 inpainting, 30 steps, guidance 7.0, ≤512 px crop; new Gaussians covariance scale ×1.7, minimum
+opacity 0.9, ≤5000 per local repair, ≤24 optimisation steps; single A40, also runs on an RTX 4060.
+
+The covariance ×1.7 is their fold fix: *"We use **wider, overlapping Gaussians** for these local repairs to
+reduce thin gaps that can remain visible after a viewpoint change."* A splat-size fudge for the same artefact
+Shade's §5.3 formula describes and our fold alpha addresses — three different treatments of one problem, none
+principled except Shade's.
+
+### 7. Verdict
+
+Architecturally they land where we did, from Gaussian splatting rather than from a baked plate: **repair from
+the scene where the scene knows the answer, generate only where it cannot.** That independent arrival is worth
+having. But the paper does not advance our decision rule — its criterion is three chosen constants plus a
+two-call budget, evaluated with no ground truth — and the one thing it has that we lack is the *shape* test,
+which is worth one arm to check and may simply be a worse proxy for the reveal field we already compute.
+
+---
+
+## 12. Sinha, Steedly & Szeliski, "Piecewise Planar Stereo for Image-based Rendering", ICCV 2009 [335 lines] DONE
+
+Read in full. Tier 3, "if it is easy" — and it turns out to contain **the correct taxonomy for S33's three
+classes**, which is worth more than most of Tier 1.
+
+### 1. Crease edges vs occlusion edges: S33 class 3 and class 2, named and distinguished
+
+§4.2:
+
+> *"Piecewise planar depth maps can contain two types of discontinuities – **occlusion edges** and **crease
+> edges**. Both plane labels **and scene depths** differ at pixels across an occlusion edge while **only the
+> plane label differs** for pixels across a crease edge. A crease edge between a pair of plane labels coincides
+> with the projection of the 3D intersection line of the two corresponding planes and is therefore **always a
+> straight line segment**. Occlusion edges on the other hand can occur anywhere in the image."*
+
+Set against S33's classes:
+
+| S33 class | count | **wall length** | median jump | this paper's name |
+|---|---|---|---|---|
+| 1 — same surface, law disagrees | 77.2% | 38.8% | 3.3 | *spurious* — neither; an artefact |
+| 2 — real step | 10.4% | 26.1% | 31 | **occlusion edge** (depth differs) |
+| 3 — axis change | 12.3% | **35.1%** | 25 | **crease edge** (label differs, depth **continuous**) |
+
+**Class 3 should have continuous depth.** At a crease two planes *meet*; the surface is C⁰ and only the gradient
+breaks. Our measured median jump at class 3 is **25 steps** — so our law is opening a depth gap where the
+geometry says there should be none. That is not a smoothness-penalty problem at all; it is a missing constraint.
+
+Sinha's contribution is precisely to add it: *"This allows us to **enforce C⁰ continuity between planes that
+meet**."* Mechanically, they precompute the crease line `L_ij` for every plane pair, collect the neighbouring
+pixel pairs straddling it into a set `S1`, and make label changes *there* cheap.
+
+And the second structural fact we have never used: **a crease is always straight**, because it is the projection
+of a 3D line. Class 3 is 35.1% of wall length — the largest single share — and the literature says those walls
+should be (a) depth-continuous and (b) straight. Both are checkable against the probe dumps we already have, and
+both are new constraints. **This reopens class 3 as its own item rather than a sub-case of the join cost**, and
+it is a better-founded target than anything else in the backlog.
+
+### 2. Their smoothness term is four discrete levels keyed to geometry
+
+`V_pq = 0` when `l_p = l_q`; otherwise, by which set the pair falls in:
+
+| pair straddles | λ |
+|---|---|
+| a **crease line** (S1) | **1000** — cheapest to cross |
+| a vanishing-direction-aligned line, occluder in front (S2) | 1200 |
+| any other detected 2D line segment (S3) | 2000 |
+| nothing (implicitly) | most expensive |
+
+*"Suitable values for the λ's were chosen empirically."*
+
+This is a fifth form of contrast/structure modulation, and it is **structural rather than photometric** — the
+cost depends on whether a *geometric* feature runs between the two texels, not on how different their colours
+are. We have geometric features available on the plate (the rim, the carrier classification, the reveal field)
+that we currently do not use in the join cost at all.
+
+### 3. The framing for Sprint 32, and it matches what we already do
+
+§2: *"The key difference is that in our MRF, **we consider a small discrete set of plane hypotheses for each
+pixel, instead of finely discretizing the disparity space**."*
+
+Our far-side law computes **four** candidates and arbitrates. That is already the small-discrete-hypothesis-set
+design; Sprint 32 is not a new architecture, it is a better arbitration over the set we have. Worth stating,
+because "per-texel plane labels" sounded like a rebuild and is not.
+
+### 4. Two perceptual claims that bear on our metrics
+
+§1: *"During view interpolation, **humans are sensitive to the motion of high-contrast edges and straight
+lines** in the scene. Our approach aims at preserving such features and minimizing parallax error, which
+produces perceptible ghosting. **The lack of surface detail is rarely noticeable during viewpoint
+transitions.**"*
+
+That is the justification for measuring what we measure. Our temporal-step metric is an edge-motion proxy, and
+this says edge motion is the thing — while surface fidelity, which PSNR and SSIM mostly measure, is *"rarely
+noticeable"*. Another reason our aggregate-metric nulls are not damning.
+
+§5, on cross-fading during interpolation: *"**Cross-fading in this manner is crucial to prevent the eye from
+being drawn to disoccluded regions** of an image that are filled in by the other. With simple linear crossfades,
+the alpha values in the rendered image would have **disturbing step discontinuities at occlusion
+boundaries.**"* Their fix is binary opacities `α1, α2` so single-source pixels stay at full opacity throughout.
+We have an envelope fade; whether it steps at occlusion boundaries is worth one look.
+
+### 5. What does not transfer
+
+Everything upstream of the MRF needs structure-from-motion over an unordered photo collection: 3D points with
+covariances, reconstructed 3D line segments verified in ≥4 views, vanishing directions by mean-shift on a
+sphere. From one photograph none of it exists. Runtimes 28–145 minutes; 2–3 Mpixel images; 33–127 planes per
+dataset.
+
+The one piece that might: they compute a **ground plane** by finding the up-vector orthogonal to most cameras'
+side-vectors, then the plane with 95% of points above it, plus per-camera **back-planes** along the optical
+axis. We already have a ground plane in the bundle meta (`ground {a,b,c}`); the back-plane idea — a far
+bounding plane per view — is close to our sky-at-infinity and may be the better construction for the
+*non*-sky far field.
+
+---
+
+## 13. Gallup, Frahm & Pollefeys, "Piecewise Planar and Non-Planar Stereo for Urban Scene Reconstruction", CVPR 2010 [414 lines] DONE
+
+Read in full. I asked for this as *"how to decide **where** the planar assumption applies, which is our
+thin-evidence rule in another guise."* It is exactly that — and it contains **a threshold-free version of our
+hybrid**, which is the best single idea I have taken from Tier 3.
+
+### 1. The non-plane label: our thin-evidence rule as a term in the energy
+
+> *"The key difference in our approach is the addition of a **non-plane label** which represents the input
+> stereo depthmap. Label likelihoods are defined as the photoconsistency of the plane, in case of a plane label,
+> or of the depthmap, in case of the non-plane label. **In the spirit of model selection, the non-plane label
+> incurs an additional penalty, due to the higher degrees of freedom** in the depthmap surface."*
+
+Our thin-evidence rule is a *procedural* guard — no ramps from short runs, fall back to constant. Theirs is the
+same judgement expressed as **model selection**: the richer model is always available, and always costs
+`ρ_bias` extra, so it wins only where it earns its complexity. `ρ_bias = 0.5` against `ρ_max = 6`, so the
+penalty is ~8% of the maximum data cost.
+
+The honest framing of why, §3.4: *"**It may very well be that a plane fits a bush or sloping ground, at least
+within the uncertainty of the stereo reconstruction.** It is in fact the appearance of these image regions that
+indicate they are non-planar."* Fit is not the same as appropriateness — the thin-evidence rule's whole premise,
+stated by someone else.
+
+### 2. THE IDEA: the discard label makes size-dependence *emerge* instead of being thresholded
+
+> *"the **discard label** indicates no reliable reconstruction could be obtained… **The discard label receives
+> slightly less penalty than maximum. Thus small poorly matching regions will be labeled according to their
+> surroundings due to the smoothness term, but large poorly matching regions will incur enough cost to be
+> discarded.**"*
+
+Read that mechanism carefully. Discarding a region of area `A` costs about `c·A`. *Not* discarding it costs the
+mismatch plus the smoothness penalty on its perimeter, ~`λ·P`. So discard wins when `A/P` is large — **which is
+exactly "large and compact"**, ORCA's hand-tuned rule (≥9000 px, ≥45% of bounding box, shorter side ≥64 px),
+falling out of a two-parameter energy rather than being chosen.
+
+**This is a better hybrid than ours.** Our reveal threshold is derived, which beats ORCA's three constants, but
+it is still a threshold on a per-texel quantity, applied per texel. Gallup's construction says: give "hand this
+to the generative inpainter" a **per-texel cost**, let the smoothness term pay for the boundary, and the
+decision about *which regions* go to generation — including their size and shape — emerges from the
+minimisation. No size threshold, no compactness threshold, and the reveal field can set the per-texel cost so
+the derivation we already have is retained rather than replaced.
+
+That is a concrete redesign of the hybrid and it subsumes both the §2 concern I raised about ORCA (shape vs
+reveal) and Sprint 29's open hybrid decision. New task.
+
+### 3. Their smoothness has a floor as well as a cap — and the floor is anti-class-1
+
+```
+E_smooth ∝ λ_smooth · f( clamp(d, d_min, d_max) ) · g(image gradient)
+```
+
+> *"where **d is the distance between the 3D neighboring points according to their labels**, and g is the image
+> gradient magnitude between the two neighbors. **`d_min` incurs a minimum penalty in order to prevent spurious
+> transitions between planes that are close in 3D.** `d_max` makes the penalty robust to discontinuities."*
+> `λ_smooth = 5`, `d_min = 2`, `d_max = 0.2 m`, `γ = 10`.
+
+`d_max` is Sprint 30's cap, confirmed for the fourth time. **`d_min` is new and it is aimed straight at class
+1.**
+
+Our S51 join cost is `revealPx`, which **goes to zero when the two candidates agree**. Two planes that predict
+nearly the same depth can therefore be swapped between freely, texel by texel, at no cost — and adjacent lines
+choosing differently at no cost is the *definition* of class 1 (77.2% of cliffs, median jump 3.3 steps, i.e.
+tiny disagreements). Gallup names this failure mode exactly — *"spurious transitions between planes that are
+close in 3D"* — and fixes it with a floor.
+
+**So Sprint 30 should clamp both ends, not one.** `V = clamp(reveal_px, floor, cap)`. The cap stops a real step
+being over-penalised (class 2); the floor stops a near-tie being under-penalised (class 1). That the same
+two-sided clamp answers both of our large classes, from one published formula, is the tidiest result of this
+reading. Sprint 30's description updated.
+
+### 4. The plane at infinity is a label
+
+*"We add to each set **the plane at infinity, denoted π∞**, which is useful for labeling sky or distant surfaces
+which are not reconstructed by stereo."* Our `_skyInf` layer, as one more candidate in the hypothesis set rather
+than a special-cased stage. If Sprint 32 ever does become a labelling, sky should be a label in it.
+
+### 5. RANSAC for *locally* fit planes — the recipe, if we want more candidates
+
+*"Typically one seeks to find a single model to fit all the data, but **our objective is to find multiple
+locally fit models**."* Three things make it work:
+
+- **Sampling**: first point uniform over the image; the other two from normals centred on it with `σ = 8 px`.
+- **Scoring**: only points within `M = 100 px` of the first sample; MLESAC likelihood, not inlier count.
+- **Contiguity**: inliers restricted to points *connected to the initial sample through the image graph*, then
+  refit and repeat.
+
+Then remove the inliers and repeat, to `N = 20` planes. Our far-side law generates candidates from runs along
+two axes; this is how to generate them from a 2-D neighbourhood, and the contiguity constraint is our
+persistent-departure segmentation (Sprint 16) in another form.
+
+### 6. Parameter sensitivity — a useful counterweight to Scharstein & Szeliski
+
+§4: *"For all our experiments we have used the same parameters… **Parameters were chosen empirically and without
+much difficulty. The fact that we used the same set of parameters for several diverse datasets indicates that
+the parameters are not overly sensitive.**"*
+
+Scharstein & Szeliski warned that λ and γ tuning dominates. Gallup reports the opposite on a harder, more varied
+dataset. The difference is probably that Gallup's costs are **clamped at both ends and truncated**
+(`ρ_max = 6`), which bounds how much any one parameter can matter. Another argument for the two-sided clamp:
+it should make Sprint 30 *less* tuning-sensitive, not more.
+
+Accuracy of the final labelling against 22,700 hand-labelled segments in 28 images: **94.7% of planar and 97.2%
+of non-planar segments correct.**
+
+### 7. The appearance classifier — noted, not scheduled
+
+Colour and texture features per **16×16 grid cell** (they tried superpixels and *"in the end we preferred the
+regular grid… it ensures segments of a regular size and density"*): mean RGB, mean HSV, 5-bin hue histogram,
+and from the edge-orientation histogram its entropy, maximum and number of modes — *"man-made objects tend to
+have only a few consistent edge orientations, while natural objects have a less structured appearance."* kNN
+over ~5000 hand-labelled segments, `λ_class = 2`, and crucially *"no hard decision is made until the final plane
+labeling"* — the classifier contributes a **probability to the data term**, not a mask.
+
+We have SAM 2.1 running in the browser and an object map. Asking "should this surface be planar?" from
+appearance is available to us in principle, and the soft-evidence-into-the-energy pattern is the right one. But
+it needs labelled training data we do not have, and the corpus has given us several cheaper things first.
+Recorded, not scheduled.
+
+### 8. Metrication, turned into a feature
+
+*"One limitation of graph-cuts, and the discrete MRF in general, is that of **metrication**, which follows a
+manhattan distance, not a euclidean one. This leads to **stair-case** and other artifacts. However, we use this
+to our advantage… rectify [the image] so that the horizontal and vertical vanishing points correspond to the x
+and y axes. Then the Manhattan distance metrication actually helps to enforce that label boundaries follow
+vertical and horizontal lines."*
+
+Worth knowing that a 4-connected grid MRF has an inherent axis bias that produces staircases. **We are on a
+4-connected texel grid and our class 3 is literally "axis change".** Whether any part of class 3 is metrication
+artefact rather than real geometry is a question I cannot answer from here, but it is now a question — and it
+argues for checking class 3 against Sinha's straightness prediction before building anything for it.
+
+---
+
+# Part II — the second archive (2026-09-22, six further papers)
+
+The four outstanding items all arrived, plus two extras. Nothing from the original 20 is missing now:
+**#10 Daribo** (both the T-BC 2011 and MMSP 2010 versions), **#16 Bornemann** complete (3456 lines, replacing
+the 26-line truncation), **#17 Sun et al.**, and **#19** — which turns out to be **Banz, Pirsch & Blume,
+"Evaluation of Penalty Functions for Semi-Global Matching Cost Aggregation", ISPRS 2012**, the citation I could
+not pin down. Bonus: **Gautier, Le Meur & Guillemot, "Depth-Based Image Completion for View Synthesis",
+3DTV 2011**.
+
+---
+
+## 14. Banz, Pirsch & Blume, "Evaluation of Penalty Functions for Semi-Global Matching Cost Aggregation", ISPRS XXXIX-B3, 2012 [814 lines] DONE
+
+Read in full. **This is the paper Sprint 30 needed and the reason it was worth chasing #19.** It is a systematic
+sweep of exactly the question the other five papers each answered differently — *what shape should the
+discontinuity penalty have, and how much does it matter* — and it changes my recommendation.
+
+### 1. The four candidate forms, in their notation
+
+> *"(a) empirically determined constant value: `P2,c = const.`
+> (b) **negatively proportional** to the absolute luminous intensity gradient of the currently processed pixels
+> along the path: **`P2,l = −α·|I(p) − I(p−r)| + γ`**
+> (c) **inversely proportional** to the absolute intensity gradient. **This follows the original proposal from
+> SGM**: `P2,i = α/(|I(p) − I(p−r)| + β) + γ`
+> (d) negatively proportional to the **variance** of the luminous intensity in a local window:
+> `P2,v = −α·Var(A(p)) + γ`"*
+
+So the corpus's five forms reduce to three shapes — constant, linear ramp, reciprocal — plus a variance variant,
+and this paper measures all of them against each other. Nobody else in the corpus does.
+
+### 2. Result: the reciprocal buys nothing over a straight line
+
+Table 1, census transform, error at 1 px in non-occluded areas, each function optimally parametrised:
+
+| penalty | Cones | Teddy | Venus | Tsukuba |
+|---|---|---|---|---|
+| `P2,c` constant | 5.38% | 10.40% | 2.53% | 8.35% |
+| **`P2,l` linear** | **5.23%** | **9.03%** | **1.92%** | **7.45%** |
+| `P2,i` reciprocal (SGM's own) | 5.43% | 9.30% | 2.06% | 7.55% |
+| `P2,v` variance | 5.28% | 10.79% | 2.55% | 8.54% |
+
+And the conclusion, stated flatly:
+
+> *"**Using inversely proportional penalty functions, as originally proposed with SGM, does not result in any
+> performance improvement compared to linear dependencies**, which is of interest for computationally limited
+> implementations."*
+
+Abstract: the two best are *"equally with 6.05% and 5.91% average error"*.
+
+**This changes Sprint 30's recommendation.** After Schönberger I wrote that the bounded exponential
+`P1(1+αe^{−|ΔI|/β})` was the form to implement. On this evidence it is over-engineered: a **negatively linear
+ramp with a floor** performs identically to the reciprocal on four images and two cost functions, has one fewer
+parameter (they note (b) *"does not require a parameter β… This is implicitly done by adjusting γ"*), and is
+trivially cheap. Sprint 30 should use `V = clamp(γ − α·|ΔI|, floor, cap)`.
+
+The variance form fails, and the stated reason matters to us:
+
+> *"This could be due to the fact that **`P2,v` does not calculate penalties along the currently processed path
+> but from the local window, giving the same penalty value for all path directions.**"*
+
+**Directional, not isotropic.** The colour difference must be measured *between the two texels being joined*,
+along the join, not as a neighbourhood statistic. That is the natural thing for us anyway — our join cost is
+already defined on a texel pair — but it is worth knowing the isotropic alternative was tried and lost.
+
+### 3. The clipping: floor explicit, cap implicit — and why ours needs both
+
+> *"In all cases it has to be ensured that `P2 ≥ P1`. Therefore, **a lower bound is introduced `P2,min` to which
+> the values are clipped. An upper bound is not required** because penalty higher than `C_max + P1` cause that
+> value never to be taken in the outer min-term in Eq. (5)."*
+
+This is a correction to what I wrote in the Gallup note, where I said "Sprint 30 should clamp both ends" as
+though both needed coding. In **SGM** only the floor needs coding: the recursion takes a `min` over the cost
+volume, so once `P2` exceeds `C_max + P1` the branch is never selected and the cap is structural.
+
+**Our construction has no such min.** The join cost enters our energy directly, not as one branch of a minimum
+over a cost volume, so nothing bounds it above. So: SGM gets its cap free and ours does not, and we must clamp
+both ends explicitly. The conclusion in the Gallup note stands; the reasoning needed this correction. Four
+papers now agree the cap exists (Hirschmüller's "constant penalty for all larger changes", Gallup's `d_max`,
+Scharstein's `V_max`, Banz's implicit bound) and two that the floor matters (Gallup's `d_min`, Banz's
+`P2,min`).
+
+### 4. The strongest result: adaptivity barely matters on clean images and matters enormously on noisy ones
+
+Table 2, Cones under degradation, census, optimally parametrised in each case:
+
+| penalty | baseline | **AWGN (12 dB)** | salt & pepper 14% | shadow | gamma |
+|---|---|---|---|---|---|
+| `P2,c` constant | 5.38% | **26.35%** | 7.63% | 7.86% | 5.41% |
+| `P2,l` linear | 5.23% | **18.91%** | 8.27% | 7.27% | 5.27% |
+| `P2,i` reciprocal | 5.43% | **18.94%** | 7.40% | 7.26% | 5.30% |
+| `P2,v` variance | 5.28% | **30.70%** | 8.40% | 8.16% | 5.45% |
+
+On clean Cones the spread between constant and best adaptive is **0.15 percentage points**. Under Gaussian
+noise it is **7.4 points**, and the constant penalty nearly quintuples its error. Their conclusion:
+
+> *"While for highly structured images taken under near ideal conditions constant penalty functions perform
+> well, **they tend to become overfitted to the particular imaging conditions and performance is not stable over
+> different conditions**… **adaptive penalty terms [are] mandatory for robust disparity estimation.**"*
+
+**This is the argument that Sprint 30's contrast term is worth building at all.** Our input is a monocular depth
+map from a photograph — we built a whole per-tile noise estimator and effective-quantum machinery (Sprint 14)
+because the noise is real and spatially varying. Middlebury-clean is not our regime; the degraded rows are. So
+the expected gain from the adaptive term is the 7-point column, not the 0.15-point one.
+
+### 5. Tune on the hardest picture, not the cleanest — a direct instruction for the sweep
+
+Their parameter transfer, stated with numbers. Best `P2,l` configuration on clean Cones:
+`{P1=11, P2,min=17, γ=35, α=0.5}` → 5.23%. Under AWGN: `{P1=20, P2,min=24, γ=70, α=0.5}`. Under salt-and-pepper:
+`{P1=14, P2,min=24, γ=40, α=0.5}`.
+
+Note `α = 0.5` throughout — the *slope* is stable and only the offsets move. And:
+
+> *"comparing good configurations to configurations from the non-degenerated images shows that now **higher
+> dynamic range and higher penalties are chosen**… **Since parametrization using difficult images results in
+> more robust parameter sets, real world systems should [be] parametrized under these conditions.**"*
+
+Confirmed on real imagery without ground truth: *"Generally, **better results were obtained when using the
+configurations from the degenerated images**."*
+
+**Actionable, and it changes how I would have run the sweep.** I would have tuned on the troll, which is our
+cleanest and best-characterised case. This says: tune on the noisiest of the seven pictures, accept a small loss
+on the clean ones, and the result will transfer. We can even pick the target objectively — the per-tile σ from
+Sprint 14 ranks our pictures by noise already.
+
+### 6. This settles the tuning-sensitivity disagreement in the corpus
+
+Scharstein & Szeliski warned that *"the algorithms are currently fairly sensitive to the tuning of the smoothness
+cost, in particular to parameters λ and γ."* Gallup reported the opposite — same parameters across diverse
+datasets, *"not overly sensitive."* Banz explains both:
+
+> *"Setting `P2` constant performs well if carefully adjusted to the particular image but **quality degrades
+> quickly as these values are changed**… All [adaptive] functions are insensitive to a certain degree of
+> non-optimal parametrization."*
+
+and on transfer between images:
+
+> *"**performance of a particular configuration coincides across all images.** Further, the best configuration
+> for one image is usually found for the other images when allowing a minimal **0.5 percentage point** error
+> margin."*
+
+**Constant penalties are brittle; adaptive penalties transfer.** Scharstein & Szeliski's DP/SO used a fixed λ
+scaled by `ρ_I`; Gallup's was clamped at both ends and truncated. The disagreement was about which regime each
+was in, and the adaptive-plus-clamped regime — which is what Sprint 30 will be — is the robust one. That is a
+second reason to expect the sweep to be well-behaved.
+
+### 7. Sprint 30, as the reading now leaves it
+
+```
+V(p,q) = clamp( γ − α·|I(p) − I(q)| ,  floor ,  cap )
+```
+
+- **linear**, not reciprocal or exponential — Banz Table 1, equal performance, fewer parameters
+- **|ΔI| measured between the two joined texels**, directionally, not as a local variance — Banz §3.1
+- **floor** — against class 1's near-ties (Gallup's `d_min`: *"prevent spurious transitions between planes that
+  are close in 3D"*; Banz's `P2,min`)
+- **cap** — against class 2's real steps (Hirschmüller's flat large-change penalty), explicit for us because our
+  energy has no min-over-cost-volume to impose it structurally
+- **sweep α, γ, floor, cap on the noisiest picture**, not the troll — Banz §3.2
+- expected effect small on clean input, large on noisy — and our input is noisy
+
+Also worth recording: they apply **no post-processing at all** — *"no post-processing steps, e.g. hole-filling
+or interpolation, are performed"* — and evaluate only non-occluded pixels, *"Otherwise, the results would be
+biased by the quality of the hole interpolation algorithm."* So these numbers isolate the penalty's effect on
+matching, with our problem (the holes) deliberately excluded. The transfer to our band is by analogy of the
+energy, not of the measurement, and I should not overstate it.
