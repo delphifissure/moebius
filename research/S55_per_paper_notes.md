@@ -955,3 +955,285 @@ We forward-map both together. Whether a backward colour fetch would reduce the b
 independently of its depth is not something this project has ever tested, and it is cheap to try. Noted, not
 scheduled — the band's problem is that there is no colour to fetch, so the gain would be confined to the
 stretched/fold region rather than the band proper.
+
+---
+
+## 9. Shih, Su, Kopf & Huang, "3D Photography using Context-aware Layered Depth Inpainting", CVPR 2020 [781 lines] DONE
+
+Read in full. **The closest paper in the corpus to what this project is**: single RGB-D input, monocular depth
+allowed, LDI representation, novel views with parallax, rendered as a mesh by a standard engine. It contains one
+ablation number that independently validates an arm we measured, one architectural criticism that lands on us,
+and one gap in our pipeline I had not identified.
+
+### 1. Explicit connectivity — task #57's representation, stated exactly
+
+> *"An LDI is similar to a regular 4-connected image, except at every position in the pixel lattice it can hold
+> any number of pixels… Unlike the original LDI work [51], **we explicitly represent the local connectivity of
+> pixels: each pixel stores pointers to either zero or at most one direct neighbor in each of the four cardinal
+> directions** (left, right, top, bottom). **LDI pixels are 4-connected like normal image pixels within smooth
+> regions, but do not have neighbors across depth discontinuities.**"*
+
+So class 2 is not a fill rule at all — it is **an edge deleted from the mesh graph**. The algorithm's first act
+on each depth edge is literally *"we first cut the LDI pixel connections across the depth"* (Fig. 3b). Four
+pointers per texel is the whole representation change.
+
+This is a better target for #57 than "draw a tear instead of a ramp". Shade's `epsilon` test decides *whether*
+two samples are one surface; this stores the answer as structure the renderer can act on, and it costs 4 bits
+per texel.
+
+### 2. The criticism of rigid layers lands on us
+
+> *"Several recent learning-based methods also use similar multi-layer image representations. However, these
+> methods use **'rigid' layer structures, in the sense that every pixel in the image has the same (fixed and
+> predetermined) number of layers.** At every pixel, they store the nearest surface in the first layer, the
+> second-nearest in the next layer, etc. **This is problematic, because across depth discontinuities the content
+> within a layer changes abruptly**, which destroys locality in receptive fields of convolution kernels."*
+
+**Our plate 1 / plate 2 is precisely that rigid structure**: first arrival, second arrival, two layers
+everywhere, no more. Recording it honestly rather than filing it away. Two qualifications, though:
+
+- Their stated harm is specific to *applying a CNN across the layer*. We do apply a CNN across plate 1 (LaMa),
+  so the criticism does bite there; we do not for depth, where the plane law is local.
+- Their alternative needs *variable* depth complexity, which their §3.3 gets by **recursion** — see §5 below.
+  Shade's own measurement was 1.24 average layers, so two is rarely the binding constraint. The binding
+  constraint is whether the second layer's *content* is right, not whether a third exists.
+
+### 3. §3.2: the context region is the gap in our pipeline
+
+> *"One important difference to our work is that **these image holes were always fully surrounded by known
+> content, which constrained the synthesis.** In our case, however, the inpainting is performed on a connected
+> layer of LDI pixels, and it should only be constrained by surrounding pixels that are **directly connected**
+> to it. **Any other region in the LDI, for example on other foreground or background layer, is entirely
+> irrelevant for this synthesis unit, and should not constrain or influence it in any way.**"*
+>
+> *"Our inpainting networks only considers the content in the context region and does not see any other parts of
+> the LDI… this algorithm selects actual LDI pixels and **follows their connection links, so the context region
+> expansion halts at silhouettes**."*
+
+**We hand LaMa the whole plate.** The occluder's colour is in the receptive field of every band texel we ask it
+to fill, and nothing stops it being copied in. Every paper in this corpus forbids exactly that — Hirschmüller
+*"only from the occludee"*, PatchMatch *"occlusion occurs at the background"*, Ndjiki-Nya's background-outward
+filling order, Criminisi's source region — and this one enforces it *structurally*, by walking the connectivity
+graph so the context physically cannot cross the silhouette.
+
+That is a concrete, unbuilt item, and it is cheap: we already compute the rim and the carrier classification, so
+a **connectivity-limited context mask** (flood-fill from the band's far rim, halting at cliff-tolerance
+discontinuities) could be passed to LaMa as the valid-context channel. New task.
+
+Their loop, for reference: synthesis region = step one pixel off each background silhouette texel, then expand
+**40** iterations; context region = expand **100** iterations following links; *"we do not step back across the
+silhouette, so the synthesis region remains strictly in the occluded part of the image."*
+
+### 4. THE ABLATION: dilation is worth more than the learned inpainter
+
+Table 3, RealEstate10K, 130 triplets. Parenthesised figures are **in the disoccluded region only** — the number
+that matters:
+
+| method | SSIM ↑ | PSNR ↑ | LPIPS ↓ |
+|---|---|---|---|
+| diffusion (the dumb baseline) | 0.8661 (**0.6215**) | 25.90 (**18.78**) | 0.088 |
+| learned inpaint, **no** dilation | 0.8643 (**0.5573**) | 25.56 (**17.14**) | 0.085 |
+| learned inpaint, **with** 5 px dilation | 0.8666 (**0.6265**) | 25.97 (**18.98**) | 0.083 |
+
+**Without the dilation heuristic the learned inpainter is worse than diffusion in the hole** — 0.5573 vs 0.6215
+SSIM, 17.14 vs 18.78 dB, a 1.6 dB deficit — and the entire margin over diffusion comes from dilating the
+synthesis region by five pixels. Their stated reason, §3.2: *"In practice, the silhouette pixels may not align
+well with the actual occluding boundaries due to imperfect depth estimation."*
+
+**This independently validates R8 item 5.** We built dilated-mask arms and measured `armD` (dilation 4) at
+−1.8% temporal step and `armE` (dilation 12) at −0.6% — i.e. a real effect, and **4 better than 12**. Their
+tuned value is 5 px at 1024 px long side; our plate is ~1008 px wide, so 4–5 px is the same operating point,
+arrived at independently on a different metric. That is the most direct cross-validation in the whole corpus,
+and it upgrades `armD` from "a small measured win" to "the published mechanism, reproduced."
+
+It also explains *why* it works, which our measurement could not: it is not that a bigger mask gives the
+inpainter more room, it is that **the depth edge is mislocated by a few pixels and the dilation buys back the
+misalignment.** That predicts the optimum should scale with depth-edge localisation error, not with band width
+— checkable against the 2× depth map, where edges are better localised and the optimal dilation should
+therefore be *smaller*. Worth one run.
+
+### 5. Their headline component is worth 0.01 dB, and they say so
+
+Table 2, edge-guided depth inpainting — the paper's "core technical novelty":
+
+| | SSIM ↑ | PSNR ↑ | LPIPS ↓ |
+|---|---|---|---|
+| diffusion | 0.8665 (0.6237) | 25.95 (18.91) | 0.084 |
+| inpaint w/o edge | 0.8665 (0.6247) | 25.96 (18.94) | 0.084 |
+| inpaint **w/ edge** | 0.8666 (0.6265) | 25.97 (18.98) | 0.083 |
+
+*"The results show that our proposed edge-guided inpainting leads to **minor improvement in numerical
+metrics**."*
+
+0.0001 SSIM. 0.01 dB. 0.001 LPIPS. A CVPR 2020 paper's named contribution, reported honestly as negligible on
+the numbers and defended on the figures (Fig. 7, T-junctions).
+
+**This is the answer to the question asked earlier in this project** — "I'm shocked that in hardly any of the
+literature their methods aren't helping." They mostly *aren't*, by these metrics, and the good papers say so.
+Our string of small-or-null measured effects is not evidence that we are doing something wrong; it is what this
+literature's own ablation tables look like when you read them instead of the abstracts. Table 1 is the same
+story: they win LPIPS 0.0724 and PSNR 27.29 but **lose SSIM** to Stereo-Mag (0.8887 vs 0.8906).
+
+### 6. Recursion: inpainted depth makes new edges, which make new holes
+
+> *"In depth-complex scenarios, applying our inpainting model once is not sufficient as **we can still see the
+> hole through the discontinuity created by the _inpainted_ depth edges.** We thus apply our inpainting model
+> **until no further inpainted depth edges are generated.**"*
+
+Fig. 8: none / once / twice, and twice is needed. **We run one pass.** Our band fill can perfectly well
+introduce a new cliff that opens a new band at a further pose, and we have never looked for it. Cheap to check:
+run the cliff detector on the *filled* plate and count texels above tolerance that were not cliffs before. If
+the count is non-trivial, a second pass is indicated and it is the honest form of "variable depth complexity"
+that §2's criticism was really about.
+
+### 7. Preprocessing details worth copying
+
+- **Depth normalisation: min/max of _disparity_ (1/depth) to 0/1.** Same convention as our law — good, no
+  conversion needed to compare with their thresholds.
+- **Bilateral median filter to sharpen the depth map before finding edges**: 7×7, `σ_spatial = 4.0`,
+  `σ_intensity = 0.5`. Stated reason: *"discontinuities are blurred across multiple pixels, making it difficult
+  to precisely localize them."* This is a *sharpening* preprocess, the opposite of Zhang & Tam, and for the
+  same underlying reason our 2× depth arm won: **edge localisation is what matters**, and both blurring it away
+  (Zhang & Tam) and leaving it blurred (raw monocular depth) cost you.
+- Discontinuities by thresholding disparity difference, then connected components into *"linked depth edges"*,
+  separated at junctions by local connectivity, then **short segments (<10 px) removed** — *"We determine the
+  threshold 10 by conducting five-fold cross-validation with LPIPS on 50 samples."* That is our despeckle
+  (Sprint 13) and our thin-evidence rule, with the threshold *tuned against a perceptual metric* rather than
+  reasoned. Ours is derived from the reveal field, which I prefer, but it is worth knowing theirs was fitted.
+- All spatial parameters tuned for **1024 px long side**, *"and should be adjusted proportionally"* — so 5 px
+  dilation, 10 px minimum edge, 40/100 flood iterations all scale.
+
+### 8. Training-data trick, if we ever train anything
+
+*"We apply the pre-trained MegaDepth on the COCO dataset to obtain pseudo ground truth depth maps. We extract
+context/synthesis regions to form a pool. We then **randomly sample and place these context-synthesis regions on
+_different_ images**… We thus can obtain the ground truth content (RGB-D) from the _simulated_ occluded
+region."*
+
+No annotation, no multi-view capture: take a real hole's *shape* and paste it somewhere the answer is known.
+Our truth kit does the rigorous version (exact multi-hit ray casting), but this is how to get volume if a
+learned band-depth model is ever wanted. 118k COCO images, ≤3 region pairs each, 5–10 epochs.
+
+---
+
+## 10. Szeliski, Zabih, Scharstein, Veksler, Kolmogorov, Agarwala, Tappen & Rother, "A Comparative Study of Energy Minimization Methods for Markov Random Fields" [327 lines] DONE
+
+Read in full. Arrived as the **ECCV 2006** version rather than the PAMI 2008 "…with Smoothness-Based Priors";
+complete (ends at reference 44 and Fig. 6's caption) and the same study, so no need to re-source.
+
+I asked for this to settle S54 §4 — *"the claim that the solver is not our bottleneck"* — noting that *"ICM is
+famously the worst performer in that study, so the claim deserves the check rather than my assertion."*
+**The claim survives, and the paper states it in one sentence.**
+
+### 1. The sentence
+
+§6: *"In light of these results, it is clear that **for the models we have considered better minimization
+techniques are unlikely to produce significantly more accurate labelings.**"*
+
+With the measured basis, §5:
+
+> *"For all of these examples, **the best methods achieved results that are extremely close to the global
+> minimum, with less than 1 percent error.** For example, on 'Tsukuba', expansion moves and TRW-S got to within
+> **0.27%** of the optimum, while on 'Penguin' TRW-S was within **0.13%**, and on 'Panorama' expansion moves was
+> within **0.78%**."*
+
+and on Teddy, TRW-S *"achieves the best energy of any algorithm on any of our stereo benchmarks, **within
+0.018% of the global minimum**."* On binary segmentation LBP comes *"under 0.04% error"* without ever reaching
+it.
+
+Then the visual verdict, §5: *"In terms of visual quality, **the ICM results looked noticeably worse, but the
+others were difficult to distinguish on most of our benchmarks.**"*
+
+**This is S51's result, published.** Our evidence that the solver is not the problem — λ inert across its range,
+five random seeds converging to the same answer, sFD 0.0005 from wash — is the signature of an energy whose
+minimum is being found and is simply not where we want it. The study says that once you are past ICM, everyone
+finds essentially the same minimum, and the remaining differences are in the model. S54's §4 was right and is
+now first-hand.
+
+The caveat they attach, which I should keep: *"it is still important to compare energy minimization algorithms
+using the energy they produce as a benchmark. **Creating more accurate models will not lead to better results if
+good labelings under these models cannot be found.**"* Fair. But our minimisation is a per-texel closed form
+over four candidates; there is no risk we are failing to find its minimum.
+
+### 2. Our capped join cost has a canonical name and parameterisation
+
+§2:
+
+```
+V(Δl) = min( |Δl|^k , V_max ),   k ∈ {1, 2}
+```
+
+*"a simple **clipped monomial** form… If we set V_max = 1.0, we get the **Potts model**, V(Δl) = 1 − δ(Δl),
+which penalizes any pair of different labels uniformly."*
+
+Sprint 30's cap is exactly this with **k = 1** and **V_max = the cliff tolerance in screen pixels**. Our current
+S51 cost is the `k=1, V_max=∞` case — the one member of the family with no discontinuity preservation at all.
+Worth using their notation in the sprint so the sweep is over a named parameter rather than an ad-hoc one.
+
+Two consequences I had not worked out:
+
+- **Potts is the far end of the same knob.** `V_max → 0⁺` (relative to the smallest step) makes every
+  disagreement cost the same, which is "any join is a join". Sweeping `V_max` sweeps continuously from our
+  current unbounded linear cost to Potts, and S51 and a pure labelling are the two endpoints of one line. That
+  is a much better-shaped experiment than the one I had planned.
+- **A clipped cost may not be a metric.** §6: *"The benchmarks that were most challenging for the expansion move
+  algorithm ('Venus', 'Penguin') **use a V which is not a metric**."* Both use truncated L2. If we ever move
+  from our closed form to graph cuts, the cap is precisely what breaks the metric condition
+  `V(α,α) + V(β,γ) ≤ V(α,γ) + V(β,α)`, and terms would need truncating. Not an issue today; noted so it is not a
+  surprise later.
+
+### 3. The "Penguin" benchmark is our band, and it is the one where the solver *does* matter
+
+§4.4, image restoration and inpainting: *"we added random noise to each pixel, and also obscured a portion of
+the image… **pixels in the obscured portion have a data cost of 0 for any intensity.**"*
+
+**A region with zero data cost is our band.** This is the only benchmark in the study with that property, and it
+behaves differently from the rest:
+
+- *"On figure 4, **the swap move algorithm has serious problems**, probably due to the fact that it considers
+  all pairs of labels."*
+- *"On the penguin benchmark, **TRW-S is the winner**."*
+- And it is one of the two that is *"most challenging for the expansion move algorithm."*
+
+So in the no-data-term case the spread between methods is wider than elsewhere, and the winner is different
+from the stereo winner. That does not overturn §1 — TRW-S still lands within 0.13% — but it is the honest
+qualification: **the "solver doesn't matter" result is measured mostly on problems with data everywhere, and our
+problem is the one benchmark in the set that isn't.** If we ever do build a real energy over the band, TRW-S is
+the indicated method and expansion moves are not, which is the opposite of what the stereo literature would
+suggest.
+
+### 4. A fourth form of contrast modulation, and it is astonishingly crude
+
+§4.1, their stereo smoothness weights: *"we computed `w_pq` by comparing the intensities of p and q in the left
+image, and **if this was small we set `w_pq` = 3 for 'Teddy' and `w_pq` = 2 for 'Tsukuba'**."*
+
+A threshold and a factor of 2 or 3 — no functional form at all. Set beside the other three now in hand
+(Hirschmüller's `P2′/|ΔI|`, Scharstein & Szeliski's `1/(1+γ|ΔI|)`, Schönberger's `P1(1+αe^{−|ΔI|/β})`), the
+spread of "how much should colour modulate the smoothness penalty" across four papers by overlapping authors is
+from *binary ×3* to *bounded exponential with two fitted parameters*. **Nobody has settled this.** It reinforces
+Scharstein & Szeliski's own warning that λ and γ tuning dominates, and it means Sprint 30 should sweep rather
+than adopt — and that a crude two-level version is a legitimate arm, not a strawman.
+
+§4.3's binary segmentation uses yet another: `V_pq = exp(−β‖x_i − x_j‖²) + λ₂`, `λ = 50`, `λ₂ = 10`, with
+`β = (2⟨‖x_i − x_j‖²⟩)⁻¹` — **β set from the image's own average squared intensity difference**. That is the
+one self-calibrating form in the set, and it is the one to prefer if we do not want to sweep: it makes the
+contrast scale adapt to the picture instead of being tuned on the troll and carried to the others. Their stated
+purpose for `λ₂` is *"to remove small and isolated areas which have high contrast"* — a floor, which is our
+despeckle in the energy rather than as a post-process.
+
+### 5. Practical notes
+
+- ICM initialised winner-take-all *"resulted in significantly better performance"* than a bad init — *"the
+  results are extremely sensitive to the initial estimate, especially in high-dimensional spaces with non-convex
+  energies."* Our far-side law is the WTA init; that is the right shape.
+- *"there never seems to be any reason to use swap moves instead of expansion moves."*
+- LBP *"performed surprisingly poorly (the only method it consistently outperformed was ICM)"*, and made gross
+  errors on Photomontage — *"leaving slices of several people floating in the air."* The authors hedge that this
+  may be their message schedule.
+- TRW-S gives a **lower bound on the optimal energy**, which they use to normalise every plot: *"this lower
+  bound can serve as a confidence measure, providing assurance that the solution obtained has near-optimal
+  energy."* If we ever want to prove our band solution is not solver-limited rather than arguing it from seed
+  agreement, that is the instrument.
+- Energy is `E = E_d + λ E_s` throughout, 4-connected grid, and the study's whole point is that the API lets one
+  energy be minimised by every method — *"almost no one in vision has ever answered questions like 'how would
+  your results look if you used LBP instead of graph cuts to minimize your E?'"*
