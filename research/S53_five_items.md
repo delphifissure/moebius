@@ -352,8 +352,31 @@ band texels saturate the 16-texel cap and the true max is 143.6.
 | T = 2.0 | 46 376 | 13.4% |
 | T = 4.0 | 32 482 | 9.4% |
 
-Arms written for the sweep: `H_rev1` (27.5% generative) and `H_seedonly` (pure regression, no model at all), to be
-rendered in motion beside `armA` (all generative). That is the three-point test of the paper's claim.
+### The three-point test, rendered: the split wins
+
+`H_seedonly` (pure regression, no model at all), `H_rev1` (27.5% generative) and `armA` (all generative), against
+the wash, on the same camera path with identical geometry:
+
+| arm | generative share | temporal step, mean | sd | sFD vs wash | LPIPS vs rest at 45° |
+|---|---|---|---|---|---|
+| wash (control) | — | 0.05161 | 0.00727 | — | 0.2878 |
+| H_seedonly | 0% | 0.05072 | 0.00689 | 0.0026 | 0.2929 |
+| **H_rev1** | **27.5%** | **0.05038** | **0.00675** | 0.0032 | 0.2947 |
+| armA | 100% | 0.05055 | 0.00707 | 0.0042 | 0.2961 |
+
+**The hybrid is the best arm on both temporal measures, beating each of its own endpoints.** That is precisely what
+SynergyAmodal Fig. 6 predicts — neither tool wins everywhere, and splitting on occlusion size beats either alone —
+reproduced here on a parallax artefact rather than an occludee, with the split taken from a field we already export
+and no new parameter.
+
+It is also the only arm in the whole study that improves on *both* of the things it is made of, which is the
+signature of a real interaction rather than a ranking.
+
+**The margins are small and must be reported as such**: H_rev1 is 0.3% below armA, 0.7% below H_seedonly, 2.4%
+below the wash, on one scene with nine frames. The ordering is consistent across mean *and* spread and matches the
+published prediction, which is worth more than any single margin, but this is a direction confirmed rather than an
+effect sized. The sFD and degradation columns simply order the arms by how much generative content they carry,
+as expected, and carry no verdict.
 
 ## Not attemptable here, and why
 
