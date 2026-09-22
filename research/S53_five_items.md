@@ -342,6 +342,88 @@ rendered in motion beside `armA` (all generative). That is the three-point test 
   under-covering masks cause "flickering between consecutive frames" — is testable now that the motion instrument
   exists, and the dilated arms D/E/F are exactly the test.
 
+---
+
+# Part III — the last untried construction, and the two instruments disagreeing
+
+## Depth from the inpainted plate (Pano3DComposer §3.3)
+
+R8 §14's "what not to do" forbids inpaint-then-redepth on three votes (1909.00915, Gen3R, DeepDR — the last
+quantifying a joint solve at ~2× better depth RMSE). But **R8's own per-paper notes contradict that**, flagging
+Pano3DComposer §3.3 as "a depth path WE HAVE NOT TRIED and can try today with assets already on disk", distinct
+from the Amodal-DAV2 failure, which failed for a task-definition reason rather than a quality one:
+
+> "We merge all instance masks and apply an inpainting model (LaMa or DiT360) on the panoramic image to obtain a
+> clean background panorama I_bg … predicts background depth with Depth-Anywhere" — Pano3DComposer §3.3, 2026
+
+The three votes all compare it against a **joint model**, and we have no joint model. The comparison nobody had run
+is against **our plane construction**. S52 arm B is already the clean background plate, so the test was one DA3 run.
+
+**It passes the guard that killed Amodal-DAV2, and beats the shipped construction there.**
+
+| | vs occluder | vs plane background | guard W1 | guard ratio |
+|---|---|---|---|---|
+| Amodal-DAV2 (S52) | 0.083 | 0.261 — **3× further** | 0.2353 | 1.55 **reject** |
+| inpaint-then-redepth | 0.193 | **0.071 — 2.7× closer** | **0.0531** | **0.35 pass** |
+| the shipped plane construction | — | — | 0.0638 | 0.42 pass |
+
+On the distribution guard this is the first thing in the project to beat the plane construction on band depth.
+
+**And the ordinal instrument overturns it, on all five kit scenes.** `band_band`, both endpoints hidden surface:
+
+| scene | far field (shipped) | do nothing | inpaint-then-redepth |
+|---|---|---|---|
+| S10 | **68.7%** | 61.3% | 54.5% |
+| S11 | 51.7% | **69.4%** | 42.2% *(below chance)* |
+| S27 | **83.3%** | 52.4% | 77.9% |
+| S2 | **81.1%** | 75.6% | 72.6% |
+| S9 | 81.2% | **83.2%** | 67.0% |
+
+**It loses to the shipped construction on five of five**, by 5 to 14 points, and falls below chance on S11. The
+occluder sanity family is fine (98.6–100%), so it is not broken — it is *smoothly wrong*.
+
+**This is the whole argument of R8 §5, demonstrated rather than cited.** The distribution guard says the field is
+drawn from the background's depth family, which it is: a plausible monocular depth map of a plausible inpainted
+background. The guard's stated limitation is that it cannot detect a return that is merely too *average*. The
+ordinal instrument exists precisely to detect that, and it does. **The two instruments disagree, and the
+disagreement is the finding** — neither is wrong, they measure different failures, and a return needs to pass both.
+
+Two consequences worth stating plainly:
+
+1. **R8 §14's prohibition on inpaint-then-redepth is upheld — by our own measurement on our own scenes, not by
+   citation.** The path is now tested rather than forbidden, and the answer is the same.
+2. **The ordinal instrument earned its place.** This is the first time it has overturned another instrument's
+   verdict, which is the job it was built for. Had the guard been the only check, this path would have been
+   adopted as an improvement.
+
+## Item 1's first numbers: the arms in motion
+
+Four arms (wash, A, B, D), nine frames, 0–45° horizontal, LPIPS-alex at 608×342.
+
+| arm | LPIPS vs rest at 45° | temporal step, mean | sd | max |
+|---|---|---|---|---|
+| wash (control) | 0.2878 | **0.05161** | 0.00727 | 0.06646 |
+| A band, occluder removed | 0.2961 | **0.05055** | 0.00707 | 0.06410 |
+| B band ∪ occluder | 0.2957 | 0.05062 | **0.00684** | 0.06379 |
+| D band dilated 4 px | 0.2914 | 0.05069 | 0.00709 | 0.06490 |
+
+sFD between arms: wash↔arms 0.0033–0.0044; arms↔each other 0.0002–0.0012.
+
+**Read honestly: the motion measurement is consistent but small.** All three inpainted arms have a lower
+frame-to-frame perceptual step than the wash (−1.8% to −2.1%) and a lower spread (−2.5% to −5.9%), which is the
+direction InpaintFusion predicts and which stills could not show at all. But the effect is **2% on a baseline
+dominated by ordinary parallax**, not the four-to-five-point separation their Fig. 9 reports on a 1–7 human scale.
+
+What it does settle: **S52's still-frame conclusion survives the motion re-measurement.** The arms remain far
+closer to each other (sFD 0.0002–0.0012) than any is to the wash (0.0033–0.0044) — the same "the choice of
+strategy matters about half as much as the choice to inpaint at all" that S52 found on two frames. The re-measure
+did not overturn S52; it confirmed it and added the one thing stills could not: inpainting measurably reduces
+temporal instability, it does not merely change the picture.
+
+The S51 arm (`_farLabel`) failed its first run — my sweep loop split the spec on `:`, which also split the JSON
+`{"_farLabel":true}`, so the arm baked with the flag unset and the return was a parse error rather than a silent
+wrong result. Re-queued; S51's verdict is still open.
+
 ## What is still open
 
 - **The re-bake for item 4.** The 2× map exists; the bake and rescore do not.
