@@ -2408,3 +2408,228 @@ shape" to **"one controlled experiment measures 5.3× on exactly this variable, 
 named as oversmoothing."** It also supplies the sweep design (logarithmic, coarse, two decades), the warning
 that over-capping collapses toward Potts and flattens slanted surfaces, and the observation that the cap is
 what makes any optimality guarantee possible at all.
+
+---
+
+## 21. Bornemann & März, "Fast Image Inpainting Based on Coherence Transport", J. Math. Imaging Vis. 28, 2007 [3456 lines] DONE
+
+Read in full — the analysis of §§2–4, the three theorems and their proofs, the coherence construction of §5, the
+implementation of §6, and all of §7's comparisons. (The PDF→markdown conversion mangled the equations into
+roughly one symbol per line; I have reassembled them below and say so.) R4 cited this and it was never read
+here; the first archive's copy was truncated to one page. **It is the most mathematically substantial paper in
+the corpus and it derives, from first principles, the artefact Criminisi observed empirically.**
+
+### 1. Telea's algorithm *is* onion-peel, and its limit equation explains the skeleton artefact
+
+Telea fills in order of distance-to-boundary (fast marching, `|∇T| = 1`, `T|∂D = 0`), taking weighted means of
+already-filled neighbours. Theorem 1 computes the high-resolution vanishing-viscosity limit of that scheme, and
+for Telea's weight it is
+
+```
+n(x) · ∇u(x) = 0   on D∖𝒮,     u|∂D = u⁰|∂D        n = ∇T
+```
+
+i.e. **transport purely along the gradient of the distance map**, with the algorithm's plain-English content
+spelled out:
+
+> *"The known image value u⁰(x) of a boundary point x ∈ ∂D is transported along the straight line of the normal
+> pointing inwards into the inpainting domain D **until this normal meets the skeleton 𝒮**, that is, until it
+> intersects with a different normal transporting different image values. **There is no transport of information
+> across 𝒮.**"*
+
+where the skeleton `𝒮` is *"the set of singularities (locations of the ridges) of the distance map"* — the
+medial axis.
+
+**This is Criminisi's Fig. 20 observation, derived rather than observed.** He wrote that concentric filling makes
+the reconstructed sky–sea boundary *"follow the skeleton of the selected target region"*; Bornemann proves that
+the limit of distance-ordered weighted-mean filling transports strictly along `∇T` and that information cannot
+cross the skeleton at all. Two papers, three years apart, one empirical and one analytic, on the same object.
+
+And Bertalmio had already rejected this direction: *"This transport direction has already been identified by
+Bertalmio et al. as being **an unsuccessful choice** for the propagation of image information."*
+
+**The prediction I logged against Criminisi's note now has a second, stronger basis** — and it sharpens. Our band
+is long and thin, so the level lines of its distance map run *along* the band and `n = ∇T` points *across* it,
+rim toward centreline. A distance-ordered mean fill would therefore transport across the band (fine) but be
+unable to carry anything across the centreline (not fine), producing a seam on the medial axis. Whether our
+simultaneous solve has an analogous locus is exactly the measurement I proposed; this gives it a predicted
+location — the band's medial axis — rather than only a direction.
+
+### 2. Their fix: steer the transport by reshaping the weight, and it has a knob we already have
+
+Theorem 2's exponentially confined weight (reassembled):
+
+```
+w(x,y) = ( √(π/2) · μ / |x−y| ) · exp( − (μ² / 2ε²) · |c⊥(x)·(x−y)|² )
+```
+
+As `μ → ∞` the limit direction `c*` tends to `±c`, the desired direction — so **the weight function of a
+single-pass fill can be made to realise an arbitrary transport field**, keeping Telea's speed while getting
+Bertalmio's quality. The deviation angle has the asymptotic form
+`ϑ(θ) = √(2/π)·log(tan(θ/2 + π/4))·μ⁻¹ + O(μ⁻²)`.
+
+Then §5 makes `μ` **per-texel**, from the structure tensor's eigenvalues:
+
+```
+μ(x) = 1                                           if λ₁ = λ₂
+     = 1 + κ · exp( − δ⁴_quant / (λ₂ − λ₁)² )       otherwise          (1 ≤ μ ≤ κ+1)
+```
+
+> *"using large values of μ … allows to faithfully following the given vector field c **with just a small amount
+> of diffusion**, whereas small values (μ ≈ 1) yield a **considerable amount of diffusion**. Since the first
+> behavior is desirable for strong coherence and the second for a weak one, we suggest taking the image-adapted
+> parameter μ = μ(x)."*
+
+**That is a per-texel continuous dial between directional transport and isotropic diffusion, driven by a
+confidence measure — which is precisely the shape of the per-texel λ we built in `_screenedPoissonBand` and of
+`_geoFarConf`.** We arrived at "blend between the structured answer and the smooth answer according to local
+confidence" independently; this is the published version, with the confidence derived from the structure
+tensor's eigenvalue gap and normalised by the quantisation step `δ_quant` to make it scale-free. **The
+normalisation by the quantum is worth stealing outright** — we have a per-tile effective quantum from Sprint 14
+and currently do not use it to set the blend.
+
+### 3. THE FINDING: the modified structure tensor, and the spurious-edge trap
+
+§5, "Boundary Effects". To compute the coherence direction at the fill front you must estimate a structure tensor
+from the *already filled* region, but the Gaussians `K_σ`, `K_ρ` reach into the not-yet-filled part. Continuing
+by zero:
+
+> *"in general, this makes ∂Ω(x) **a spurious edge, aligning the coherence flow tangentially to it** … Since we
+> know from Sect. 4 that a tangential vector field c is rotated into the normal direction c* = n, **we would
+> basically end up with Telea's algorithm once again.**"*
+
+And symmetry/Neumann conditions fail too, the other way: *"They tend to align the coherence flow field with the
+**normal** to the boundary… once more, we would obtain a vector field c that yields c* ≈ n."*
+
+The fix, equation (21) — **normalised convolution**:
+
+```
+v_σ      = ( K_σ ⋆ (1_Ω · u) ) / ( K_σ ⋆ 1_Ω )
+Ĵ_σ,ρ(x) = ( K_ρ ⋆ (1_Ω · ∇v_σ ⊗ ∇v_σ) )(x) / ( K_ρ ⋆ 1_Ω )(x)
+```
+
+Divide every smoothed quantity by the identically-smoothed **validity mask**.
+
+**Two things follow for us, and the second is the more important.**
+
+**(a) A class of bug to audit.** Any filter we run near the band's rim that does not normalise by the valid mask
+is treating unfilled texels as zeros and manufacturing an edge at the rim. `return_grad.py` (bi-directional
+gradient means) and `return_align.py` (colour–depth edge alignment) both operate exactly there. Worth checking;
+`return_grad`'s self-test asserts a no-op on a *dense* field, which would not catch this.
+
+**(b) A third mechanism that produces rim-parallel structure.** A hole treated as content makes its own boundary
+into an edge, and the fill then runs *along* that edge. So rim-parallel artefacts can arise from (i) per-line
+independence — our class 1; (ii) uniform-speed filling following the medial axis — Criminisi/Bornemann; and now
+(iii) the hole's own boundary read as a spurious edge. **This bears directly on task #59**: LaMa receives the
+band as a masked region, and if its effective context straddles the rim the same trap is available. That
+strengthens the case for a connectivity-limited context and adds a specific thing to look for in the output.
+
+### 4. The tunnel metaphor, which is our two-rim problem stated exactly
+
+§1: *"Of course, this transport along characteristics will cross somewhere. However, if we are lucky, crossing
+characteristics might carry similar information. **(Like two teams digging a tunnel from both ends are meant to
+meet somewhere.)**"*
+
+Footnote 9, less optimistically: *"The closing of edges at the skeleton is comparable to the digging of a tunnel
+from two ends: **if the measurements, the plan, and the performance were good the digging teams will meet
+somewhere in the middle (at the skeleton). If not, they will fail badly.**"*
+
+That is the far-side law's situation in one image: two rims, each extrapolating inward, required to agree at the
+middle. Fig. 8(b) shows what failure looks like — **a shock on the non-transparent part of the skeleton**, i.e. a
+visible seam down the band's centreline. And §4 gives a computable criterion, the *transparency* of a skeleton
+point: a point where the two sides' characteristics can be continued through each other. Our class-1
+disagreements are, in this language, non-transparent skeleton points.
+
+### 5. The failure mode they call unavoidable — and it may be part of class 1
+
+Theorem 2's limit (14): `c* → c` when `n·c > 0`, `→ −c` when `n·c < 0`, and **`→ n` when `c ⊥ n`**.
+
+> *"The price to pay for it is, by continuity, the **unavoidable** sudden rotation of c* into the perpendicular
+> direction n if the flow generated by c becomes **close to tangential to the level lines of the distance
+> map**."*
+
+Fig. 8 measures the degradation as the edge's slope `α` falls: `α = 18.2°` closes perfectly; `11.3°` perfect;
+**`5.7°` a clearly visible shock**; `0°` reproduces Telea's behaviour exactly.
+
+For an elongated band, `n` points across it, so `c ⊥ n` means **structure running along the band**. So:
+structure crossing the band steeply is recoverable; **structure crossing at a shallow angle to the rim is
+not, and degrades to distance-normal transport.** That is a specific, testable sub-population of class 1 — and
+it predicts the error should correlate with the *angle between the local structure and the rim*, which we can
+measure from the probe dumps alongside the medial-axis test. Added to the same check.
+
+### 6. The maximum principle — a guarantee we gave up and should know we gave up
+
+§2: the generic single-pass algorithm, being a weighted mean, satisfies a **comparison principle** —
+*"If the data image satisfies u_min ≤ u⁰ ≤ u_max … the inpainting result satisfies the same inequalities"* — and
+is `l∞`-stable. *"Note that the comparison principle still holds if w_h depends on u_h"*, so it survives the
+nonlinear coherence weighting.
+
+**Our far-side law fits and extrapolates planes, so it has no such bound.** A plane fitted to a noisy run and
+extended across a gap can and does overshoot the range of its own evidence. That is the price of the slanted
+model, and PatchMatch's 7.6× on Venus is the reason we pay it — but it is worth stating plainly that we traded a
+maximum principle for slant, and that a bound on the band's output against its own rim values is therefore
+something we must impose explicitly rather than inherit. Cheap to add, and the kind of guard that catches
+exactly the class-2 blow-ups.
+
+### 7. Parameters, and one design rule worth keeping
+
+Four parameters: `ε` averaging radius, `κ` sharpness, `σ` and `ρ` the pre- and post-smoothing scales.
+
+> *"For inpainting problems with **narrow (that is, about 10 px) but elongated inpainting domains** … a good
+> start is made with the default parameters `(ε, κ, σ, ρ) = (5 px, 25, 1.4 px, 4 px)`."*
+
+**"Narrow but elongated" is our band's shape**, so that default is the relevant one, not the ones tuned for
+compact holes (`ε=14, κ=250, σ=1.2, ρ=7` for the parrot cage; `ε=6, κ=125, σ=12, ρ=18` to close a circle).
+
+And the cross-gap rule, from the circle-closure discussion:
+
+> *"at the inpainting of a point x ∈ D the modified coherence flow field **starts communicating between opposite
+> sides of the yet-to-be-inpainted domain if their distance is below 4ρ**."*
+
+So `ρ` sets the range at which the two rims can see each other: **`ρ ≳ bandwidth / 4`** for a band fill to couple
+its two sides at all. With their default `ρ = 4 px` that is an 16 px reach, consistent with the ~10 px domains.
+A concrete sizing rule if we ever build a coherence-steered band fill, and a diagnostic if we do not: any method
+whose smoothing scale is below a quarter of the local band width **cannot** be coupling the rims.
+
+### 8. Why nobody uses the variational methods, with numbers
+
+§1's iteration-count argument: explicit time stepping needs `τ ∝ h^ν`, so `#iterations ∝ (#pixels)^{ν/2}`.
+
+- Bertalmio's transport equation has `ν = 1` → order **10³** iterations; *"Bertalmio et al. report to have used
+  **3000 time steps**."*
+- Chan et al.'s **Elastica** has `ν = 4` → order **10⁷**; *"[12], Fig. 6.9, reports to have used **12 000 000
+  time steps**"* to reproduce a 140×32 px detail.
+
+**Sprint 17b's mathematics note proposed elastica for hidden contours.** This is the number that should sit
+beside that proposal: twelve million time steps for a 140×32 patch. Chan & Shen themselves list *"fast and
+efficient digital realization"* of these methods as a major open problem. Recorded against S17b — the
+formulation stays interesting, the explicit scheme is not viable, and if elastica is ever wanted it needs a
+non-iterative or implicit route.
+
+Against which: their own method is **0.4 s** for 241×159, **0.5 s** for a 483×405 scratch removal, **20 s** for
+the parrot cage where Tschumperlé needed 4 min 11 s, and *"at least an order of magnitude faster"* than
+Bertalmio at comparable quality.
+
+### 9. Smaller things
+
+- **Edge-detection flow `c = ∇⊥u_σ` is rejected in favour of the coherence direction** (minimal eigenvector of
+  the structure tensor): on an unprocessed fingerprint the edge flow *"closely follows minor local features; it
+  looses relation with the global coherent flow of information… **edge detection flow, like edge detection
+  itself, has problems with its robustness**."* The coherence flow is near-identical on the raw and the
+  shock-filtered image. Another instance of "a second-moment statistic beats a first-moment one", now for
+  *direction* rather than value — and a reason to prefer Gautier's tensor over Criminisi's gradient.
+- **Colour**: one shared coherence direction for all three channels, from a common structure tensor combined with
+  the luminance weights `0.299/0.587/0.114`. *"color images take just about twice the CPU time needed for
+  inpainting the corresponding luminance image."*
+- **Implementation**: the structure tensor is the bottleneck and is maintained by an **incremental update** as
+  the front advances — `v̂_σ(y) ← v̂_σ(y) + K_σ(x−y)·u(x)`, `χ_σ(y) ← χ_σ(y) + K_σ(x−y)` over the `4σ`-wide
+  quadratic mask — rather than recomputed. Relevant if we ever run an ordered fill at plate resolution.
+- **μ cannot be raised without limit in practice**: beyond some point *"values of μ which are too large simply
+  result, by **underflow**, in a weight w that is identical to a floating point zero"*, because only finitely
+  many discrete directions `x−y` exist in the neighbourhood. A discretisation ceiling on how sharply any such
+  weight can steer.
+- Shocks in the discrete algorithm sit *"not exactly located at the skeleton but have an offset of ε = 6 px"* —
+  the seam lands a radius away from where the theory puts it.
+- Their §7 denoising application: Lena with **80% salt-and-pepper noise** inpainted in 20 s by masking the 0 and
+  255 levels and treating the result as a hole. A reminder that "inpainting" and "denoising a heavily corrupted
+  image" are the same operation, which is a fair description of what a noisy monocular depth map needs.
