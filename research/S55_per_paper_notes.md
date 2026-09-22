@@ -2248,3 +2248,163 @@ based on the assumption of a complex, but **global** radiometric transformation"
 *"None of the matching costs we compared was very successful at handling strong local radiometric changes."*
 All of it is about comparing two views of the same scene. We have one view, and our band has no correspondent
 anywhere. Recorded so the note is complete, not because it bears on anything we will build.
+
+---
+
+## 20. Boykov, Veksler & Zabih, "Fast Approximate Energy Minimization via Graph Cuts", PAMI 23(11), 2001 [1041 lines] DONE
+
+Read in full, including the graph constructions of §§4–5, the optimality proofs of §6, and the NP-hardness
+appendix. R7 and R8 both named this as missing-by-citation; it is now read. **It contains the controlled
+measurement of Sprint 30's cap that nothing else in the corpus provides.**
+
+### 1. The definition of "discontinuity preserving" *is* the cap
+
+§1:
+
+> *"Informally, a discontinuity preserving interaction term should have **a bound on the largest possible
+> penalty. This avoids overpenalizing sharp jumps between the labels of neighboring pixels.**"*
+
+with the canonical examples: truncated quadratic `V(α,β) = min(K, |α−β|²)` (a semi-metric), truncated absolute
+`V(α,β) = min(K, |α−β|)` (a metric), and Potts `V(α,β) = K·T(α≠β)` (a metric).
+
+**Our S51 join cost is `revealPx` — unbounded, therefore by this definition not discontinuity-preserving at
+all.** And the named failure mode, *"overpenalizing sharp jumps"*, is precisely the 11% real-step damage S51
+recorded. The prediction S54 made from Hirschmüller is here derived from the definition rather than inferred
+from a sentence.
+
+### 2. §8.6 — the measurement, and it is 5.3×
+
+Image restoration, constant-intensity regions corrupted by `N(0,100)` noise, **same solver, same data, only the
+penalty shape differing**:
+
+| smoothness | average absolute error | time |
+|---|---|---|
+| **truncated** absolute difference `80·min(3, |f_p − f_q|)` | **0.34** | 38 s |
+| plain absolute difference `15·|f_p − f_q|` | **1.8** | 237 s |
+
+*"For both models we chose parameters which minimize the average absolute error"* — so both are optimally
+tuned. *"The results in (b,c) were histogram equalized to reveal **oversmoothing** in (c), which does not happen
+in (b). **Similar oversmoothing for the absolute difference model occurs in stereo.**"*
+
+**A 5.3× error reduction from capping the penalty, and the uncapped failure mode is oversmoothing — which is
+class 2 exactly: a real step drawn as a ramp.** This is the single strongest piece of support for Sprint 30 in
+the corpus, and unlike the others it is a clean A/B on one variable.
+
+**And the sharper twist:** the uncapped model is *convex*, so *"for the absolute difference model we can find
+the **exact** solution"* — while the truncated model is NP-hard and only approximately minimised. **The exact
+minimum of the uncapped energy is 5.3× worse than an approximate minimum of the capped one.** That is Szeliski's
+"the solver is not the bottleneck" conclusion in its strongest possible form: better minimisation of the wrong
+energy loses to worse minimisation of the right one, by a factor of five, on the same data.
+
+### 3. Capping also restores the optimality guarantee — which unbounded costs do not have
+
+§6.1, Theorem 6.1: a local minimum under expansion moves satisfies `E(f̂) ≤ 2c·E(f*)`, where
+
+```
+c = ( max_{α≠β} V(α,β) ) / ( min_{α≠β} V(α,β) )
+```
+
+For Potts `c = 1`, giving the factor 2 — *"by definition c ≥ 1, so this is the energy function with the best
+bound."*
+
+**An unbounded `V` has `c → ∞` and therefore no bound at all.** So the cap does two things at once: it fixes the
+energy's shape *and* it makes the approximation guarantee finite, tightening as the cap tightens. I had not seen
+that the two were connected. If Sprint 30's capped cost is ever moved into an expansion-move framework, the cap
+is what makes the framework applicable; without it there is no guarantee to appeal to.
+
+(Caveat kept: `min(K,|Δ|)` is a metric, so expansion moves apply; `min(K,|Δ|²)` is only a **semi-metric**, so it
+needs swap moves — or the Potts approximation of §6.2, which still yields the `2c` bound. Our clamped-both-ends
+cost would need checking against the triangle inequality before assuming expansion moves are legal. This is the
+same point Szeliski et al. make about "Venus" and "Penguin" using a non-metric `V`.)
+
+### 4. Seed-insensitivity, with 100 seeds — and what it does and does not prove
+
+§8.3: *"for our algorithms **the starting point is unimportant**. The results differ by less than 1% of image
+pixels from any starting point that we have tried. **We also run 100 tests with randomly generated initial
+labelings.** Final solutions produced by our expansion and swap algorithms had the average energy of **252,157
+and 252,108**, correspondingly, while the **standard deviations were only 1,308 and 459**."*
+
+That is sd/mean of 0.5% and 0.2% over 100 random initialisations. **S51's five-seed convergence is the same
+signature, measured 20× more thoroughly here.**
+
+The useful distinction, which I should have drawn earlier: they present seed-insensitivity as evidence the
+*minimisation* is reliable. It is not evidence the *minimum is right*. Our S51 evidence — λ inert across its
+range **and** seeds converging **and** sFD 0.0005 from wash — is therefore correctly read as "we are reliably
+finding the minimum of an energy that does not say what we want", which is exactly what §8.6 says happens when
+the penalty shape is wrong. The two results reinforce each other.
+
+### 5. Static cues — a seventh contrast form, and a fifth metric-versus-eye statement
+
+§8.2: `u_{p,q}` smaller where `|I_p − I_q|` is larger — *"two neighboring pixels p and q are much more likely to
+have the same disparity if we know that I(p) ≈ I(q)."* They also suggest `u_{p,q}` could be set *"according to
+an output of an edge detector"* or from segmentation.
+
+The synthetic white-rectangle-on-black example is the clearest argument for the term I have seen: with uniform
+`u`, the smoothness minimum places the disparity boundary *wherever the region geometry makes it cheapest* —
+determined by *"the relationship between the height of the square and the height of the background"*, not by the
+image. With contrast weighting the boundary lands on the intensity edge, and *"this result is much closer to
+human perception."*
+
+**That is Hirschmüller's §II-E.2 objection** (*"E(D) does not differentiate between placing a disparity step
+correctly just next to a foreground object or a bit further away"*) demonstrated on a two-region toy.
+
+Measured worth, Fig. 12: expansion algorithm **7.2%** total errors with static cues, **7.6%** without. Then:
+
+> *"Without the static cues, **a corner of size approximately 800 pixels gets broken off and is assigned to the
+> wrong disparity**… The percentage improvement may not seem too significant, however **visually it is very
+> noticeable**, since without the static cues a large block of pixels is misplaced."*
+
+Fifth paper in this corpus to say the aggregate number understates what the eye sees — and the first to
+quantify the exchange rate: **0.4 percentage points = one 800-pixel block in the wrong place.** That is a
+genuinely useful calibration for reading our own null results. A change of a few tenths of a percent on a
+whole-image metric can be a single large, obvious, ruinous artefact.
+
+### 6. Parameter stability — the sweep shape to expect
+
+Fig. 14, expansion algorithm, varying the Potts parameter `K`:
+
+| K | 5 | 10 | 20 | 30 | 50 | 100 | 500 |
+|---|---|---|---|---|---|---|---|
+| total errors % | 13.0 | **7.0** | 7.6 | 7.9 | 8.8 | 10.4 | 16.3 |
+| errors >±1 % | 4.5 | 2.3 | **2.1** | 2.3 | 2.3 | 2.9 | 8.2 |
+
+*"For small K there are many errors because the data term is overemphasized, for large K there are many errors
+because the smoothness term is overemphasized. **However for a large interval of K values the results are
+good.**"*
+
+A broad basin across a factor of ~3 in `K`, failing at both ends over two decades. **So Sprint 30's sweep should
+be logarithmic and coarse** — a factor-of-2 or -3 grid across two decades will find the basin, and a fine grid
+would waste bakes. Note also the two columns disagree about the optimum (10 vs 20), by amounts smaller than the
+basin's width; worth remembering when our own arms differ by less than their spread.
+
+### 7. Smaller things worth keeping
+
+- **99% of the progress in the first iteration** (8 s of 25 s to convergence); running time linear in the number
+  of labels (Fig. 15, 15→75 labels: 8→35 s per iteration), accuracy degrading only slightly with more labels
+  (7.3%→8.3%).
+- **Expansion vs swap**: 7.2% vs 7.0%, *"the observed difference in errors is insignificant, less than 1%"*,
+  expansion **1.4× faster**. Expansion requires `V` metric; swap needs only semi-metric but *"a local minimum
+  when the swap moves are allowed can be **arbitrarily far** from the global minimum"* (Fig. 8's three-pixel
+  counterexample). Szeliski's later *"there never seems to be any reason to use swap moves"* is consistent.
+- Against simulated annealing on Tsukuba: 7.2% vs **20.3%**, 25 s vs 1200 s; normalised correlation 24.7%. The
+  smoothness energy reached is 160,000 vs annealing's 330,000 after four hours — *"twice as bad."*
+- §8.4, the SRI tree pair: the ground is slanted, so *"a piecewise constant model (Potts model) does not work as
+  well"* and they switch to `V = 15·min(3,|f_p − f_q|)`; *"the Potts model tends to produce **large regions with
+  the same disparity**."* The fronto-parallel/staircase bias again, now as a property of the *penalty* rather
+  than of the window — Potts is the limit where every disagreement costs the same, so nothing distinguishes a
+  ramp from a step and the cheapest answer is a constant. **Directly relevant**: this is the far end of the
+  `V_max` knob identified in note 10, and it tells us what over-capping looks like — our class-1 disagreements
+  would be suppressed at the cost of flattening class-3 creases into constants. The basin has two walls.
+- Data term robustness: `D_p(f_p) = min(|f_p − I_p|², const)` with `const = 20` — *"if we set const to infinity,
+  the results are mostly the same except they become **speckled** by a few noisy pixels."* A truncation on the
+  data term as well as the smoothness term; ours is the thin-evidence rule.
+- Minimising even the Potts energy is **NP-hard** (appendix, via reduction to multiway cut, construction due to
+  Kleinberg), *"and it is possible to extend this proof to the case when P is a planar grid."*
+
+### 8. What this changes
+
+Sprint 30 was already the best-supported item in the backlog. §8.6 raises it from "five papers agree on the
+shape" to **"one controlled experiment measures 5.3× on exactly this variable, and the uncapped failure mode is
+named as oversmoothing."** It also supplies the sweep design (logarithmic, coarse, two decades), the warning
+that over-capping collapses toward Potts and flattens slanted surfaces, and the observation that the cap is
+what makes any optimality guarantee possible at all.
