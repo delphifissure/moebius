@@ -2146,3 +2146,105 @@ per Sinha the crease lines, which are straight by construction). But the transfe
 **framing**, not the method: structure before texture (we do it), restricted source regions (we do not — task
 #59), and above all the DP↔BP equivalence, which says the per-line to cross-line step is an edge-set change to
 a recursion we already run, at `O(2LN²)`, rather than a new algorithm.
+
+---
+
+## 19. Hirschmüller & Scharstein, "Evaluation of Cost Functions for Stereo Matching", CVPR 2007 [316 lines] DONE
+
+Read in full. This arrived in place of the PAMI 2009 version and I flagged it as *"only if the P1/P2 question
+turns into a 'which cost' question."* It did not — **we have no matching cost at all**, so the paper's substance
+(BT, LoG, Rank, Mean, HMI, NCC compared under gain, gamma, vignetting and noise) does not transfer. Three
+things in it do, and one is a real caution for Sprint 30.
+
+### 1. The caution: the best penalty shape depended on the *solver*, not just the images
+
+§2.2, on the graph-cut implementation:
+
+> *"**We tried to use the same energy function E(D) as for SGM. However, we found that for GC it gives better
+> results to adapt the cost P2 not linearly with the intensity gradient, but rather to double the value of P2
+> for gradients below a given threshold.**"*
+
+Hirschmüller — the author of the `P2 = P2′/|I_bp − I_bq|` form — found that his own form was **not** the right
+one once the optimiser changed, and replaced it with a two-level step (×2 below a gradient threshold). That is a
+**sixth** shape in the corpus, and it is the same crude binary weighting Szeliski et al. used (`w_pq` = 2 or 3
+below a threshold).
+
+So the six forms now on record are:
+
+| source | form | fitted for |
+|---|---|---|
+| Hirschmüller 2008 | `P2′/|ΔI|` | SGM's 1-D recursion |
+| **Hirschmüller & Scharstein 2007** | **×2 below a gradient threshold** | **graph cuts** |
+| Szeliski et al. 2006 | `w_pq` = 2 or 3 below a threshold | graph cuts / BP / TRW |
+| Scharstein & Szeliski 2002 | `1/(1+γ|ΔI|)` | DP / SO |
+| Schönberger 2018 | `P1(1+αe^{−|ΔI|/β})` | SGM |
+| Banz 2012 | `γ − α|ΔI|`, clipped below | SGM, both cost functions |
+
+**The shape is not a property of the problem; it is fitted to the optimiser.** Our arbitration is a per-texel
+closed form over four candidates — neither a 1-D recursion nor a global minimisation — so *none* of these
+transfers with confidence. That is the strongest argument yet that Sprint 30 must **sweep** the shape rather
+than adopt one, and it retrospectively justifies carrying both the linear and reciprocal arms (per the Banz
+amendment above) rather than picking.
+
+### 2. The robustness/sharpness trade, for the fourth time — and here it is the paper's closing open problem
+
+§4: *"the filter-based costs (LoG, Rank and Mean) **tend to blur object boundaries**… the blurring effect is
+clearly visible for pixel-based matching methods such as SGM and GC. For such methods, the results of BT and
+HMI appeared best."*
+
+§3.1 gives the mechanism: *"Rank also **reduces the effect of outliers near depth discontinuities**. This is
+important for a window-based method, but less so for pixel-based methods."*
+
+And the paper ends on exactly this wish:
+
+> *"**It would be nice if the advantages of the different costs could be combined to get a matching cost that is
+> able to handle local radiometric transformations like Rank and LoG while still maintaining sharp depth
+> discontinuities like HMI.**"*
+
+That is the fourth independent statement of the trade Sprint 31 is about — after Gautier's K-patch smoothing,
+Ndjiki-Nya's 9×9-beats-25×25, and Banz's census-over-rank *"less edge blurring because census transform retains
+spatial information."* **A neighbourhood statistic buys outlier resistance and pays in boundary blur, and in
+2007 two of the field's principals named combining the two as open.**
+
+For Sprint 31 this settles the experimental design: the gated median's neighbourhood size is not a parameter to
+optimise against the temporal step alone, because the metric that would catch its cost — band sharpness at the
+rim — is a different measurement. Both must be reported per arm.
+
+### 3. The occludee rule, ninth time, as the unremarked default
+
+§2.2, describing the *baseline* post-processing of their local method: *"Invalid disparity areas are filled by
+**propagating neighboring small (i.e., background) disparity values**."* And for SGM: *"Disparity segments below
+the size of 20 pixels are invalidated"* (160 pixels for the correlation method) — a despeckle threshold, ours is
+Sprint 13's.
+
+By 2007 "fill from the background" is not a contribution, it is the sentence you write about your baseline. Nine
+statements now.
+
+### 4. Two notes worth keeping
+
+**Their tuning protocol is the one Banz later contradicts.** §2.2: *"We manually tuned the smoothness parameters
+of SGM and GC individually for each cost **using images without radiometric differences**. After the tuning
+phase, all parameters were kept constant for all images and experiments."* Banz (2012, note 14) measures that
+parameters tuned on clean images fail under noise while parameters tuned on degraded images transfer to both,
+and verifies it on real imagery. **Banz's protocol supersedes this one**, and it is Banz's that Sprint 30 should
+follow — tune on the noisiest picture.
+
+**The realistic-data penalty is 3× .** §3.2: their six new datasets (Art, Books, Dolls, Laundry, **Moebius**,
+Reindeer — the coincidence of names is worth a smile) are *"more challenging… due to the increased disparity
+range, lack of texture, and the more complicated scene geometry. This is reflected in the higher matching
+errors: **the best methods now have errors of about 10%, as opposed to about 3% before**."* Every Middlebury
+number quoted elsewhere in these notes is from the easy set. Worth remembering when any of them is used as a
+bar.
+
+These six datasets are public with ground truth at `vision.middlebury.edu/stereo/data/`, 7 rectified views each,
+3 exposures × 3 lightings. Not obviously useful to us — they are stereo pairs, not single photographs with
+hidden geometry — but noted in case a depth-estimator comparison ever wants controlled radiometric variation.
+
+### 5. What does not transfer, stated plainly
+
+The whole of §3. Rank beats HMI for correlation; HMI beats Rank for SGM and GC under global brightness change
+and noise; Rank and LoG beat HMI under vignetting and moving light sources because *"[HMI's] cost is explicitly
+based on the assumption of a complex, but **global** radiometric transformation"*; NCC degrades under gamma;
+*"None of the matching costs we compared was very successful at handling strong local radiometric changes."*
+All of it is about comparing two views of the same scene. We have one view, and our band has no correspondent
+anywhere. Recorded so the note is complete, not because it bears on anything we will build.
