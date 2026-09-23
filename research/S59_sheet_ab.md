@@ -82,6 +82,18 @@ On the old troll dump this form leaves 4 021 texels (1.6%) to fall back, 17 114 
 summed depth jump inside the band from 3.20 M to 0.30 M steps against arm A. That number was taken before the test and is
 advisory; it does not enter the decision.
 
+## 2b. Run log: bugs fixed during the run (the rule's "a frame broken by a bug is not a result")
+
+- **Troll, first render attempt, 01:14.** The render guard stopped the run before any frame: the bake's band differed
+  from the dump's band by 7 098 texels.
+  - The cause was the harness, not the app. `streak_class.js` writes as its band `_qbDisocc ∩ (far field < source
+    depth − grid)`. The texels it leaves out keep their own depth: nothing is revealed there.
+  - Fix (`1a8c29c`): inject depth and wash on the dump's band, and require the dump band to be a subset of the app's
+    band.
+  - Re-run guard: subset holds, 7 098 app-band texels outside the dump band (identical on all three arms), plate
+    against the dump's far field max |Δ| = 0.
+  - No construction changed, and no frame had been seen.
+
 ## 3. Frames and the key
 
 *Pending.* The key's SHA-256 will be recorded here before the frames are sent.
