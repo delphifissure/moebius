@@ -400,3 +400,28 @@ and its quotation; Theorem 6.2 via Potts; Fig. 8 and the "arbitrarily far" quota
 8→35 s, 7.3→8.3 %; expansion vs swap 7.2 / 7.0 %, 1.4×; SA 20.3 %, 1 200 s, NC 24.7 %, 160 000 vs 330 000; §8.4
 SRI tree and the Potts quotation; data term min(|f−I|², 20) and the speckle quotation; NP-hardness via multiway
 cut (Kleinberg), extendable to planar grids.
+
+## 20. Boykov, Veksler & Zabih, Fast approximate energy minimization via graph cuts, PAMI 2001 — 1 041 lines read
+
+✘ **"S51's five-seed convergence is the same signature [as Boykov's 100 seeds]."** Opposite: S51 used ICM
+(standard moves) and its restarts spread 16 %; Boykov's large-move solvers are what give 0.5 %. The paper itself
+says standard-move local minima are "a very weak condition" and sensitive to the start, and names S51's trap
+("no obvious way to tell" energy from minimiser). Rewritten, with the exact two-label graph cut (Greig et al.) as
+the way out.
+✘ **"An unbounded V has c → ∞ and no bound at all."** With a finite label set c is finite (255 for |Δ| over 256
+levels), only very loose. Corrected.
+✘ **Sweep design "logarithmic, coarse, two decades"** — a search (rule 2). Rewritten as the shape to expect when
+checking a derived value.
+~ §8.6 is not a one-variable A/B in the strict sense (weights differ, each tuned; piecewise-constant test image).
+"Szeliski's 'solver is not the bottleneck' in its strongest form" → a strong approximate solver on the right
+energy beats an exact one on the wrong energy; standard-move solvers are not in that class. The 800-pixel
+"exchange rate" is my reading; the static-cue formula is blank in the file. Potts over-capping effect on our
+classes marked as inference. §8 updated (Sprint 30 on hold).
+✔ §1 discontinuity-preserving quotation and the three example penalties with their metric/semi-metric status;
+§8.6 setup, 0.34 / 1.8, 38 / 237 s, both quotations, exactness of the convex model; Theorem 6.1, c, Potts c = 1
+and its quotation; Theorem 6.2 via Potts; Fig. 8 and the "arbitrarily far" quotation; §8.3 seed quotation and
+252 157 / 252 108, sd 1 308 / 459; static-cue quotations and the white-rectangle example; 7.2 / 7.6 % and the
+800-pixel quotation; Fig. 14 every value and its quotation; 99 % in the first iteration (8 of 25 s); Fig. 15
+8→35 s, 7.3→8.3 %; expansion vs swap 7.2 / 7.0 %, 1.4×; SA 20.3 %, 1 200 s, NC 24.7 %, 160 000 vs 330 000; §8.4
+SRI tree and the Potts quotation; data term min(|f−I|², 20) and the speckle quotation; NP-hardness via multiway
+cut (Kleinberg), extendable to planar grids.

@@ -2609,14 +2609,20 @@ tuned. *"The results in (b,c) were histogram equalized to reveal **oversmoothing
 in (b). **Similar oversmoothing for the absolute difference model occurs in stereo.**"*
 
 **A 5.3× error reduction from capping the penalty, and the uncapped failure mode is oversmoothing — which is
-class 2 exactly: a real step drawn as a ramp.** This is the single strongest piece of support for Sprint 30 in
-the corpus, and unlike the others it is a clean A/B on one variable.
+class 2 exactly: a real step drawn as a ramp.** This is the single strongest piece of support for a capped join
+cost in the corpus, and unlike the others it is an A/B on the penalty's shape with everything else optimally
+tuned. (Verification qualifiers: the weight differs too, 80 against 15, each tuned; and the test image is
+constant regions plus noise — the case a cap suits best. On slanted surfaces, §8.4, they still use a cap, but no
+number is given for the gain there.)
 
 **And the sharper twist:** the uncapped model is *convex*, so *"for the absolute difference model we can find
 the **exact** solution"* — while the truncated model is NP-hard and only approximately minimised. **The exact
-minimum of the uncapped energy is 5.3× worse than an approximate minimum of the capped one.** That is Szeliski's
-"the solver is not the bottleneck" conclusion in its strongest possible form: better minimisation of the wrong
-energy loses to worse minimisation of the right one, by a factor of five, on the same data.
+minimum of the uncapped energy is 5.3× worse than an approximate minimum of the capped one.** Better minimisation
+of the wrong energy loses to good-enough minimisation of the right one, by a factor of five, on the same data.
+(Verification: "good-enough" matters. The approximate minimiser here is expansion moves, with a 2c guarantee. The
+same paper, §2, says local methods using *standard* moves — one pixel at a time, which is what ICM does —
+*"frequently generate low quality solutions"* (Fig. 1(c)). So this result does not say the solver is irrelevant;
+it says a strong approximate solver on the right energy beats an exact solver on the wrong one.)
 
 ### 3. Capping also restores the optimality guarantee — which unbounded costs do not have
 
@@ -2629,10 +2635,12 @@ c = ( max_{α≠β} V(α,β) ) / ( min_{α≠β} V(α,β) )
 For Potts `c = 1`, giving the factor 2 — *"by definition c ≥ 1, so this is the energy function with the best
 bound."*
 
-**An unbounded `V` has `c → ∞` and therefore no bound at all.** So the cap does two things at once: it fixes the
-energy's shape *and* it makes the approximation guarantee finite, tightening as the cap tightens. I had not seen
-that the two were connected. If Sprint 30's capped cost is ever moved into an expansion-move framework, the cap
-is what makes the framework applicable; without it there is no guarantee to appeal to.
+**An uncapped `V` makes `c` as large as the label range allows** — for `|α−β|` over 256 grey levels, `c = 255`, a
+bound too loose to mean anything. (Corrected on verification: I first wrote `c → ∞` and "no bound at all"; with
+a finite label set `c` is finite, only very large.) So the cap does two things at once: it fixes the energy's
+shape *and* it tightens the approximation guarantee, `c = K / (smallest step)`. The theorem needs a common
+label set with a metric `V`; S51's per-texel two-candidate labelling is not in that form, and for it min-cut is
+exact anyway (note 10).
 
 (Caveat kept: `min(K,|Δ|)` is a metric, so expansion moves apply; `min(K,|Δ|²)` is only a **semi-metric**, so it
 needs swap moves — or the Potts approximation of §6.2, which still yields the `2c` bound. Our clamped-both-ends
@@ -2646,14 +2654,22 @@ pixels from any starting point that we have tried. **We also run 100 tests with 
 labelings.** Final solutions produced by our expansion and swap algorithms had the average energy of **252,157
 and 252,108**, correspondingly, while the **standard deviations were only 1,308 and 459**."*
 
-That is sd/mean of 0.5% and 0.2% over 100 random initialisations. **S51's five-seed convergence is the same
-signature, measured 20× more thoroughly here.**
+That is sd/mean of 0.5% and 0.2% over 100 random initialisations (and *"on average about 1% of pixels change
+their labels between different runs"*).
 
-The useful distinction, which I should have drawn earlier: they present seed-insensitivity as evidence the
-*minimisation* is reliable. It is not evidence the *minimum is right*. Our S51 evidence — λ inert across its
-range **and** seeds converging **and** sFD 0.0005 from wash — is therefore correctly read as "we are reliably
-finding the minimum of an energy that does not say what we want", which is exactly what §8.6 says happens when
-the penalty shape is wrong. The two results reinforce each other.
+**Corrected on verification (2026-09-22): this is the opposite of S51, not the same signature.** I first wrote
+"S51's five-seed convergence is the same signature". S51's solver was ICM — standard moves — and its restarts did
+*not* converge: law 438 955, all-row 440 523, all-column 507 839, random 458–464 k, a spread of 16%. This paper
+predicts exactly that for standard moves: *"local minimization techniques are naturally sensitive to the initial
+estimate"* (§2), and a standard-move local minimum is *"a very weak condition"*. Large-move solvers are what give
+the 0.5% spread above.
+
+And the paper names the trap S51 is in: *"When an algorithm gives unsatisfactory results, it may be due either to
+a poor choice of the energy function, or to the fact that the answer is far from the global minimum. **There is
+no obvious way to tell which of these is the problem.**"* For S51 there is a way — its two-label energy is solved
+exactly by one graph cut (Greig et al., cited here in §2) — and until that is run, "the energy does not say what
+we want" and "ICM did not find its minimum" cannot be told apart. (Seed-insensitivity, where it holds, shows the
+*minimisation* is reliable, not that the *minimum is right*; that distinction stands.)
 
 ### 5. Static cues — a seventh contrast form, and a fifth metric-versus-eye statement
 
@@ -2676,10 +2692,12 @@ Measured worth, Fig. 12: expansion algorithm **7.2%** total errors with static c
 > wrong disparity**… The percentage improvement may not seem too significant, however **visually it is very
 > noticeable**, since without the static cues a large block of pixels is misplaced."*
 
-Fifth paper in this corpus to say the aggregate number understates what the eye sees — and the first to
-quantify the exchange rate: **0.4 percentage points = one 800-pixel block in the wrong place.** That is a
-genuinely useful calibration for reading our own null results. A change of a few tenths of a percent on a
-whole-image metric can be a single large, obvious, ruinous artefact.
+Fifth paper in this corpus to say the aggregate number understates what the eye sees — and the first to put a
+size on it: **a 0.4-point change in total errors accompanied one 800-pixel block in the wrong place** (800 px is
+0.7% of the 384×288 image, so other pixels moved the other way; the pairing is theirs, the "exchange rate" is my
+reading). A change of a few tenths of a percent on a whole-image metric can be a single large, obvious artefact.
+(The static-cue formula itself, eqs. (19)–(20), is blank in this file; they add that static cues *"help mostly in
+areas of low texture"*.)
 
 ### 6. Parameter stability — the sweep shape to expect
 
@@ -2694,10 +2712,12 @@ Fig. 14, expansion algorithm, varying the Potts parameter `K`:
 because the smoothness term is overemphasized. **However for a large interval of K values the results are
 good.**"*
 
-A broad basin across a factor of ~3 in `K`, failing at both ends over two decades. **So Sprint 30's sweep should
-be logarithmic and coarse** — a factor-of-2 or -3 grid across two decades will find the basin, and a fine grid
-would waste bakes. Note also the two columns disagree about the optimum (10 vs 20), by amounts smaller than the
-basin's width; worth remembering when our own arms differ by less than their spread.
+A broad basin across a factor of ~3 in `K`, failing at both ends over two decades. Under rule 2 we derive the
+constant rather than search for it; what this table gives is the shape to expect when *checking* a derived value:
+a factor of 2 either side should stay in the basin if the derivation is right, and a fine grid would learn
+nothing. (I first wrote "Sprint 30's sweep should be logarithmic and coarse" — a search, which rule 2 forbids.)
+Note also the two error columns disagree about the optimum (10 vs 20), by amounts smaller than the basin's width;
+worth remembering when our own arms differ by less than their spread.
 
 ### 7. Smaller things worth keeping
 
@@ -2715,8 +2735,9 @@ basin's width; worth remembering when our own arms differ by less than their spr
   the same disparity**."* The fronto-parallel/staircase bias again, now as a property of the *penalty* rather
   than of the window — Potts is the limit where every disagreement costs the same, so nothing distinguishes a
   ramp from a step and the cheapest answer is a constant. **Directly relevant**: this is the far end of the
-  `V_max` knob identified in note 10, and it tells us what over-capping looks like — our class-1 disagreements
-  would be suppressed at the cost of flattening class-3 creases into constants. The basin has two walls.
+  `V_max` knob identified in note 10, and it tells us what over-capping looks like — my inference is that our
+  class-1 disagreements would be suppressed at the cost of flattening sloped surfaces and creases into
+  constants. The basin has two walls.
 - Data term robustness: `D_p(f_p) = min(|f_p − I_p|², const)` with `const = 20` — *"if we set const to infinity,
   the results are mostly the same except they become **speckled** by a few noisy pixels."* A truncation on the
   data term as well as the smoothness term; ours is the thin-evidence rule.
@@ -2725,11 +2746,12 @@ basin's width; worth remembering when our own arms differ by less than their spr
 
 ### 8. What this changes
 
-Sprint 30 was already the best-supported item in the backlog. §8.6 raises it from "five papers agree on the
-shape" to **"one controlled experiment measures 5.3× on exactly this variable, and the uncapped failure mode is
-named as oversmoothing."** It also supplies the sweep design (logarithmic, coarse, two decades), the warning
-that over-capping collapses toward Potts and flattens slanted surfaces, and the observation that the cap is
-what makes any optimality guarantee possible at all.
+§8.6 raises the case for a capped join cost from "five papers agree on the shape" to **"one controlled
+experiment measures 5.3× on this variable, and the uncapped failure mode is named as oversmoothing."** It also
+supplies the expected shape of a parameter check (a broad basin), the warning that over-capping collapses toward
+Potts and flattens slanted surfaces, and the link between the cap and a tight optimality bound. (Sprint 30
+itself is on hold behind the sheet A/B, S57; and this paper's §2 and §8.3 are the strongest argument in the
+corpus that S51's ICM result should be re-run with an exact min-cut before any conclusion about its energy.)
 
 ---
 
