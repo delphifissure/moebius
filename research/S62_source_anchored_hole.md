@@ -151,3 +151,52 @@ and 11 867 (vermeer), against 67 k–163 k and 57 k–176 k for the per-line arm
 4. **Plate mesh tears.** `srcfill.js` rebuilds the plate's triangle index from the new plate, on the source mesh's
    full grid, with the app's own rule (a quad across an edge the rim law does not join is not drawn, S2b.4). It
    replaces the bake's index, which had been torn on the per-line plate.
+
+## 6. In the app (panel "hole depth: source", default off; app `9e4650a` → `c84bf1d`)
+
+**What it does.**
+- At depth load (after the effective quantum is known): `bgEdgeSharpen`, so the foreground tears at the same one-texel
+  cliffs the hole starts from.
+- After the bake: `bgSourceHole` + `bgApplySourceHole`.
+  - The whole plate is replaced: depth, colour, and triangle index (rebuilt on the full grid with the rim law's own
+    rule on the new plate).
+  - Plate 2 (the per-line law's second layer) is hidden.
+  - `_qbPlateF`, `_qbPlateColor` and `_qbDisocc` follow, so the SD bundle carries what is on screen. The bundle's
+    placeholder classes are not yet rebuilt from the new hole.
+- `bgMGSolve`: the multigrid-preconditioned CG lifted out of `bgPlainFill`. It takes several right-hand sides, warm
+  starts, and flat-array coarsening. `bgPlainFill` through it is byte-identical to before (107/140 iterations, every
+  texel).
+
+**Checked against `srcfill.py`** (`harness/srchole_verify.js`, the app's own functions extracted).
+- Starwatcher: edge sharpening identical, hole 2 of 86 640 texels different, plate 3 texels over one step (max 1.4).
+- Troll: edge sharpening identical, hole 2 349 of 252 510 different. The not-behind rounds cascade and amplify
+  tie-breaks. It is the same construction.
+
+**The quantum trap, again.**
+- The first live run on the clean 16-bit maps (sunflowers, starwatcher) sharpened 90 917 texels on starwatcher
+  instead of 2 080.
+- The cause: the app's effective quantum there is the 16-bit grid (S10: no noise, so the grid is the precision), and
+  the port had borrowed the rim law's `tolAt`, which is 170× finer than a visible step.
+- `bgRimLawAtStep` takes the ratio test and the straight-slope join with the tolerance at one visible step, as the
+  construction is stated.
+- The offline check had missed it because it stubbed the quantum to the visible step. `QEFF=grid` now reproduces the
+  app's setting.
+
+**Speed** (troll hole, in node).
+- First port: 81 s, 39 rounds, every round re-solving the whole 250 k-texel hole while the later rounds dropped 1–2
+  texels.
+- Rounds solving depth only, warm-started, with the wash once at the end: about 2× faster.
+- **Local rounds:** after a global round, only 33×33 boxes around the dropped texels are re-solved (the texels just
+  outside held at the current fill), until nothing drops. Then a global round checks the whole hole again. Troll:
+  **21 s** (7 global + 89 local rounds), and the hole is the same to 10 texels. Starwatcher: about 3–6 s.
+- The rest of the bake (100–245 s headless under SwiftShader) is the per-line bake, which still runs underneath and
+  whose plate is then replaced. Skipping it in source mode is the next and larger saving.
+
+**The ink outline** (user: the wash "drawing color from the dark outline of the astronaut that somehow got burned into
+the background").
+- A colour pin sat right at the silhouette, where the painting has its ink line.
+- A colour pin now takes the per-channel median of an 8-texel run of background texels stepping away from the hole.
+  Eight is over twice the widest ink line measured (about 3 texels on starwatcher), so the line is outvoted.
+- The run stops at the frame edge, or at anything nearer than the pin by two steps. A thin strip of background between
+  fine lines uses what it has, as the user noted there is no other option there.
+- Depth pins are unchanged.
