@@ -90,6 +90,11 @@ app (S59 arm A): https://claude.ai/artifact/9bvULpNisSaMWba6bkpZoW.
 | sunflowers | 165 547 | 26 | 1 066 / 7 777 | 7 840 | 18 694 | 44 |
 | starwatcher | 69 371 | 6 | 603 / 2 320 | 3 569 | 3 595 | 17 |
 
+*Correction (same evening).* The sunflowers and starwatcher rows above were run with the wrong step. `srcfill.py`
+read `meta.quantum`, which on those two 16-bit maps is the 16-bit grid (1/65 535), not the visible step
+(2.68e-3, 2.57e-3). Every two-step test was about 170× too strict there, hence the dropped anchors and the kinks. Fixed
+in app `b353e18`; §6 has the corrected numbers.
+
 A kink is a second difference over one visible step: a comb or a spike makes one, a smooth slope does not. The
 per-line arms' holes were measured in walls (S59), not kinks. For comparison, the new holes have 3 102 walls (troll)
 and 11 867 (vermeer), against 67 k–163 k and 57 k–176 k for the per-line arms.
@@ -137,8 +142,12 @@ and 11 867 (vermeer), against 67 k–163 k and 57 k–176 k for the per-line arm
      untouched.
    - The cut is at the centre of the colour change across the stretch, not its peak. The peak jumped a texel or two
      between neighbouring columns and left ticks along the dune's edge.
-   - Only stretches anchored on a torn step are touched, so a faceted surface with no occlusion (the crystal mountain
-     that `strong` striped) is left as DA3 drew it.
+   - A stretch is found from its steepest step, with curving tails on both sides. It is taken if it holds a torn step,
+     or if it continues a taken stretch of the same sign on the next line over (one contour). Before this, the soft
+     left half of starwatcher's dune edge was sharpened only on the columns that happened to tear, and the
+     alternation showed as a comb of teeth at pitch +30°. With contour continuity it is one clean band.
+   - A faceted surface with no occlusion on its contour (the crystal mountain that `strong` striped) has nothing to
+     start from, and is left as DA3 drew it.
 4. **Plate mesh tears.** `srcfill.js` rebuilds the plate's triangle index from the new plate, on the source mesh's
    full grid, with the app's own rule (a quad across an edge the rim law does not join is not drawn, S2b.4). It
    replaces the bake's index, which had been torn on the per-line plate.
