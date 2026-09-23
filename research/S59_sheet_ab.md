@@ -143,6 +143,13 @@ advisory; it does not enter the decision.
 - **The wash is the law's rim colour, diffused.** It is not what ships today (the app's own wash is continued per line).
   All three arms carry it, so it doesn't favour any arm, but it also means none of the frames shows today's colour.
 
+## 7b. Queued for after the verdicts (user, 2026-09-23)
+
+- **Fill the pinhole depth spikes in the bake's own band** (S61 §10–§11). The same rule as the bundle mask: an enclosed
+  hole at its surrounding band's depth joins the band. It is applied at bake time, so those texels take the winning
+  arm's fill and the wash. It changes the band the arms are frozen on, so it runs after the decision and is measured
+  before/after, with frames for the user's screen.
+
 ## 8. Metrics (advisory, reported only after the verdicts)
 
 `harness/sheet_ab_metrics.py`, per arm, on the plate as rendered, in visible steps:
