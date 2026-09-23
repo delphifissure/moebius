@@ -179,3 +179,37 @@ This is a choice for the user, not a result to tune further.
 - **Still to do before merge** (queued after the SD tests, since the browser port is shared):
   - default frames byte-identical between main and the branch;
   - the troll baked with safe and strong in the live app, with frames for the user's screen.
+
+## 10. Two parallel findings (same day)
+
+**The SD-mask pinholes are artefacts of the band definition, not content.** Each enclosed hole in the dump band was
+classified by comparing its median source depth with that of the band texels around it (within two visible steps,
+S35 §47's lip criterion).
+
+| picture | pinholes | same depth as the surrounding band | nearer | farther |
+|---|---|---|---|---|
+| troll | 962 (20 867 texels) | 928 (10 530 texels) | 14 | 20 |
+| vermeer | 606 | 588 | 8 | 10 |
+| sunflowers | 373 | 352 | 8 | 13 |
+| starwatcher | 449 | 432 | 5 | 12 |
+
+About 95% are specks of the occluder where the per-line law returned the occluder's own depth, so they drop out of the
+band (`streak_class.js`'s band keeps only texels whose fill lies behind the source). In an SD inpaint each is an island
+of source pixels left unpainted inside a hole.
+
+The rule, with no size constant: an enclosed hole at the depth of its surrounding band belongs to the band. Holes
+nearer or farther than their surroundings are real content and stay out. The rule is proposed, not applied: it would
+change the band, and the S59 arms are frozen on it. It is for after the A/B, and before the SD test is repeated on the
+chosen arm.
+
+**The colour-guided ramp test and the literature.** Colour-guided depth refinement has one documented failure, texture
+copying: "copying of texture-information into smooth depth areas", caused by "the inconsistency between depth edges and
+corresponding color edges" ([Robust Guided Image Filtering, arXiv 1703.09379](https://arxiv.org/pdf/1703.09379);
+[non-convex JBU](https://link.springer.com/article/10.1007/s11042-017-5131-x)).
+
+The standard remedy is to use the colour only where the depth has an edge, with distinct handling for edge and smooth
+pixels ([edge-guided joint trilateral upsampling](https://www.researchgate.net/publication/349180447_Depth_map_super-resolution_based_on_edge-guided_joint_trilateral_upsampling);
+[Chan et al., noise-aware filter, ECCV 2008](https://people.mpi-inf.mpg.de/~theobalt/eccv08.pdf)). Our test already
+does this, since only steep depth runs are candidates, and v2's refusal when a run holds more than one colour edge is
+the same principle pushed to abstention. S2's and L3's residue (real faceted geometry with several colour edges) is
+the documented limit of the method, not a missed technique.
