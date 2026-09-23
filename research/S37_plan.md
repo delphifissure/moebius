@@ -158,6 +158,10 @@ DA3-16 map as it is: no depth repair (rule 3), and no fifth picture if the resul
   model, truth from the phone pans, or a failure on a new photograph that the shipped arm does not explain.
 - Defaults change in the live pass after the decision, not before (A126).
 
+**Withdrawn by the user (2026-09-23, after the verdict).** All three arms were found noisy (S59 §4). The user then
+said: "drop per-line, and also the stopping law. This needs to work no matter what, everything else follows." This rule
+no longer decides anything. The successor is S62.
+
 **What does not count as a result.**
 - A frame broken by a bug is not a result: for example, a mismatched pose, a missing wash, an empty band, or an
   injection that misses texels. Fix the bug, re-render that picture (all three arms), and log it.
