@@ -291,3 +291,40 @@ Everything is on branch `rule5-pass`. Each new panel select defaults to today's 
     offset-free case.
 
   Nothing from the tool is judged yet. The first real run belongs to the chosen arm's bundle, after the verdicts.
+
+## 14. Run log after the renders (2026-09-23, morning)
+
+**The branch's browser checks ran main's code, and are being re-run.**
+- What happened: a scratch server started from main at 01:11, orphaned by the failed first troll run, held port 8099
+  all night. Every later browser run from the `rule5-pass` worktree started its own server, which failed to bind
+  without saying so, and the page loaded main's `moebius.js`.
+- What this voided: the branch identity check (it compared main with main), the ramp safe/strong bakes, the three fill
+  options and the live pinhole bundle. The give-away was the bake line: it had no `ramps=`, `hole=` or `pinholes=`
+  fields, and `_qbRampColour` / `_qbPostFill` were null.
+- What it did not touch:
+  - the S59 frames, which are main's by design;
+  - the verifications in §9–§12, which read the branch's source file directly;
+  - the end-to-end smoke test below, which is a valid test of main.
+- Fix (both trees): `scratch_server.js` answers `/__root` with the folder it serves and exits on a bind error.
+  `bake_today.js`, `e2e.js` and `branch_check.js` abort unless `/__root` is their own harness folder. It was tested
+  against the orphan before the orphan was stopped (it aborted with the served-tree message). Nothing had been
+  recorded from the void runs.
+
+**End-to-end smoke test on main (the troll; plumbing only: 4 SD steps at 320×384, not a quality run).**
+- The steps: bake (121 s), bundle (13 MB), lint, SD with depth back, then the app's own *Import plane return*
+  function, and frames before and after. Every step completed.
+- Lint of main's bundle:
+  - 347 177 mask texels in 261 components (106 specks of ≤ 4 texels);
+  - 497 pinholes, holding 41 304 spike texels;
+  - 0 clones;
+  - 581 walls per 1 000 mask texels;
+  - wash anisotropy 1.11.
+- The import: 155 solver iterations (1.7 s), the rim seam exact (max |Δ| 0), and 37 643 rim-law join decisions that a
+  rebake would change.
+- **A finding for the first real run.** The import moved the hole's depth by 0.078 on average (max 0.65), about 44
+  visible steps.
+  - DA3's absolute depth fitted this completed picture to a median residual of 0.095 (54 steps), and the import used
+    it together with the gradients (form "screened (both)").
+  - So the absolute part is likely dragging the result. When the absolute fit is that poor, the import should take
+    the gradients alone, which is the case §13's gradient return was added for.
+  - This is not changed yet. It is a design point for the chosen arm's first real run.
