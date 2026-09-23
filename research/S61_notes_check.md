@@ -158,3 +158,24 @@ This is a choice for the user, not a result to tune further.
 - If v2: it goes into the app on the 16-bit path, behind a panel option, as a candidate for the live pass.
 - If v1: the same, with the misfire counts stated beside it.
 - Either way, the app version must reproduce this Python to the texel before any frame is judged.
+
+## 9. Both versions ported, behind one panel select (user: "both, as two options")
+
+- **The code.** `bgRampColourCollapse` is in `moebius.js` (branch `rule5-pass`, not yet merged), and it is called on
+  the 16-bit path right after the raw decode. The panel select is **ramps: as estimated (default) / collapse (safe = v2)
+  / collapse (strong = v1)**, and it sets `window._rampColour`. The step and the law come from the app itself
+  (`bgShiftLUTFor`, the volume depths, the portal plane), and the colour is the source drawn at the plate grid.
+- **Bit-exact to the Python.** `harness/ramp_colour_verify.js` extracts the function's source from `moebius.js` and runs
+  it on the four pictures' raw maps. In both modes it matches `ramp_colour.py` with **0 texels differing** and identical
+  run statistics, in 90–240 ms.
+
+| picture | texels changed, strong / safe |
+|---|---|
+| troll | 21 606 / 1 562 |
+| vermeer | 9 829 / 982 |
+| sunflowers | 5 491 / 1 058 |
+| starwatcher | 6 508 / 1 209 |
+
+- **Still to do before merge** (queued after the SD tests, since the browser port is shared):
+  - default frames byte-identical between main and the branch;
+  - the troll baked with safe and strong in the live app, with frames for the user's screen.
