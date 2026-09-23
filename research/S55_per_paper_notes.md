@@ -2784,7 +2784,9 @@ spelled out:
 where the skeleton `𝒮` is *"the set of singularities (locations of the ridges) of the distance map"* — the
 medial axis.
 
-**This is Criminisi's Fig. 20 observation, derived rather than observed.** He wrote that concentric filling makes
+**This is closely related to Criminisi's Fig. 20 observation, derived rather than observed** (Criminisi's is a
+patch-based exemplar fill in concentric order, Bornemann's analysis is of Telea's weighted means; the
+distance-ordering is what they share). He wrote that concentric filling makes
 the reconstructed sky–sea boundary *"follow the skeleton of the selected target region"*; Bornemann proves that
 the limit of distance-ordered weighted-mean filling transports strictly along `∇T` and that information cannot
 cross the skeleton at all. Two papers, three years apart, one empirical and one analytic, on the same object.
@@ -2792,12 +2794,15 @@ cross the skeleton at all. Two papers, three years apart, one empirical and one 
 And Bertalmio had already rejected this direction: *"This transport direction has already been identified by
 Bertalmio et al. as being **an unsuccessful choice** for the propagation of image information."*
 
-**The prediction I logged against Criminisi's note now has a second, stronger basis** — and it sharpens. Our band
-is long and thin, so the level lines of its distance map run *along* the band and `n = ∇T` points *across* it,
-rim toward centreline. A distance-ordered mean fill would therefore transport across the band (fine) but be
-unable to carry anything across the centreline (not fine), producing a seam on the medial axis. Whether our
-simultaneous solve has an analogous locus is exactly the measurement I proposed; this gives it a predicted
-location — the band's medial axis — rather than only a direction.
+**The prediction I logged against Criminisi's note had a second, stronger basis here** — and a sharper form. Our
+band is long and thin, so the level lines of its distance map run *along* the band and `n = ∇T` points *across*
+it, rim toward centreline. A distance-ordered mean fill would transport across the band but be unable to carry
+anything across the centreline, producing a seam on the medial axis.
+
+**Tested, and negative for our law** (task 61, S57 §5, `harness/truthkit/medial_axis.py`, 11 kit scenes): at fixed
+distance from the rim, the medial-axis ridge is *better* than the basin in 22 of 39 cells (weighted −0.050). Our
+far field is a per-line extrapolation, not a distance-ordered fill, so this mechanism does not act on it. The
+analysis stands for any distance-ordered fill we might adopt (Telea-like colour fills included).
 
 ### 2. Their fix: steer the transport by reshaping the weight, and it has a knob we already have
 
@@ -2829,8 +2834,9 @@ confidence measure — which is precisely the shape of the per-texel λ we built
 `_geoFarConf`.** We arrived at "blend between the structured answer and the smooth answer according to local
 confidence" independently; this is the published version, with the confidence derived from the structure
 tensor's eigenvalue gap and normalised by the quantisation step `δ_quant` to make it scale-free. **The
-normalisation by the quantum is worth stealing outright** — we have a per-tile effective quantum from Sprint 14
-and currently do not use it to set the blend.
+normalisation by the quantum is worth taking** — theirs is the global grey-level step (*"the difference of two
+successive gray levels"*); using our per-tile effective quantum from Sprint 14 in its place would be my
+extension, not theirs.
 
 ### 3. THE FINDING: the modified structure tensor, and the spurious-edge trap
 
@@ -2856,10 +2862,15 @@ Divide every smoothed quantity by the identically-smoothed **validity mask**.
 
 **Two things follow for us, and the second is the more important.**
 
-**(a) A class of bug to audit.** Any filter we run near the band's rim that does not normalise by the valid mask
-is treating unfilled texels as zeros and manufacturing an edge at the rim. `return_grad.py` (bi-directional
-gradient means) and `return_align.py` (colour–depth edge alignment) both operate exactly there. Worth checking;
-`return_grad`'s self-test asserts a no-op on a *dense* field, which would not catch this.
+(Note on status: the fix is empirical — *"Experimentally … we have observed that the problem can be solved by
+appropriately rescaling"*, with *"a deeper mathematical understanding … the subject of future work."*)
+
+**(a) A class of bug to audit — audited.** Any filter we run near the band's rim that does not normalise by the
+valid mask treats unfilled texels as content and manufactures an edge at the rim. Task 62 (S56 Part II) checked
+both tools that operate there: `return_grad.py` was already clean (it never forms a cross-source difference);
+`return_align.py` was defective — its central difference reached across the rim, and the one-texel ring carried
+almost all of its score (NCC 0.4006 → 0.1454 once excluded; margin over the shifted control +0.2178 → +0.0020).
+Fixed in moebiusv2 `86a725b`.
 
 **(b) A third mechanism that produces rim-parallel structure.** A hole treated as content makes its own boundary
 into an edge, and the fill then runs *along* that edge. So rim-parallel artefacts can arise from (i) per-line
@@ -2881,8 +2892,9 @@ somewhere in the middle (at the skeleton). If not, they will fail badly.**"*
 That is the far-side law's situation in one image: two rims, each extrapolating inward, required to agree at the
 middle. Fig. 8(b) shows what failure looks like — **a shock on the non-transparent part of the skeleton**, i.e. a
 visible seam down the band's centreline. And §4 gives a computable criterion, the *transparency* of a skeleton
-point: a point where the two sides' characteristics can be continued through each other. Our class-1
-disagreements are, in this language, non-transparent skeleton points.
+point: a point where the two sides' characteristics can be continued through each other. (I first wrote that our
+class-1 disagreements "are, in this language, non-transparent skeleton points". Task 61 found no excess error on
+the medial axis, so the language fits transport fills, not our per-line law; the tunnel image stays apt.)
 
 ### 5. The failure mode they call unavoidable — and it may be part of class 1
 
@@ -2897,9 +2909,10 @@ Fig. 8 measures the degradation as the edge's slope `α` falls: `α = 18.2°` cl
 
 For an elongated band, `n` points across it, so `c ⊥ n` means **structure running along the band**. So:
 structure crossing the band steeply is recoverable; **structure crossing at a shallow angle to the rim is
-not, and degrades to distance-normal transport.** That is a specific, testable sub-population of class 1 — and
-it predicts the error should correlate with the *angle between the local structure and the rim*, which we can
-measure from the probe dumps alongside the medial-axis test. Added to the same check.
+not, and degrades to distance-normal transport.** That predicted that our error should rise as structure runs
+along the band. **Tested with task 61 (S57 §5): no monotone law** — present on S2, S10, S12 (S10: 0.75 → 0.37 bad
+rate from "along" to "across"), reversed on S9 and S16, flat on S7 and S11. Not a sub-population of class 1 we
+can isolate this way.
 
 ### 6. The maximum principle — a guarantee we gave up and should know we gave up
 
@@ -2910,7 +2923,9 @@ nonlinear coherence weighting.
 
 **Our far-side law fits and extrapolates planes, so it has no such bound.** A plane fitted to a noisy run and
 extended across a gap can and does overshoot the range of its own evidence. That is the price of the slanted
-model, and PatchMatch's 7.6× on Venus is the reason we pay it — but it is worth stating plainly that we traded a
+model, and PatchMatch's slant gain is the reason we pay it (≈1.7× on Venus at 0.5 px; Teddy's ground plane 5.52 →
+2.99 at 1 px — the "7.6×" I first quoted here mixed in the sub-pixel gain, see note 3) — but it is worth stating
+plainly that we traded a
 maximum principle for slant, and that a bound on the band's output against its own rim values is therefore
 something we must impose explicitly rather than inherit. Cheap to add, and the kind of guard that catches
 exactly the class-2 blow-ups.
@@ -2930,10 +2945,11 @@ And the cross-gap rule, from the circle-closure discussion:
 > *"at the inpainting of a point x ∈ D the modified coherence flow field **starts communicating between opposite
 > sides of the yet-to-be-inpainted domain if their distance is below 4ρ**."*
 
-So `ρ` sets the range at which the two rims can see each other: **`ρ ≳ bandwidth / 4`** for a band fill to couple
-its two sides at all. With their default `ρ = 4 px` that is an 16 px reach, consistent with the ~10 px domains.
-A concrete sizing rule if we ever build a coherence-steered band fill, and a diagnostic if we do not: any method
-whose smoothing scale is below a quarter of the local band width **cannot** be coupling the rims.
+So `ρ` sets the range at which the two rims can see each other: **`ρ ≳ bandwidth / 4`** for their band fill to
+couple its two sides at all. With their default `ρ = 4 px` that is a 16 px reach, consistent with the ~10 px
+domains. A concrete sizing rule if we ever build a coherence-steered band fill. (I first generalised it to "any
+method whose smoothing scale is below a quarter of the band width cannot be coupling the rims"; the rule is for
+this construction, whose only cross-gap channel is the smoothed structure tensor.)
 
 ### 8. Why nobody uses the variational methods, with numbers
 
@@ -2960,7 +2976,8 @@ Bertalmio at comparable quality.
   the structure tensor): on an unprocessed fingerprint the edge flow *"closely follows minor local features; it
   looses relation with the global coherent flow of information… **edge detection flow, like edge detection
   itself, has problems with its robustness**."* The coherence flow is near-identical on the raw and the
-  shock-filtered image. Another instance of "a second-moment statistic beats a first-moment one", now for
+  shock-filtered image (partly by construction — *"the post-processed image was calculated using the coherence
+  flow of the digitized image"*). Another instance of "a second-moment statistic beats a first-moment one", now for
   *direction* rather than value — and a reason to prefer Gautier's tensor over Criminisi's gradient.
 - **Colour**: one shared coherence direction for all three channels, from a common structure tensor combined with
   the luminance weights `0.299/0.587/0.114`. *"color images take just about twice the CPU time needed for
@@ -2976,7 +2993,12 @@ Bertalmio at comparable quality.
   the seam lands a radius away from where the theory puts it.
 - Their §7 denoising application: Lena with **80% salt-and-pepper noise** inpainted in 20 s by masking the 0 and
   255 levels and treating the result as a hole. A reminder that "inpainting" and "denoising a heavily corrupted
-  image" are the same operation, which is a fair description of what a noisy monocular depth map needs.
+  image" can be the same operation — for impulse noise, where the corrupted pixels can be detected and masked.
+  (I first called it a fair description of what a noisy monocular depth map needs; depth-map noise is not
+  impulse noise and cannot be masked this way, so the transfer is loose.)
+- **Scope, from §1**: this is *"nontexture"* inpainting — *"local features and short range correlations"*; *"It is
+  also not possible to restore semantic content of an image."* The method is a candidate for our depth band
+  (smooth, structured), not for its colour, which is why the colour stage is a learned inpainter.
 
 ---
 
