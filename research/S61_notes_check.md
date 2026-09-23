@@ -264,3 +264,30 @@ Everything is on branch `rule5-pass`. Each new panel select defaults to today's 
   to 0.0004 steps, and the wash within one colour level, with every count identical.
 - **One difference from the A/B:** the A/B hid plate 2 on every arm; the options leave plate 2 as the panel has it.
 - **Queued in the live app:** the troll with hole=plain, wash=membrane and pinholes=filled, after the branch check.
+
+## 13. Two more tools built while waiting
+
+- **`moebiusv2/harness/atlas_lint.py`.** It counts a bundle's noise before SD sees it:
+  - mask specks and pinholes;
+  - depth spikes standing in pinholes, and clones in the mask;
+  - walls in visible steps;
+  - wash streak anisotropy.
+
+  It takes the step from the bundle's own `meta.plane.depth.visibleStep`. A first cut counted spikes inside the mask,
+  where by construction there are none; spikes stand in the pinholes around the mask, and that was fixed before use.
+  An older troll bundle (S45) reads: 494 pinholes with 41 304 spike texels, 0 clones in the mask, 581 depth walls per
+  1 000 hole texels, and wash anisotropy 1.11. The linter is advisory (A126).
+- **`moebiusv2/harness/sd_return.py`: the SD stage as a tool.**
+  - **In:** an exported bundle, using S52's contract: `plane_color_occluder_removed.png`, the pinhole-ruled
+    `plane_mask_inpaint.png`, and the atlas's own `plane_plate_depth16.png` through a depth ControlNet.
+  - **Out:** Sprint 25's return files, `return_band_color.png` plus, with `--depth`, depth back. The plumbing is
+    smoke-tested at 2 steps and 256 px.
+  - **What depth back found:** DA3 run on the completed picture does not come back in the app's frame by any global
+    fit. Fitted on the legal background (`plane_mask_context`), in whichever affine form fits better, the median
+    residual is still 0.059, about 33 visible steps. A first fit over all visible texels was worse (0.067), because
+    the completed picture has the occluder removed while the source depth has it.
+  - **So the tool also writes the gradient return** (`return_band_gradx16/grady16`, (g + 0.5) · 65535). The app's
+    screened Poisson solve integrates it from the hole's own rim, which is the Sprint 25/S48 design for exactly this
+    offset-free case.
+
+  Nothing from the tool is judged yet. The first real run belongs to the chosen arm's bundle, after the verdicts.
