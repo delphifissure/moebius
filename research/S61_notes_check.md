@@ -131,3 +131,30 @@ The next step is held-out:
 
 Only a version that keeps every exact map untouched and sharpens blur on unseen scenes goes to the app, and then
 behind a panel option for the user's screen.
+
+## 8. The held-out test: both versions frozen, 15 unseen kit scenes (same day)
+
+v1 and v2 exactly as committed in §7, with no change after seeing any held-out result. The scenes are C1–C3, L1–L6 and
+P1–P6, each with the kit's own blur rungs (`truthkit/degrade.py`, σ = 1, 2, 4 px, within 3σ of the exact rims) and its
+own depth law. The script is `moebiusv2/harness/ramp_colour_heldout.py`; the result is in
+`shots/sheet_ab/ramp_colour_heldout.json`.
+
+| | v1 | v2 |
+|---|---|---|
+| exact16 untouched | 7 of 15. Misfires: L1 290, L4 267, P3 25, P6 15, L6 10, P4 10, P2 6, L5 2 texels (worst 0.08% of a map) | **13 of 15.** L1 2, P4 2 texels |
+| blur σ1: error where the rung departs, in steps | C1 20.5 → 1.2 · C2 12.9 → 3.3 · C3 12.3 → 0.9 · L1 13.5 → 5.3 · L2 27.8 → 8.3 · L3 17.4 → 6.4 · L4 17.9 → 4.3 · L5 16.0 → 6.8 · L6 38.6 → 21.8 · P1 24.4 → 12.5 · P2 14.3 → 8.4 · P3 20.7 → 17.7 · P4 15.2 → 9.3 · P5 24.2 → 2.3 · P6 25.3 → 8.7 | roughly a third of v1's gain (C1 → 11.2, L4 → 9.8, P5 → 10.5) |
+| texels made better : worse | 10:1 to over 100:1, except **L3 about 2:1** at σ1/σ2 | similar, except **L3 net worse** at σ1/σ2 (1 716 : 2 073) |
+
+What it says:
+- The colour-guided test generalises: on unseen scenes it sharpens blurred silhouettes a lot and rarely touches real
+  geometry.
+- Neither version meets the strict bar set before the test ("every exact map untouched"). v2 misses by 4 texels in
+  5.4 M; v1 by up to 290 in one map.
+- The trade is plain: v1 gives about three times the sharpening for small misfires on half the scenes. v2 is almost
+  perfectly safe for a third of the gain.
+- L3 is the case both handle worst, and it is where real structure and blur look most alike.
+
+This is a choice for the user, not a result to tune further.
+- If v2: it goes into the app on the 16-bit path, behind a panel option, as a candidate for the live pass.
+- If v1: the same, with the misfire counts stated beside it.
+- Either way, the app version must reproduce this Python to the texel before any frame is judged.
