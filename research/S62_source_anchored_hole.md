@@ -200,3 +200,29 @@ the background").
 - The run stops at the frame edge, or at anything nearer than the pin by two steps. A thin strip of background between
   fine lines uses what it has, as the user noted there is no other option there.
 - Depth pins are unchanged.
+
+**The ink line itself joins the object** (app `cc16884`, `bgInkAdopt`, run after `bgEdgeSharpen` at depth load).
+- With the pins fixed, the wash was light blue, but a faint dark trace of the astronaut stayed in the sky at every
+  pose. The ink texels have the background's depth (DA3's edge lies inside the line), so they are background: they
+  stay put when the figure moves, and they are not in the hole.
+- The line is the figure's own outline, so it should move with the figure. At every torn step the rule walks 8 texels
+  into the background. If it meets the frame edge or another torn step first, the run is left alone.
+- The outer 4 texels are the background's own colour: the CIELAB median and the robust spread (1.4826 × the median
+  distance).
+- The leading texels that differ from that by more than 3 spreads, and by more than one just-noticeable difference
+  (ΔE\*ab 2.3), take the object's depth, up to the first texel that matches. At most 4, so the background always
+  outvotes the line.
+- They are then part of the object. The hole's reach starts past them, so the wash covers where they were.
+
+| picture | rims checked | rims with a line | texels adopted | hole before → after |
+|---|---|---|---|---|
+| starwatcher | 3 153 | 2 484 | 4 316 | 86 640 → 89 316 |
+| troll | 3 999 | 2 246 | 4 241 | 252 207 → 262 722 |
+| vermeer | 4 784 | 3 038 | 5 789 | 347 462 → 355 881 |
+| sunflowers | 8 098 | 4 899 | 8 836 | 163 530 → 170 168 |
+
+- The "before" column is the offline chain without the step (`NOINK=1`), not the live run.
+- On the photographs and the Vermeer the same step removes the silhouette halo that the wash used to trace: the
+  troll's light rim, the dark edge around the jug, the rims of the sunflower leaves. No background detail was taken
+  in the crops checked.
+- The step costs 0.13–0.17 s. `harness/srchole_ink.js` runs the chain offline on an A/B dump.
