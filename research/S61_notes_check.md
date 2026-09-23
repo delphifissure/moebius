@@ -213,3 +213,22 @@ pixels ([edge-guided joint trilateral upsampling](https://www.researchgate.net/p
 does this, since only steep depth runs are candidates, and v2's refusal when a run holds more than one colour edge is
 the same principle pushed to abstention. S2's and L3's residue (real faceted geometry with several colour edges) is
 the documented limit of the method, not a missed technique.
+
+## 11. The pinhole rule applied to the bundle masks (user: "apply the pinhole rule to the bundle masks")
+
+- **The code.** `bgPinholeFilledMask` is in `moebius.js` (branch `rule5-pass`). It is pure and takes no size constant:
+  an enclosed hole in the placeholder set joins it when its median source depth is within two visible steps of the
+  median over the mask texels bordering it, each texel counted once. The step is the app's 1/k.
+- **Export.** The export writes `plane_mask_inpaint.png` with the rule applied and `plane_mask_inpaint_raw.png`
+  without it, and records the counts in `window._qbPinholes`.
+- **Return.** The return path (`_importPlaneReturn`) applies the same rule, so colour SD paints into a pinhole comes
+  back rather than being dropped.
+- **Verified** (`harness/pinhole_verify.js`, source extracted from `moebius.js`). It reproduces the offline
+  classification exactly: troll 928 of 962 holes joined (10 530 texels), vermeer 588 of 606 (8 416), sunflowers 352 of
+  373 (1 619), starwatcher 432 of 449 (15 643), in 44–152 ms. A first cut counted a bordering texel once per adjacent
+  hole texel, which skewed the median and gave 925 and 585. That was fixed before commit.
+- **Not done:** the pinholes are also depth spikes. The plate keeps the occluder's own depth there, standing up
+  inside the filled band. The mask rule fixes the colour. A depth return that covers the mask now fills them on
+  reimport, but the bake's own band still leaves them, and fixing that changes the band that the S59 arms are frozen
+  on. That is for after the verdicts.
+- **Queued:** a live bundle exported from the branch (the troll), with the pinholes counted in both masks.
