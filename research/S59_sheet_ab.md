@@ -116,6 +116,16 @@ advisory; it does not enter the decision.
     in-app SAM click step (Sprint 21, exists) as part of every bake, or automatic maps. S35 §52 measured that choice as
     material on the kit.
   - Weeks.
+  - **Measured while waiting (arm B against itself, so nothing is unblinded):** the frozen arm re-run with automatic
+    object maps (`view_troll_auto`, `view_vermeer_auto`) in place of the clicked ones.
+
+    | picture | band owned by sheets, clicked / automatic | median difference where both own | band differing by > 10 steps |
+    |---|---|---|---|
+    | troll | 82% / 64% | 24 steps | 36% |
+    | vermeer | 97% / 99% | 0.6 steps | 28% |
+
+    About a third of the hole's depth changes with the map. If B wins, the port must carry the click step (Sprint 21's
+    in-app SAM) into every bake, or it ships something materially different from what was judged.
 - **C (ship the plain fill).**
   - About 100 lines in the bake: find the background-side edge texels (the existing lip test), take the per-line law's
     values there (the law still runs, as the pin source), and solve a masked membrane.
