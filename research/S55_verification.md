@@ -335,3 +335,24 @@ distance; the depth-diffusion and "texture-less" quotations and Navier–Stokes;
 its quotation; the one-side-only quotation; α_Z = 3, α_RGB = 1, K = 5, Wexler et al.; the smoothing-counterpart
 quotation; the anti-ghosting quotation; the Oh-connexity quotation; the disoccluded-only PSNR quotation; the
 "essentially address visually" quotation.
+
+## 18. Sun, Yuan, Jia & Shum, Image completion with structure propagation, SIGGRAPH 2005 — 390 lines read
+
+✘ **"The per-line to cross-line step is an edge-set change to a recursion we already run, at O(2LN²)."** Two errors:
+the O(2LN²) bound is Sun's for loop-free graphs only (a texel grid is all loops), and our shipped far-side law is a
+per-line extrapolation, not a DP (S57 §5). Corrected in §1 and §7; S51's labelling is the construction the
+DP↔BP framing applies to, and min-cut is exact for its two-label form.
+~ "The manual half is free — confirmed" → partly: we have depth structure (rims, crease candidates); their user
+draws image curves into the hole, which we do not compute.
+~ Structure-before-texture: "depth = structure" marked as an analogy. #59 support restated (two of the four
+source restrictions exclude the occluder). The 25× weight is a coefficient across different units. Patch-size
+rule is Criminisi's, not Ndjiki-Nya's. R8 item 2 is not a seam fix; the count is two, not three.
++ Added: Sun's loopy-BP statement (optimal on a single loop if it converges, local minimum otherwise); the
+"thousands of loops" results he cites include grid stereo.
+✔ Eqs. (5) and (9) and the equivalence quotation; O(2T·L·N²) → O(2LN²) and the converged-message quotation; N =
+10³ seconds-vs-hours; O(LN^{2+K}); the loopy-BP quotation; the structure-first and synthesis-ordering quotations;
+the texture-propagation quotation and Fig. 5 caption; E(X), E1 = k_s·E_S + k_i·E_I, symmetric E_S normalised,
+E_I zero off the boundary, E2 normalised overlap SSD; k_s 50, k_i 2; the depth-ambiguity and layers quotation and
+Fig. 10; anchors at half patch size; 1–5 px band; N hundreds–thousands; sample transformation and θ*; the
+"not enough samples" quotation; Poisson photometric correction details and the blending/graph-cut quotation;
+<3 s per curve, 6 s hawk, 2–20 s per subregion, 2.8 GHz; the "high-level human knowledge" quotation.

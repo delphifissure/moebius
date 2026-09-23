@@ -2301,8 +2301,9 @@ their place beside the metrics in this project.
 ## 18. Sun, Yuan, Jia & Shum, "Image Completion with Structure Propagation", SIGGRAPH 2005 [390 lines] DONE
 
 Read in full. I requested it because *"our rim law already knows where the structure is, which makes the manual
-half free."* That is confirmed — and the paper turns out to contain **the cleanest statement in the corpus of
-what it would actually cost to go from per-line to cross-line**, which is the class-1 question.
+half free."* That is only partly true (see §7: their curves are *image* structure running into the hole, which
+we do not compute) — and the paper turns out to contain **the cleanest statement in the corpus of how per-line
+and cross-line optimisation relate**, which is the class-1 question.
 
 ### 1. DP and BP are the same update — one on a chain, one on a graph
 
@@ -2329,25 +2330,29 @@ problem as graph cuts *"except that vertical smoothness terms are ignored."* Hir
 the two algorithms are **the same recursion**, and the only difference is whether the neighbour set `N(i)` is
 `{i−1, i+1}` or the full graph.
 
-So the class-1 fix is not a different method. It is our existing per-line recursion with cross-line edges added
-to `N(i)` and the messages summed over all neighbours instead of one. That is a much smaller change than
-"implement belief propagation" sounds, and it is the correct way to frame whatever eventually replaces the
-per-line law.
+So for a *labelling*, per-line and cross-line are not different methods: the per-line DP is the chain case of
+BP, and adding cross-line edges to `N(i)` is the generalisation. (Verification caveat: our shipped far-side law
+is a per-line *extrapolation* with a four-candidate choice, not a DP over labels — S57 §5 — so there is no
+recursion of ours to extend; S51's labelling is the construction this framing applies to. And S57 puts
+*replacing* the per-line law, via the sheet A/B, ahead of coupling it.)
 
-**And the cost is bounded and known.** §3.2: standard BP on a loop-free graph is `O(2T·L·N²)`, but *"each
-message can be updated only when all necessary neighboring messages are converged"*, so attaching a binary
-converged-flag to each message reduces it to **`O(2LN²)`, independent of the number of intersection nodes**.
-*"For a typical value of N = 10³, the running time of belief propagation is about a few seconds, while dynamic
-programming might take hours."* (DP on a graph with `K` intersections is `O(LN^{2+K})` — it explodes; BP does
-not.)
+**The cost Sun gives is for loop-free graphs only.** §3.2: standard BP on a loop-free graph is `O(2T·L·N²)`, but
+*"each message can be updated only when all necessary neighboring messages are converged"*, so a binary
+converged-flag per message reduces it to **`O(2LN²)`, independent of the number of intersection nodes** — *"for
+a graph without any loops."* *"For a typical value of N = 10³, the running time of belief propagation is about
+a few seconds, while dynamic programming might take hours."* (DP with `K` intersections is `O(LN^{2+K})`.) A
+cross-line texel grid is full of loops, so this bound does not apply to it; loopy BP there is iterative, with no
+optimality guarantee (Sun: optimal on a single loop *if it converges*, a local minimum otherwise).
 
 One caution, recorded because the corpus disagrees with itself here: Sun reports loopy BP working well —
 *"belief propagation is often a very good approximation even for graphs with thousands of loops"* — while the
 Szeliski MRF study (note 10) found LBP *"performed surprisingly poorly (the only method it consistently
 outperformed was ICM)"* and producing gross errors on Photomontage. Szeliski hedges that this may be their
-message schedule. Sun's graphs are sparse and nearly loop-free, Szeliski's are dense 4-connected grids. **Ours
-would be a dense grid**, which is Szeliski's regime, not Sun's. So take the *equivalence* from Sun and the
-*performance expectation* from Szeliski: if we ever build this, TRW-S rather than LBP.
+message schedule. Sun's own graphs are sparse and nearly loop-free (*"we typically do not have a graph with
+multiple loops"*), though the "thousands of loops" results he cites include stereo on grids; Szeliski's are dense
+4-connected grids. **Ours would be a dense grid**, which is Szeliski's regime. So take the *equivalence* from Sun
+and the *performance expectation* from Szeliski: for a multi-label grid energy, TRW-S rather than LBP; for S51's
+two-label submodular form, min-cut, which is exact (note 10).
 
 ### 2. Structure first, texture second — which is already our architecture
 
@@ -2358,8 +2363,9 @@ would be a dense grid**, which is Szeliski's regime, not Sun's. So take the *equ
 Their second stated observation: *"There exists a synthesis ordering for image completion: **the regions with
 salient structures should be completed before filling in other regions.**"*
 
-We fill **depth** (structure) with the far-side law, then hand the band to LaMa for **colour** (texture). Shih
-does the same with three sub-networks (edge → colour, depth). Three independent architectures, same ordering.
+We fill **depth** with the far-side law, then hand the band to LaMa for **colour**. Shih does the same with three
+sub-networks (edge → colour, depth). Three architectures, same ordering. (An analogy: Sun's "structure" is
+salient *image* curves, not depth; the shared idea is "decide the skeleton first, fill the rest to fit".)
 This is one of the places our pipeline is already aligned with settled practice, and it is worth saying so in
 S54's rewrite rather than only cataloguing gaps.
 
@@ -2380,8 +2386,9 @@ Four mechanisms for one principle now:
 | Shih 2020 | context region follows LDI connectivity links, halts at silhouettes |
 | Gautier 2011 | zero priority on the occluder side |
 
-**We hand LaMa the whole plate.** Task #59 is confirmed four times over and is the best-supported unbuilt item
-in the backlog.
+**We hand LaMa the whole plate.** Four ways of restricting the source; two of them (Shih's connectivity, Gautier's
+zero priority) specifically keep the occluder out, which is task #59's point. It remains the best-supported
+unbuilt item in the backlog.
 
 ### 4. The energy, and a weight ratio worth noticing
 
@@ -2396,7 +2403,9 @@ E(X) = Σ_{i∈V} E1(x_i) + Σ_{(i,j)∈E} E2(x_i, x_j),    E1(x_i) = k_s·E_S(x
 
 §5: ***"The weights `k_s` and `k_i` are 50 and 2 respectively in all our experiments."***
 
-**Structure is weighted 25× the boundary fit.** For a method whose entire output is patches pasted into a hole,
+**Structure is weighted 25× the boundary fit** — in coefficient; the two terms are in different units (squared
+curve distances against normalised colour SSD), so this is not a measured 25× in importance. For a method whose
+entire output is patches pasted into a hole,
 "match the curve the user drew" dominates "match the pixels at the edge of the hole" by a factor of 25 — and
 the same two numbers are used for every image in the paper. That is a strong prior about what a viewer notices,
 and it agrees with Sinha's *"humans are sensitive to the motion of high-contrast edges and straight lines…
@@ -2423,8 +2432,8 @@ representation.
 
 ### 6. Parameters and the rest
 
-- Patch size *"greater than the largest structure in the image"* — same rule as Criminisi's and Ndjiki-Nya's;
-  used 9 up to 27×31.
+- Patch size *"greater than the largest structure in the image"* — Criminisi's rule (Ndjiki-Nya chose 9×9 by
+  experiment instead); used 9 up to 27×31.
 - Anchor points sampled along the curve at **half the patch size**, *"to guarantee sufficient overlaps."*
 - Sample set = all patches centred within a **1–5 pixel band along the curve**; `N` in the hundreds to
   thousands.
@@ -2435,8 +2444,9 @@ representation.
   texture."*
 - **Photometric correction** by Poisson reconstruction with the gradient zeroed across the patch seam, Dirichlet
   boundary on the patch interior, channels corrected independently. *"such seams cannot be easily removed by
-  simple blending or by graph-cut."* This is the third gradient-domain seam fix in the corpus (Ndjiki-Nya's
-  covariant cloning, our own bi-directional gradient means from R8 item 2).
+  simple blending or by graph-cut."* The second gradient-domain seam fix in the corpus, after Ndjiki-Nya's
+  covariant cloning. (I first counted our R8 item 2 bi-directional gradient means as a third; that avoids forming
+  cross-source gradients in the exporter, a related idea but not a seam fix.)
 - Timings: structure propagation *"fewer than 3 seconds for each curve"*, 6 s for the two-X-junction hawk;
   texture propagation 2–20 s per subregion; 2.8 GHz PC.
 - Against Criminisi (Figure 7): *"Previously developed automatic image completion algorithms may not be able to
@@ -2445,11 +2455,12 @@ representation.
 
 ### 7. What I take from it
 
-The manual half really is free for us — we compute automatically what their user draws by hand (the rim, and
-per Sinha the crease lines, which are straight by construction). But the transferable content is the
-**framing**, not the method: structure before texture (we do it), restricted source regions (we do not — task
-#59), and above all the DP↔BP equivalence, which says the per-line to cross-line step is an edge-set change to
-a recursion we already run, at `O(2LN²)`, rather than a new algorithm.
+The manual half is only partly free for us. We compute depth structure automatically — the rims, and per Sinha
+the candidate crease lines, straight by construction — but their user draws *image* curves continuing into the
+hole (a window frame, a horizon), which nothing of ours computes. The transferable content is the **framing**:
+structure before texture (we do it), restricted source regions (we do not — task #59), and the DP↔BP
+equivalence, which says per-line and cross-line labellings are one family — with the caveats that our shipped
+law is not a DP, and that on a grid the loop-free cost bound no longer holds.
 
 ---
 
