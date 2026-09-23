@@ -425,3 +425,28 @@ and its quotation; Theorem 6.2 via Potts; Fig. 8 and the "arbitrarily far" quota
 8→35 s, 7.3→8.3 %; expansion vs swap 7.2 / 7.0 %, 1.4×; SA 20.3 %, 1 200 s, NC 24.7 %, 160 000 vs 330 000; §8.4
 SRI tree and the Potts quotation; data term min(|f−I|², 20) and the speckle quotation; NP-hardness via multiway
 cut (Kleinberg), extendable to planar grids.
+
+## 21. Bornemann & März, Fast image inpainting based on coherence transport, JMIV 2007 — 3 456 lines read
+
+✘ **Two predictions left open in the notes had already been tested** (task 61, S57 §5): error on the band's medial
+axis — negative (ridge better than basin, 22 of 39 cells); error rising with structure angle — no monotone law.
+Replaced with the results (rule 5). The "class-1 = non-transparent skeleton points" sentence withdrawn.
+✘ **The "class of bug to audit" had been audited** (task 62, S56 Part II): `return_grad` clean, `return_align`
+defective and fixed. Replaced with the result.
+✘ **"PatchMatch's 7.6× on Venus"** repeated the figure corrected in note 3; now the slant gain (≈1.7× Venus 0.5 px;
+Teddy ground 5.52 → 2.99).
+~ "Criminisi's Fig. 20 derived" → closely related (different fills sharing the distance order). δ_quant is the
+global grey-level step; the per-tile quantum is my extension. The 4ρ rule is for this construction, not "any
+method". The coherence flow's robustness on the fingerprint is partly by construction. The denoising analogy to
+depth-map noise loosened (impulse noise only).
++ Added: the boundary fix is empirical ("future work" for its theory); the method's "nontexture" scope.
+✔ Header, 241×159 in 0.4 s; the Theorem 1 limit n·∇u = 0 (c₀ = n/4) and the transport-to-skeleton quotation; the
+skeleton definition; the Bertalmio "unsuccessful choice" quotation; Theorem 2's weight, the limit (14), the
+asymptotic deviation formula; μ(x) (eq. 20), 1 ≤ μ ≤ κ+1 and its quotation; the spurious-edge and Neumann
+quotations; eq. (21); both tunnel quotations; Fig. 8's 18.2° / 15.1° / 11.3° / 5.7° / 0°; the "unavoidable sudden
+rotation" quotation; the comparison principle and l∞-stability, and that it survives u-dependent weights; the four
+parameters and the (5, 25, 1.4, 4) default and its quotation; the parrot and circle parameter sets; the 4ρ
+quotation; ν and iteration counts (10³, 3 000; 10⁷, 12 000 000; 140×32); Chan & Shen's open problem; 0.5 s, 20 s vs
+4 min 11 s; the edge-flow robustness quotation; the common colour tensor (0.299 / 0.587 / 0.114) and "about twice
+the CPU time"; the incremental tensor update over a 4σ mask; μ underflow; the ε = 6 px shock offset; Lena at 80 %
+impulse noise in 20 s.
