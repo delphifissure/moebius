@@ -107,6 +107,25 @@ of the band texels (`_qbDisocc`).
   can never be nearer than the background it continues (no clone) and can never comb. A component with no background
   ring keeps arm A's values; how many do is reported.
 
+**Pre-render amendment to C and the wash (2026-09-23, before any frame; S59 §2).** The builder's guard found that the
+"background ring" as written above is almost all silhouette ramp. On the troll:
+- the median ring texel is 3.2 visible steps behind the occluder, and 37 steps nearer than the per-line law's far rim;
+- 88% of ring texels are still descending three texels further out.
+
+The membrane pinned there filled 56 k texels (22% of the band) *in front of* their occluder.
+
+So C is now pinned at the band texels on the background side (identified by the same test), to the per-line law's own
+value there, where the law has just left its far rim past the ramp. The wash is pinned at the same texels, to the colour
+of the law's own far rim (`farRimJ`, weighted by `farRimW`).
+
+Two kinds of texel keep arm A, and both are counted:
+- texels where the membrane is still not behind the occluder by two steps (the maximum principle bounds the fill by
+  its component's pins, not by each texel's occluder);
+- components with no pin.
+
+The claim above that C is "clone-free by the maximum principle" was wrong as stated, and this amendment replaces it.
+Nothing else in the rule changes.
+
 **One wash for all three.** The band colour is the same membrane per RGB channel, pinned to the same background ring. It
 is smooth, carries no structure, and takes nothing from the occluder. It is identical on all three arms, so depth is the
 only difference between them. Plate 2 is hidden on all three arms, because it is the per-line law's second layer.
