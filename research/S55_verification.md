@@ -310,3 +310,28 @@ quotation; the rank quotation; the variance quotation; the clipping quotation; T
 points, ×4.9; the conclusion quotation; the three parameter sets and α = 0.5; the degraded-configuration
 quotations; the constant-brittleness and 0.5-point transfer quotations; the no-post-processing and hole-bias
 quotations.
+
+## 15–17. Daribo & Pesquet-Popescu (MMSP 2010, 194 lines), Daribo & Saito (T-BC 2011, 246 lines), Gautier, Le Meur & Guillemot (3DTV 2011, 130 lines) — all read
+
+✘ **"Not LDI (rejected on bandwidth)."** Daribo 2011 is an LDV paper; it uses inpainting to shrink the layered
+residual. Daribo 2010 says only that LDI adds "overhead complexity". Corrected.
+✘ **Baselines of ~65 mm and twice that** were Ndjiki-Nya's numbers, attributed to Daribo. The Daribo papers state
+no baseline. Corrected.
+✘ **PSNR "above Criminisi throughout by a visually small margin"** — the curves are lost in the file; only the axis
+ranges survive. The claim is withdrawn; the text's own sentence quoted instead.
+~ Gautier cites the 2010 version only and shares Daribo's code, so the two are one lineage; the occludee-rule count
+is now 6th/7th (after the paper-7 and paper-11 corrections), not 7th/8th. "DIBR settled on" → "this lineage".
+~ "S33 measures what diffusing depth produces" → S33 measured our law's ramps, the same failure a smooth fill
+has. Envelope sentences updated to the ±90° target. "Must be swept" (K) → derive and check on screen (rule 2,
+A126). The "fifth robust statistic … overwhelming" → a consistent instinct acting at different stages. Shih's
+dilation claim restated to what Table 3 shows. The detachment check is not on the task list; said so.
++ Missed: Gautier's depth channel is the supplied depth of the final view ("depth inpainting … out of the scope"),
+so his 3-D tensor had true depth in the hole; crack filling by averaging (a two-tier rule); out-of-field strip
+filling (the frame-edge problem); Daribo 2011's argument against depth pre-filtering. Added.
+✔ Titles, venues, line counts; Criminisi "makes no distinction"; Oh's boundary swap; P = C·D·L and the L(p)
+formula; the "naturally favors background" quotation (and the critique of it, which stands); the β patch
+distance; the depth-diffusion and "texture-less" quotations and Navier–Stokes; the one-reference-view and
+"fewer disocclusions" quotations; the Di Zenzo tensor, D(p) formula and flat/edge quotation; the RGBZ tensor and
+its quotation; the one-side-only quotation; α_Z = 3, α_RGB = 1, K = 5, Wexler et al.; the smoothing-counterpart
+quotation; the anti-ghosting quotation; the Oh-connexity quotation; the disoccluded-only PSNR quotation; the
+"essentially address visually" quotation.

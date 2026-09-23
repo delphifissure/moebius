@@ -2087,7 +2087,8 @@ Read in full: **Daribo & Pesquet-Popescu, "Depth-aided image inpainting for Nove
 
 The two Daribo papers share one method — the 2011 journal version applies the 2010 method to residual-layer
 generation for LDV coding and adds a comparison against Oh — so I treat them together. Gautier is the direct
-successor, cites both, and thanks Daribo for the source code. **Together with Ndjiki-Nya these four papers are
+successor, cites the 2010 version, and thanks Daribo and Pesquet-Popescu for the source code (so the two are
+not independent of each other). **Together with Ndjiki-Nya these four papers are
 the answer to the question S54 never asked: what did the DIBR field settle on.**
 
 ### 1. The lineage, and its single shared conclusion
@@ -2102,10 +2103,14 @@ background. They differ only in how forcefully.
 | Daribo 2010/11 | a third multiplicative priority term `L(p)`, plus depth in the patch distance |
 | Gautier 2011 | **zero priority** on the occluder side, depth weighted ×3 in the match, 3-D structure tensor |
 
-So the answer is: **DIBR settled on exemplar-based inpainting with the fill forced to come from the background,
-and it converged on that within about two years.** Not pre-smoothing (Ndjiki-Nya §I records that branch as
-known-bad), not LDI (rejected on bandwidth), not diffusion. That is now the **seventh and eighth** independent
-statement of the rule behind our S45 far-side rim filter.
+So the answer, for this lineage: **exemplar-based inpainting with the fill forced to come from the background**,
+arrived at within about two years. Not pre-smoothing (Ndjiki-Nya §I records that branch as known-bad; Daribo
+2011 adds that depth pre-filtering *"would reduce the user's original depth perception"*), not diffusion for
+colour. (Correction: I first wrote "not LDI (rejected on bandwidth)". Daribo 2010 says only that LDI means
+*"increasing the overhead complexity"*, and Daribo 2011 is itself an LDV paper — it uses inpainting to *shrink*
+the layered residual, not to replace layers.) Daribo and Gautier are the **sixth and seventh** statements of the
+rule behind our S45 far-side rim filter (after Hirschmüller, PatchMatch, Ndjiki-Nya, Shih, ORCA), and they share
+code, so count them as one lineage.
 
 ### 2. Daribo's `L(p)`: the depth-variance priority, and why I think the stated justification is wrong
 
@@ -2140,15 +2145,17 @@ colour SSD, *"which enables control [of] the importance given to the depth dista
 They fill the band's depth with Navier–Stokes diffusion (Bertalmío), in one line, as a preliminary, and spend
 the paper on colour.
 
-**This is the clearest statement in the corpus of the assumption our results contradict.** S33 measures what
-diffusing depth into the band produces: class 2, a real step (median jump **31**, 26.1% of wall length) drawn as
-a smooth ramp. Smoothness inside the disoccluded region is *not* verified — it is verified only where the
-disocclusion is small enough that the wrong answer is invisible.
+**This is the clearest statement in the corpus of the assumption our results contradict.** S33 did not measure
+diffusion itself; it measured our own law, whose class 2 — a real step (median jump **31**, 26.1% of wall
+length) drawn as a smooth ramp — is what any smooth fill does to a real step. Smoothness inside the disoccluded
+region is *not* verified — it holds only where the disocclusion is small enough that the wrong answer is
+invisible.
 
-And that is exactly the difference in regime. Their baseline is ~65 mm between adjacent MVD cameras; the "large
-baseline" case they make a point of is **twice** that. Our envelope is ±45° horizontal and ±30° vertical. At a
-few pixels of reveal, diffusion is fine and the hard part is colour texture. At ours, the depth is the hard part
-and diffusion is the artefact.
+And that is exactly the difference in regime. (Correction: I first gave "their baseline" as ~65 mm and twice
+that; those are Ndjiki-Nya's numbers. The Daribo papers use Microsoft's Ballet and Breakdancers and state no
+baseline, only a "large baseline camera setup"; Gautier warps view 5 to views 4 and 2.) Our instruments run to
+±45° horizontal and ±30° vertical, and the user's target is ±90°. At a few pixels of reveal, diffusion is fine
+and the hard part is colour texture. At ours, the depth is the hard part and diffusion is the artefact.
 
 **So the DIBR lineage treats depth completion as the easy preliminary and colour as the problem; we have found
 the reverse.** That is not a disagreement about method — it is the same inversion S54 §1 identified between our
@@ -2186,6 +2193,10 @@ J = Σ_{l = R,G,B,Z} ∇I_l ∇I_l^T
 > *"The 3D tensor allows the diffusion of structure not only along color but also along depth information.
 > **It is critical to jointly favor color structure as well as geometric structure.**"*
 
+(One caveat found on verification: Gautier's Z is *"the depth of the final view"*, supplied — *"The depth
+inpainting issue is out of the scope of this paper."* So his tensor has a true depth channel inside the hole; ours
+would have only the far-side law's estimate there.)
+
 This is the cleanest formulation in the corpus of something we do piecemeal: our colour–depth edge alignment
 (`return_align.py`) checks agreement *after the fact*, and S51's join cost uses depth alone. A structure tensor
 over (R,G,B,Z) makes "the colour edge and the depth edge point the same way" a single quantity, computed once,
@@ -2201,9 +2212,10 @@ structure.
 > patches being set to zero.**"*
 
 Not a weight, not a percentile, not a variance surrogate — **zero**, on the occluder side, chosen by the sign of
-the camera motion. Eight papers now, and this is the most absolute form.
+the camera motion. The most absolute form of the rule in the corpus.
 
-For us the twist is that **our camera moves in both directions**, over ±45° horizontal *and* ±30° vertical. So
+For us the twist is that **our camera moves in both directions**, horizontally *and* vertically, over the whole
+envelope. So
 there is no single "right side" — the occluder side of a given rim depends on the pose, and the bake is one
 artefact serving the whole envelope. Our far-side law resolves this per texel from the geometry rather than per
 image from the motion sign, which is the correct generalisation and one of the few places our construction is
@@ -2214,18 +2226,19 @@ image from the motion sign, which is the correct generalisation and one of the f
 robustness than just duplicating one. We use a weighted combination of the K-best patches depending on their
 exponential SSD distances"*, `K = 5`, citing Wexler–Shechtman–Irani.
 
-This is the **fifth** "robust statistic over a neighbourhood rather than a single nearest value" in the corpus —
-after PatchMatch's weighted median, Ndjiki-Nya's k-means centroid, Schönberger's gated median, and ORCA's 78th
-percentile. That is now overwhelming, and Sprint 31's re-scoping rests on it.
+This is the fifth instance in the corpus of "combine several candidates rather than trust one" — after
+PatchMatch's weighted median, Ndjiki-Nya's k-means check, Schönberger's gated median, and ORCA's 78th percentile.
+(They act at different stages — rim estimate, post-fill filter, patch combination — so this is a consistent
+instinct, not five measurements of one thing. Sprint 31, which leaned on it, is on hold behind the sheet A/B.)
 
 But Gautier is the only one to name the price: *"**The counterpart of the patch combination is the smoothing
 effect** appearing on the bottom part of this area. By taking different numbers of patches for combination, it
 is possible to limit this effect."*
 
-**K is a sharpness/robustness dial, and it must be swept, not assumed.** That is the direct counterweight to
-Criminisi's warning against post-hoc smoothing, and it sets Sprint 31's experiment: sweep the gated median's
-neighbourhood size and watch the band's sharpness alongside the temporal step, because the robustification buys
-stability with blur.
+**K is a sharpness/robustness dial.** That is the direct counterweight to Criminisi's warning against post-hoc
+smoothing. (I first wrote "it must be swept"; rule 2 says derive it, then check — and the check is the band's
+sharpness on the user's screen, not the temporal step, which A126 says cannot gate a change on its own. Any
+robust combination buys stability with blur.)
 
 ### 5. Gautier's anti-ghosting is Shih's dilation, with the mechanism stated
 
@@ -2237,7 +2250,7 @@ stability with blur.
 
 Detect the depth edge, dilate it, **delete** what lies behind it before filling. Shih's 5-px synthesis-region
 dilation does the same job by a different route (grow the hole rather than delete the fringe), and Shih's
-Table 3 shows it is worth more than his learned inpainter. Ndjiki-Nya's blob removal is a third route to the
+Table 3 shows that without it his learned inpainter falls below diffusion on in-hole SSIM and PSNR. Ndjiki-Nya's blob removal is a third route to the
 same end.
 
 **Three independent mechanisms for one problem — mislocated foreground colour at the rim — and it is our
@@ -2258,18 +2271,25 @@ occluder, so take the far one" quietly assumes they are still adjacent.
 detaches from the object that cast it is a question we have never asked, and it is answerable from the probe
 dumps: for each band component, is the near rim still in contact with the occluding surface at the envelope
 edge? If a non-trivial fraction detaches, the rim classification has a blind spot at exactly the poses that
-matter most. Added as a check, not a sprint — it is a measurement on data we hold.
+matter most — and more so at the ±90° target. A check, not a sprint — a measurement on data we hold. (Recorded
+here only; it is not yet on the task list.)
 
 ### 7. Evidence, and another admission about metrics
 
 Daribo reports PSNR **computed only on the disoccluded areas** — *"In order not to introduce in the objective
 PSNR measurement the warping-induced distortion, and so to consider only the inpainting-induced distortion"* —
-which is the right methodology and the same one Shih uses for his parenthesised columns. Ballet sits around
-38–43 dB, Breakdancers 48–54 dB, with the proposed method above Criminisi throughout by a visually small margin
-on the plotted curves.
+which is the right methodology and the same one Shih uses for his parenthesised columns. The plot axes span
+38–43 dB (Ballet) and 48–54 dB (Breakdancers); the curves themselves are lost in this file, so I cannot check
+the margin I first described — the text says only *"We can observe on the Fig. 4 the quality improvement
+obtained with our method."* Daribo 2011 gives no PSNR numbers in its text either (Figs. 12–13).
 
 Gautier reports **no numbers at all**, and says why: *"The results can indeed be essentially address[ed]
 visually, as argued by [Kawai et al.]."*
+
+Two further details from Gautier, added on verification: *"Standard cracks (unique vacant pixels) are filled in
+with an average filter"* before inpainting — a two-tier rule like Ndjiki-Nya's Laplace fill for tiny holes; and
+he fills the **out-of-field** strip too (*"one quarter width of the warped image"* at V5→2), starting from the
+known border — the frame-edge problem our margin addresses (S56).
 
 That is the fourth paper in this corpus — after Ndjiki-Nya's k-means tie, Shih's 0.0001 SSIM, and ORCA's
 saturated no-reference scores — to concede that the measurements do not capture what the method is for. It is
