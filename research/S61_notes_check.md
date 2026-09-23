@@ -96,3 +96,38 @@ where the IMAGE has one sharp edge but the depth spreads over several texels, an
 the image does too (joint / guided filtering against the colour). The kit has `rest_rgb.png` for every scene, so the
 same exact-must-be-untouched test applies. Not started. It needs its own design and its own falsification, not a
 tweak of this one.
+
+## 7. The colour-guided ramp test on the kit (same day): promising, not yet trustworthy
+
+`moebiusv2/harness/ramp_colour.py`:
+- **Candidates:** steep same-sign runs with flat flanks (no join condition, so the blur is caught).
+- **The colour edge:** the run edge with the largest colour change, counted only if it exceeds the flanks' colour
+  change.
+- **The blur signature:** texels strictly between the two surfaces on BOTH sides of that edge. A one-sided deviation
+  is real geometry, like exact S31's slope beside a cliff, and is left alone.
+- **The collapse:** each intermediate texel takes its own side's flank extrapolation.
+
+It uses no constant beyond the rim law's tolerance at one visible step.
+
+| version | exact16: texels changed / made worse | blur σ1: error where the rung departs from truth, in steps |
+|---|---|---|
+| v1 (as above) | S2 481 / 481 · S27 0 · S31 0 · **S15 0** | S31 15.2 → **1.6** (3 200 better, 0 worse) · S27 18.7 → **6.9** · S15 21.4 → **10.7** (ramp width 2.8 → 1.05) · S2 14.1 → 10.1 |
+| v2 (+ the colour edge must be the only one in the run) | S2 85 / 85 · others 0 | S31 **no change** · S27 18.7 → 13.2 · S15 21.4 → 15.7 · S2 14.1 → 9.2 |
+
+Findings:
+- The colour image separates blur from real geometry far better than depth alone (S61 §6): S15's exact forest,
+  where the depth-only test made 4 514 texels worse, is untouched.
+- v1's S2 misfire is real multi-faceted geometry: a one-texel dark rim, a four-texel sloped face, a second face. v2's
+  clause removes most of it and loses S31 entirely, whose blur runs cross several colour edges as well.
+
+**Stopped here on purpose.** Each clause so far was cut to the last failure on the same four scenes. That is fitting
+the test, not passing it.
+
+The next step is held-out:
+1. Freeze v1 or v2 as they stand.
+2. Generate the kit's own blur rungs (`truthkit/degrade.py`) for scenes neither version has seen: C1–C3, L1–L6,
+   P1–P6.
+3. Test the frozen version there unchanged.
+
+Only a version that keeps every exact map untouched and sharpens blur on unseen scenes goes to the app, and then
+behind a panel option for the user's screen.
