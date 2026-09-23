@@ -119,7 +119,35 @@ No injection missed its band.
 
 ## 4. The user's verdicts
 
-*Pending.* One line per picture: L / M / R / no clear difference.
+**The user, 2026-09-23, on the review page (no per-picture line):** "honestly all of them still feel pretty noisy —
+huge chunk are look like lattice / grid in the depth. Not smooth."
+
+So no arm passes the bar the test was built on ("clean and plausible"). The key is still sealed.
+
+**What the lattice is, measured without opening the key.** The measurements use only what the three arms share, or
+report the arms unlabelled.
+- **DA3's own depth is smooth.** Shaded the same way, the troll's source map shows no lattice: the lattice is made
+  by the bake.
+- **Outside the hole the three arms are the same by construction** (100% of texels identical), and the per-line law
+  has written there too. The arms replaced only the dump band (`_qbDisocc` ∩ far field behind the source). Outside
+  it, the law pushes texels back by more than one visible step, all of them behind the source, in runs that stick
+  out sideways from the hole:
+
+  | picture | texels outside the hole, pushed back | walls they add that the source doesn't have |
+  |---|---|---|
+  | troll | 88 567 (14.5%) | 34 968 |
+  | sunflowers | 42 228 (7.9%) | 11 778 |
+  | vermeer | 18 398 (3.5%) | 2 100 |
+  | starwatcher | 6 814 (1.2%) | none |
+
+  That part of the atlas was held constant, and on the troll and the sunflowers it is a large share of the lattice
+  seen on every side.
+- **Inside the hole all three arms are anchored to the per-line law.**
+  - B falls back to C.
+  - C is pinned to the law's own values at the background edge. Those values are the ends of combed rows, and the
+    membrane passes through each of them.
+  - C and B keep the law's values in pin-less components and where the fill is not behind its occluder.
+- The test compared three fills that all inherit the per-line law's noise, so none could come out clean.
 
 ## 5. The decision
 
