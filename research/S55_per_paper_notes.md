@@ -1381,9 +1381,10 @@ tolerance), then checked, not swept.
 Two consequences I had not worked out:
 
 - **Potts is the far end of the same knob.** `V_max → 0⁺` (relative to the smallest step) makes every
-  disagreement cost the same, which is "any join is a join". Sweeping `V_max` sweeps continuously from our
-  current unbounded linear cost to Potts, and S51 and a pure labelling are the two endpoints of one line. That
-  is a much better-shaped experiment than the one I had planned.
+  disagreement cost the same, which is "any join is a join". `V_max` moves continuously from our current
+  unbounded linear cost to Potts, so S51 and a pure labelling are the two endpoints of one family. (Under rule 2
+  the cap is derived — the cliff tolerance — not swept along this line; the family is useful for knowing what
+  the two ends do.)
 - **Which clipped costs are not metrics.** §6: *"The benchmarks that were most challenging for the expansion move
   algorithm ('Venus', 'Penguin') **use a V which is not a metric**."* Both use truncated **L2**. (Correction: I
   first wrote that the cap is what breaks the metric condition. It is not — the *square* is. Truncated L1 is
@@ -2528,7 +2529,7 @@ For Sprint 31, if revived (it is on hold behind the sheet A/B): its cost — ban
 the temporal step measures, and A126 bars the temporal step from gating on its own; judge it on the user's screen,
 with rim sharpness reported beside any smoothness number.
 
-### 3. The occludee rule, ninth time, as the unremarked default
+### 3. The occludee rule, once more, as the unremarked default
 
 §2.2, describing the *baseline* post-processing of their local method: *"Invalid disparity areas are filled by
 **propagating neighboring small (i.e., background) disparity values**."* And for SGM: *"Disparity segments below
@@ -3004,6 +3005,8 @@ Bertalmio at comparable quality.
 
 ## 22. Taniai, Matsushita, Sato & Naemura, "Continuous 3D Label Stereo Matching using Local Expansion Moves", TPAMI 2018 (arXiv 1603.08328v3) [3750 lines] DONE
 
+(The supplied file is the arXiv technical report, revised Oct. 2017; the TPAMI venue is not stated in it.)
+
 Read in full, including Appendix A's submodularity proof and Appendix B's per-image convergence study. (Lines
 2488–3750 are the axis data for Appendix B's fifteen plots.) **The last of the twenty-three, and it settles
 Sprint 32 — mostly by showing that the part we can use is the energy, not the optimiser.**
@@ -3021,16 +3024,20 @@ w_pq            = exp( −‖I_L(p) − I_L(q)‖₁ / γ )                     
 
 with `{λ, τ_dis, ε, γ} = {1, 1, 0.01, 10}`, eight neighbours.
 
-**This is exactly the design I assembled across Gallup, Banz and Boykov–Veksler–Zabih, in one formula, in the
-most recent paper in the corpus:**
+**Close to the design I assembled across Gallup, Banz and Boykov–Veksler–Zabih — but not identical, and the
+difference matters** (corrected on verification, 2026-09-22):
 
 - **cap** — `min(ψ̄, τ_dis)`, *"truncated at τ_dis to allow sharp jumps in disparity at depth edges"* (class 2);
-- **floor** — `max(w_pq, ε)`, *"ε is a small constant value that gives a lower bound to the weight ω_pq to
-  increase the robustness to image noise"* (class 1's near-ties);
-- **contrast modulation** — the eighth form in the corpus, and an exponential decay like Schönberger's.
+- **a floor on the contrast weight, not on the penalty** — `max(w_pq, ε)`, *"ε is a small constant value that
+  gives a lower bound to the weight ω_pq to increase the robustness to image noise"*. It stops a strong colour
+  edge from switching smoothing off entirely. It is *not* Gallup's `d_min`: nothing here puts a minimum cost on a
+  switch between near-identical planes (ψ̄ → 0 as the planes coincide). I first mapped it onto "class 1's
+  near-ties"; that was wrong;
+- **contrast modulation** — the eighth form in the corpus, an exponential decay like Schönberger's.
 
-That the synthesis I built from three older papers turns out to be the current state of the art's actual
-smoothness term is the strongest possible confirmation of Sprint 30's revised design. Nothing left to argue.
+So the cap and the contrast term are confirmed by the most recent *stereo* paper in the corpus (ORCA, 2026, is
+more recent overall); the anti-near-tie floor rests on Gallup alone. I first wrote "nothing left to argue"; the
+floor still is.
 
 **And `ψ̄` is the piece we do not have.** It evaluates *each plane at both pixels* and sums the disagreements, so
 it is zero iff the two planes agree at p **and** at q — i.e. iff they are the same plane. It therefore penalises
@@ -3038,16 +3045,18 @@ it is zero iff the two planes agree at p **and** at q — i.e. iff they are the 
 linear model"* since `ψ̄ = 2|c_p − c_q|` when `a = b = 0` is forced — *"although the latter has a
 fronto-parallel bias and should be avoided."*
 
-Our S51 join cost is `revealPx`: a **value** difference at the join. So two planes that meet at the same depth
-but at different angles — **a crease, which is Sinha's class 3, 35.1% of wall length** — cost us nothing. The
-curvature form is precisely the object that distinguishes a crease from a step, and it is the one we are
-missing.
+Our S51 join cost is `revealPx`: a **value** difference at the join. (Corrected on verification: I first
+argued that a crease "costs us nothing" under a value cost and that ψ̄ is what "distinguishes a crease from a
+step". Both costs are small at a true crease — the two planes nearly agree at pixels next to the crease line, so
+ψ̄ ≈ |slope difference| × one pixel — and both are large, and capped, at a step. The value cost already tells a
+crease from a step.)
 
-This does not contradict the Sinha note, it completes it. Sinha says class 3 *should* be depth-continuous and
-we measure a median jump of 25 steps there. So our class-3 walls are value jumps *where the geometry says there
-should be none* — the law is manufacturing a step at a crease. The curvature penalty is what would make a
-crease cheap and a step expensive, which is the discrimination class 3 needs. **That makes "add a curvature term
-to the join cost" a concrete Sprint 30 addition rather than a vague Sprint 32 aspiration.**
+What ψ̄ adds is different and still useful: **it costs nothing along a slanted surface when neighbours share a
+plane**, where any cost on neighbouring *values* charges for the slope itself — the fronto-parallel bias the
+paper warns about. And it separates "same plane" from "different planes that happen to agree in value here".
+That is the right form if a plane-label join cost is ever built. It does not by itself fix class 3: our class-3
+walls jump a median 25 steps, which a value cost already penalises; the jump comes from the law's arbitration,
+and whether those walls are creases at all is the open check from the Sinha note.
 
 ### 2. Local expansion moves: the idea is good, the machinery needs a data term we do not have
 
@@ -3076,10 +3085,10 @@ terms at a gap."*
 
 **The whole construction is a move-making scheme for minimising an energy whose data term is photo-consistency.
 Our band has no data term.** With `φ_p ≡ 0` every labelling in the expansion region is equally good on the data
-and the minimisation is driven entirely by the smoothness term — which, being minimised, would collapse the band
-to whatever is smoothest. Sprint 32 as "port local expansion moves" is therefore not available to us, and this
-confirms from the other end what the Szeliski study said: **our problem is the energy, and we do not have half
-of theirs.**
+and the minimisation is driven entirely by the smoothness term and the rim — which, being minimised, would
+collapse the band to whatever is smoothest. Sprint 32 as "port local expansion moves" is therefore not available
+to us: **we do not have half of their energy.** (I first added "this confirms what the Szeliski study said: our
+problem is the energy"; note 10 is corrected — that question is open until S51's min-cut is run.)
 
 What *is* available: the **label space** (per-texel `(a,b,c)` planes), the **curvature smoothness term**, the
 **random-plane initialisation** (pick disparity `z₀` uniformly, a random unit normal `n`, convert), and the
@@ -3100,9 +3109,10 @@ helps to obtain smoother disparities, and it is especially effective for **occlu
 small-only is *slower*, not faster: *"the use of the small-size cells is inefficient due to the increased
 overhead in cost filtering."*
 
-**Larger neighbourhoods help most in occluded regions** — which is our band entirely. That is a third argument,
-after PatchMatch's weighted median and Schönberger's gated median, for Sprint 31's neighbourhood being
-generous rather than minimal, and for sweeping its size over a *range of scales* rather than picking one.
+**Larger neighbourhoods help most in occluded regions** — which is our band entirely. (Their cells are
+*propagation* regions in an optimiser with a data term; carrying the lesson to a post-filter's neighbourhood is an
+analogy. If Sprint 31 is revived — it is on hold behind the sheet A/B — the transferable point is "use several
+scales together", with sizes derived, rule 2, not searched.)
 
 ### 4. Numbers, and the honest ones
 
@@ -3110,17 +3120,24 @@ generous rather than minimal, and for sweeping its size over a *range of scales*
 - **Middlebury V3, bad 2.0 nonocc**: first of 64 methods, and first *"for all combinations of
   {bad 0.5, 1.0, 2.0, 4.0} × {nonocc, all} except for bad 4.0 – all."*
 - **Seed stability** (Table 3, ten random initialisations): **6.63 ± 0.12** nonocc, **12.3 ± 0.2** all —
-  *"our inference is stable by different random initializations."* The third paper in this corpus to measure
-  seed-insensitivity and report it as a property of a good optimiser (after Boykov's 100 seeds and our own S51's
-  five). The pattern is now unmistakable: **a well-posed energy is seed-insensitive, and seed-insensitivity
-  says nothing about whether the energy is right.**
-- **Ablation, Table 3** (15 V3 training pairs, nonocc): full **6.52**, without RANSAC proposer 6.65, **without
-  post-processing 7.72**. So post-processing — left/right check plus weighted median filtering — is worth
-  **1.2 points**, roughly ten times the RANSAC proposer's 0.13. The largest single component in their ablation
-  is the **weighted median post-filter**, which is PatchMatch §2.3's, which is Sprint 31's.
+  *"our inference is stable by different random initializations."* The second paper in this corpus to measure
+  seed-insensitivity of a strong optimiser (after Boykov's 100 seeds). (I first counted S51 as a third; S51's
+  ICM restarts did *not* converge — see note 20.) Seed-insensitivity shows the *optimiser* is reliable on this
+  energy; it says nothing about whether the energy is right.
+- **Ablation, Table 3** (15 V3 training pairs, weighted bad 2.0). **Corrected on verification — I had the rows
+  reversed.** The three rows are: post-processing (PP) and RANSAC proposer (RP) both on, **6.52** nonocc / **12.1**
+  all; RP on, PP off, **6.65 / 13.6**; neither, **7.72 / 14.6**. The text confirms the reading: *"the RANSAC
+  proposer reduces errors by one point"* (7.72 → 6.65), and the method *"is ranked first even without
+  post-processing"* (6.65 < 3DMST's 7.08). So the RANSAC proposer is worth ~1.1 nonocc; post-processing (left/right
+  check, fill and weighted median together) adds only 0.13 nonocc — but **1.5 on all pixels**, i.e. almost
+  entirely in the occluded regions. That last number is the one for us: the post-processing earns its keep where
+  there is no data, which is our band. (I first called the weighted median "the largest single component"; it
+  is neither the largest nor isolated — the post-processing is ablated as one block.)
 - **Table 4** against Olsson (same energy, different optimiser): Teddy nonocc 3.98 vs 5.21; and *"without
   regularization"* 5.47 — so their regulariser is worth 1.5 points on Teddy and **17 points on Vintage**
   (5.65 vs 22.8), a large texture-less scene. Texture-less is our regime.
+- Against Olsson et al. on the same energy (Appendix B): *"about 6x faster to reach comparable or better
+  accuracies"* on most pairs.
 - Speed: 3.5–3.8× from four CPU cores, 19× from GPU unary costs, **5.3× from cost filtering**; the CPU
   guided-filter version matches the GPU bilateral one. Against PMBP: faster convergence, lower energy, better
   accuracy. Against PMF (local, no explicit smoothness): *"although energies are reduced almost monotonically in
@@ -3148,12 +3165,13 @@ results — part of the smoothness is already in the model.
 
 **Re-scope it.** "Per-texel plane labels with propagation" as a port of this method is not available: it is a
 move-making scheme for an energy with a photo-consistency data term, and the band has none. What transfers is
-the **energy**, and the energy's transferable half is the curvature smoothness term `ψ̄` with its two-sided
-clamp — which belongs in Sprint 30, not a separate sprint. The remainder of Sprint 32 (random plane
-initialisation, halving perturbation, multi-scale neighbourhoods) is a set of tactics for Sprint 31's
-neighbourhood design rather than a sprint of its own.
+the **energy**'s smoothness half — the plane-label curvature term `ψ̄` with a cap and a contrast weight — as the
+right form for any plane-label join cost. The remainder of Sprint 32 (random plane initialisation, halving
+perturbation, multi-scale neighbourhoods) is a set of tactics rather than a sprint of its own.
 
-Which leaves the backlog: **Sprint 30** (capped, floored, contrast-modulated, *and curvature-aware* join cost),
-**Sprint 31** (gated median, neighbourhood swept over scales), **#57** (class 2 as a connectivity cut, per
-Shih/Shade), **#59** (connectivity-limited inpainting context), **#60** (second-pass cliff check), plus the new
-class-3 crease item from Sinha. Sprint 32 dissolves into the others.
+**Where the backlog stands after verification** (superseding the list first written here): S57 puts the **sheet
+A/B** (#63) first, with Sprints 30 and 31 **on hold** behind it; notes 10 and 20 add that **S51's labelling
+should be re-run with an exact min-cut** before any conclusion about its energy; then **#57** (class 2 as a
+connectivity cut, per Shih/Shade), **#59** (connectivity-limited inpainting context), **#60** (second-pass cliff
+check), and the class-3 crease item (#56) — whose premise, that class-3 walls are creases, needs the kit-truth
+check first (note 12). Sprint 32 dissolves into the others.

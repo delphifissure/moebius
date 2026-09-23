@@ -11,6 +11,33 @@ read; it is the title page, abstract and the first two paragraphs of §1, identi
 
 Legend: ✔ verified against the text · ✘ wrong, corrected · ~ imprecise, tightened · + missed, added.
 
+## Summary (all 22 papers checked, 2026-09-23)
+
+Quotations and numbers were overwhelmingly right; the errors were in what I concluded from them, and they
+leaned one way — towards "the literature confirms what we planned". The corrections that change something:
+
+1. **The solver question is open, not closed** (notes 10, 20, 22; S54 §4 rewritten). I had read the MRF study and
+   Boykov et al. as showing our S51 labelling found its energy's minimum. S51 used ICM — the one method both
+   papers single out as weak — and its restarts did not converge (438 955 to 507 839). Its two-label energy is
+   solved exactly by one graph cut; until that is run, "the energy is wrong" and "the search was weak" cannot be
+   told apart.
+2. **Ndjiki-Nya does not condemn our far-side law** (note 6). The per-line filling it condemns is for colour; its
+   own depth fill is per-line, with the rim value checked against a background cluster.
+3. **Two misread tables**: Zhang & Tam's standard errors (note 5) and Taniai's ablation (note 22 — the RANSAC
+   proposer, not the weighted-median post-filter, is the larger component; post-processing helps mostly in
+   occluded regions).
+4. **Rule-2 violations in my own recommendations**, repeated across notes 2, 4, 10, 14, 17, 19, 20: "sweep γ",
+   "tune on the noisiest picture", "logarithmic sweep". All rewritten as derive, then check.
+5. **Stale items** — predictions and audits already done (task 61 medial axis and angle tests, negative; task 62
+   rim audit, done) were still written as open (notes 7, 21); replaced with the results (rule 5).
+6. **Wrong internal claims** found by checking the code: our renderer already maps colour backward through the
+   displaced mesh (note 8), and counts I had inflated (the "occludee rule" count, "overwhelming" robust
+   statistics, "every Middlebury number is from the easy set").
+
+One new, cheap, concrete item came out of it: **re-run S51's labelling with an exact min-cut** (it is a two-label,
+submodular energy). It is not started; per S57 the sheet A/B still comes first.
+
+
 ---
 
 ## 1. Hirschmüller, SGM + MI, PAMI 2008 — 2 127 lines read
@@ -475,3 +502,31 @@ quotation; ν and iteration counts (10³, 3 000; 10⁷, 12 000 000; 140×32); Ch
 4 min 11 s; the edge-flow robustness quotation; the common colour tensor (0.299 / 0.587 / 0.114) and "about twice
 the CPU time"; the incremental tensor update over a 4σ mask; μ underflow; the ε = 6 px shock offset; Lena at 80 %
 impulse noise in 20 s.
+
+## 22. Taniai, Matsushita, Sato & Naemura, Local expansion moves, arXiv 1603.08328v3 (2017) — 3 750 lines read
+
+✘ **Table 3's ablation read with the rows reversed.** The rows are PP+RP 6.52 / 12.1; RP only 6.65 / 13.6; neither
+7.72 / 14.6 (the text: "the RANSAC proposer reduces errors by one point"; "ranked first even without
+post-processing"). So RANSAC ≈ 1.1 nonocc; post-processing 0.13 nonocc but 1.5 on all pixels — almost entirely in
+occluded regions. "The weighted median is the largest single component" withdrawn.
+✘ **"max(w_pq, ε) is the floor for class 1's near-ties."** It floors the contrast *weight* (robustness to noise),
+not the penalty between near-identical planes; Gallup's d_min has no counterpart here. "Nothing left to argue" and
+"the most recent paper in the corpus" (ORCA is) corrected.
+✘ **"Under a value cost a crease costs nothing; ψ̄ is what distinguishes crease from step."** Both costs are small at
+a true crease and large (capped) at a step. What ψ̄ adds is no charge for slope within a shared plane (no
+fronto-parallel bias). Rewritten.
+✘ **"S51's five seeds" as a third seed-insensitivity result** — S51's ICM restarts did not converge (note 20).
+Corrected; "a well-posed energy is seed-insensitive" → the optimiser is reliable on this energy.
+~ "Confirms what the Szeliski study said: our problem is the energy" → note 10 corrected; open until the min-cut.
+Larger grid cells → a post-filter's neighbourhood marked as analogy; "sweep over scales" (rule 2) removed. §6's
+backlog list replaced by the post-S57 order. Venue: the file is the 2017 arXiv report.
++ Added: ~6× faster than Olsson et al. on the same energy (Appendix B).
+✔ Eqs. (10)–(12), {λ, τ_dis, ε, γ} = {1, 1, 0.01, 10}, eight neighbours; the cap and ε quotations; ψ̄ = 2|c_p − c_q|
+and the fronto-parallel quotation; the local-expansion construction and its quotation; Algorithm 1's three
+proposers and halving perturbation; k = 4(j mod 4) + (i mod 4), 16 groups, gaps for submodularity and independence,
+Lemma 3's quotation; random plane initialisation; 5/15/25 px and 1/3/9 % cells, {1,7} and {2,0}; the cell-size
+quotations and (S,M,L) "for most of the image pairs"; V2 rank 3.9 and 5.97 %; V3 first of 64 except bad 4.0–all;
+6.63 ± 0.12 / 12.3 ± 0.2; Table 4 (Teddy 3.98 / 5.21 / 5.47; Vintage 5.65 / 22.8); 3.5–3.8×, 19×, 5.3×; the
+PMBP and PMF comparisons and the PMF quotation; the implicit-smoothness and piecewise-planar-bias quotations; the
+slanted-term quotation; Appendix A's submodularity proof; Appendix B's fifteen-pair plots (axis data only in the
+file).
