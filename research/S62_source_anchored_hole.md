@@ -216,7 +216,7 @@ the background").
 
 | picture | rims checked | rims with a line | texels adopted | hole before → after |
 |---|---|---|---|---|
-| starwatcher | 3 153 | 2 484 | 4 316 | 86 640 → 89 316 |
+| starwatcher | 3 153 | 2 484 | 4 316 | 86 647 → 89 316 |
 | troll | 3 999 | 2 246 | 4 241 | 252 207 → 262 722 |
 | vermeer | 4 784 | 3 038 | 5 789 | 347 462 → 355 881 |
 | sunflowers | 8 098 | 4 899 | 8 836 | 163 530 → 170 168 |
