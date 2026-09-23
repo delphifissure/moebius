@@ -59,18 +59,53 @@ It reads only the source depth, the picture and the app's constants. The band an
 
 Every constant is the visible step, the rim law's t, or the envelope (45°/30°).
 
-## 4. Troll, first results (offline)
+## 4. Four pictures, in the app (2026-09-23, 18:30; app `53f526c`)
 
-| construction | hole texels | pieces | steps over one visible step inside the hole |
-|---|---|---|---|
-| per-line band (S59, arms A/B/C) | 258 610 | 427 | 67 k – 163 k by arm |
-| srcfill, rims on single steps, box reach | 181 198 | 37 | 26 913 |
-| srcfill, reach through the object only | 281 723 | 5 | 38 177 |
+**How they were run.** Each picture was baked by the app with `ramps: safe`. Then the whole plate was replaced by
+`srcfill.py`'s plate and wash (`harness/srcfill.js`) and shot at the S59 poses. The page shows them next to today's
+app (S59 arm A): https://claude.ai/artifact/9bvULpNisSaMWba6bkpZoW.
 
-- The shaded relief of the new plate shows no lattice (`troll_view.png` in the scratchpad).
-- **Open 1: octagon patches.** Isolated tears whose reach spreads over a large joined surface make octagon-shaped
-  patches.
-- **Open 2: the ground.** The ground at the bottom tears against what is behind it, so a band of it enters the hole.
-- **Open 3: the mesh.** The plate mesh's tear index is still the bake's, so it is counted as retear. The port
-  rebuilds it.
-- **Next:** frames in the app on the four pictures (`harness/srcfill.js`).
+**What changed on the way here** (each one found by looking at the result, and recorded here):
+1. The first version grew the "ramp" beside the hole through any surface steeper than one step per texel. It ran up
+   the ground and the trees for 345 texels. It was replaced by rims as whole runs of torn steps.
+2. Envelope rectangles around each rim spilled onto neighbouring objects. The reach now spreads only through the
+   object, across pairs the rim law joins.
+3. Anchor points that were leftovers of the blur made small cone-shaped dimples. They are dropped by a first solve
+   with soft anchors (two-step margin).
+4. The ratio test alone tore every texel of a steep receding ground. The rim law's straight-slope join (the app's own)
+   now applies in both axes.
+5. Clamping not-behind texels copied the object's relief into the plate, which striped starwatcher's crystal
+   mountain. Instead those texels leave the hole and the fill is solved again.
+6. `ramps: strong` striped the crystal mountain in the foreground itself (v1's known misfire on faceted shapes,
+   S61 §7). `ramps: safe` is used instead.
+
+| picture | hole texels | pieces | anchors kept / dropped | left the hole (not behind) | kinks in the hole | fill (s) |
+|---|---|---|---|---|---|---|
+| troll | 192 432 | 19 | 2 036 / 1 197 | 26 260 | 278 | 132 |
+| vermeer | 305 447 | 6 | 915 / 1 613 | 1 167 | 266 | 96 |
+| sunflowers | 165 547 | 26 | 1 066 / 7 777 | 7 840 | 18 694 | 44 |
+| starwatcher | 69 371 | 6 | 603 / 2 320 | 3 569 | 3 595 | 17 |
+
+A kink is a second difference over one visible step: a comb or a spike makes one, a smooth slope does not. The
+per-line arms' holes were measured in walls (S59), not kinks. For comparison, the new holes have 3 102 walls (troll)
+and 11 867 (vermeer), against 67 k–163 k and 57 k–176 k for the per-line arms.
+
+**Seen.**
+- The shaded depth has no lattice on any picture. The figures are lifted out and the background continues smoothly
+  behind them.
+- In the troll frames, the areas uncovered next to the woman and the leg show a smooth wash with clean edges.
+
+**Open, in order of visibility.**
+1. **Starwatcher's ground.** The ground's top edge tears from the sky, because DA3 puts the far ground well in front
+   of the sky. The reach then spreads down the ground in the envelope's rectangle shape, and the fill there is flat
+   where the ground slopes. The result is a boxy plateau with straight edges.
+2. **Foreground smears along soft edges.** Where DA3's blur is a straight slope, the rim law joins it (correctly for a
+   real steep surface), so the foreground stretches. Telling blur from steep geometry is the ramp test's job. `safe`
+   catches little (troll 1 562 texels); `strong` catches more (21 606) but stripes faceted shapes. This needs a better
+   blur test.
+3. **Octagon- and box-shaped outlines** where one isolated edge tears.
+4. **The plate mesh's tears are still the bake's** (between 13 k and 61 k rim-law decisions per picture would change).
+   The port rebuilds them.
+5. **Speed.** The not-behind rounds re-solve up to 29 times (troll: 132 s). Rejecting anchors once instead of per
+   round was tried: it was not faster (159 s against 96 s on the vermeer, with a render sharing the CPU) and it
+   changed 105 k texels by up to 48 steps, so it was backed out.
