@@ -356,3 +356,22 @@ E_I zero off the boundary, E2 normalised overlap SSD; k_s 50, k_i 2; the depth-a
 Fig. 10; anchors at half patch size; 1–5 px band; N hundreds–thousands; sample transformation and θ*; the
 "not enough samples" quotation; Poisson photometric correction details and the blending/graph-cut quotation;
 <3 s per curve, 6 s hawk, 2–20 s per subregion, 2.8 GHz; the "high-level human knowledge" quotation.
+
+## 19. Hirschmüller & Scharstein, Evaluation of cost functions for stereo matching, CVPR 2007 — 316 lines read
+
+✘ **"Every Middlebury number in these notes is from the easy set."** Schönberger's are Middlebury 2014 and Taniai's
+include V3. Corrected.
+✘ **"Sprint 30 must sweep the shape"; "Sprint 30 should follow Banz — tune on the noisiest picture."** Rule 2.
+Rewritten: forms as discrete arms, constants derived, *check* on the hardest picture. Their own tuning protocol
+had a different purpose (isolating the matching cost), now quoted.
+~ "The shape is fitted to the optimiser" → "can depend on", one sentence of evidence. Their GC uses Szeliski et
+al.'s MRF library, so its two-level weighting is not independent of Szeliski's. "Scharstein & Szeliski 2002" →
+the 2001 workshop paper supplied.
+~ The robustness/sharpness trade: Ndjiki-Nya's 25×25 failure is foreground copying, not blur → third statement,
+not fourth. Sprint 31 design sentence updated (on hold; A126; screen). "Ninth statement" numbering removed (same
+first author as note 1).
++ Added: the new datasets' resolution and disparity range; the cost of Banz's degraded-tuned sets on clean images.
+✔ The GC ×2-below-threshold quotation; P2 = P2′/|ΔI| in the SGM energy; the §4 blurring and §3.1 Rank-outlier
+quotations; the closing "it would be nice" quotation; the background-fill and 20 px / 160 px segment quotations;
+the manual-tuning quotation; 10 % vs 3 % and its quotation; the six datasets, 7 views, 3×3 exposure/lighting;
+§5's cost-comparison summary and the HMI-global and "none … very successful" quotations.
