@@ -1213,3 +1213,22 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   ships. The existing `_screenedPoissonBand` pins every non-band neighbour and runs a fixed 600 SOR sweeps, so it is
   not a drop-in.
 - `bake_today.js`: today's app at the A/B poses, for LIVE_PASS §10 D, plus a CDP CPU profile of Build.
+
+## 44. S60/S61 on branch `rule5-pass` (2026-09-23; merges after the default-frame identity check)
+
+- `bgRampColourCollapse(d, rgba, pw, ph, {outer, inner, pn, D}, step, singleEdge)` is placed just before
+  `bgRimLawFor`. It is pure and is called on the 16-bit path right after `dQ.set(L._depth16.data)` when
+  `window._rampColour` is 1 (strong) or 2 (safe); the capture is `window._qbRampColour`. The step is
+  1/max(|m0|,|m1|) of `bgShiftLUTFor(pw, ph)`, the same as `_tauVis`. The panel select is `bgPlateRampSel`
+  (`ramps: off | safe | strong`, default off), read by `applyPlateOptions` into `window._rampColour`. It is verified
+  bit-exact against `harness/ramp_colour.py` by `harness/ramp_colour_verify.js`, which extracts the function's source
+  from `moebius.js`.
+- `bgPinholeFilledMask(src, dQ, pw, ph, step)` joins an enclosed hole to the mask when its median source depth is within
+  two steps of the mask texels bordering it, each counted once.
+  - Used in `exportSDBundle`'s plane set: `plane_mask_inpaint.png` is the filled mask, `plane_mask_inpaint_raw.png`
+    the placeholder classes alone, and `window._qbPinholes` holds the counts.
+  - Used in `_importPlaneReturn`, when no caller mask is given.
+  - Verified by `harness/pinhole_verify.js`.
+- The gap-rule select's `default` branch and `bakePlate` now delete `_plugMembrane`, `_plugGuided` and `_fragTear`
+  (the object-rule arms set them and nothing cleared them). The `default` branch also deletes `_plateFlushExempt`.
+- The rule-5 removals are listed at the end of `S60_rule5_audit.md`.
