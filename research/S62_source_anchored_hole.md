@@ -113,3 +113,32 @@ and 11 867 (vermeer), against 67 k–163 k and 57 k–176 k for the per-line arm
 5. **Speed.** The not-behind rounds re-solve up to 29 times (troll: 132 s). Rejecting anchors once instead of per
    round was tried: it was not faster (159 s against 96 s on the vermeer, with a render sharing the CPU) and it
    changed 105 k texels by up to 48 steps, so it was backed out.
+
+## 5. The four open items, worked (user: "fix all the 'still open'")
+
+1. **Hole outlines** (boxes, octagons, the ground's staircase).
+   - The reach is now measured in the ellipse through the envelope rectangle's corners (x² + (y/env)² ≤ 2R²), with
+     16 move directions (the 8 neighbours plus the knight moves), still only across pairs the rim law joins.
+   - Outlines are smooth curves that follow the silhouette. The ellipse covers the rectangle, so nothing the envelope
+     uncovers is left out; it over-covers the sides by up to √2, which only makes the hole a little larger.
+   - An edge that tears at a single place with a long reach now makes a round lobe (troll, the trees on the left).
+     That lobe is the region the envelope can uncover through that tear, seen one line at a time.
+2. **Starwatcher's "ground".** At pitch +30° the frame shows what it is: the pink foreground dune's top edge hides
+   the blue plain behind it. The flat fill under the dune's edge is that plain continued, so it is correct. What was
+   visibly wrong there was item 3's smear along the dune's edge.
+3. **Foreground smears along soft edges.** `srcfill.py` now collapses DA3's blurred occlusion edges itself, and the
+   app bakes from that depth (`depthD16.png`, ramps off). The `safe`/`strong` ramp collapse is no longer used.
+   - An edge is a run of torn steps (the rim law) extended through its blurry tails. A tail step is steep (more than
+     the law's tolerance tolAt) and still curving: each step outward is smaller than the last by more than that
+     tolerance.
+   - The first cut took every steep step as tail. On starwatcher it ran down every column of the steeply receding
+     dune and striped it (163 615 texels changed). The curving condition stops a tail at a straight slope, however
+     steep. After it, 8 898 texels changed, all on occlusion outlines, with the mountain and the dune surface
+     untouched.
+   - The cut is at the centre of the colour change across the stretch, not its peak. The peak jumped a texel or two
+     between neighbouring columns and left ticks along the dune's edge.
+   - Only stretches anchored on a torn step are touched, so a faceted surface with no occlusion (the crystal mountain
+     that `strong` striped) is left as DA3 drew it.
+4. **Plate mesh tears.** `srcfill.js` rebuilds the plate's triangle index from the new plate, on the source mesh's
+   full grid, with the app's own rule (a quad across an edge the rim law does not join is not drawn, S2b.4). It
+   replaces the bake's index, which had been torn on the per-line plate.
