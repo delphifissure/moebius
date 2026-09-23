@@ -226,3 +226,16 @@ the background").
   troll's light rim, the dark edge around the jug, the rims of the sunflower leaves. No background detail was taken
   in the crops checked.
 - The step costs 0.13–0.17 s. `harness/srchole_ink.js` runs the chain offline on an A/B dump.
+
+**Off the main thread, and the live SD view** (app branch `s62-worker`, `2e60fcb`; goes to main when the clip run ends).
+- The hole solve runs in a Web Worker built from the solve's own source. The app globals it reads travel with the
+  message. The new plate is applied when the result arrives, unless a newer bake has started. With no Worker it runs
+  on the main thread, as before.
+- The worker's result against a main-thread solve on the same inputs (starwatcher, `harness/srchole_worker_check.js`):
+  hole, plate and wash identical (0 of 86 722 texels differ).
+- The page still freezes for about 12.5 s during a source-mode bake. That is the per-line bake, which still runs
+  underneath and whose plate is then thrown away; the hole solve itself (4–7 s) no longer adds to it. Skipping the
+  per-line build in source mode is the change that would remove the freeze.
+- The "SD regions" tint (the plate, its strips, and the foreground's dimming) now reads the hole. Tinted texels = hole
+  texels (86 722 = 86 722, 0 differing), so the tint on screen is the bundle's inpaint mask.
+- The SD bundle export waits for a hole that is still solving, instead of writing the per-line plate.
