@@ -74,10 +74,57 @@ group, a layered order) into the live JS/WebGL bake is a large piece of work —
 authority, and the kit does not measure what a seam looks like when a head moves.
 
 **The cheap decision procedure:** bake the same four pictures both ways offline, render each through the envelope at the
-same poses, and put them side by side on screen. If the sheet model is visibly better, port it; if it is a wash, shelve it
-with the numbers and keep the per-line law. One day of work to get the answer, against weeks to port blind.
+same poses, and put them side by side on screen. One day of work to get the answer, against weeks to port blind.
 
-**Done means:** a documented decision, either way, with the shots that made it.
+### The stopping rule (fixed 2026-09-23, before any A/B frame was rendered)
+
+This rule was written before the test ran, so a result cannot change it. It ends the geometry loop either way.
+
+**What is compared.**
+- Arm A is the per-line law with the app's start-up defaults.
+- Arm B is S35's measured arm (§58: `--closure comp --thingrule wrap --reach-group --group-plate --ramp --crease
+  --group-prior`). Its band depth goes into the app through the Sprint 25 return path.
+- Where the sheet model owns no texel, arm B uses the per-line law's depth. It does not use the occluder's own depth,
+  which would be a clone by construction (S35 §47) and would break rule 4.
+- The two arms differ only where the sheets supply a surface, and neither arm contains a clone.
+- Both arms get the same band colour (the hybrid inpaint), the same depth map and the same poses.
+- The arm B construction is frozen as written. No flag is changed after the first frame has been seen.
+
+**The pictures.** Troll, vermeer, sunflowers and starwatcher: the four that have object maps (S35 §58). This set is fixed.
+If the result is close, no fifth picture is added (rule 6).
+
+**Who judges, and how.**
+- The user judges, on their screen (rule 8). I do not decide.
+- Each picture is shown as a pair at yaw 45°, with 22.5° and a vertical 45° as context. Each pair is labelled only L/R.
+  Which arm is on which side is randomised per picture and recorded in a sealed file. It is revealed only after all four
+  verdicts are in.
+- For each picture the user answers **L better**, **R better**, or **no clear difference**. The question is which one
+  looks better overall at 45°, so any new artefact the sheets bring (seams between sheets, jumps at the fall-back edge)
+  counts against them.
+- Metrics (wall length, S33 classes, coverage) are reported only after the verdicts, as context. They cannot overturn a
+  verdict (A126).
+
+**The decision.**
+- **The sheets are preferred on at least 3 of the 4 pictures: port them.** The sheet model becomes the far field, with the
+  per-line law as its fall-back.
+  - After that, geometry work means only the port: matching the offline frames, then bake speed (66 s now, ~2 s target).
+  - The S55 material (capped join cost, gated median, connectivity for class 2) is input to the port, not a separate
+    sprint.
+  - Defaults change in the live pass after the port, not before (A126).
+- **Any other outcome (2 of 4 or fewer, "no clear difference" included): stop geometry research.**
+  - Ship the per-line law with the hybrid inpaint band.
+  - Close Sprints 30 and 31 and the join-cost work on the per-line law.
+  - Record the remaining combing as the known limit of one photograph.
+  - Geometry reopens only for *new information*, not for a new idea on the same data. Examples: a new depth model, truth
+    from the phone pans, or a failure on a new photograph that the current limit does not explain.
+- A "no clear difference" verdict counts against the port, because a port of several weeks needs a visible reason.
+
+**What does not count as a result.**
+- A frame broken by a bug is not a result: for example, a mismatched pose, missing colour, or an empty band. Fix the bug,
+  re-render that pair, and log it in the write-up.
+- Changing arm B because a frame looked wrong is not a bug fix. It would be a new test, and this rule does not allow one.
+
+**Done means:** a documented decision under this rule, with the frames, the sealed side assignment and the user's verdicts.
 
 ---
 
