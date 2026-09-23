@@ -36,10 +36,10 @@ The lesson for what replaces it:
 
 It reads only the source depth, the picture and the app's constants. The band and far field are not read.
 
-1. **Ramps.** The colour-guided ramp collapse (S61, the stronger version) turns DA3's blurred silhouettes into
-   one-texel cliffs at the picture's own colour edge.
-2. **Rims.** Every 4-neighbour pair, in rows and columns alike, is tested by the rim law's ratio on eye distance. A
-   run of torn steps of one sign across an edge is one rim, from the run's top texel (the object) to its bottom
+1. **Ramps.** The colour-guided ramp collapse (S61, the safe version; the strong one striped faceted shapes, §4) turns
+   DA3's blurred silhouettes into one-texel cliffs at the picture's own colour edge where it is sure.
+2. **Rims.** Every 4-neighbour pair, in rows and columns alike, is tested by the rim law as the app has it: the
+   ratio on eye distance, unless the pair continues the straight slope of the texels beside it. A run of torn steps of one sign across an edge is one rim, from the run's top texel (the object) to its bottom
    texel (the background it reveals). The run's interior texels are the blur and join the hole.
 3. **The hole.**
    - A rim's reach at the envelope's edge is the app's own shift difference between its two sides,
@@ -52,10 +52,14 @@ It reads only the source depth, the picture and the app's constants. The band an
 4. **Depth.**
    - A membrane on the hole, pinned at every neighbour outside it that lies behind the adjacent hole texel by more
      than two steps (the background), and free on the object side.
-   - Not-behind texels are clamped to two steps behind and counted.
+   - Anchor points more than two steps from the consensus of a first solve with soft anchors are the blur's
+     leftovers, and are dropped.
+   - A hole texel whose fill is not behind its own source depth by two steps is not uncovered: it leaves the hole
+     and the fill is solved again (clamping it copied the object's relief into the plate).
    - A component with no pin is flat at its farthest border depth, and counted.
 5. **Wash.** The same membrane per RGB channel, with the same pins, each taking its own source colour.
-6. **Outside the hole,** the plate is the source depth and the source colour.
+6. **Outside the hole,** the plate is the source depth (after the safe collapse, as the app draws it) and the source
+   colour.
 
 Every constant is the visible step, the rim law's t, or the envelope (45°/30°).
 
