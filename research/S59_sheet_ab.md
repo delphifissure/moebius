@@ -53,6 +53,9 @@ So on two of the four pictures arm B had human segmentation input that arms A an
 - `sheet_ab_fields.py` → B, C and the wash;
 - `sheet_ab.js` → frames, with guards: the bake band equals the dump band, and the plate equals the dump's far field;
 - `sheet_ab_compose.py` → blind sheets and the key.
+- `sheet_ab_review.py` → the same frames as a page to flip through (L/M/R only, side by side or in place, every pose
+  and the relief). It runs only after compose has recorded the key's hash, and its verdict buttons build the line
+  `sheet_ab_decide.py` takes.
 
 ## 2. Found before any frame: the plain fill's first specification pinned to the silhouette ramp
 
