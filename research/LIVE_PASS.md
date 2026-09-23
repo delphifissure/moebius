@@ -268,3 +268,15 @@ streaked colour. Measured −2.4 % step, the only arm better than both of its ow
 picture. Look at 27° and 45° behind the troll's arms. Better than the wash, or not?
 
 One line per decision is enough: keep / drop / undecided.
+
+**Added 2026-09-23, after the user restated the goal** ("clean holes for later inpainting via diffusion: plausible but
+clean depth, plausible wash for the colour, then SD; we can't have a noisy atlas"):
+- **C, reframed.** The hybrid puts LaMa texture into the band. Under that standard, texture in the atlas is something SD
+  would either keep as structure or have to overwrite. So the question for C is not whether it looks better than the
+  wash. It is whether the atlas should carry texture at all before SD, or only a clean wash. If only a wash, C drops by
+  definition, and the wash itself is the decision (D).
+- **D (new), the wash.** Today's wash is continued along each line from the rim, and it streaks (S35 §23 measured this).
+  Every S59 frame carries a different wash: one smooth membrane per colour channel, pinned at each hole's background
+  edge to the colour of the per-line law's own far rim. It is identical on all three arms, so it doesn't bias the depth
+  test. After S59, look at any of its frames against a normal build at the same pose. Should that wash replace today's?
+  Keep / drop / undecided.
