@@ -1357,8 +1357,8 @@ best methods (TRW-S, expansion moves) come within 1% of the optimum; ICM is far 
 
 So the paper's own caveat applies to us directly: *"it is still important to compare energy minimization
 algorithms using the energy they produce as a benchmark. **Creating more accurate models will not lead to better
-results if good labelings under these models cannot be found.**"* Whether S51's labelling clears the 50% bar is
-**unknown until the min-cut is run.** (Context that limits the stakes: S51's labelling is off, its A/B frames were
+results if good labelings under these models cannot be found.**"* Whether S51's labelling clears the 50% bar
+could not be known until the min-cut was run. **Run 2026-09-23 (S58): ICM stopped 23.9 % above the true minimum (437 677 vs 353 333); the exact optimum cuts the artefact wall 52.0 % (class 3 −79.7 %, class 1 only −8.4 %) but shrinks real steps 21.3 %.** (See S58.) (Context that limits the stakes: S51's labelling is off, its A/B frames were
 indistinguishable at a 21% wall-length cut, and S57 puts the per-line law's replacement — the sheet A/B — ahead
 of any further work on it. S54 §4's claim is corrected in place.)
 
@@ -2668,8 +2668,8 @@ the 0.5% spread above.
 And the paper names the trap S51 is in: *"When an algorithm gives unsatisfactory results, it may be due either to
 a poor choice of the energy function, or to the fact that the answer is far from the global minimum. **There is
 no obvious way to tell which of these is the problem.**"* For S51 there is a way — its two-label energy is solved
-exactly by one graph cut (Greig et al., cited here in §2) — and until that is run, "the energy does not say what
-we want" and "ICM did not find its minimum" cannot be told apart. (Seed-insensitivity, where it holds, shows the
+exactly by one graph cut (Greig et al., cited here in §2). **Run 2026-09-23 (S58): ICM stopped 23.9 % above the true minimum (437 677 vs 353 333); the exact optimum cuts the artefact wall 52.0 % (class 3 −79.7 %, class 1 only −8.4 %) but shrinks real steps 21.3 %.** So both were true: ICM did not find
+the minimum, *and* the energy's true minimum erodes real steps and leaves class 1 (S58). (Seed-insensitivity, where it holds, shows the
 *minimisation* is reliable, not that the *minimum is right*; that distinction stands.)
 
 ### 5. Static cues — a seventh contrast form, and a fifth metric-versus-eye statement
@@ -2752,7 +2752,8 @@ experiment measures 5.3× on this variable, and the uncapped failure mode is nam
 supplies the expected shape of a parameter check (a broad basin), the warning that over-capping collapses toward
 Potts and flattens slanted surfaces, and the link between the cap and a tight optimality bound. (Sprint 30
 itself is on hold behind the sheet A/B, S57; and this paper's §2 and §8.3 are the strongest argument in the
-corpus that S51's ICM result should be re-run with an exact min-cut before any conclusion about its energy.)
+corpus that S51's ICM result should be re-run with an exact min-cut before any conclusion about its energy — done
+in S58: the uncapped wall energy, minimised exactly, shrinks real steps 21.3 %, the oversmoothing §8.6 names.)
 
 ---
 
@@ -3088,7 +3089,7 @@ Our band has no data term.** With `φ_p ≡ 0` every labelling in the expansion 
 and the minimisation is driven entirely by the smoothness term and the rim — which, being minimised, would
 collapse the band to whatever is smoothest. Sprint 32 as "port local expansion moves" is therefore not available
 to us: **we do not have half of their energy.** (I first added "this confirms what the Szeliski study said: our
-problem is the energy"; note 10 is corrected — that question is open until S51's min-cut is run.)
+problem is the energy"; note 10 is corrected; S58 has since run the min-cut — the solver was a limit, and the energy is also short.)
 
 What *is* available: the **label space** (per-texel `(a,b,c)` planes), the **curvature smoothness term**, the
 **random-plane initialisation** (pick disparity `z₀` uniformly, a random unit normal `n`, convert), and the
@@ -3170,8 +3171,8 @@ right form for any plane-label join cost. The remainder of Sprint 32 (random pla
 perturbation, multi-scale neighbourhoods) is a set of tactics rather than a sprint of its own.
 
 **Where the backlog stands after verification** (superseding the list first written here): S57 puts the **sheet
-A/B** (#63) first, with Sprints 30 and 31 **on hold** behind it; notes 10 and 20 add that **S51's labelling
-should be re-run with an exact min-cut** before any conclusion about its energy; then **#57** (class 2 as a
+A/B** (#63) first, with Sprints 30 and 31 **on hold** behind it; notes 10 and 20 asked that S51's labelling
+be re-run with an exact min-cut — **done, S58**: 52.0 % artefact cut, but real steps −21.3 % and class 1 −8.4 %; then **#57** (class 2 as a
 connectivity cut, per Shih/Shade), **#59** (connectivity-limited inpainting context), **#60** (second-pass cliff
 check), and the class-3 crease item (#56) — whose premise, that class-3 walls are creases, needs the kit-truth
 check first (note 12). Sprint 32 dissolves into the others.

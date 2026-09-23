@@ -19,8 +19,7 @@ leaned one way — towards "the literature confirms what we planned". The correc
 1. **The solver question is open, not closed** (notes 10, 20, 22; S54 §4 rewritten). I had read the MRF study and
    Boykov et al. as showing our S51 labelling found its energy's minimum. S51 used ICM — the one method both
    papers single out as weak — and its restarts did not converge (438 955 to 507 839). Its two-label energy is
-   solved exactly by one graph cut; until that is run, "the energy is wrong" and "the search was weak" cannot be
-   told apart.
+   solved exactly by one graph cut. **Run 2026-09-23 (S58): ICM stopped 23.9 % above the true minimum (437 677 vs 353 333); the exact optimum cuts the artefact wall 52.0 % (class 3 −79.7 %, class 1 only −8.4 %) but shrinks real steps 21.3 %.** (S58.)
 2. **Ndjiki-Nya does not condemn our far-side law** (note 6). The per-line filling it condemns is for colour; its
    own depth fill is per-line, with the rim value checked against a background cluster.
 3. **Two misread tables**: Zhang & Tam's standard errors (note 5) and Taniai's ablation (note 22 — the RANSAC
@@ -35,7 +34,7 @@ leaned one way — towards "the literature confirms what we planned". The correc
    statistics, "every Middlebury number is from the easy set").
 
 One new, cheap, concrete item came out of it: **re-run S51's labelling with an exact min-cut** (it is a two-label,
-submodular energy). It is not started; per S57 the sheet A/B still comes first.
+submodular energy). Done 2026-09-23 — S58.
 
 
 ---

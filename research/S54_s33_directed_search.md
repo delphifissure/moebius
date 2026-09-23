@@ -128,8 +128,11 @@ S51 used ICM, which Szeliski et al.'s comparison singles out as the one method f
 *"extremely sensitive to the initial estimate"*. S51's restarts did not converge (law 438 955, all-row 440 523,
 all-column 507 839, random 458–464 k), its oracle bound allows 80.7% on the artefact classes against ICM's 33%,
 and λ being inert says nothing about whether the minimum was found. S51's energy is two-label and submodular, so
-one s–t min-cut gives the global optimum. **Until that is run, S51's 33% is a lower bound on what the labelling
-can do.** Priority is set elsewhere: S57 puts the sheet A/B ahead of any further work on the per-line law.
+one s–t min-cut gives the global optimum. **Run 2026-09-23 (S58):** ICM stopped 23.9 % above the true minimum
+(437 677 vs 353 333), so the solver *was* a limit. The exact optimum cuts the artefact wall 52.0 % — but almost all
+of it is class 3 (−79.7 %); class 1 moves only 8.4 %, and real steps shrink 21.3 %. So the solver hid the energy's
+behaviour, and the energy, once minimised properly, erodes real steps and still cannot reach class 1. Priority is
+unchanged: S57 puts the sheet A/B ahead of any further work on the per-line law.
 
 ---
 

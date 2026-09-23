@@ -1,5 +1,10 @@
 # S51 — Sprint 27: the cross-line labelling, with the reveal field as the join cost (2026-09-21)
 
+> **Solved exactly 2026-09-23 (S58).** ICM stopped 23.9 % above this energy's true minimum. At the exact optimum the
+> artefact wall falls 52.0 % (class 3 −79.7 %, class 1 −8.4 %) while real steps fall 21.3 %. The "the search is the
+> limitation" correction below was right for the total and for class 3; for class 1 the oracle bound was loose and
+> the label set is the limit, as the Standing section says.
+
 S33 measured that **74 % of the troll's visible streak length is the far field disagreeing with itself**, and S50
 confirmed the consequence: Sprint 26's cliff rules were all choosing how to draw a wall that should not exist. S22 named
 the construction never attempted — a consistent *choice* across lines, a labelling over candidates with a join cost —
