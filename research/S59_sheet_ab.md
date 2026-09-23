@@ -99,7 +99,23 @@ advisory; it does not enter the decision.
 
 ## 3. Frames and the key
 
-*Pending.* The key's SHA-256 will be recorded here before the frames are sent.
+All four pictures rendered (troll 02:17, vermeer 03:26, sunflowers 04:28, starwatcher 05:23). Every render guard held:
+the bake band matches the dump band (mismatch 0; app-band texels outside the dump band, identical on all arms: troll
+7 098, vermeer 1 606, sunflowers 1 636, starwatcher 7 600), and the plate matches the dump's far field exactly (max |Δ| 0).
+
+**The key** (`shots/sheet_ab/key.json`, drawn by `sheet_ab_compose.py` from `os.urandom`, 2026-09-23 after the last
+render, before anyone saw a sheet):
+
+    SHA-256 8abe1c3a94441201ef47a45a43788f8d335375e18456dcfca29e441c45d8a82c
+
+**Rule 7 (the arms diverge), checked before sending.** Measured per arm pair, with no side named:
+- Band depth: 75–95% of band texels differ by more than one visible step, per picture and pair.
+- The frames: at the decision poses, 0.3–3.6% of each frame's pixels differ by more than 8 levels, and the largest
+  difference is 104–215 levels.
+- Starwatcher's differences are the smallest (0.3–0.9% of pixels), because less of its hole is in view. Its band still
+  differs on 86–91% of texels.
+
+No injection missed its band.
 
 ## 4. The user's verdicts
 
