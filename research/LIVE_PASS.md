@@ -280,3 +280,32 @@ clean depth, plausible wash for the colour, then SD; we can't have a noisy atlas
   edge to the colour of the per-line law's own far rim. It is identical on all three arms, so it doesn't bias the depth
   test. After S59, look at any of its frames against a normal build at the same pose. Should that wash replace today's?
   Keep / drop / undecided.
+
+## 11. The options built on 2026-09-23 (branch `rule5-pass`; not on main until the default-frame identity check passes)
+
+All four are off by default: the panel starts exactly as today. Troll unless stated. Look at about 42° and at pitch 30°.
+
+**A. `ramps: as estimated / collapse (safe) / collapse (strong)`.** The colour-guided ramp collapse (S61 §7–§9).
+DA3's outlines are several texels wide, and those texels read as a wall when the head moves. The collapse snaps each
+one to a one-texel cliff at the image's own edge.
+- On 15 kit scenes it had never seen, "safe" left real geometry untouched on 13 (4 texels in total), and "strong"
+  sharpened about three times as much with tiny misfires on 8.
+- On the troll, strong changes about 21 600 texels and safe about 1 600.
+
+Look at the outline of the troll's arms and head at 42°. Are the edges cleaner, and does anything that should be there
+go missing?
+
+**B. `hole depth: per-line / plain fill`.** Arm C of the S59 A/B, exactly as judged. Each hole's depth is one smooth
+surface, pinned at its background edge to the per-line law's value there. It is only meaningful after the A/B
+verdict, so wait for that first.
+
+**C. `fill: wash / mirrored far side / membrane wash (S59)`.** This is §10 D, as a select. The S59 frames all
+carried the membrane wash; this puts it on the live bake. Is it cleaner than today's wash at 42°?
+
+**D. `pinholes: as baked / filled`.** The specks inside a hole that the per-line law left at the subject's own depth
+take the hole's depth and wash, instead of standing up as spikes. On an older troll bundle, `atlas_lint.py` counts
+**41 304 spike texels in 494 pinholes**. It is meant to go on after the A/B verdict; look for small stubs standing out
+of the revealed background.
+
+Tool: `python3 harness/atlas_lint.py <bundle.zip>` reports mask specks and pinholes, depth spikes, walls in visible
+steps and wash streaking for any exported SD bundle. It is advisory; your screen decides.
