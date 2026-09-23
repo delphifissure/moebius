@@ -232,3 +232,35 @@ the documented limit of the method, not a missed technique.
   reimport, but the bake's own band still leaves them, and fixing that changes the band that the S59 arms are frozen
   on. That is for after the verdicts.
 - **Queued:** a live bundle exported from the branch (the troll), with the pinholes counted in both masks.
+
+## 12. Built ahead of the verdicts, default off (user: "build all speculative stuff you can")
+
+Everything is on branch `rule5-pass`. Each new panel select defaults to today's behaviour.
+
+- **Arm C as an app option: "hole depth: per-line | plain fill".**
+  - `bgPlainFill` is `harness/plainfill.js` copied verbatim.
+  - The solver was rebuilt, because plain conjugate gradients took 2 730 iterations and 60 s on the troll. The
+    replacement is CG preconditioned by an aggregation-multigrid V-cycle: 2×2 blocks, Galerkin coarse operators,
+    symmetric Gauss–Seidel.
+
+| stopping rule | iterations | error against the exact fill |
+|---|---|---|
+| relative residual 1e-10 | 144 | 0.00003 visible steps |
+| **1e-8 (adopted)** | 107 | 0.0004 steps |
+| 1e-6 | 73 | **81 steps** |
+
+  - The cutoff is chosen on measured error. The 1e-6 row is why: this problem is badly conditioned, and a loose
+    residual hides a large error.
+  - Timing: 13 s with the CPU shared with SwiftShader renders; an idle machine should manage a few seconds. A
+    warm start from a coarse solve alone gave only 2 730 → 2 566 iterations: warm starts do not fix conditioning.
+- **The membrane wash as an app option:** `fill: wash | mirrored far side | membrane wash (S59)` (LIVE_PASS §10 D).
+- **The pinhole spike fill: "pinholes: as baked | filled".** The S61 §10 rule is applied to the bake's own band, so
+  joined pinholes take the hole's fill and the wash. The user asked for this after the verdicts: it is built, off, and
+  gets switched on then.
+- **How they apply:** `bgPostBakeFill` runs right after `_bgQuickBaked = true`. It works on the A/B's band
+  definition and writes exactly as `sheet_ab.js` injected the arms, so the options show what was judged. It also
+  updates `_qbPlateF` and `_qbPlateColor`, so the SD bundle carries what is on screen.
+- **Verified** (`harness/plainfill_verify.js`, source extracted from `moebius.js`): the troll matches the Python arm C
+  to 0.0004 steps, and the wash within one colour level, with every count identical.
+- **One difference from the A/B:** the A/B hid plate 2 on every arm; the options leave plate 2 as the panel has it.
+- **Queued in the live app:** the troll with hole=plain, wash=membrane and pinholes=filled, after the branch check.
