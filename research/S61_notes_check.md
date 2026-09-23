@@ -65,3 +65,34 @@ idea on the band alone. LIVE_PASS §10 D should be read as "adopt a harmonic was
   recounted on the bundle's `plane_mask_inpaint.png`.
 - **Bake speed.** Stated (S44: 66 s) and flagged unowned (S57: "A184's speed target … is in no plan"). Never profiled.
   The profile runs after the A/B renders.
+
+## 6. The ramp collapse on the 16-bit path: first prototype, and why it is not ready (same day)
+
+`moebiusv2/harness/ramp_collapse.py` is S35 §38's ramp test, in the rim law's own units: the visible step
+1/k = 1/(D·max(outer/(D+outer), inner/(D−inner))·px-per-world), which reproduces the troll's logged 1.760e-3 and the
+kit's 2.563e-3; t from the 2° grazing limit. Each ramp's interior snaps to the nearer flank's affine extrapolation. The
+test ground is the kit's own blurred-edge rungs (`degrade/blur_s1/s2/s4`), scored against `exact16`. The exact map must
+come through untouched.
+
+| variant | exact16 texels changed (made worse by > 1 step) | blur rungs: error where the rung departs from truth, in steps (before → after) |
+|---|---|---|
+| steep runs, no join condition | S2 1 966 (1 693) · S31 1 600 (1 600) · S15 6 576 (5 408) | S31 σ1 15.2 → 1.6, S2 σ1 14.1 → 9.2, **S27 σ1 18.7 → 22.1 (worse)** |
+| S35's form: only joined steep edges, joined flat flanks | S2 3 (3) · S27 0 · S31 0 · **S15 5 478 (4 514)** | S2 σ1 14.1 → 13.1, S27 ≈ unchanged, S31 only σ4 (18.2 → 11.7) |
+
+Why each form fails:
+- **Without the join condition**, a one-texel cliff beside a real two-texel slope reads as one ramp. On exact S31, a
+  0 → 0.268 cliff followed by two texels of real grazing surface had those two texels snapped onto the plateau,
+  9 steps wrong.
+- **With the join condition**, a blurred silhouette's steepest middle edge fails the join test and splits the run in
+  two. Neither half has flat flanks on both sides, so most blur is missed. S15 (the open scene, thin structures)
+  still misfires on exact geometry.
+
+**The 1-D ramp test cannot tell an estimator's blur from real geometry on this kit, in either form.** Nothing goes to
+the app from this. The original collapse's 0.06 gate masked the problem by collapsing only large steps, and that gate
+is the rule-2 violation.
+
+The candidate the literature and the pictures both point to is a 2-D, colour-guided test: an estimator's ramp sits
+where the IMAGE has one sharp edge but the depth spreads over several texels, and real geometry keeps its slope where
+the image does too (joint / guided filtering against the colour). The kit has `rest_rgb.png` for every scene, so the
+same exact-must-be-untouched test applies. Not started. It needs its own design and its own falsification, not a
+tweak of this one.
