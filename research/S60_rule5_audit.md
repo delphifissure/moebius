@@ -236,3 +236,37 @@ The gap-rule select leaks state into later bakes:
 - Any object-rule arm sets `_plugMembrane=1`, `_plugGuided=1` and `_fragTear=2` (21533).
 - Neither the `default` branch of the gap select (21530) nor `bakePlate` (21606) resets them.
 - So after one gap-rule bake, every later plate bake in that session silently carries the guided membrane and the per-fragment tear. `_plugMargin` is re-set by `applyPlateOptions`, so it does not leak.
+
+## Applied on branch `rule5-pass` (2026-09-23; not merged until the default-frame identity check passes)
+
+**Removed, falsified:**
+- `_fillBandLimit`
+- `_nearestAnchorWins`
+- `_plugBackTex`
+- `_plateMembrane`
+- `_plateRowColor`
+- the viewpoint scan with `_vpScan`, `_noVpScan`, `_scanRange` and `_legacyScanWarp` (the log line's prefix is
+  kept for harnesses that grep it)
+- the A55/A56 ink seat with `_inkSeat`, `_seatFloorFlat` and `_seatDbg`
+
+**Removed, adopted revert hatches:** `_noSmearSnap`, `_noPromBound`, `_noConeFill`, `_noDescFloor`,
+`_sConeFixed`, `_legacyPlugLUT`, `_legacyV2Budget`, `_noSeedReveal`, `_plugZBias`, `_noFloatDepth`,
+`_noContactCut`, `_noThinLift`. In each case the default branch became unconditional.
+
+**Fixed:** the gap-rule select no longer leaks `_plugMembrane`, `_plugGuided` and `_fragTear` into later bakes.
+
+**Kept on purpose:**
+- `_envelopePlateStep`: its falsification was measured on 8-bit maps only (REPLY02), and the maps are now 16-bit.
+- The disputed flags: `_farLabel`, `_plateNearOnlyPx`, `_plugCarve`.
+- `_plateNearOnly`: it shares a shader block with `_plateNearOnlyPx`.
+- `_strokeAdopt`: it feeds the `_srCapture` dumps.
+- The remaining hatches on the v1/v2 paths, which the default-frame check does not exercise: `_noBgIslands`,
+  `_legacyExtMargin`, `_noV2PairValid`, `_noOrderClamp`, `_noExactCone`, `_noPerPixelCone`, `_legacyPlateTear`,
+  `_noPlateTear`, `_scanPoses`, `_scanLegacyPoses`, `_winFloorLegacy`, `_legacyGapPass`, `_noRampCollapse`,
+  `_noDequant`, `_dirPlate`.
+- The panel rules (`_ceilCut`, `_despeckleLines`), whose select goes in the live pass.
+
+**Harnesses that set a removed switch.** Their A/B arms now render identically, the a134 hazard: retire them, or read
+them as history. There are 33:
+
+a106_ab.js a109_dolly.js a113_tiny.js a213_ab.js a228_carve.js a229_plugaudit.js a229_plugshot.js a79b_lift.js a79c_liftoff.js a81_rigid_ab.js a82_inband.js a85_minrate3.js a87_spokes.js a88_membrane.js a90_islands.js a92_washalpha.js a94_relax_ab.js a95_cutoff.js a96_graded.js a99_leg.js ab_valwins.js bufexport_a84.js depthaudit.js diag_mask.js dirplate_err.js dirplate_probe.js fold_probe.js metric1.js metric10.js metric4.js metric5.js metric6.js metric8.js 
