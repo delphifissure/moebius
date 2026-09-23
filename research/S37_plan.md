@@ -76,55 +76,75 @@ authority, and the kit does not measure what a seam looks like when a head moves
 **The cheap decision procedure:** bake the same four pictures both ways offline, render each through the envelope at the
 same poses, and put them side by side on screen. One day of work to get the answer, against weeks to port blind.
 
-### The stopping rule (fixed 2026-09-23, before any A/B frame was rendered)
+### The stopping rule (second edition, fixed 2026-09-23 before any frame was rendered; supersedes the two-arm edition of the same day)
 
-This rule was written before the test ran, so a result cannot change it. It ends the geometry loop either way.
+**Why it was rewritten.** The user restated the goal: this stage exists to hand diffusion **clean holes**, with plausible
+but clean depth, a plausible wash for the colour, and SD doing the texture later. **A noisy atlas is the failure.** The
+first edition failed that standard in two ways:
+- It judged LaMa-textured frames on "looks better", although texture can hide combing in a still frame and textured
+  frames are not what goes to SD.
+- Its losing branch shipped the per-line law as it is, which means shipping a noisy atlas.
 
-**What is compared.**
-- Arm A is the per-line law with the app's start-up defaults.
-- Arm B is S35's measured arm (§58: `--closure comp --thingrule wrap --reach-group --group-plate --ramp --crease
-  --group-prior`). Its band depth goes into the app through the Sprint 25 return path.
-- Where the sheet model owns no texel, arm B uses the per-line law's depth. It does not use the occluder's own depth,
-  which would be a clone by construction (S35 §47) and would break rule 4.
-- The two arms differ only where the sheets supply a surface, and neither arm contains a clone.
-- Both arms get the same band colour (the hybrid inpaint), the same depth map and the same poses.
-- The arm B construction is frozen as written. No flag is changed after the first frame has been seen.
+The bar is now **clean and plausible, not accurate**.
 
-**The pictures.** Troll, vermeer, sunflowers and starwatcher: the four that have object maps (S35 §58). This set is fixed.
-If the result is close, no fifth picture is added (rule 6).
+**Three arms.** Every arm is baked by the app with its start-up defaults (no flags, rule 1). They differ only in the depth
+of the band texels (`_qbDisocc`).
+- **A, the per-line law:** the app's own plate, untouched.
+- **B, the sheets:** S35's measured arm (§49/§58, RWCPh): `--no-tps --things --closure comp --thingrule wrap
+  --reach-group --group-plate --ramp --crease --group-prior`.
+  - Inputs: the object maps S35 measured with (troll `view_troll_v2`, vermeer `view_vermeer`, sunflowers
+    `view_sunflowers_auto`, starwatcher `view_starwatcher_auto`). `--step`/`--q` is the picture's visible step 1/k
+    (the app's `[S10]` line), as S35 used.
+  - Band texels no sheet owns take arm C's value. They do not keep the occluder's depth, which would be a clone by
+    construction (S35 §47) and would break rule 4.
+- **C, the plain fill:** each 4-connected band component's depth is a membrane (Laplace's equation) with two kinds of
+  boundary:
+  - it is pinned to its **background ring**: non-band texels adjacent to the component that lie behind the adjacent
+    band texel's occluder by more than two visible steps (S35 §47's lip criterion);
+  - it is free (zero flux) along the occluder side.
+
+  It has no constant of its own. By the maximum principle the fill never leaves the range of its background ring, so it
+  can never be nearer than the background it continues (no clone) and can never comb. A component with no background
+  ring keeps arm A's values; how many do is reported.
+
+**One wash for all three.** The band colour is the same membrane per RGB channel, pinned to the same background ring. It
+is smooth, carries no structure, and takes nothing from the occluder. It is identical on all three arms, so depth is the
+only difference between them. Plate 2 is hidden on all three arms, because it is the per-line law's second layer.
+
+**Pictures and inputs.** Troll, vermeer, sunflowers and starwatcher, the four that have object maps. Each uses its own
+DA3-16 map as it is: no depth repair (rule 3), and no fifth picture if the result is close (rule 6).
+
+**Poses.**
+- Decision: yaw +42° and −42° (x = ±0.180, y = 0.008 at z = 0.2; the "p45" pose of every S35/S53 frame, inside the
+  35–45° fade).
+- Context: yaw 22.5° and pitch +30°, the vertical envelope edge.
+- The band depth is also shown on its own as a shaded relief: the atlas itself.
 
 **Who judges, and how.**
-- The user judges, on their screen (rule 8). I do not decide.
-- Each picture is shown as a pair at yaw 45°, with 22.5° and a vertical 45° as context. Each pair is labelled only L/R.
-  Which arm is on which side is randomised per picture and recorded in a sealed file. It is revealed only after all four
+- The user judges, on their screen (rule 8).
+- For each picture the three arms are shown as **L / M / R**. The order is drawn at random per picture and written to a
+  key file whose SHA-256 is recorded in the write-up before the frames are sent. It is opened only after all four
   verdicts are in.
-- For each picture the user answers **L better**, **R better**, or **no clear difference**. The question is which one
-  looks better overall at 45°, so any new artefact the sheets bring (seams between sheets, jumps at the fall-back edge)
-  counts against them.
-- Metrics (wall length, S33 classes, coverage) are reported only after the verdicts, as context. They cannot overturn a
-  verdict (A126).
+- For each picture the question is one: **which is cleanest?** The answer is L, M, R, or no clear difference.
+  "Cleanest" covers anything that would reach SD as structure: combing, ridges, speckle, seams between sheets, jumps at
+  a fall-back edge.
+- Metrics (wall length, S33 classes, coverage) are reported only after the verdicts. They cannot overturn one (A126).
 
-**The decision.**
-- **The sheets are preferred on at least 3 of the 4 pictures: port them.** The sheet model becomes the far field, with the
-  per-line law as its fall-back.
-  - After that, geometry work means only the port: matching the offline frames, then bake speed (66 s now, ~2 s target).
-  - The S55 material (capped join cost, gated median, connectivity for class 2) is input to the port, not a separate
-    sprint.
-  - Defaults change in the live pass after the port, not before (A126).
-- **Any other outcome (2 of 4 or fewer, "no clear difference" included): stop geometry research.**
-  - Ship the per-line law with the hybrid inpaint band.
-  - Close Sprints 30 and 31 and the join-cost work on the per-line law.
-  - Record the remaining combing as the known limit of one photograph.
-  - Geometry reopens only for *new information*, not for a new idea on the same data. Examples: a new depth model, truth
-    from the phone pans, or a failure on a new photograph that the current limit does not explain.
-- A "no clear difference" verdict counts against the port, because a port of several weeks needs a visible reason.
+**The decision.** Every branch ends the geometry loop.
+- **B chosen on at least 3 of 4 pictures: port the sheets.** Geometry work then means only the port: matching these
+  frames, then bake speed (66 s now, ~2 s target). The S55 material is input to the port.
+- **Otherwise: stop geometry research.** Ship whichever of A and C was chosen on more pictures. On a tie (a "no clear
+  difference" is no vote), ship C: it is clean by construction, and combing is the known complaint.
+- Afterwards, geometry reopens only for *new information*, not for a new idea on the same data. Examples: a new depth
+  model, truth from the phone pans, or a failure on a new photograph that the shipped arm does not explain.
+- Defaults change in the live pass after the decision, not before (A126).
 
 **What does not count as a result.**
-- A frame broken by a bug is not a result: for example, a mismatched pose, missing colour, or an empty band. Fix the bug,
-  re-render that pair, and log it in the write-up.
-- Changing arm B because a frame looked wrong is not a bug fix. It would be a new test, and this rule does not allow one.
+- A frame broken by a bug is not a result: for example, a mismatched pose, a missing wash, an empty band, or an
+  injection that misses texels. Fix the bug, re-render that picture (all three arms), and log it.
+- Changing an arm's construction because a frame looked wrong is a new test, and this rule does not allow one.
 
-**Done means:** a documented decision under this rule, with the frames, the sealed side assignment and the user's verdicts.
+**Done means:** a documented decision under this rule, with the frames, the key and its hash, and the user's verdicts.
 
 ---
 

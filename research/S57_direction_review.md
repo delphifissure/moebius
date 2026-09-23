@@ -287,12 +287,14 @@ says no.)
    pictures, both carrying the same hybrid inpaint, same poses, on screen. S51's condition for judging geometry
    (real texture in the band) is met, and the Sprint 25 return path (`return_band_depth16.png`, absolute depth on the band) can carry
    the sheet model's band depth into the app without a port — the band is where the two constructions differ. This decides whether the port happens.
-3. **Only then the geometry sprint, under the stopping rule in S37 Phase C (fixed 2026-09-23, before the A/B ran).**
-   - If the sheets win on at least 3 of 4 pictures on the user's screen, the port follows. The S55 material (clamped
-     two-sided join cost, gated median, explicit connectivity for class 2) becomes design input to it.
-   - Otherwise geometry research stops: the per-line law ships with the hybrid inpaint band.
-   - *Superseded:* this item used to say "if it is a wash, a join-cost sprint on the per-line law". That would have kept
-     the loop running, and the rule removes it.
+3. **Only then the geometry sprint, under the stopping rule in S37 Phase C** (second edition, 2026-09-23, fixed before
+   any frame was rendered).
+   - Three arms: the per-line law, the sheets, and a plain membrane fill. All three carry one clean wash, and the user
+     judges them blind on "which is cleanest?".
+   - If the sheets are chosen on at least 3 of 4 pictures, the port follows, with the S55 material as design input.
+   - Otherwise geometry research stops and the cleaner of per-line and plain fill ships.
+   - *Superseded:* this item once read "if it is a wash, a join-cost sprint on the per-line law", which would have kept
+     the loop running.
 4. **The rule-5 hygiene pass** (§4), byte-identical default frames as the guard.
 5. **Ask the user for 3–5 sideways phone pans** (W3). It is the only route to truth on real hidden content.
 6. **Task list:** #54 and #55 are superseded by item 2; #53 becomes item 1 (recommendations, not banked wins); #56
