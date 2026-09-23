@@ -1925,26 +1925,30 @@ And the conclusion, stated flatly:
 
 Abstract: the two best are *"equally with 6.05% and 5.91% average error"*.
 
-**This changes Sprint 30's recommendation.** After Schönberger I wrote that the bounded exponential
+**This changes Sprint 30's recommendation** (Sprint 30 is now on hold behind the sheet A/B, S57; this records
+what the reading implies if it is revived). After Schönberger I wrote that the bounded exponential
 `P1(1+αe^{−|ΔI|/β})` was the form to implement. On this evidence it is over-engineered: a **negatively linear
-ramp with a floor** performs identically to the reciprocal on four images and two cost functions, has one fewer
-parameter (they note (b) *"does not require a parameter β… This is implicitly done by adjusting γ"*), and is
-trivially cheap. Sprint 30 should use `V = clamp(γ − α·|ΔI|, floor, cap)`.
+ramp with a floor** performs as well as the reciprocal on four clean images with census costs (and better with
+rank costs), has one fewer parameter (they note (b) *"does not require a parameter β… This is implicitly done by
+adjusting γ"*), and is trivially cheap: `V = clamp(γ − α·|ΔI|, floor, cap)`, with α and γ derived, not fitted
+(rule 2).
 
 **One qualification, and it is the one that matters most to us.** §3.1, on the visual comparison behind
 Table 1: *"**Using `P2,i` the small structures in Cones are retained**, otherwise there is no significant
 difference between `P2,l` and `P2,i`."*
 
-The reciprocal's only measured advantage is on **thin structures** — and thin structures are our worst
+The reciprocal's measured advantages are on **thin structures** (visual, Fig. 5) and under **salt-and-pepper
+noise** with census costs (Table 2: 7.40% against the linear 8.27%) — and thin structures are our worst
 documented failure. S5's poles (0.5–3 px wide) score **P 0.489, R 0.514**: half the hidden pixels missed, the
-one limitation recorded in S18 without a fix. Figure 6 shows why the two forms differ there: plotted together
-over `ΔI ∈ [0,100]` they are *"obvious[ly] similar"* in shape, but the reciprocal's `α/(|ΔI|+β)` falls steeply
-in the first few grey levels where the linear ramp is still near `γ`, so at a thin structure's weak, narrow
-colour edge the reciprocal has already dropped the penalty and the linear form has not.
+one limitation recorded in S18 without a fix. Why the forms would differ there is my inference, not the
+paper's: the paper says only that Fig. 6 shows *"an obvious similarity between the two functions"* (the plot
+itself is lost in this file), and the reciprocal `α/(|ΔI|+β)` falls fastest at small `|ΔI|`, where a thin
+structure's weak edge would sit.
 
-So: **sweep both**, with the linear as the default and the reciprocal as the arm to check specifically against
+So: **carry both forms**, the linear as the default and the reciprocal as the arm to check specifically against
 the pole scenes. Also note the rank-transform rows, where *"in opposite to census, `P2,l` always outperforms
-`P2,i`; in 3 cases quite significantly"* — which form wins depends on the matching cost, and since we have no
+`P2,i`; in 3 cases quite significantly"* (and under AWGN with rank costs, 32.61% against 40.61%) — which form
+wins depends on the matching cost and the degradation, and since we have no
 matching cost at all, neither result transfers cleanly. The linear default rests on parsimony and the
 census-transform tie, not on a measurement in our regime.
 
@@ -1971,8 +1975,9 @@ volume, so once `P2` exceeds `C_max + P1` the branch is never selected and the c
 over a cost volume, so nothing bounds it above. So: SGM gets its cap free and ours does not, and we must clamp
 both ends explicitly. The conclusion in the Gallup note stands; the reasoning needed this correction. Four
 papers now agree the cap exists (Hirschmüller's "constant penalty for all larger changes", Gallup's `d_max`,
-Scharstein's `V_max`, Banz's implicit bound) and two that the floor matters (Gallup's `d_min`, Banz's
-`P2,min`).
+Szeliski et al.'s `V_max`, Banz's implicit bound). The floors differ in purpose: Gallup's `d_min` is against
+spurious transitions; Banz's `P2,min` only keeps `P2 ≥ P1` (the discontinuity penalty never below the
+small-step one). So one paper, not two, argues a floor for our reason.
 
 ### 4. The strongest result: adaptivity barely matters on clean images and matters enormously on noisy ones
 
@@ -1986,16 +1991,20 @@ Table 2, Cones under degradation, census, optimally parametrised in each case:
 | `P2,v` variance | 5.28% | **30.70%** | 8.40% | 8.16% | 5.45% |
 
 On clean Cones the spread between constant and best adaptive is **0.15 percentage points**. Under Gaussian
-noise it is **7.4 points**, and the constant penalty nearly quintuples its error. Their conclusion:
+noise it is **7.4 points**, and the constant penalty nearly quintuples its error. (Not every column goes that
+way: under salt-and-pepper the constant, 7.63%, beats the linear, 8.27%; shadow and gamma move little.) Their
+conclusion:
 
 > *"While for highly structured images taken under near ideal conditions constant penalty functions perform
 > well, **they tend to become overfitted to the particular imaging conditions and performance is not stable over
 > different conditions**… **adaptive penalty terms [are] mandatory for robust disparity estimation.**"*
 
-**This is the argument that Sprint 30's contrast term is worth building at all.** Our input is a monocular depth
-map from a photograph — we built a whole per-tile noise estimator and effective-quantum machinery (Sprint 14)
-because the noise is real and spatially varying. Middlebury-clean is not our regime; the degraded rows are. So
-the expected gain from the adaptive term is the 7-point column, not the 0.15-point one.
+I first read this as "our input is noisy, so expect the 7-point column". **That transfer does not hold as
+stated** (verification, 2026-09-22). Banz degrades the *intensity image*: the noise corrupts both the matching
+cost and the `|ΔI|` the penalty reads. Our measured noise (Sprint 14's per-tile σ) is in the *depth map*; the
+colour a join cost would read is the photograph, which is not AWGN at 12 dB. What does transfer is weaker: a
+constant penalty fitted to one condition is brittle when conditions change, and an adaptive one is less so. The
+size of any gain for us is unknown.
 
 ### 5. Tune on the hardest picture, not the cleanest — a direct instruction for the sweep
 
@@ -2003,19 +2012,21 @@ Their parameter transfer, stated with numbers. Best `P2,l` configuration on clea
 `{P1=11, P2,min=17, γ=35, α=0.5}` → 5.23%. Under AWGN: `{P1=20, P2,min=24, γ=70, α=0.5}`. Under salt-and-pepper:
 `{P1=14, P2,min=24, γ=40, α=0.5}`.
 
-Note `α = 0.5` throughout — the *slope* is stable and only the offsets move. And:
+Note `α = 0.5` throughout — the *slope* is stable and only the offsets move. The cost on the clean image of
+using the degraded-condition sets: 6.27% (AWGN set) and 5.37% (salt-and-pepper set) against 5.23%. And:
 
 > *"comparing good configurations to configurations from the non-degenerated images shows that now **higher
 > dynamic range and higher penalties are chosen**… **Since parametrization using difficult images results in
 > more robust parameter sets, real world systems should [be] parametrized under these conditions.**"*
 
-Confirmed on real imagery without ground truth: *"Generally, **better results were obtained when using the
-configurations from the degenerated images**."*
+Supported on real imagery without ground truth, by *"optical inspection"* only: *"Generally, **better results
+were obtained when using the configurations from the degenerated images**."* They add a caution: *"for high-end
+applications targeting highest quality disparity maps sophisticated image preprocessing is required."*
 
-**Actionable, and it changes how I would have run the sweep.** I would have tuned on the troll, which is our
-cleanest and best-characterised case. This says: tune on the noisiest of the seven pictures, accept a small loss
-on the clean ones, and the result will transfer. We can even pick the target objectively — the per-tile σ from
-Sprint 14 ranks our pictures by noise already.
+**What this means under our rules.** I first wrote "tune on the noisiest of the seven pictures". That is still
+per-image tuning, which rule 2 forbids: our constants are derived. The lesson that survives is about *checking*:
+when a derived constant is checked, check it first on the hardest picture, not the troll — the per-tile σ from
+Sprint 14 ranks our pictures by depth noise already.
 
 ### 6. This settles the tuning-sensitivity disagreement in the corpus
 
@@ -2024,8 +2035,12 @@ cost, in particular to parameters λ and γ."* Gallup reported the opposite — 
 datasets, *"not overly sensitive."* Banz explains both:
 
 > *"Setting `P2` constant performs well if carefully adjusted to the particular image but **quality degrades
-> quickly as these values are changed**… All [adaptive] functions are insensitive to a certain degree of
-> non-optimal parametrization."*
+> quickly as these values are changed**."*
+
+(Correction: I had quoted a later sentence as *"All [adaptive] functions are insensitive…"*. The original is
+*"All functions are insensitive to a certain degree of non-optimal parametrization to the image content"* — all
+four, the constant included, with *"good parametrization is essential"* following. The bracket changed the
+meaning; the paper is less one-sided than I made it.)
 
 and on transfer between images:
 
@@ -2033,10 +2048,10 @@ and on transfer between images:
 > for one image is usually found for the other images when allowing a minimal **0.5 percentage point** error
 > margin."*
 
-**Constant penalties are brittle; adaptive penalties transfer.** Scharstein & Szeliski's DP/SO used a fixed λ
-scaled by `ρ_I`; Gallup's was clamped at both ends and truncated. The disagreement was about which regime each
-was in, and the adaptive-plus-clamped regime — which is what Sprint 30 will be — is the robust one. That is a
-second reason to expect the sweep to be well-behaved.
+**Constant penalties are the more brittle; configurations of the adaptive ones transfer between images** (row
+three of Fig. 4 shows transfer for `P2,l` and `P2,i`). That offers a reconciliation of Scharstein & Szeliski and
+Gallup — each in a different regime — rather than settling it. For us it is a reason to expect a derived
+adaptive constant to travel between pictures better than a fitted constant one.
 
 ### 7. Sprint 30, as the reading now leaves it
 
@@ -2049,11 +2064,11 @@ V(p,q) = clamp( γ − α·|I(p) − I(q)| ,  floor ,  cap )
   found to retain small structures (§3.1), and where S5 scores P 0.489
 - **|ΔI| measured between the two joined texels**, directionally, not as a local variance — Banz §3.1
 - **floor** — against class 1's near-ties (Gallup's `d_min`: *"prevent spurious transitions between planes that
-  are close in 3D"*; Banz's `P2,min`)
+  are close in 3D"*); a hypothesis for us, see the Gallup note
 - **cap** — against class 2's real steps (Hirschmüller's flat large-change penalty), explicit for us because our
   energy has no min-over-cost-volume to impose it structurally
-- **sweep α, γ, floor, cap on the noisiest picture**, not the troll — Banz §3.2
-- expected effect small on clean input, large on noisy — and our input is noisy
+- **α, γ, floor, cap derived** (rule 2) and *checked* first on the noisiest picture, not the troll — Banz §3.2
+- expected effect: unknown for us; Banz's large noisy-case gain comes from image noise, which is not our noise
 
 Also worth recording: they apply **no post-processing at all** — *"no post-processing steps, e.g. hole-filling
 or interpolation, are performed"* — and evaluate only non-occluded pixels, *"Otherwise, the results would be

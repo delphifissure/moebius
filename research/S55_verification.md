@@ -286,3 +286,27 @@ and λ_smooth 5, d_min 2, d_max 0.2 m, γ 10; π∞ quotation; the RANSAC recipe
 N 20) and its quotation; the §4 parameters quotation; 22 700 segments in 28 images; the classifier (16×16 grid,
 features, edge-orientation quotation, ~5 000 segments, kNN, λ_class 2, no hard decision); the metrication
 quotation.
+
+## 14. Banz, Pirsch & Blume, Penalty functions for SGM, ISPRS 2012 — 814 lines read
+
+✘ **Misquotation.** "All [adaptive] functions are insensitive to … non-optimal parametrization" — the original
+says "All functions", the constant included. The bracket reversed part of the paper's point. Corrected.
+✘ **"Our input is noisy, so expect the 7-point AWGN gain."** Banz degrades the intensity image (matching cost and
+the |ΔI| the penalty reads); our measured noise is in the depth map. Transfer withdrawn; only "constant penalties
+are brittle across conditions" carries.
+✘ **"Tune on the noisiest picture"** is per-image tuning (rule 2). Rewritten: constants derived; *check* first on
+the noisiest picture. The same fix applied to the Sprint 30 bullet list ("sweep α, γ, floor, cap").
+~ "Banz's P2,min is a floor for our reason" → it only keeps P2 ≥ P1; one paper (Gallup), not two, argues the floor.
+"Scharstein's V_max" → Szeliski et al.'s.
+~ The Fig. 6 explanation of why the reciprocal keeps thin structures is my inference (the plot is lost in this
+file; the paper says only the two curves are similar). Marked. "Sweep both" → carry both forms.
++ Missed: the reciprocal also wins under salt-and-pepper with census (7.40 vs 8.27 %); the linear wins big under
+AWGN with rank (32.61 vs 40.61 %); the constant beats the linear under salt-and-pepper (7.63 vs 8.27 %); the clean-
+image cost of the degraded-condition parameter sets (6.27 %, 5.37 % vs 5.23 %); the real-image check is visual
+only; the "sophisticated image preprocessing" caution. Added.
+✔ The four forms and their quotations (the reciprocal's fraction reassembled); Table 1 census values; the "does not
+result in any performance improvement" and 6.05 / 5.91 % quotations; the β quotation; the thin-structure
+quotation; the rank quotation; the variance quotation; the clipping quotation; Table 2 census values; 0.15 / 7.4
+points, ×4.9; the conclusion quotation; the three parameter sets and α = 0.5; the degraded-configuration
+quotations; the constant-brittleness and 0.5-point transfer quotations; the no-post-processing and hole-bias
+quotations.
