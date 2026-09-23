@@ -1,5 +1,7 @@
 # S60 — Rule-5 audit of every behaviour switch in moebius.js (2026-09-23, read-only; nothing removed yet)
 
+> **Status (2026-09-23, 11:40): applied and merged into main** (app `6a72b25`), after the S59 renders finished and the default-frame identity check passed on the branch's own code (main vs branch byte-identical at rest, yaw ±42° and pitch 30°; S61 §14). The status line as first written follows.
+>
 > **Status.** Nothing has been removed. The removals are applied only after the S59 A/B renders finish, because every bake reads the live `moebius.js`. The guard is byte-identical default frames plus the a134 served-identity check.
 >
 > Three verdict quotes were re-checked verbatim against REVIEW.md: 5401–5403, 10078–10081 and 3972.

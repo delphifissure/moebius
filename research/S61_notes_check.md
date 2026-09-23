@@ -328,3 +328,29 @@ Everything is on branch `rule5-pass`. Each new panel select defaults to today's 
   - So the absolute part is likely dragging the result. When the absolute fit is that poor, the import should take
     the gradients alone, which is the case §13's gradient return was added for.
   - This is not changed yet. It is a design point for the chosen arm's first real run.
+
+**The re-run on the branch's own code (10:17–11:30).** Every bake line now carries the new fields.
+- **Identity:** main's default frames and the branch's default frames are byte-identical at all four poses (troll:
+  rest, yaw ±42°, pitch 30°). The branch was merged into main on that basis (app `6a72b25`); main's `moebius.js` is
+  now the branch's, byte for byte.
+- **Ramp collapse, live (troll):**
+  - safe: 1 562 texels changed (316 edges collapsed, 4 948 candidates refused for several colour edges), 0.2 s;
+  - strong: 21 606 texels (2 399 edges), 0.2 s.
+  - The frames are in `shots/sheet_ab/branch_branch_{safe,strong}/`, for the screen check the live pass needs.
+- **Fill options, live (troll):**
+  - Plain fill and membrane wash:
+    - band 258 633 texels, 427 components, 16 856 in pin-less components, 3 957 not behind their occluder
+      (offline, on the dump band 23 texels smaller: 258 610 / 427 / 16 856 / 3 942);
+    - 107 multigrid-CG iterations for depth, 140 for the wash;
+    - about 18 s on this CPU-emulated GPU for the whole post-bake step.
+  - Pinholes filled: 962 enclosed holes, 928 joined (10 530 texels), exactly the offline count (§10).
+- **Live bundle from the branch (troll):** the mask rule took the pinholes from 497 to 20, adding 10 257 texels.
+  - **But the linter now counts 10 257 clones in the mask, exactly the added texels.** The bundle rule puts those
+    texels in the inpaint mask, while the plate depth there, which is the depth ControlNet's condition, is still the
+    occluder speck's.
+  - So the mask rule on its own hands SD a hole that says "paint here" over a depth that says "something near is
+    here". Pinholes = filled makes the two agree, and that is task #69, after the verdicts.
+  - The 20 pinholes left (31 047 texels, 17 of them with spikes) are enclosed islands at a different depth from
+    their surround. The rule keeps them, as it should.
+- **Minor:** each option bake logs "[S61] post-bake fill: no plane bake on screen" once before the real run. That call
+  is a harmless early one (it finds no plate yet and returns); left as is.
