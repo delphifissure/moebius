@@ -1193,3 +1193,23 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   by distance transform within the component; PCG-free sparse `spsolve` for the harmonic residual; scoring as
   `check_app_band.py` plus jumps / kinks (first / second differences beyond the visible step) split by sheet ownership.
 
+
+## 43. S59 (2026-09-23; `S59_sheet_ab.md`) — the three-arm A/B harness (app repo `harness/`, no app code changed)
+
+- `sheet_ab_fields.py <dump> <sheets out> <step> <out>`: arm C (membrane per band component, pinned at the
+  background-side edge to the per-line law's value, CSR Laplacian + SuperLU), arm B (S35 sheets where `who >= 0`, else C),
+  and the wash (the same membrane per RGB channel, pinned to the colour at the law's `farRimJ` weighted by `farRimW`).
+  Guards: residual, maximum principle per component, and not-behind counts.
+- `sheet_ab.js` (`PHASE=rims` dumps `_geoFarRimJ`/`_geoFarRimW`). The render: bake with start-up defaults, then check
+  that the dump band is a subset of `_qbDisocc` and that the plate equals the dump's far field. It writes the band
+  depth into the displacement texture (rows flipped) and the wash into the plate's colour canvas on dump-band texels,
+  hides plate 2, shoots four poses per arm, and saves `plate_<arm>.f32` plus the per-arm re-tear count (`bgRimLawFor`).
+  - Note: `streak_class.js`'s `disocc.u8` is `_qbDisocc ∩ (farField < dQ − grid)`. It is not the app's whole band
+    (7 098 texels fewer on the troll).
+- `sheet_ab_compose.py` (blind L/M/R, `key.json` plus its SHA-256, and the decision and context sheets with a depth
+  relief), `sheet_ab_metrics.py` (sealed advisory metrics), `sheet_ab_decide.py` (applies the rule and checks the
+  key's hash), `sheet_ab_kit.py` (advisory kit check of C).
+- `plainfill.js`: arm C in JS (Jacobi-preconditioned CG). It is not wired into `moebius.js`; it is the port if C
+  ships. The existing `_screenedPoissonBand` pins every non-band neighbour and runs a fixed 600 SOR sweeps, so it is
+  not a drop-in.
+- `bake_today.js`: today's app at the A/B poses, for LIVE_PASS §10 D, plus a CDP CPU profile of Build.
