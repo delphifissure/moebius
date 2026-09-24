@@ -1232,3 +1232,30 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
 - The gap-rule select's `default` branch and `bakePlate` now delete `_plugMembrane`, `_plugGuided` and `_fragTear`
   (the object-rule arms set them and nothing cleared them). The `default` branch also deletes `_plateFlushExempt`.
 - The rule-5 removals are listed at the end of `S60_rule5_audit.md`.
+
+## 45. S62 (2026-09-23/24; `S62_source_anchored_hole.md`) — source mode: the hole anchored on the source (app main `643fe49`)
+
+Selected by `bgPlateHoleSel` = `source` (moebius.html:313, "hole depth: source (S62)"; default `perline`). Line numbers are moebius.js at `643fe49`.
+
+- **`bgSourceHole(o)`** (934): the whole construction, pure (inputs `dQ, rgb, pw, ph, rl, step, D, layerW`; returns `plate, wash, hole, far, plate2, wash2, has2, stats`).
+  - Rims (runs of torn steps), then the reach: a geodesic budget R = s(near) − s(far) in 16 directions through texels in front of the far side by 2 steps.
+  - `FF`, the unbudgeted far field for the object code.
+  - **SEEN** (995): 32 poses (8 directions × 4 magnitudes). The source mesh is forward-rastered with each texel's own shift, stretched where `rl.joinedIdx` joins, nearest in front. Two demands are united:
+    - **P0 (1013):** a quick membrane on the candidates, pinned at neighbours behind by 2 steps. The texel P0 draws in each gap is demanded.
+    - **The far-side guess:** g − s_far·h for two-sided gaps.
+    - Both keep only texels in front of what they would show by 2 steps. A majority vote over a 17×17 square follows (RS = `WASH_RUN` = 8); rim texels that were seen are kept.
+  - `bgPinholeFilledMask`, then the membrane rounds (global plus local not-behind rounds, soft-consensus pins, 1191 ff.).
+  - **`surfaces()`** (1150): pin runs, merged by the ratio test; the random walker (Grady 2006) splits multi-surface components.
+  - Plate 2: the farthest non-sky surface's membrane behind the nearer parts.
+  - **SHOWN** (1270): both plates are drawn at the 32 poses behind the source mesh. A texel whose quad (corners included) fills an uncovered pixel is shown. Hole and plate-2 texels farther than `WASH_RUN` from a shown texel go back to the source or plate 1.
+  - Stats: `st.seen`, `st.shown`, `st.surfaces`, `st.secondLayerTexels`.
+- **`bgSourceHoleInWorker(o)`** (551): builds a Worker from the function sources, with the globals the rim law reads passed in the message.
+- **`bgFinishSourceHole`** (581): applies the result unless a newer bake has started.
+- **`bgSourcePlate2`** (633): the plate-2 mesh (class 4).
+- **`bgRetearPlate`** (665): the plate's own tear; skips all-sky triangles; also used after the SD return import.
+- **`bgInkAdopt`** (885): ink at a silhouette. The first texels past each torn step that are CIELAB outliers against the outer run take the near depth (≤ 4 texels).
+- **`_srcOnly`** (16081, 16622, 16730): source mode skips the per-line band, plugs, far side, wash, plate 2, step faces, clamps and post-bake fill.
+- **Harness** (app repo):
+  - `harness/srchole_worker_check.js`: worker vs main thread, SD tint, DUMP/BUNDLE/RETURN.
+  - `harness/app_black.js`: see-through pixels on screen per pose; MB = a variant moebius.js.
+  - `harness/truthkit/visplate.js`, `errvis.py`, `layers.py`: which plate texels any pose shows, and depth scored there.
