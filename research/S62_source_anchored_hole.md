@@ -314,3 +314,49 @@ the background").
 **Still open: S15's depth inside the canopy.** The median band error stays 3.5 m (per-line 0.18 m; keeping the source depth 0.02 m).
 - It is not the flood. The errors sit inside the tree's canopy, where the first hidden surface is other leaves a few centimetres behind, and the source fill puts the far hills and sky there.
 - The per-line law continued neighbouring leaves. A porous occluder (foliage) is its own problem for the source construction.
+
+## 9. See-through spots, precision, the second layer, the foliage (user: "fix the foliage depth, the second layer, the precision gap, the black holes, etc")
+
+Measured on screen with a new harness, `moebiusv2/harness/app_black.js`. It bakes in source mode, renders five poses and counts canvas pixels left at alpha 0 inside the picture. "Interior" is see-through not connected to the frame's edge. Troll, 572 px canvas:
+
+| build | R42 interior | head up-right interior | L42 | down-left | hole texels | plate 2 texels |
+|---|---|---|---|---|---|---|
+| §8 (main `0e18ce0`) | 334 px, 20 spots | 823 px, 34 spots | 31 | 23 | 127 383 | 46 918 |
+| + occluded test + shown trim | 341, 11 | 850, 34 | 26 | 90 | 124 254 | 13 429 |
+| + the fill's own demand (**shipped**) | **23, 6** | **98, 22** | 5 | 25 | 161 584 | 26 111 |
+
+**The see-through spots (the "black holes").**
+- §8 chose the hole from one guess per gap pixel: the surface on the gap's far side continues there, so the plate texel shown is g − s_far·h.
+- On the troll's left, the fill behind the head is two surfaces (0.18 and 0.27). The texels the fill actually moves into the gap were not the ones guessed, so the pose showed through both layers.
+- **Fix:** a second demand. A quick membrane P0 is solved on the candidates, pinned at every neighbour behind by two steps. The plate is drawn with P0 at the same 32 poses, and the texel P0 draws in each gap is demanded too.
+- The two demands are united before the vote.
+- **Tried and dropped:** checking against the solved fill and re-solving. It put back the right texels, but it cost 30–170 s per bake (the not-behind rounds and the random walker ran again).
+
+**The occluded test (precision).**
+- A plate texel a gap shows must lie in front of the surface it continues, by two steps. If its own source is that surface, the source mesh already draws it there.
+- Both demands now check this. On S15 alone it lifts precision from 0.53 to 0.82 at the same recall (0.965; weighted 0.997), past per-line's 0.72. On S2 it does nothing (0.47).
+- **Why S2 does not move.** The fill behind each box continues the wall down behind the floor in front of the box. Under that fill those texels really are shown when the head rises, so the demand is consistent with the fill. The truth has floor behind the box, so this is a question for the fill at a contact, not for the demand. It remains open.
+
+**The shown trim (the second layer, and the atlas).**
+- After the fill, both plates are drawn at the 32 poses behind the source mesh. A texel whose quad fills an uncovered pixel is shown. A quad's three corners are all kept, because removing one would remove the quad.
+- A hole texel no pose shows goes back to its source. So does a plate-2 texel no pose shows past plate 1. Each shown set keeps a margin of `WASH_RUN` = 8 texels.
+- Plate 2 shrinks from 42k to 17k texels on S15, from 20k to 13k on S2 and from 95k to 37k on the troll offline (47k → 26k in the app bake). Cost: 1–7 s.
+- The screen does not change (table, second row).
+
+**Foliage depth: what the 3.5 m is.**
+- The kit's first hidden layer in the tree is the tree's own side and inside (classes 4 and 5, about 7 cm behind the window). A plate behind the object cannot be those surfaces, and the source mode never claimed to model an object's volume.
+- New scorer `moebiusv2/harness/truthkit/errvis.py` (with `visplate.js`): depth where some pose shows the plate. Scored against the kit's hidden layers of *other* surfaces (background or another object) (`truthkit/layers.py`):
+  - Plate 1: median 0.07 m, 78% within 0.5 m.
+  - Where the truth is background: median 0.09 m.
+  - Plate 2, where the kit has a second other-surface layer: median 0.08–0.19 m.
+- The shown trim removes the canopy's inside from the hole. The leaves' own mesh covers it at every pose. This is where S15's kit recall drops, from 0.967 to 0.874 (the texels lost are classes 4/5, and the pole's foot, where the pole's mesh joins the ground).
+- **Still open:** a canopy seen past its outline shows sky, where truth shows more leaves. That is object volume, which the depth map does not show. It belongs with object layers (S27), not the hole.
+
+Kit (env45; hole vs the exact hidden set), §8 → now:
+
+| scene | precision | recall | weighted recall | hole px | plate 2 px |
+|---|---|---|---|---|---|
+| S2 | 0.47 → 0.37 | 0.997 → 0.998 | 0.998 → 0.998 | 34 818 → 44 653 | 20 300 → 12 554 |
+| S15 | 0.53 → 0.59 | 0.967 → 0.874 | 0.993 → 0.903 | 63 395 → 51 899 | 42 224 → 16 728 |
+
+S2's precision falls because the fill's own demand adds the floor that the fill shows (above). The screen was the tie-breaker (user rule), and it favours the union.
