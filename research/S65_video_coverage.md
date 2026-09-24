@@ -56,8 +56,8 @@ disparity; each band texel weighted by its seen size cos²θ at the angle that f
 | rack_focus | 8.4 % | 109 k / 578 k |
 | pan | 0 % | 76 k / 825 k |
 
-Two facts from this table. (1) The band behind **things** is first revealed almost entirely below 30° (no thing pixels
-first revealed beyond 45° in any shot). (2) Most of the app's band on these shots is **stuff behind stuff** — a near
+Two facts from this table. (1) The band behind **things** is first revealed almost entirely below 30° (fewer than 1 k
+thing pixels first revealed beyond 45° on any shot). (2) Most of the app's band on these shots is **stuff behind stuff** — a near
 hill over a far one — 87–94 % of band pixels on eight shots, 57 % on bokeh. Moving people do not help there; that part is the still-picture
 problem, and only camera motion can cover it (not measured yet: the coverage test above only follows points hidden by
 things).
