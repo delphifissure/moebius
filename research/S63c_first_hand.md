@@ -534,3 +534,101 @@ upsampler the authors themselves say invents detail; and the quantitative margin
    the two are consistent once you separate "remove an object and its effects" from "fill behind an object that stays".
 3. At 128 px the model is a planner, not a painter; any use for us would be as a low-resolution prior with our own
    texture carried from observed pixels.
+
+---
+
+## OmnimatteZero (2503.18033, SIGGRAPH Asia 2025) — read in full (Table 1 survived)
+
+**Method.** Training-free, inside a frozen video DiT (LTX-Video or Wan2.1). **Temporal Attention Guidance:** TAP-Net
+tracks each masked point to other frames; tracks landing in the mask are discarded; the attention from the masked token to
+its background correspondences is set to the mean attention among those correspondences — i.e. the model is steered to
+*copy what other frames saw*. **Spatial Attention Guidance** does the same within the frame for points with no
+correspondence. Effects (shadows, reflections) are found from the object's self-attention after one noise/denoise step,
+Otsu-thresholded into an enlarged mask. Foreground layer = latent(object+bg) − latent(bg), with the object's own pixels
+pasted back from the input; alpha from the soft attention mask decoded by the VAE's upsampling path.
+
+**Evidence (Table 1, background reconstruction on OmnimatteRF's Movies + Kubric, A100).**
+
+| Method | Movies PSNR | Kubric PSNR | Avg PSNR | s/frame |
+|---|---|---|---|---|
+| ProPainter | 27.44 | 34.67 | 31.06 | 0.083 |
+| DiffuEraser | 29.51 | 35.19 | 32.35 | 0.8 |
+| Lumiere inpainting | 26.62 | 31.46 | 29.04 | 9 |
+| ObjectDrop (per frame) | 28.05 | 34.22 | 31.14 | – |
+| Video RePaint [LTX] | 20.13 | 21.15 | 20.64 | 0.4 |
+| OmnimatteRF | 33.86 | 40.91 | 37.38 | 3.5 (+6 h fit) |
+| Generative Omnimatte | 32.69 | 44.07 | 38.38 | 9 |
+| **OmnimatteZero [LTX]** | **35.11** | 44.97 | **40.04** | **0.04** |
+| OmnimatteZero [Wan2.1] | 34.12 | 45.55 | 39.84 | 3.2 |
+
+Limitations they state: VAE round trip gives "slight deviations" from the input; TAP quality under heavy occlusion or low
+resolution; bounded by the base model.
+
+**Checking S63.** Mechanism, real-time claim and the VAE caveat are accurate. S63's Omnimatte line ("3–8.5 h per video,
+~2.5 s per frame", cited via this paper) is this paper's sentence about *LNA and Omnimatte together*; Omnimatte alone is
+~3 h (see OmnimatteRF note).
+
+**For moebius — the table is the strongest evidence yet for the S63 plan.** On backgrounds that are mostly *observed
+somewhere in the clip*, the methods that gather observations geometrically (OmnimatteRF's static 3-D field: 37.4 dB)
+beat the 2-D video inpainters (ProPainter 31.1, DiffuEraser 32.4) by about 5 dB, and the best method wins by *steering a
+generator to copy corresponded pixels* (TAG). Per-frame generation (Video RePaint, 20.6 dB) is the worst by far. That is
+exactly the ordering S63 proposed: copy what was seen (by 3-D reprojection, with a z-test), paint once only what was never
+seen. The 0.04 s/frame is for 2-D correspondences from a tracker; we get correspondences from depth and pose instead, at
+no model cost.
+
+---
+
+## EasyOmnimatte (2512.21865, Dec 2025) — read in full (Tables 1–2 cells lost)
+
+**Method.** Start from the Gen-Omnimatte public video inpainting model (Wan2.1). Duplicate the input tokens; the
+original tokens go through the **frozen** inpainter and give the background B; the copy goes through LoRA "branch"
+blocks and predicts the alpha matte. Foreground colour is then solved analytically, **F = (I − (1−α)·B)/(α+ε)**. A
+block-wise attention analysis finds three stages — context, *effect perception* (middle), *effect suppression* (late) —
+so the **Effect Expert** puts LoRA (rank 128) only on the late blocks, the **Quality Expert** (rank 64) on all blocks;
+sampling switches from the first to the second at τ = 0.5. Trained 8 k iterations on 2×H100 on synthetic composites
+(VideoMatte240K foregrounds over captioned background videos, with programmatic shear-and-blur shadows and
+affine-eased "camera motion").
+
+**Evidence.** Tables are empty in the mirror. The text: under 10 s per clip against minutes per layer for
+Gen-Omnimatte's optimisation; a user study (28 people, 20 videos, 0–5 scale on foreground integrity, effect harmony,
+temporal consistency); recomposition PSNR/SSIM/warp loss and FVD on new backgrounds. Fine-tuning a general Wan-Fun model
+instead of the inpainter fails to learn effects at all (App. E). Failures inherit the inpainter's (App. F).
+
+**Checking S63.** Accurate as far as it goes ("LoRA effect expert plus quality expert on the Gen-Omnimatte Wan model;
+under 10 s"). The background layer is not EasyOmnimatte's contribution — it is the frozen inpainter's output — so it
+brings nothing new to *filling* holes.
+
+**For moebius.** The piece we can use is the analytic un-compositing **F = (I − (1−α)B)/α**: once the layer behind a
+soft edge is known (our plate, filled once), the foreground's own colour at a hair/bokeh/motion-blur edge follows from
+the observed pixel and α. That is the known-background matting idea (BGMv2 is their baseline) and it fits the αDepth
+soft-edge plan: fill the plate first, then solve α and F at the edge against it, so the edge carries no background colour
+when the head moves.
+
+---
+
+## FloED (2412.00857, v Mar 2025) — read in full (tables survived)
+
+**Method.** SD-inpainting UNet + AnimateDiff-v3 motion modules (stage 1: motion modules fine-tuned for inpainting).
+Stage 2 adds a time-independent **flow-completion branch** (RAFT flow of the masked frames, completed) feeding
+**multi-scale flow adapters** (IP-Adapter-style cross-attention) into the up-blocks, with an L1 flow loss (λ = 0.1).
+**Anchor frame:** one extra frame is inpainted first by an *image* inpainter and prepended as guidance, then dropped.
+**Speed-up:** for denoising steps 2–6 of 25, only half the frames are denoised per step and the other half are warped
+from them by the completed flow (warping x̂₀, not the noise — warping the noise blurs); flow K/V cached after step 1.
+Training: Open-Sora-Plan, 421 k clips, 16 frames at 512, 8×A800.
+
+**Evidence (Table 1, their own 100-clip Pexels/Pixabay benchmark at 512×512).** Background restoration (synthetic
+random masks): FloED PSNR 29.17 / E_warp 2.83 / TC 0.994; DiffuEraser 24.23 / 2.98 / 0.984; CoCoCo 23.08 / 3.73 / 0.991;
+VideoComposer 22.81 / 3.43 / 0.987. Ablation (Table 2): no flow adapter and no anchor 21.30 dB → anchor only 25.34 →
+flow adapter only 27.05 → both 28.71 → longer training 29.17. Timing (Table 3/4, H800, 25 steps, CFG): 0.13 s/frame at
+432×240 and 0.34 s at 512²; the flow machinery costs +16 % and the interpolation + cache win back 13.4 %, so net it is
+about the cost of the plain model. User study: 15 annotators, preferred 62 % (BR) / 56 % (OR).
+
+**Checking S63.** The FloED table in S63 matches the paper. **Correction:** S63 says latents are "warped by flow to skip
+half the denoising work"; the paper interpolates only in steps 2–6 of 25, and the whole speed-up is 13.4 %, roughly
+cancelling the flow branch's own cost. S63 does not say that the benchmark is the authors' own and that PSNR here is
+over random background masks (the "BR" task), not object removal.
+
+**For moebius.** The ablation is the useful number: of the 7.9 dB FloED gains over its plain baseline, **propagated
+motion (flow) is worth about 5.8 dB and an image-inpainted anchor frame about 4 dB**, together ~7.4 dB. Both are cheap
+stand-ins for what we get exactly from geometry: correspondences from depth + pose instead of completed flow, and a
+painted world-anchored layer instead of one anchor frame.
