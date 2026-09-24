@@ -360,3 +360,7 @@ Kit (env45; hole vs the exact hidden set), §8 → now:
 | S15 | 0.53 → 0.59 | 0.967 → 0.874 | 0.993 → 0.903 | 63 395 → 51 899 | 42 224 → 16 728 |
 
 S2's precision falls because the fill's own demand adds the floor that the fill shows (above). The screen was the tie-breaker (user rule), and it favours the union.
+
+In the app (main `643fe49`):
+- The worker's hole, plate and wash are identical to the main thread on starwatcher (84 539 texels) and the troll (161 584). The SD tint equals the hole.
+- The troll's solve takes 64 s in the worker (25 s at §8): the P0 membrane, the larger hole's rounds and the shown trim. The page's longest freeze is unchanged at 14 s (the quick bake), because the solve is off the main thread.
