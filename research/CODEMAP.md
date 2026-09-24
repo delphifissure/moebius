@@ -1283,6 +1283,19 @@ Selected by `bgPlateHoleSel` = `source` (moebius.html:313, "hole depth: source (
     - Wants are the farthest triangle's non-hole corners (`want = 1`, path ≤ `WASH_RUN`) and the texel the fill shows at the pixel, the pixel minus the fill's shift (`want = 2`, path ≤ 254 texels).
     - Path texels (`pAdd`) take the harmonic continuation of the fill, linked only where `rl.joined` holds; unanchored groups keep their path value (`st.patch.smoothed`).
   - **PINHOLES AGAIN:** `bgPinholeFilledMask` on the final hole; joined texels take the harmonic fill and wash when behind by two steps (`st.pinholesLate`).
+- **§12 additions** (main `57edc95`; branch `s62-worker` after it):
+  - **MIDDLE SURFACE**, in `bgSourceHole` after the plate-2 split block and before SHOWN:
+    - `pinM` marks hole texels in front of their fill by two steps and behind a neighbouring hole texel's source across a rim.
+    - The region `inU` is flooded through source-joined texels with a budget of |shift difference| at the envelope's edge (`bud`).
+    - Neighbour kinds are 1 (middle surface), 2 (a source layer of the nearer part's own surface) and 0 (the far fill).
+    - Pin groups are joined by union-find where the rim law joins them; groups under `WASH_RUN` are dropped (branch). Each region texel takes its nearest group (`gU`) and links only within it (`wD`).
+    - Presence (`P`, 1 at kind 1, 0 at kind 0, weight 0 at kind 2) must be above 0.5.
+    - The layer is kept where the continuation is behind the source and in front of the fill by two steps; plate 1 = continuation, plate 2 = the old fill, `has2 = 2` (`st.middle`).
+  - **Bridges.** `bgRetearPlate`, the patch's `bridge` and `seethrough.js` leave a triangle torn when it mixes `has2 === 2` corners with others (branch).
+  - **Import.** `_importPlaneReturn` keeps the layer order (`st.layer2.droppedByOrder`), paints plate 2 from `return_band2_color.png`, and rebuilds it through `bgSourcePlate2` with `window._qbSrcCtx` (branch).
+  - **Harness:**
+    - `sd_return.py` makes a layer-2 pass (`return_band2_color.png`) and uses `--grow auto` (the fringe, per texel).
+    - `atlas_lint.py` gains a LAYERS section.
 - **Harness:** `harness/sd_src_roundtrip.js`, with two modes:
   - `MODE=export`: source bake, then `bundle.zip`.
   - `MODE=view`: bake, then import `return/return_band_*.png` through `_importPlaneReturnFiles`, then six wide poses before and after.
