@@ -45,29 +45,27 @@ The pan's 0 % is the sanity check: rotation about the lens centre reveals nothin
 | rack_focus | 40.0 % | 1.3 % | 0.3 % | 0.2 % |
 | pan | 0 % | 0 % | 0 % | 0 % |
 
-**On the app's own band over the ±90° design envelope** (S64; every fourth frame; the app law with per-frame normalised
-disparity; each band texel weighted by its seen size cos²θ at the angle that first reveals it):
+**On the app's own band over the ±90° design envelope** (S64; every fourth frame; the app's **default** volume, outer 0.02 /
+inner 0.04, with per-frame normalised disparity; each band texel weighted by its seen size cos²θ at the angle that first
+reveals it). *(A first version of this table used outer 0.24, a kit scene's depth — superseded.)*
 
-| shot | band pixels hidden by a moving thing: seen elsewhere | band pixels: behind a thing / other (mostly stuff behind stuff) |
-|---|---|---|
-| walker_tripod | 98.4 % | 56 k / 838 k |
-| walker_handheld | 99.9 % | 55 k / 837 k |
-| crowd_pan | 98.6 % | 125 k / 796 k |
-| runner_blur | 98.7 % | 29 k / 628 k |
-| truck_trunks | 88.7 % | 204 k / 644 k |
-| push_in | 19.2 % | 126 k / 781 k |
-| bokeh | 27.5 % | 38 k / 50 k |
-| rack_focus | 8.3 % | 109 k / 578 k |
-| pan | 0 % | 76 k / 825 k |
+| shot | band behind a moving thing: seen in another frame | share of band pixels behind a thing | band behind STUFF: seen in another frame |
+|---|---|---|---|
+| walker_tripod | 98.5 % | 6 % | 0.1 % |
+| walker_handheld | 99.9 % | 6 % | 2.0 % |
+| crowd_pan | 98.6 % | 13 % | 0.5 % |
+| runner_blur | 98.8 % | 5 % | 0.1 % |
+| truck_trunks | 76.6 % | 36 % | 0.4 % |
+| push_in | 20.8 % | 13 % | 2.2 % |
+| bokeh | 27.2 % | 12 % | 0.0 % |
+| rack_focus | 6.8 % | 15 % | 0.5 % |
+| pan | 0 % | 8 % | 0.4 % |
 
-Two facts from this table. (1) The band behind **things** is first revealed almost entirely below 30° (fewer than 1 k
-thing pixels first revealed beyond 45° on any shot). (2) Most of the app's band on these shots is **stuff behind stuff** — a near
-hill over a far one — 87–94 % of band pixels on eight shots, 57 % on bokeh. Moving people do not help there; that part is the still-picture
-problem. **Camera motion does not cover it either** (`vid_stuff.py`: the hidden point is the first hit behind the visible one
-on a different primitive): 0.2–2.9 % seen on every shot (truck 0.3 %, push-in 2.9 %, handheld 1.6 %), against a method
-floor of 0.8 % measured on the pure pan, where the true value is zero (half-pixel sampling at the edge). The app's ±90°
-head motion is a far larger baseline than any of these camera moves, so the scenery-behind-scenery band is paint, as for
-a still picture.
+Two facts. (1) Where a moving thing hides the band, other frames almost always saw it (98.5–99.9 % when people move).
+(2) But things hide only 5–36 % of the band; the rest is **stuff behind stuff** (a near hill over a far one), and camera
+motion does not cover it: 0.0–2.2 % on every shot (`vid_stuff.py`, the hidden point = the first hit behind the visible
+one on a different primitive), against a method floor measured on the pure pan (true value zero) of 0.4 %. The app's
+±90° head motion is a far larger baseline than any camera move here, so that part is paint, as for a still picture.
 
 **Reading.** When the foreground moves, the background behind it is almost all in the clip already, and mostly in
 *earlier* frames (a streaming pass works). When the foreground is still and the camera moves a little, only the rim
