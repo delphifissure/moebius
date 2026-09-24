@@ -358,3 +358,179 @@ camera motion is a 2-D transform of a tripod shot, so none of its clips has diso
 3. **Temporal stability in moving shots needs geometry, not RC-T.** With exact truth (camera + depth per frame) we can
    warp frame t's fill to t+1 and difference it inside the shared hole — the pixel-true version of RC-T. Use RC-T only
    where there is no truth.
+
+---
+
+## StereoCrafter (2409.07447, Sept 2024, Tencent) — read in full
+
+**Method.** Video depth (DepthCrafter preferred over DAv2 for temporal stability) → forward splat left→right → occlusion
+mask = target pixels nothing landed on → SVD fine-tuned as a stereo inpainter (condition = warped frames instead of an
+image; one extra zero-initialised mask channel, 8→9). Only the spatial UNet layers are fine-tuned (8×A100, 26 k
+iterations, 25×576×1024 clips, frame stride 1–6). **Long clips:** during training the first n frames (random 0…N) are
+replaced by ground truth; at inference the last frames of the previous window (n = 3 in the ablation) are fed in with
+the next window. **High resolution:** spatial tiles, blended linearly in latent space across the overlap.
+
+**The splat (§3.2).** Each source pixel is splatted bilinearly to its four nearest target pixels; overlaps are resolved by
+a **soft** weight w = √2^disp, so a pixel 2 px nearer counts twice as much, not infinitely more. That is a soft z-buffer:
+at small disparity steps foreground and background colours are *blended*, not ordered. (Our warp uses a hard z-test.)
+
+**Data.** Stereo films/videos cut by shot, disparity from a video stereo matcher after shifting the pair so all
+disparities are ≤ 0, warped by the same splat, kept only if warped-left vs real-right PSNR > 25 dB: ~180 k clips,
+~25 M frames.
+
+**Evidence.** **No quantitative table.** Comparisons are figures only (Deep3D, Owl3D, Immersity; FuseFormer, E2FGVI,
+ProPainter "blurry"), plus a stereo matcher run on the result to show left/right consistency. Ablations (overlap, tiling)
+are figures.
+
+**Checking S63.** Mechanism, 25-frame SVD windows, auto-regressive + tiled, the real-time GPU splat, and the quote about
+dynamic reconstruction ("cannot address the occlusion that does not appear in the neighboring frames") are all accurate.
+S63 does not say the paper has no numbers, and it does not mention the soft z-buffer.
+
+**For moebius.**
+1. The overlap-window scheme (feed the last three filled frames into the next window) is the cheap version of
+   "copy what was already filled"; with a world-anchored canvas we get it exactly instead of approximately.
+2. Their soft splat weight is a design choice we should not copy: it trades crisp occlusion for fewer cracks. Our hard
+   z-test plus explicit hole mask is the right call for layers that must stay clean.
+3. Their training-data recipe (real stereo pairs → warp → mask → the other eye is truth, filtered by warp PSNR) is the
+   stereo twin of the GRT protocol; we already have truth from the kit, so we do not need it.
+
+---
+
+## SVG — stereo video by denoising a frame matrix (2407.00367, ICLR 2025) — read in full (Table 1–2 cells missing)
+
+**Method.** Generate (or take) the left video; video depth (DAv2-class, flow-aligned and Gaussian-smoothed in time;
+normalised to 1–10) → warp into **8 evenly spaced views** along a 0.08 baseline (MPI-style projection to remove isolated
+pixels and cracks) → a matrix of views × time. Inpainting is RePaint-style with a frozen text-to-video model
+(Zeroscope): at each noise level the known pixels are re-noised from the warp and pasted outside the mask; rows (fixed
+time, sweeping view) and columns (fixed view, sweeping time) are denoised **alternately**, with noise added back between
+resamplings — 8 resamplings per step for steps 50→25, then 4 and right view only. DDPM, 50 steps. **16 frames** only
+(Zeroscope's limit). One A6000; no runtime is given, but 9 views × 16 frames × 8 resamplings × 50 steps is heavy.
+
+**Disocclusion boundary re-injection (§3.3).** A latent model sees the black hole through its VAE, and the 8× encoder
+spreads the black past the latent mask, corrupting the "known" latents along the boundary. Fix: at each step decode the
+current x̂₀, paste the warped pixels back outside the hole, re-encode, and use that as the new known latent.
+
+**Evidence.** A 20-person VR user study (7-point Likert, 5 methods; table cells lost in the mirror, text says ours best
+on all four axes, p < 0.001) and a left/right CLIP similarity: **96.44** full, **95.81** without the frame matrix,
+**95.60** without re-injection. Baselines: ProPainter, E2FGVI (blurry), RoDynRF, DynIBaR (pose failures). Fails beyond a
+20 cm baseline at their depth normalisation; thin structures limited by depth.
+
+**Checking S63.** S63 calls this "the one method that makes a fill consistent across both time and viewpoint, which is
+what a head-tracked window needs". **Correction:** the frame matrix *encourages* consistency — views are tied only by the
+denoiser's smoothness along the row, not by geometry; nothing reprojects one view's fill into another. The measured
+benefit is 0.6 CLIP points. It covers a 2-view baseline with 7 in-between views and 16 frames; our window needs a
+continuous 2-D range of views. For static content a world-anchored layer painted once is consistent across every view
+*by construction* and costs one paint; SVG's scheme is only a candidate for the "never seen and changing" class, and even
+there it is heavy.
+
+**For moebius.**
+1. **Never hand a latent painter a black hole.** Their re-injection result says the VAE smears the hole's black into the
+   known ring. Our SD path feeds `plane_plate_color.png`, where the hole already holds our wash — check that this is so
+   for every class we send (plate 2, sky, carriers), and that no mask-black survives into the image we encode.
+2. The alternating row/column denoising is a neat general trick for coupling two axes with a 1-D video model; park it
+   for the dynamic-content class.
+
+---
+
+## CoDeF (2308.07926, CVPR 2024) — read in full
+
+**Method.** A 2-D hash-grid canonical image C(x, y) and a 3-D hash-grid deformation field D(x, y, t) → canonical
+position; colour = C(D(x, y, t)), fitted by L2 to the frames. Regularisers: **annealed** hash levels on the deformation
+(coarse first, fine added between steps 4 000 and 8 000 of 10 000; without it the canonical image grows "multiple
+hands"), and a flow-consistency loss on RAFT flow where forward–backward agrees. For big occlusions, optional *grouped*
+fields per SAM-track segment, with an extra loss that trains each group's canonical *outside* its mask to the frame colour
+— because unsupervised hash cells otherwise fill with "random and unstructured patterns". Image tools (ControlNet, SAM,
+R-ESRGAN) run on the canonical image; the result is warped to every frame.
+
+**Cost / evidence (stated).** About 5 minutes for 100 frames on one A6000 (1–10 min depending on clip); LNA "more than
+10 hours". Reconstruction PSNR **+4.4 dB** over LNA on unnamed "collected videos"; positional encoding instead of the 3-D
+hash: −3.1 dB. Everything else is figures and project-page videos — the authors say there is no accurate metric.
+Limitations they name: per-scene optimisation, **extreme viewpoint changes**, large non-rigid deformation.
+
+**Checking S63.** Accurate: mechanism, ~300 s vs >10 h, "cannot un-occlude anything". S63 says "large camera translation
+… which CoDeF names as a known flaw of prior atlases"; CoDeF actually names *distorted atlases* as the prior flaw and
+*extreme viewpoint change* as its own open problem — same substance, attribution loosened. S63 omits that CoDeF gives
+only one number against LNA.
+
+**For moebius.** CoDeF confirms the "edit the canonical image once, warp everywhere" pattern and its price: the canonical
+image is only as natural as the deformation is smooth, and regions never observed are *noise*, not a fill. It has no
+depth, so it does not help a head-tracked window. Our world-anchored layer is the 3-D version; the useful borrowing is
+their trick for unobserved cells — supervise them with something (for us: the plane wash) so a painter never sees
+garbage there.
+
+---
+
+## OmnimatteRF (2309.07749, ICCV 2023) — read in full (tables survived)
+
+**Method.** Omnimatte's 2-D RGBA foreground layers (a U-Net per object, fed a coarse mask, RAFT flow and an (x, y, t)
+encoding) over a **static TensoRF radiance field** for the background, rendered from each frame's pose (COLMAP, or
+RoDynRF poses where COLMAP fails). Losses: reconstruction, Omnimatte's alpha/flow terms, TV on the field, a
+scale-invariant MiDaS depth loss (needed when the camera only rotates; it breeds floaters, so a Mip-NeRF-360 distortion
+loss is added). **Masked retraining (§3.3):** joint training lets the field model shadows as holes/floaters that
+correlate with view direction; so after joint training the field is retrained *from scratch* on pixels where the
+foreground alpha is low (~30 min).
+
+**What it does not do.** Nothing fills background that was never seen: the field is only trained on observed pixels,
+and the background is evaluated only **at the input views** ("novel view synthesis is not the focus"). Foreground
+layers do not hallucinate their own occluded parts (limitation 3). A region under a shadow in nearly every frame keeps
+the shadow (limitation 1); unrelated motion (trees, cars) lands in the foreground layer (limitation 2); results depend on
+the random seed (App. B, seed 3).
+
+**Evidence.** Background PSNR on Kubric **39.1–43.6 dB** (D²NeRF 33.3–38.8, Omnimatte 21.2–31.2) and on their new
+**Movies** set **27.7–39.1 dB** (Omnimatte 19.1–23.9, LNA 18.8–26.5; D²NeRF fails on 2 of 5). Cost on one RTX 3090 at
+480×270: 3.8 h training, 3.5 s per rendered image (Omnimatte 2.7 h / 2.5 s; LNA 8.5 h). Masks: Mask R-CNN picks or
+After-Effects Roto Brush, ~10 min of manual work per 200 frames.
+
+**Checking S63.** S63's summary (2-D foreground + 3-D radiance-field background, masked retraining, static background,
+known or estimated poses) is accurate. S63's Omnimatte line "3–8.5 h per video and ~2.5 s per frame" (cited via
+OmnimatteZero) blends two rows of this paper's Table A2: Omnimatte is 2.7 h and 2.5 s/frame; 8.5 h is LNA.
+
+**For moebius.**
+1. This is the "copy what was seen anywhere" half of S63's plan, done with a radiance field; it confirms that a static
+   3-D background gathered over the clip is clean where observed, and says nothing about the never-seen rest — that is
+   still our plate fill.
+2. **Masked retraining is our rule too:** build the static layer only from pixels the foreground does *not* cover, after
+   the foreground is known. Their failure (shadow baked where it is present in nearly every frame) is the lighting case
+   S63 assigns to a per-frame gain.
+3. **The Movies dataset is a ready truth set for our video work:** Blender Studio clips re-rendered with and without the
+   actors, with camera poses, released by the authors. It complements our ray-cast shots with real production lighting
+   and non-rigid actors — the Blender-realism check we planned, already rendered. (Licence to be checked before use.)
+
+---
+
+## Generative Omnimatte (2411.16683, CVPR 2025) — read in full (main Table 1 cells lost; appendix tables survived)
+
+**Method.** Stage 1: **Casper**, Lumiere's inpainting model fully fine-tuned (20 k iterations, batch 32) to remove an
+object *and its effects*. Condition = input video + **trimask** (0 remove, 1 keep, 0.5 "background that may hold effects")
++ noise; unlike ordinary inpainting the RGB inside the removal region is **kept** in the condition (after ObjectDrop), so
+the model can tie a shadow outside the mask to the object inside it. One clean-plate run plus one "solo" run per object.
+Stage 2: per object, optimise RGB + alpha (U-Net for alpha, sparsity L0/L1, mask loss decayed) so that
+alpha·fg + (1−alpha)·clean-plate = solo video; the clean plate is fixed. Layer order for recomposition from DepthCrafter.
+Training data: 31 omnimatte results, 15 tripod web videos (Ken-Burns motion added), 569 Kubric scenes, 1024 object-paste
+clips — about half real, half synthetic.
+
+**Resolution and cost.** Casper runs at the **Lumiere base resolution, 128 px high (e.g. 224×128)**, 80 frames, 256 DDPM
+steps, no CFG — ~12 min on a 96 GB TPU; Lumiere SSR to 640×384 (~15 min) *hallucinates high-frequency detail*, so alpha
+is bootstrapped at 128 px and detail is transferred back only where layers are fully opaque. Whole clip, 3 objects:
+35–49 min. A CogVideoX re-fine-tune: 66 s for 85 frames at 384×672 on an A100 (50 DDIM steps).
+
+**Evidence.** On OmnimatteRF's 10 synthetic scenes (5 Kubric + 5 Movies): **38.38 dB / LPIPS 0.020** with all data
+(Table 3); Omnimatte-only data 37.06. For scale, OmnimatteRF's own per-scene numbers average ≈ 37.4 dB — the generative
+method is about **1 dB** better on average on backgrounds that are mostly *observed*; its advantage is qualitative, on
+real clips where pose/depth fail and on content never seen (the occluded horse). Limitations: deformation effects
+(bending poles, trampolines), many similar objects, unrelated background motion assigned to an object; fixed seed 0.
+
+**Checking S63.** Accurate: Casper/trimask, "no static scene, poses or depth", 12 min / 80 frames at 128 px then 640×384,
+the limitations list. Not stated in S63: the 128-px working resolution means every fine detail in the fill comes from an
+upsampler the authors themselves say invents detail; and the quantitative margin over OmnimatteRF is about 1 dB.
+
+**For moebius.**
+1. **Amodal completion by removing the occluder (App. A, Fig. 14):** to recover a dog hidden behind poles they mark the
+   *poles* for removal and let the model complete the dog in the solo video. That is the middle-surface class (a leg
+   behind a leg, the starwatcher's hidden body) posed as a removal problem — useful framing for the "never seen and
+   changing" class.
+2. **Keeping the occluder's pixels visible to the model** helps *effect* removal (shadows follow the object). For our
+   disocclusion fills the occluder is not inside the hole, and Diffusion-VAS/our S62 finding says keep it out of context;
+   the two are consistent once you separate "remove an object and its effects" from "fill behind an object that stays".
+3. At 128 px the model is a planner, not a painter; any use for us would be as a low-resolution prior with our own
+   texture carried from observed pixels.
