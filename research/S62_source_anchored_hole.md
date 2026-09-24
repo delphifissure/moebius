@@ -478,3 +478,68 @@ In the app (main `964a616`):
     - The app's "margin" plate option (default off) extends the plate past the frame by clamp.
     - A real fix is outpaint, not the hole.
   - The Vermeer keeps 259 and 170 px at the two diagonal poses (±0.9, 0.87).
+
+## 12. The middle surface, and the second layer downstream (user: "the silhouette of the legs leaves a gap in the dune"; "is there not a rule we can make to capture this issue generally"; "include / ship it — just now have to see what it breaks downstream")
+
+**What the user saw.**
+- Starwatcher, head to either side: a blue wedge cuts into the dune beside the astronaut's legs, shaped like the legs.
+- It is in the renders before SD as well: the fill, not SD.
+
+**Why.**
+- The hole around the astronaut takes in both his legs and the dune's top band, the band that shows the plain behind the ridge when you look over it.
+- The hole's one fill is the far plain (depth ≈ 0.06; the dune is ≈ 0.35–0.43). That is right for the band.
+- Behind the lower legs, though, the nearest surface is the dune going on; the plain is one layer further back.
+- Nothing carried the dune there:
+  - the boots stand in it, so legs and dune meet at one depth and there is no rim between them;
+  - the pins and the rims' reach (`Fc`) both carry the plain.
+
+**The rule** (app main `57edc95`; no constant set per image):
+1. **Pin.** A hole texel whose source lies in front of its own fill by two steps, and behind a neighbouring hole texel's source across a rim, is a *middle-surface pin* (the dune beside the legs).
+2. **Region.** The hole texels in front of the pins, reached through texels joined in the source, up to the relative shift of the two at the envelope's edge. Past that no pose shows them.
+3. **Groups.** The pins are grouped where the rim law joins them. Each texel of the region continues its nearest group only, so where two groups meet it tears instead of stretching a sheet between them.
+4. **Presence.** A field is 1 beside the middle surface and 0 beside the far fill. The layer is kept where it is above one half: the ridge between them, continued across the legs.
+5. **Layers.** Where the continuation is behind the texel's source and in front of its fill by two steps, it is plate 1, and the old fill becomes plate 2.
+
+**On the way:**
+- Unbounded, the region ran through the boots and over the whole dune: 73 405 texels.
+- Anchored on the legs' own depth past the reach, the continuation ramped up to meet them: 70 walls per 1 000 inside the layer on the starwatcher.
+- One membrane over every group drew rubber sheets between leaves: 160 per 1 000 on the sunflowers.
+
+**Result:**
+- **Screen.** In the app, starwatcher at L42, R42 and LU: the wedge is gone and the dune continues behind the legs.
+  - Left: at LU, a thin streak where the two layers meet.
+  - Left: at R42, a few specks by the right boot.
+- **Offline equals app.** The worker's hole is identical to the offline build: 85 990 texels, 12 373 middle-layer texels.
+- **See-through** (8 poses): troll 36 → 40, Vermeer 488 → 468, starwatcher 27 → 12, sunflowers 7 854 → 6 660, S2 8 580 → 8 377.
+- **Kit** (env45):
+  - S2: precision 0.339 → 0.343, recall 0.991.
+  - S15: recall 0.849 → 0.862, weighted recall 0.827 → 0.843, precision 0.410 → 0.414.
+- **Atlas.** Walls per 1 000 hole texels rise: troll 21 → 55, Vermeer 10 → 44, starwatcher 0.8 → 34, sunflowers 24 → 97.
+  - About half are the seams between the two layers, which the rule must make.
+  - On the sunflowers, the walls inside the layer are mostly seams between groups (median jump 1.9 steps, 90th percentile 110): stem, leaf and flower each continued separately.
+
+**Downstream: what it would break, and the fixes** (branch `s62-worker`, `c37b3a4`, `a15ae96`):
+1. **Plate 2 was never painted.** SD painted plate 1 only; plate 2 kept its wash, and the middle surface makes plate 2 far more common.
+   - `sd_return.py` now makes a second SD pass for plate 2: the first pass's picture with plate 2's wash in its region, plate 2's mask and its depth. It writes `return_band2_color.png`.
+   - The import paints plate 2 with it and rebuilds the plate-2 mesh.
+2. **The layers could cross after SD.** The import replaces plate 1's depth with the return, which could put it behind plate 2.
+   - After a returned depth, any plate-2 texel not behind plate 1 by two steps leaves plate 2, and plate 1 is re-torn.
+   - Reported as `st.layer2.droppedByOrder`.
+3. **The SD mask edge sat on the silhouette's colour fringe.** That fringe was the troll's lace.
+   - A fixed widening of 4 texels removed the lace.
+   - It is now measured per texel (`--grow auto`, the default): walking out from the hole's edge, the run of texels whose colour is nearer the occluder's than the background's joins the mask SD paints.
+   - Median run 0 texels on all four pictures; 90th percentile 3–8.
+4. **The linter judged layer seams as combing.**
+   - `atlas_lint.py` LAYERS splits the walls into layer seams and walls inside a layer.
+   - It lints plate 2 on its own, and counts order violations (plate 2 not behind plate 1).
+   - Starwatcher's new bundle:
+     - plate 2: 10 923 texels in 12 components, no walls inside it, 0 order violations;
+     - one texel in the mask sits exactly 2.0 steps behind its source (16-bit rounding at the threshold, not a clone).
+
+**The model, from first principles.**
+- Every ray should show the first surface along it.
+- So every texel needs an ordered stack of layers, each with a depth, a colour and an end, and SD paints every layer a pose can show.
+- Against that model, still to do:
+  - the frame's edge as a hole (outpaint, as its own class);
+  - hidden edges continued along their tangent (elastica) instead of where a harmonic field crosses one half;
+  - a minimum size for a middle layer (the ink-line scale, `WASH_RUN` = 8).
