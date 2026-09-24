@@ -7,6 +7,8 @@ completion; benchmarks and synthetic scene generation; depth-estimator artefacts
 Section 1 is written from our own failures and from what any photograph, painting or render can
 contain. Nothing here is code; nothing here changes a default.
 
+**First-hand check (2026-09-24).** `R1_first_hand.md` re-reads the papers these agent passes relied on where the text was reachable (17 papers, plus the classical ones already read in S55/R8). It corrects several claims below — Depth Pro's boundary metric, TMPI's tiling, MoGe-2's sky mask, SEVA's quote, the 'converged on one rule' claim in §2.5 — and lists the papers (SLIDE, One Shot 3D Photography, 3D Ken Burns, Zitnick 2004, …) that are still second-hand.
+
 ## 0. Why this note exists
 
 Addenda 173–190 attacked disocclusion one mechanism at a time (band outline, membrane colour,
