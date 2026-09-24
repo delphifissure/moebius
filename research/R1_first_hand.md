@@ -152,3 +152,196 @@ point (no generative NVS model yields a per-pixel layered asset for a browser) s
 **For moebius.** Two consistent data points with TrajectoryCrafter: generating a large novel view from one image lands
 around 13–15 dB against truth, and single-image scale is ambiguous. Their anchors-then-fill sampling is the same
 keyframe pattern as DiffuEraser's pre-inference and our "paint the static layer once".
+
+---
+
+## MoGe-2 (2507.02546, Microsoft, NeurIPS 2025) — read in full (main tables' cells partly lost; appendix tables survived)
+
+**Method.** MoGe's **affine-invariant point map** (DINOv2-L, robust optimal alignment solver, multi-scale local
+supervision), plus a **separate metric scale** predicted from the CLS token by an MLP, trained with a stop-gradient on
+the aligned scale — so scale errors do not disturb relative geometry. Focal/shift recovered from the point map.
+**Real-data refinement:** a synthetic-only MoGe flags real depth that disagrees *locally* (per-sphere alignment, several
+radii) — mainly LiDAR/RGB mis-sync and SfM holes at boundaries — and refills the flagged pixels by **log-depth Poisson
+completion**: match the gradients of the synthetic model's log depth inside the region, with the real depth as the
+Dirichlet boundary (Eq. 7). 24 datasets, 32 A100 for 120 h.
+
+**Evidence.** Best relative and metric geometry averaged over 10 / 7 datasets (metric point map rank 1.64 vs UniDepth V2
+2.43, Depth Pro 3.29); boundary F1 "comparable to Depth Pro" using far fewer tokens. Ablation: synthetic-only data gives
+the sharpest edges (F1 13.3) but worst geometry; raw real data the reverse (10.3); refined real data 12.5 with near-best
+geometry. Latency 29–108 ms (A100, FP16) for 484²–1188² input. **Limitations stated:** thin lines and hair; straight
+structures under large foreground/background scale differences; metric scale out of distribution.
+
+**Checking R1.** R1 §2.7 and pass 7 credit MoGe-2 with "metric, FOV, **sky validity mask**". Metric and FOV: yes. **A
+sky/validity mask is not described anywhere in the MoGe-2 paper** (it is a MoGe-1/repository output); the claim cannot be
+supported from this text.
+
+**For moebius.** The log-depth Poisson completion is directly usable: to give a painted plate a depth, run a depth model
+on the painted image and **keep only its log-depth gradients inside the hole, with our known rim depth as the boundary
+condition**. That is image-conditioned (like Invisible Stitch/InFusion), costs one depth pass and one sparse solve, and
+cannot drift from the rim — a principled alternative to aligning a whole depth map.
+
+---
+
+## UniDepthV2 (2502.20110) — read (method, evaluation, efficiency)
+
+Metric 3-D from one image with **no intrinsics input**: a camera module predicts pinhole residuals that are turned into a
+dense azimuth/elevation ray map, which prompts the depth module by cross-attention; output in a pseudo-spherical space
+(azimuth, elevation, log-depth) so camera and depth errors are disentangled; a geometric-invariance loss across
+augmented views; an **edge-guided scale-shift-invariant loss** on patches around image edges (median/MAD-normalised
+inverse depth); and an **uncertainty output** trained without extra labels (evaluated by AUSE / Spearman). Beyond ~5 MP
+every compared model becomes memory-bound. **Checking R1:** "predicts intrinsics", "edge-guided local SSI loss",
+"confidence (v2)", "pseudo-spherical" — all accurate.
+
+## GeoCalib (2409.06704, ECCV 2024) and Perspective Fields (2212.03239, CVPR 2023) — read (method and results)
+
+**Perspective Fields** predict, per pixel, the **up-vector** (projected inverse gravity) and the **latitude** (angle of
+the ray above the horizontal plane; 0 on the horizon); a small ParamNet turns them into roll, pitch, FoV **and principal
+point** — the representation survives cropping and warping, where centred-pinhole calibrators fail (pitch error −40 %
+on crops). Object cut-outs need a separate distilled model. **GeoCalib** feeds a learned perspective field and
+per-pixel confidences into a Levenberg–Marquardt optimisation of the camera (gravity + focal, pinhole or fisheye), can
+take any known parameters as priors, and outputs uncertainties that track the true error; it beats both classical
+vanishing-point methods (which fail outside Manhattan scenes) and pure regressors on median roll/pitch/FoV.
+
+**Checking R1.** "Gravity, horizon, focal" from either — accurate.
+
+**For moebius.** A point R1 did not draw: **paintings and cropped photographs often have an off-centre principal
+point**, which a centred-pinhole assumption misreads as pitch. Perspective Fields recovers the principal point; if we
+ever fit a ground plane or horizon to a picture (R1's A2 step), it should come from a field that allows the shift.
+
+---
+
+## Floating No More / ORG (2407.18914, ECCV 2024) — read (method, data, experiments)
+
+**Method.** For an object-centric image, predict two dense fields with a PVTv2/SegFormer network: a **Perspective Field**
+(up-vector + latitude, as above) and **pixel height** — the image distance from a point to its vertical projection on the
+ground — for **both the front (first entry) and the back (last exit) surface** along each ray. Grid search on the
+perspective field gives FoV and roll/pitch; a closed-form reprojection turns pixel heights into a depth map and a point
+cloud standing on the ground plane. Trained on 3.36 M Blender renders of Objaverse objects (512², random FoV and
+viewpoint; a CUDA ray tracer for front/back pixel heights). Principal point assumed at the centre.
+
+**Evidence.** Better AbsRel/δ₁ and point-cloud metrics than LeReS, MiDaS/DPT + CTRL-C and Zero-123 on unseen object and
+human sets; the gain grows with viewpoint diversity; shadows and reflections with correct contact.
+
+**Checking R1.** R1 §2.4 cites ORG for "ground contact" — right. Two refinements: (1) R1's "shadow footprint is the only
+image cue to depth extent" comes from the pass's OutCast quote, not from ORG; (2) ORG **does predict a back surface per
+pixel** (as a pixel height), so R1's "Shin et al. 2019 — the only scene-level predictor of an object's back surface" is
+true only at *scene* level; ORG does it per object (masked, object-centric, trained on synthetic objects).
+
+**For moebius.** ORG's back-surface pixel height is exactly the "thickness field" R1 wanted for self-occlusion, in a
+form that needs no metric scale; it applies to isolated objects on a ground plane, which is the starwatcher/gladiator
+case rather than the painting-full-of-figures case. Candidate for the object-layer back face if the plane law ever needs
+a learned thickness.
+
+---
+
+## HairGuard (2601.03362, ETH / Disney Research) — read (method)
+
+Soft boundaries modelled as matting: I = α·FG + (1−α)·BG. A **depth fixer** (DINOv2/DPT features + a U-Net pixel branch
+fed Sobel edges of the input depth) outputs a **gate map** G and a residual, d̂ = d_in·G + d_res·(1−G), so it edits only
+soft-boundary pixels and plugs onto any depth model; training pairs are synthesised from **matting datasets** composited
+over backgrounds (a low α threshold gives the fine target, a high threshold plus blur the degraded input). For view
+synthesis: forward-warp with the fixed depth, a generative painter for the holes, and a **colour fuser** that removes
+the "redundant background colours" a warped soft edge carries and the painter's hallucinated texture. Observations
+stated: Depth Anything V2 breaks hair; **Depth Pro puts soft-boundary depth behind the true surface, detaching hair**;
+latent models degrade fine texture. **Checking R1:** cited only as "the learned form" of soft visibility — fair.
+
+**For moebius.** Their observation that a warped soft edge carries background colour is the same point as αDepth and
+the EasyOmnimatte un-compositing: an edge pixel must be split into FG and BG before it moves.
+
+## Modeling Depth Ambiguity — MDA (2606.02552, Michigan / NVIDIA) — read (method, sky section)
+
+**Flying points explained:** a pixel straddling an edge is trained towards one depth, so the loss pulls it to a value
+between the two surfaces, on neither. MDA replaces the single (confidence-weighted Laplace) output with a **K-component
+mixture** — depth, confidence and weight per component, only the last layer changed — and decodes by choosing the most
+likely component, so a boundary pixel lands on the foreground *or* the background, never between. Instantiated on
+**DA3** and VGGT, negligible overhead, robust to input blur. Extensions: transparent objects (several components active
+at once = several depth layers) and **sky as its own component** at infinite depth.
+
+**Checking R1.** "'Modeling Depth Ambiguity' 2026 sky mixture component" — accurate.
+
+**For moebius.** This is the cleanest statement of why our silhouettes ramp and of what fixes it: at an edge pixel
+keep **two** depth hypotheses and assign the pixel to one. Our colour-guided ramp collapse does the assignment after
+the fact; an MDA-style DA3 would give the two hypotheses (front and back depth at the same pixel) directly — which is
+also what the αDepth soft-edge layer needs. Worth checking whether MDA weights for DA3 are released.
+
+---
+
+## Gen3DSR (2404.03421, 3DV 2025), LayerPano3D (2408.13252), Scene4U (2504.00387) — read (method sections)
+
+- **Gen3DSR.** Entity segmentation (CropFormer), OneFormer to split entities into things and stuff, Perspective Fields for
+  the camera, Marigold depth. Things: amodal completion + per-object single-view reconstruction, placed by depth.
+  Stuff: all background entities are merged into one mask and a **small SDF MLP (plus a colour MLP) is fitted to their
+  unprojected points**, which continues the background behind the objects. Limitations: errors of each stage propagate.
+- **LayerPano3D** (text → panorama). Layers are made by **panoptic segmentation (ADE20K) of all visible assets, each
+  given the 75th-percentile depth of its mask, then K-means into N depth layers** — not by a stuff/things split. Each
+  layer's hidden part is filled with Flux-Fill + a panorama LoRA; each layer's depth is completed conditioned on the
+  inpainted layer and the masked depth of the layer behind; lifted to 3D Gaussians.
+- **Scene4U** (real panorama). Open-vocabulary segmentation, then an **LLM groups segments into dynamic objects,
+  foreground, background and sky**; layers repaired back to front with FLUX inpainting; depth estimation + completion;
+  layered 3DGS training.
+
+**Checking R1.** R1 §2.5 says the 2024–25 literature (Gen3DSR, LayerPano3D, Scene4U, Generative Omnimatte) "converged on
+one rule: background = the union of panoptic stuff classes … represented as a surface fitted to their depth; things are
+the separable layers". **Overstated.** Only Gen3DSR uses the stuff/things split with a fitted background surface (an SDF,
+not a depth surface); LayerPano3D clusters *all* assets by depth; Scene4U lets an LLM decide the grouping (with sky as its
+own class); Generative Omnimatte is per-object removal and has no stuff model at all. The quote attributed to Gen3DSR is a
+paraphrase of the sentence above.
+
+**For moebius.** What they do share, and what matters to us: **fill layers back to front, each conditioned on the layer
+behind**, and **complete each layer's depth conditioned on its own inpainted image and the depth behind it** (LayerPano3D
+Eq. 1) — the same order and conditioning as our plate → object-layer build. Our depth-only reveal geometry does not need
+semantic classes to decide what tears; semantics would only be a tie-breaker.
+
+---
+
+## Tree-D Fusion (2407.10330, ECCV 2024) and pix2gestalt (2401.14398, CVPR 2024) — read (method, results, limits)
+
+**Tree-D Fusion.** From one street-view image and a genus label: optimise a NeRF with score distillation from two
+tree-adapted diffusion priors (SD + LoRA on tree photos, Zero123 on synthetic trees) to get a **3-D crown envelope**,
+fill it with point markers, then **grow branches into it by space colonisation** (a genus-conditioned developmental
+model). 600 k trees released. Best for symmetric trees; shapes limited by the simulator. **Checking R1:** "fills a crown
+envelope … never per-gap depth" — accurate (the paper recovers an envelope and grows plausible structure, not the observed
+gaps).
+
+**pix2gestalt.** An image-conditioned diffusion model (from SD, trained on synthetic occluded/whole pairs) that, given a
+point or mask prompt on a partly visible object, **synthesises the whole object alone**; sampling gives several
+completions; works on paintings. SD-XL inpainting, by contrast, "often hallucinates extraneous, unrealistic details";
+failures include common-sense/physics errors (a car completed facing the wrong way). **Checking R1:** "completes a
+silhouette hidden by ANOTHER object … applicable to stacked occluders, not to self-occlusion" — accurate. The VRAM and
+speed figures in the pass are from the repository, not the paper.
+
+---
+
+## Summary
+
+**Read first-hand here (17):** Depth Pro, TMPI, Invisible Stitch, InFusion, Stable Virtual Camera, MoGe-2, UniDepthV2,
+GeoCalib, Perspective Fields, Floating No More, HairGuard, MDA, Gen3DSR, LayerPano3D, Scene4U, Tree-D Fusion,
+pix2gestalt. Plus the ten classical papers already read in S55 and the R8 set.
+
+**Corrections to R1:**
+
+| R1 said | The paper says |
+|---|---|
+| Depth Pro's metric rewards foreground depth over a silhouette "including its gaps" | α > 0.1 edges include internal gaps; filling gaps loses recall. The real support for "porosity comes from the image": best model recovers ~17 % of hair/fur contours |
+| TMPI: 12.5 %-width tiles, 3-cluster k-means for four planes, tuning-free | 64-px tiles with ⅛ overlap; k = n = 4; confidence weights are learned |
+| Hidden depth in InFusion / Invisible Stitch "a smooth interpolant of the rim … floors bulge" | not in either paper |
+| SEVA v1.0 "foreground objects detached from the background" | not in the paper (repository note at best) |
+| MoGe-2 has a sky validity mask | not described in MoGe-2 |
+| 2024–25 scene papers "converged on one rule" (stuff = background surface) | only Gen3DSR does that; LayerPano3D clusters by depth, Scene4U by LLM |
+| Shin 2019 the only predictor of an object's back surface | ORG predicts per-pixel back-surface pixel height (object-level) |
+
+**New, useful for the current work:** MoGe-2's log-depth Poisson completion (depth for a painted hole from a depth
+model's gradients, pinned to our rim); MDA's two-hypothesis edge pixels on DA3 (the principled form of ramp collapse and
+the input αDepth needs); Invisible Stitch's 7× gain from view-change-shaped masks (third confirmation of the round-trip
+mask idea); Perspective Fields' principal-point recovery for cropped pictures; ORG's back-surface pixel height as a
+learned thickness.
+
+**Still second-hand — needs the texts (please supply as .md or PDF if you want these checked):**
+SLIDE (Jampani et al., ICCV 2021, arXiv 2109.01068) — R1's "single most reusable paper" and the source of its
+soft-visibility and disocclusion-extent formulas; One Shot 3D Photography (Kopf et al., SIGGRAPH 2020, 2008.12298);
+3D Ken Burns (Niklaus et al., SIGGRAPH Asia 2019, 1909.05483); Tucker & Snavely, single-view MPI (CVPR 2020,
+2004.11364); Boosting Monocular Depth (Miangoleh et al., CVPR 2021, 2105.14021); Zitnick et al., "High-quality video view
+interpolation using a layered representation" (SIGGRAPH 2004); Solh & AlRegib, hierarchical hole filling (IEEE JSTSP
+2012); Müller et al., reliability-based 3D video view synthesis (EURASIP JIVP 2008); Zinger, Do & de With (JVCIR 2010);
+Monster Mash (Dvorožňák et al., SIGGRAPH Asia 2020). Lower priority: Worldsheet, SynSin, Flash3D, SharpNet, Displacement
+Fields, AdaMPI, MINE, Spring, Shin et al. 2019, Liba et al. 2020.
