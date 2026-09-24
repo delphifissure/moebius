@@ -6,7 +6,10 @@ one clip in the app repo; Part B is the literature pass (report written for this
 
 **Corrections.** `S63b_paper_notes.md` reads five of the cited papers in full (αDepth, Omnimatte3D, SEE4D, Diffusion-VAS,
 DepthDirector) and corrects Part B where it relied on abstracts — notably, Omnimatte3D keeps a per-frame background
-held together by a consistency loss, not one world-anchored canvas.
+held together by a consistency loss, not one world-anchored canvas. `S63c_first_hand.md` re-reads the other 22 papers
+Part B relied on, first-hand, with a table of factual corrections (ProPainter's E_warp unit, DA3's figures and the
+Base/Small pose weakness, MiniMax's background-only PSNR, SVG, FloED, ReCamMaster's base model, Warped Diffusion's
+inpainting scope, and others) and what they change in the plan.
 
 ## Part A — the coverage measurement on the gladiator clip
 

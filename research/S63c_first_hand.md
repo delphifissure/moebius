@@ -5,6 +5,57 @@ mirror; the user asked that every paper an agent read be read first-hand. Full t
 kept in `research/papers/s63/`. Each section: what the paper actually says that S63 relies on, what S63 got wrong or
 left out, and what it means for moebius. Written paper by paper, in the order of weight in the plan.
 
+**Status: all 22 read.** Where a table's cells were lost in the mirror's HTML conversion, the section says so and uses
+only numbers stated in the text.
+
+### Summary — corrections to S63 (factual)
+
+| Paper | S63 said | The paper says |
+|---|---|---|
+| ProPainter | E_warp in units ×10⁻² | ×10⁻³; quantitative scores are on stationary masks, object removal only shown |
+| Depth Anything 3 | beats VGGT by 44.3 % pose / 25.1 % geometry | 35.7 % / 23.6 % in this version's abstract |
+| Depth Anything 3 | DA3-Base/Small if licensing matters | Base/Small are far weaker at poses; VGGT-1B-Commercial is the licence-safe pose choice |
+| Video Depth Anything | (omitted) | built on DAv2, not DA3 — a different depth family from our stills |
+| MegaSaM | ~1.3 fps | 1.3 fps is the optional depth stage; tracking is ~1 s/frame on an A100 |
+| GEN3C | (omitted) | explicit 3-D fusion of monocular depths costs −2.3 dB; it re-renders every pixel |
+| MiniMax-Remover | "DAVIS PSNR" column | background-preservation PSNR (outside the hole); says nothing about the fill |
+| DiffuEraser | 22-frame clips with overlap | overlap alone fails; staggered denoising + whole-clip pre-inference; no quantitative table at all |
+| SVG | "the one method consistent across time and viewpoint" | consistency encouraged by denoising rows/columns, not enforced; +0.6 CLIP points; 16 frames |
+| FloED | latents warped "to skip half the denoising work" | only steps 2–6 of 25; net speed-up 13.4 %, about cancelling the flow branch's cost |
+| Omnimatte (via OmnimatteZero/RF) | 3–8.5 h per video | Omnimatte ≈ 2.7–3 h; 8.5 h is LNA |
+| ReCamMaster | Wan2.1 [paper] | an internal Kuaishou T2V model; Wan2.1 would be the code release |
+| Warped Diffusion | "does video inpainting" | inpainting tested only on synthetic integer shifts; authors say it fails on real-video inpainting |
+
+Smaller omissions (no benchmark ownership, 128-px working resolution of Generative Omnimatte, 2-D-only camera motion in
+PROVE-M, soft z-buffer in StereoCrafter, no pixel metric in ReCamMaster) are in the sections.
+
+### Summary — what the first-hand reading changes in the plan
+
+1. **The S63 ordering is confirmed by the strongest table we have** (OmnimatteZero Table 1, on backgrounds that were seen
+   somewhere in the clip): 3-D gathering of observations (OmnimatteRF 37.4 dB) ≫ 2-D video inpainting (ProPainter 31.1,
+   DiffuEraser 32.4) ≫ per-frame generation (Video RePaint 20.6). CogNVS's +3 dB from stacking the static background
+   and FloED's ablation (propagated motion worth ~5.8 dB, an image-inpainted anchor ~4 dB) point the same way. Copy what
+   was seen, by geometry; paint once what was never seen.
+2. **Warped Diffusion and SVG close the door on per-frame SD with noise tricks** for real footage — consistency must come
+   from the world-anchored layer.
+3. **The starwatcher leg fill has a named cause.** MiniMax-Remover (App. 7): a hole cut to the occluder's silhouette makes
+   diffusion models regrow an object of that shape. Automatic arms to test, no training: (a) hand the painter a mask that
+   is not the silhouette (the reveal band / dilation along the reveal direction only); (b) start SD from our plane wash
+   partially noised inside the hole, as DiffuEraser does with its ProPainter prior; (c) LaMa first then SD refine (exists).
+4. **Never give a latent painter a black hole** (SVG §3.3): the VAE smears the black into the known ring. Check every class
+   we send to SD carries the wash, not mask-black.
+5. **Scoring rules** (PROVE): score fills inside the hole against truth with masked LPIPS first; never whole-frame or
+   background PSNR; check any no-reference score against a blurred copy (blur must not win); temporal stability in
+   moving shots measured by warping with true depth/pose, not RC-T.
+6. **Real-picture ground truth**: Geometric Reciprocity and TrajectoryCrafter's double reprojection are the same round
+   trip; build it. For middle surfaces, TACO's paste-an-occluder recipe gives truth on real footage.
+7. **Ready truth sets for video**: OmnimatteRF's Movies (Blender Studio clips rendered with and without actors, with
+   poses) and ReCamMaster's multi-camera Unreal set. Licences to check.
+8. **Soft edges**: once the plate behind an edge is filled, solve the edge's own colour by un-compositing
+   F = (I − (1−α)B)/α (EasyOmnimatte, known-background matting) — pairs with the αDepth plan.
+9. **Depth**: explicit fusion needs consistent per-frame depth first (GEN3C −2.3 dB); VDA is DAv2-based; MegaSaM's
+   observability test decides when parallax can build the static layer at all.
+
 ---
 
 ## ProPainter (2309.03897, ICCV 2023) — read in full, with supplementary
@@ -632,3 +683,113 @@ over random background masks (the "BR" task), not object removal.
 motion (flow) is worth about 5.8 dB and an image-inpainted anchor frame about 4 dB**, together ~7.4 dB. Both are cheap
 stand-ins for what we get exactly from geometry: correspondences from depth + pose instead of completed flow, and a
 painted world-anchored layer instead of one anchor frame.
+
+---
+
+## ReCamMaster (2503.11647 v2, ICCV 2025) — read in full (tables survived; appendix not in the mirror)
+
+**Method.** A *video-to-video* re-shoot with no geometry: source-video tokens are concatenated with target-video tokens
+**along the frame axis**, so the DiT's 3-D attention sees both; the target camera's extrinsics (12 numbers per frame, no
+intrinsics, no source pose) are added through a per-block linear encoder. Only the camera encoder and 3-D attention
+layers are trained (10 k steps, 384×672, batch 40). Tricks: noise the condition latent (200–500 steps) to hide the
+Unreal look; drop the source entirely 20 % of the time (T2V) or all but the first frame 20 % (I2V), which "prompts
+performance in synthesizing coherent objects invisible in the source video". **Data:** Unreal Engine 5, 136 k videos,
+13.6 k dynamic scenes, 40 environments, 122 k trajectories, 10 synchronised cameras per scene; released.
+**Base model: "an internal pre-trained text-to-video foundation model"** (Kuaishou).
+
+**Evidence.** On 1 000 WebVid clips × 10 simple trajectories: FID 57.1 (next best DaS 63.3), FVD 122.7 (159.6),
+RotErr 1.22 (1.45), TransErr 4.85, matched pixels 906 k (634 k). Frame-axis conditioning vs channel-axis: FID 57.1 vs
+74.1, matched pixels 906 k vs 521 k. No metric compares pixels against a true novel view; limitations: compute (tokens
+doubled), hands.
+
+**Checking S63.** **Correction:** S63 says "Wan2.1 conditioned on the source video … [paper]". The paper names only an
+internal Kuaishou model; any Wan2.1 version would be the public code release (S63 cites MIT code), which cannot be
+checked from the paper. The rest (frame-concatenation, Unreal data, 384×672) is accurate.
+
+**For moebius.** ReCamMaster re-generates every pixel of every frame; nothing guarantees that a seen pixel stays the
+seen pixel, and camera accuracy is measured after the fact by SfM (≈1.2° rotation error). That is the opposite contract
+to ours (source pixels are sacred, only holes are painted). Two useful things: the **released multi-camera Unreal
+dataset** (synchronised views of the same dynamic scene — a truth source for "what is behind" at a second viewpoint),
+and the finding that dropping the condition during training is what teaches the model to invent unseen content.
+
+---
+
+## TrajectoryCrafter (2503.05638) — read in full (Tables 1–3 cells lost)
+
+**Method.** DepthCrafter video depth with "empirically set" intrinsics → per-frame point clouds → render the target
+trajectory (holes + mask) → CogVideoX-Fun-5B with the render+mask as the I2V condition, plus **Ref-DiT** blocks that
+cross-attend to the (misaligned) source video. **Double reprojection (§3.4):** to train from ordinary monocular video,
+lift a frame, render it to a random nearby view, lift that render and render it back — the result is aligned with the
+original frame but carries exactly the holes a view change makes, so the original frame is the ground truth. Plus 120 k
+triplets from DL3DV and RealEstate10K reconstructed with MASt3R. Two stages (10 k + 5 k iterations, batch 8 on 8 GPUs),
+49 frames at 384×672.
+
+**Evidence.** On the five usable iPhone (DyCheck) scenes the table cells are lost, but the text states **all methods are
+below 15 dB PSNR** on held-out real novel views and argues pixel metrics are unsuitable for occluded regions; VBench on
+160 in-the-wild clips. Limitations: very large trajectories (360°), depth errors propagate (a dog's nose through a door
+pane), multi-step cost.
+
+**Checking S63.** Accurate (dual-stream on CogVideoX-Fun-5B, 49 frames 384×672, the quoted limitation). S63 does not
+note that the whole output video is generated — the rendered pixels are a condition, not kept.
+
+**For moebius.** **Double reprojection is the Geometric-Reciprocity round trip, published four months earlier** and used
+for the same purpose (free training/evaluation pairs from monocular video). Two independent groups converging on it is
+good support for building our real-picture fill test on it. The sub-15 dB figure on real novel views is the honest
+ceiling for "generate the new view"; our contract (keep every source pixel) avoids that loss on everything that was seen.
+
+---
+
+## TACO — video amodal completion (2503.12049, ICCV 2025) — read in full (tables survived)
+
+**Method.** SVD (14 frames) fine-tuned to output the **whole object** across the clip, given the occluded video and the
+object's visible SAM2 masks (video latent + mask latent + noise concatenated; per-frame CLIP embeddings by
+cross-attention). Data: **OvO**, ~200 k pairs made by pasting SA-1B occluders over objects that are fully visible in real
+videos (MVImgNet, SA-V, BDD100k); OvO-Easy (30–70 % occluded, occluder interpolated linearly) then OvO-Hard (40–80 %,
+occluder rides with the object so part stays hidden all clip, feathered edges), trained in that order. Long clips:
+14-frame windows, the last 5 completed frames pasted back into the next window's input.
+
+**Evidence (Table 1).** PSNR / LPIPS against true amodal frames: OvO-Easy 26.1 / 0.054, OvO-Hard 22.6 / 0.093;
+Kubric-Static **23.96** (Diffusion-VAS 21.36, pix2gestalt 20.52, PCNet 19.85); Kubric-Dynamic 23.05 (Diffusion-VAS
+21.07). Amodal mask IoU on Kubric: Diffusion-VAS slightly better (84.3 vs 83.9; 77.8 vs 77.4). User study 36 people,
+~4.6/5 vs ≤2.9 for baselines. Downstream: better NeRF2Mesh reconstruction of occluded objects (Chamfer 1.26 vs 1.97 for
+pix2gestalt, GT-amodal 1.05) and POPE pose.
+
+**Checking S63.** Accurate (SVD 14-frame, progressive curriculum on synthetic occlusions). The 8×80 GB training and the
+licence are repo facts not checkable here.
+
+**For moebius.** TACO is the candidate for the **middle-surface class** — the part of a moving person hidden by their own
+arm or other leg — where the object itself must be completed, not the background behind it. Two transferable ideas:
+(1) its **data recipe** (paste a real occluder over a fully visible object; the unoccluded frames are truth) gives us a
+cheap truth set for testing any middle-surface fill on real footage, the same spirit as GRT for background fills;
+(2) on Kubric it beats Diffusion-VAS by ~2–2.6 dB on content while Diffusion-VAS's explicit amodal-mask stage gives
+slightly better shapes — so a two-step "shape first, then content" (Diffusion-VAS mask, TACO-like fill) is the sensible
+split, matching our own "geometry first, then paint".
+
+---
+
+## Warped Diffusion (2410.16152, NeurIPS 2024) — read in full (tables survived)
+
+**Method.** Treat each frame as a function; use **Gaussian-process noise** (random Fourier features, so the noise can be
+evaluated anywhere and warped by optical flow without interpolation), which requires fine-tuning SDXL on correlated
+noise (100 k steps on COYO; single-image quality unchanged: inpainting FID 58.7 GP vs 61.4 white). For each new frame,
+warp the noise by flow and add **equivariance self-guidance**: at each sampling step, a gradient step pulling the
+prediction towards the warped prediction of the previous frame on pixels that stay in frame.
+
+**Evidence.** Inpainting is tested **only on synthetic integer 2-D shifts of a single image** (Table 2): warping error
+0.001 for Warped Diffusion vs 0.046 (How I Warped Your Noise) and 0.06–0.14 for other noise schemes, with restoration
+metrics unchanged — i.e. noise warping alone leaves the frames inconsistent; guidance removes it. On 600 real FETV videos
+only **8× super-resolution** is evaluated (Table 3): warping error 0.649 vs 0.81–1.05 for the others, with some FID cost.
+"No warping" (guidance only) hurts at low step counts. **Limitations (§5):** ~5 min per 2-s clip on an A100; the VAE
+decoder need not be equivariant (text); it depends on flow quality — "for real videos, there might be occlusions and the
+estimation of the flow map can be noisy. We observed that in such cases our method fails, **especially for challenging
+tasks such as video inpainting**"; needs a model fine-tuned on correlated noise.
+
+**Checking S63.** The quotes from the ∫-noise authors, the SDXL fine-tune and the 5-min figure are accurate.
+**Correction:** S63 says Warped Diffusion "does video inpainting"; its inpainting results are on synthetic integer
+shifts only, and the authors state it fails on real-video inpainting with occlusions. S63's conclusion ("shared or
+warped noise is not enough for SD latent inpainting") is right and is in fact stronger than S63 put it.
+
+**For moebius.** This is the most direct evidence that **per-frame SD with any noise trick will not give stable fills in
+real footage**: even with a fine-tuned model and explicit equivariance guidance, occlusion breaks it. It confirms the S63
+choice — paint static content once in a world-anchored layer, so consistency comes from geometry and not from the
+sampler.
