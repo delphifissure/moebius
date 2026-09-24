@@ -65,9 +65,12 @@ derived, no new constant — and the envelope's extent then only matters for the
 the strip added per degree is seen at a constant size, see `reveal90.py`) and for the band texels first revealed
 beyond 45°, weighted by cos²θ.
 
-Measured on a video frame (truck_trunks frame 0, app law, 3° steps): the in-plate band is 93 % first revealed by 30°
-and 98.5 % by 45° (65 776 / 3 954 / 258 / 177 / 658 px in the rings 0–30 / 30–45 / 45–60 / 60–75 / 75–90°); beyond 45° the new need is almost all outpaint beyond the frame (0.76 × window at 48°, 2.5 × at 75°,
-6.5 × at 84° on the glass; seen, the visible strip peaks near 45–50° and falls to 5 px at 84°).
+Measured on a video frame (truck_trunks frame 0, the app's default volume outer 0.02 / inner 0.04 / pn 0.5 / D 0.2,
+moebius.js L2959–2960; 3° steps): the in-plate band, weighted by seen size, is 77 % first revealed by 30°, 86 % by 45°,
+94 % by 60° and 99.9 % by 75° (raw texels 38 356 / 6 678 / 10 501 / 26 605 / 1 202 in the rings 0–30 / 30–45 / 45–60 /
+60–75 / 75–90°: the far rings hold many texels but each is seen small). *(A first version of this paragraph, and of the
+two examples below, used outer = 0.24, a truth-kit scene's depth, about six times deeper than the app's default; the
+derivations do not depend on it, the example numbers do, and they are now the default's.)*
 
 ## The outpaint strip at ±90° is finite if it is stored by angle (item 3)
 
@@ -84,11 +87,13 @@ glass needs falls exactly as cos²θ without a rule for it, and the whole strip 
 
     σ · π/2 texels per side   (finite; 89° and 90° cost the same).
 
-Example: truck_trunks frame 0 under the app law, σ ≈ 327 px at 45° on a 480-px plate → ≈ 510 texels per side, about one
-window width, for the full ±90°. On the glass the same strip would be 18 700 px at 89°.
+Example: truck_trunks frame 0 under the app's default volume, σ ≈ 150 px at 45° on a 480-px plate (the pop-out near
+content; the far background moves 55 px) → ≈ 236 texels per side, about half a window width, for the full ±90°. On the
+glass the same strip would be 8 600 px at 89°.
 
 **When the view becomes all invention.** The window shows only content beyond the photograph's frame (for the far
-background) once σ·tan θ exceeds the window width W_px: tan θ* = W_px / σ. truck_trunks: θ* ≈ 56°. Past θ*, what the
+background) once σ·tan θ exceeds the window width W_px: tan θ* = W_px / σ. truck_trunks at the default volume: θ* ≈ 73°
+for the pop-out content (σ = 150 px) and ≈ 83° for the far background (σ = 55 px). Past θ*, what the
 viewer sees through the window at the far depth is entirely outpaint. This is where "scale the apparent size of the scene
 later" enters with a formula: compressing the depth range scales σ, and θ* = atan(W_px/σ) is the angle up to which the
 photograph itself still fills the far view. A target θ* sets the depth scale; nothing else needs choosing.
