@@ -68,3 +68,49 @@ beyond 45°, weighted by cos²θ.
 Measured on a video frame (truck_trunks frame 0, app law, 3° steps): the in-plate band is 93 % first revealed by 30°
 and 98.5 % by 45° (65 776 / 3 954 / 258 / 177 / 658 px in the rings 0–30 / 30–45 / 45–60 / 60–75 / 75–90°); beyond 45° the new need is almost all outpaint beyond the frame (0.76 × window at 48°, 2.5 × at 75°,
 6.5 × at 84° on the glass; seen, the visible strip peaks near 45–50° and falls to 5 px at 84°).
+
+## The outpaint strip at ±90° is finite if it is stored by angle (item 3)
+
+Beyond 45° almost all new need lies beyond the photograph's frame. Let σ be the farthest content's shift on the glass
+at 45° (px). At angle θ the strip beyond the frame edge is σ·tan θ on the glass — 57σ at 89°, unbounded at 90°. But a
+glass texel seen from θ is seen at cos²θ of its rest size, so the strip **added per degree** is seen at
+
+    d(σ tan θ)/dθ · cos²θ = σ   (px per radian, constant).
+
+Every degree adds the same visible amount, so the thinning does not bound the outpaint the way it bounds the band.
+What bounds it is the parametrisation: **store the strip by angle** (texel u ∝ θ, like a cylindrical sky map) instead
+of by position on the glass. One texel per dθ = 1/σ is then seen at a constant size at every angle, the resolution the
+glass needs falls exactly as cos²θ without a rule for it, and the whole strip from 0 to 90° is
+
+    σ · π/2 texels per side   (finite; 89° and 90° cost the same).
+
+Example: truck_trunks frame 0 under the app law, σ ≈ 327 px at 45° on a 480-px plate → ≈ 510 texels per side, about one
+window width, for the full ±90°. On the glass the same strip would be 18 700 px at 89°.
+
+**When the view becomes all invention.** The window shows only content beyond the photograph's frame (for the far
+background) once σ·tan θ exceeds the window width W_px: tan θ* = W_px / σ. truck_trunks: θ* ≈ 56°. Past θ*, what the
+viewer sees through the window at the far depth is entirely outpaint. This is where "scale the apparent size of the scene
+later" enters with a formula: compressing the depth range scales σ, and θ* = atan(W_px/σ) is the angle up to which the
+photograph itself still fills the far view. A target θ* sets the depth scale; nothing else needs choosing.
+
+**No acuity cut-off inside the envelope.** The window itself subtends (W/D)·cos²θ; with the app's W/D = 0.8 it falls
+under one arc-minute only past 88.9°. So everything to ~89° is visible, and the finite, angle-parametrised strip is the
+way to cover it, not a cut-off.
+
+## App audit: every use of D·tan(fadeEnd), and what it does at ±90°
+
+| where (moebius.js, worker branch) | kind | at fadeEnd → 90° |
+|---|---|---|
+| `bgPoseFrac` / `bgFadeFrac` (L150–160) | display fade | works up to 89° (the fade is angle-based through tan); exactly 90° divides by ∞ |
+| `bgShiftLUTFor` default `ex` (L341) | **coverage**: band, reach walk, sweep | shifts ×57 at 89°: band reach and sweep extent explode |
+| sweep pose grid (L9512: `ex = z0·tan(fadeDeg)`, poses uniform in e) | **coverage sampling** | poses uniform in e put ~all of a 17-pose grid beyond 80° and ~1 pose below 45° — must be uniform in angle (or in seen size) |
+| `bgSkyZ` (L1698) | coverage | sky Z ∝ tan: unbounded |
+| `bgConeSlopeAtDepth` (L266), L2293 (D hard-coded 0.2) | coverage (cone fill) | unbounded |
+| exRim (L9706) | probe extent | unbounded |
+| band tiers (L10677) | tier by pose fraction relative to tan(end) | angle-based, fine |
+| `_revealLaw` exH/exV (L11920) | **visibility tolerance** (S48/S50) | should cap at 45° (seen gap max) |
+| `bgRimLawFor` (L1609) | join test | does **not** use the envelope (fov/pw and a grazing angle) — unaffected |
+
+So ±90° is not a settings change. It needs (1) pose sampling by angle, (2) coverage extents from the angle-parametrised
+strip and the cos²-weighted band instead of D·tan(fadeEnd), (3) the visibility tolerance capped at 45°. (3) is one line
+and changes nothing at today's 45°; (1)–(2) are a sprint.
