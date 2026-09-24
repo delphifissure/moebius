@@ -283,3 +283,34 @@ the background").
 - Input: the whole astronaut lies inside the mask, so SD sees the picture with the figure already gone (PACO's arm (c), the contract S52 found best).
 - Colour: starry sky and the plain continue through the figure's place, with no trace of it. There are a few flaws: a faint dotted trace of the staff under the lamp, one small invented object on the plain, and a dark smudge at the frame's bottom edge.
 - Depth asked back through DA3 and fitted on the legal background: the plain in the hole comes back nearer than the plain beside it. The import removes one constant per component; whether that is enough is checked by the round trip.
+
+## 8. The hole kept to what some pose shows (user: "go ahead with the contact fix")
+
+**The kit found it.** S2 (boxes on a floor) and S15 (tree, sign, hills, sky) were scored against their exact hidden sets at the env45 envelope (`truthkit/check_app_band.py`). Source mode missed almost nothing (recall 1.00 and 0.99), but the hole was 4–6× the hidden set (precision 0.22 and 0.16; per-line 0.89 and 0.72).
+- The reach flowed off each object through the contact where it stands: the trunk on the ground, the box on the floor. The contact is joined, and the ground is in front of the far wall, hills and sky, so the reach passed. It then covered the whole floor or ground.
+- The renders never showed this, because the ground covers that plate at every pose. But the SD mask carried the whole floor, and the ground no longer gave the fill its pins.
+- Three repairs were tried and measured before the one that works:
+  - Continuing the far side as a plane instead of a constant: no change. Here the far side is a wall or the sky.
+  - Clipping the reach to the frame: no change.
+  - Rerunning the reach with seen budgets: the flood came back through the same contacts.
+
+**The rule** (`bgSourceHole`, after the reach).
+- A hole texel is kept only if some pose shows it. For 32 head offsets over the envelope rectangle (8 directions × 4 magnitudes), the source mesh is moved: each texel by its own shift, stretched between the texels the rim law joins, nearest in front.
+- Every uncovered screen pixel inside the frame with a surface on both sides along h (a real gap, not the outpaint band at the frame's edge) shows the plate.
+- The surface on the gap's far side continues there, so the plate texel shown is g − s_far·h. It is marked seen.
+- The seen set's outline carries the map's column-to-column noise. A majority over a (2·8+1)² square decides the texels: 8 is `WASH_RUN`, the ink-line scale. Texels within 8 of their own rim stay whenever they were seen, so a thin staff (all rim) is kept.
+- Cost: about 3.3 s per bake, in the worker.
+
+| scene | precision | recall | weighted recall | hole px | band depth p90 |
+|---|---|---|---|---|---|
+| S2 before | 0.22 | 1.000 | 1.000 | 75 937 | 0.072 m |
+| S2 seen | 0.47 | 0.997 | 0.998 | 34 818 | 0.049 m |
+| S15 before | 0.16 | 0.994 | 0.999 | 220 310 | 8.57 m |
+| S15 seen | 0.53 | 0.967 | 0.993 | 63 395 | 8.57 m |
+
+- Pictures (hole texels, before → after): troll 259k → 133k, starwatcher 89k → 54k, the Vermeer 342k → 246k, the sunflowers 170k → 121k.
+- The outlines stay smooth. Starwatcher's staff stays in the hole, and the near dune keeps only its reveal band.
+
+**Still open: S15's depth inside the canopy.** The median band error stays 3.5 m (per-line 0.18 m; keeping the source depth 0.02 m).
+- It is not the flood. The errors sit inside the tree's canopy, where the first hidden surface is other leaves a few centimetres behind, and the source fill puts the far hills and sky there.
+- The per-line law continued neighbouring leaves. A porous occluder (foliage) is its own problem for the source construction.
