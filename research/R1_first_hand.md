@@ -336,12 +336,239 @@ the input αDepth needs); Invisible Stitch's 7× gain from view-change-shaped ma
 mask idea); Perspective Fields' principal-point recovery for cropped pictures; ORG's back-surface pixel height as a
 learned thickness.
 
-**Still second-hand — needs the texts (please supply as .md or PDF if you want these checked):**
-SLIDE (Jampani et al., ICCV 2021, arXiv 2109.01068) — R1's "single most reusable paper" and the source of its
-soft-visibility and disocclusion-extent formulas; One Shot 3D Photography (Kopf et al., SIGGRAPH 2020, 2008.12298);
-3D Ken Burns (Niklaus et al., SIGGRAPH Asia 2019, 1909.05483); Tucker & Snavely, single-view MPI (CVPR 2020,
-2004.11364); Boosting Monocular Depth (Miangoleh et al., CVPR 2021, 2105.14021); Zitnick et al., "High-quality video view
-interpolation using a layered representation" (SIGGRAPH 2004); Solh & AlRegib, hierarchical hole filling (IEEE JSTSP
-2012); Müller et al., reliability-based 3D video view synthesis (EURASIP JIVP 2008); Zinger, Do & de With (JVCIR 2010);
-Monster Mash (Dvorožňák et al., SIGGRAPH Asia 2020). Lower priority: Worldsheet, SynSin, Flash3D, SharpNet, Displacement
-Fields, AdaMPI, MINE, Spring, Shin et al. 2019, Liba et al. 2020.
+**Still second-hand:** see the end of the second batch below (Zitnick 2004 is the one high-priority text still missing).
+
+---
+
+## Second batch — the texts the user supplied (read first-hand, 2026-09-24)
+
+Ten of the requested papers plus one survey, supplied by the user as markdown. The full texts are **not committed**:
+several are publisher copies (IEEE, Elsevier, ACM), one carries a personal licence stamp. The file named
+`1015706.1015731` is **not** Zitnick et al. 2004: it is Liu, Lin & Hays, "Near-Regular Texture Analysis and Manipulation"
+(SIGGRAPH 2004), the neighbouring ACM article. It was read anyway (note at the end); Zitnick 2004 is still needed.
+Several conversions lost their equations (Zinger, Müller, Solh & AlRegib, Monster Mash); where a number was only in an
+equation it is marked "lost" rather than guessed.
+
+### SLIDE (Jampani et al., ICCV 2021, 2109.01068) — read in full, with the supplement
+
+**Method.** Two layers only. MiDaS v2 disparity, "slight Gaussian blur and max-pool" (to reduce missing foreground
+pixels and noise; the sizes are not given). Foreground visibility A = exp(−β‖∇D‖²) with a Sobel gradient (Eq. 1). A
+pixel's background is disoccluded if some neighbour at pixel distance K has D(x) − D(neighbour) > ρK (Eq. 2) — ρ stands
+for an assumed maximum camera move; soft version S = ReLU(tanh(γ·max(…))) (Eq. 3), computed along horizontal and
+vertical scan lines only, over a neighbourhood of more than 30 px. The mask S lies on the **foreground** side of the edge:
+the background layer is inpainted *under* the foreground rim. Optional matte: A′ = A·(1 − (M̄ − M)(1 − Ŝ)), so matting
+acts only in the dilated ring outside the matte. **β, ρ, γ and the neighbourhood size are not given anywhere.**
+
+**The inpainter** (DeepFillv2 gated convolutions, RGB + disparity in and out) is trained on Places2 with two kinds of
+mask: random strokes, and **occlusion masks** — the ring on the background side of each object, where the true
+background is visible — "pretending the foreground is larger than its actual size along its silhouette", so the network
+learns to borrow only from farther pixels. Fig. 6 shows HiFill and DeepFill completing the basketball and the dog's head
+inside the hole: the same regrowth we see on the starwatcher's legs.
+
+**Evidence.** RealEstate10K LPIPS 0.06 / 0.10 (t = 5 / 10) vs 3D-Photo 0.09 / 0.12, PSNR equal at t = 10; Dual-Pixels
+0.23 vs 0.27; Mannequin Challenge 0.18 vs 0.22 — whole-frame metrics with a 20 % border ignored. User study 56 % vs 26 %
+(99 photos), 62 % vs 22 % on hair close-ups. 0.07 s per image (0.35 s with matting). End-to-end fine-tuning helped only
+0.10 → 0.09 LPIPS because the datasets "do not have many large (dis)occlusions".
+
+**Checking R1.** Soft visibility, the disocclusion condition, matting only near the edge, and the occlusion-mask
+training are all correctly reported, and β/ρ/γ are indeed unstated. Two over-readings: "ρ = 1/(g·b_max) … bounds the
+plug depth and tunnelling analytically" is R1's own derivation, not the paper's; "max-pooled **by the blur radius** so
+mixed pixels land on the foreground" — the paper gives no size link.
+
+**For moebius.** The occlusion-mask training is the model-level cure for regrowth; our blob mask is a prompt-time
+imitation of it. It is also a fourth source (with GRT, Invisible Stitch, TrajectoryCrafter) for training/testing masks
+shaped like the background side of an edge, where truth exists.
+
+### One Shot 3D Photography (Kopf et al., ACM TOG 39(4), SIGGRAPH 2020, 2008.12298) — read in full
+
+Authors: Kopf, Matzen, Alsisan, Quigley, Ge, Chong, Patterson, Frahm, Wu, Yu, Zhang, He, Vajda, Saraf, Cohen (Facebook).
+
+**Method.** Mobile depth network (architecture search, int8), sky forced to twice the maximum depth in training. Depth
+cleaning: 5×5 weighted median with Gaussian weights on disparity difference (σ = 0.2), **weights switched off next to an
+edge** (a neighbour more than τ = 0.05 away) "to force a decision between foreground and background"; connected
+components under 20 px merged into the side with more contact. Lift to a layered depth image with explicit
+4-connectivity, cut where disparity jumps by more than τ. **Occluded geometry:** discontinuity pixels grouped into
+curves (not across junctions; groups under 20 px dropped); each curve grows as one unit, one pixel per iteration, **never
+past the perpendicular line at its end points**; at three-way junctions only the mid/foreground constraint is kept so
+the background grows freely under both; a new pixel's depth is the **average of its neighbours**; 50 iterations.
+**Inpainting on the LDI:** a partial-convolution network whose kernels are filled by walking the LDI's connectivity, so
+across a silhouette the network sees nothing (zero padding). Screen-space inpainting is rejected because it is slow,
+inconsistent between views, and "continuous on both foreground and background sides … strong blur artifacts along the
+edges". Foreground pixels close to a discontinuity ("possibly mixed colors") are re-inpainted too (Fig. 6). Charts by
+seed-and-grow, padding by diffusion, JPEG macroblock padding (−40 % size), glTF of 300–500 KB, 1.1 s on a phone. Viewing:
+"constrain the viewing angles and fade the model out if there is too much head motion".
+
+**Evidence (Table 2).** Truth by construction: lift a picture to a single-layer mesh, render it from a canonical view,
+**depth-peel** to get every layer's true colour, inpaint all layers but the first, reproject. Same network on the LDI vs
+in screen space: **34.13 vs 32.02 dB, LPIPS 0.023 vs 0.033**; full PConv 34.00 vs 33.23 dB.
+
+**Checking R1.** "Closest production analogue", LDI, "not limited to two layers", chart atlas: correct. **"Kopf continues
+the depth EDGE into the disoccluded region under constraints, so the fill's depth profile is shaped rather than flat":
+wrong.** The constraints bound how far each curve grows sideways (end-point perpendiculars, the junction rule); the depth
+of a new pixel is a plain neighbour average.
+
+**For moebius.** (1) The number task #59 lacked: inpainting that cannot see across the silhouette beats screen-space
+inpainting with the same network by 2.1 dB / 0.009 LPIPS. (2) Depth peeling is the same truth-by-construction idea as our
+kit. (3) Mixed rim pixels are repainted, not kept. (4) The end-point perpendicular is a general, constant-free rule for how
+far a hidden contour may run.
+
+### 3D Ken Burns Effect from a Single Image (Niklaus, Mai, Yang, Liu, ACM TOG 38(6), 2019, 1909.05483) — read in full
+
+**Method.** Depth network with VGG-19 semantic features forced to dominate; Mask R-CNN people/cars/animals get "the
+smallest depth value from the bottom of the salient object" over the whole mask (an upright plane on its contact point;
+"not physically correct" but plausible); a refinement network upsamples to 1024 px guided by the image. Rendering by
+point cloud with a z-buffer crack filter (pixels whose two opposite neighbours are both much closer get their average
+depth). **Disocclusion:** a network inpaints **colour and depth** of the incomplete novel view (plus a learned 64-channel
+context), and the inpainted pixels become new points — "only at extreme views like the beginning and the end" (extreme
+left, right, top, bottom in the interactive mode). Every frame is then a render of the extended cloud: temporally
+consistent by construction. Per-frame DeepFill/EdgeConnect fail on both geometry and temporal consistency.
+
+**Evidence.** NYUv2 rel 0.08 (MegaDepth 0.24); iBims depth-boundary error 2.02 px with refinement. Users rate the results
+on par with artists overall, but prefer artists on portraits because artists **exaggerate parallax beyond physical
+depth**, "and this artistic emphasis is often preferred by viewers".
+
+**Checking R1.** R1's "code-level" facts (|Laplacian| ≥ 0.03, a 16-direction scan taking the farther endpoint, bottom 3 %
+of rows, 1.1× maximum shift) are **not in the paper**; the paper's adjustment is "smallest depth from the bottom of the
+object" and its hole fill is a learned colour+depth network. Keep them marked as code-only, unverified here.
+
+**For moebius.** Paint once at the envelope extremes and lift the paint to geometry — the atlas logic, with the temporal
+argument made first here. The portrait finding supports treating our dolly/diorama sliders as artistic controls.
+
+### Tucker & Snavely, Single-View View Synthesis with Multiplane Images (CVPR 2020, 2004.11364) — read in full
+
+**Method.** 32 planes equally spaced in disparity; each plane's colour is w·input + (1 − w)·**one predicted background
+image**, with w = the product of the alphas in front (visible → input, occluded → background). Scale from sparse SfM
+points; edge-aware smoothness (e_min = 0.1, g_min = 0.05).
+
+**Evidence (Table 2).** Whole frame PSNR 26.4 / 23.5; **disoccluded pixels only 19.7 / 17.9**. The model without the
+background image scores **better on the whole frame** (26.8 / 23.7) and **worse on the disoccluded pixels** (18.7 / 17.7).
+The background "inpaints" only a few pixels; the network learned to erode foreground edges and guess what lies behind.
+
+**Checking R1.** 32 planes, one global background, and the "blurriness and repeated edge artefacts" quote (Flowers,
+Fig. 7) are right. "Low-frequency — validating the membrane" is R1's reading, not the paper's.
+
+**For moebius.** A published case where whole-frame scores prefer the worse hole fill — a citation for our rule of scoring
+inside the hole only.
+
+### Boosting Monocular Depth (Miangoleh, Dille, Mai, Paris, Aksoy, CVPR 2021, 2105.14021) — read in full (main paper)
+
+**Method.** Run a fixed depth network at two resolutions and merge: the low one (the receptive field, 384 for MiDaS) for
+structure, the high one (R20: the resolution leaving 20 % of pixels without an image edge within half a receptive field)
+for detail, merged by a Pix2Pix network; then patches in edge-dense areas at higher resolution, merged one by one.
+Upsampling a small image before inference already adds detail (a capacity limit).
+
+**Evidence.** Middlebury boundary error D3R 0.334 → 0.158 with MiDaS; iBims only 0.370 → 0.322; refinement-only methods
+add nothing. **Limitation:** the high-resolution passes carry low-level noise that "may result in flat surfaces
+appearing noisy".
+
+**Checking R1.** "Thin detail needs a resolution fitting the edge density" — right. "Edge ramps are roughly constant in
+network-input pixels (R0/R20 argument)" — not in the paper; it is R1's inference.
+
+**For moebius.** Not for the plate: the method's own limitation is noise on flat surfaces, which is what the atlas must
+not have. The capacity finding explains our R8 item 4 (running DA at twice the short side).
+
+### Zinger, Do & de With, Free-viewpoint depth image based rendering (JVCIR 21, 2010) — read in full
+
+**Method.** Two-camera interpolation. Cracks (< 3 % of the image) found by a 3×3 median on the warped depth and filled
+by inverse warping. Mixed edge pixels (texture edges span 2–3 px, depth edges 1 px) are **not warped at all**, expanded
+by one pixel; the discontinuity threshold is 80 of 255, "about 25 % of the maximal depth value" (empirical). Holes: for
+each hole pixel, look in eight directions for the nearest valid pixel, **keep only the background ones**, average them
+weighted by distance.
+
+**Evidence.** +3 dB and +4.5 dB PSNR over Mori et al.; "the subjective quality difference is smaller". Their own
+limitation of the fill: "the inpainted region becomes a low frequency patch, when the disoccluded region is very large".
+
+**Checking R1.** "Pixels at strong discontinuities are not warped at all" — right. **"Every pixel carries a reliability
+weight = distance to a depth edge" and the "reliability channel (Zinger 2010 …)" — not in Zinger**; its only distance
+weight is inside the hole fill.
+
+**For moebius.** Their fill is our far-rim wash, with the property stated plainly: smooth on large holes, no foreground
+bleed — the "plausible wash" to hand to SD.
+
+### Müller, Smolic, Dix, Merkle, Kauff, Wiegand, View Synthesis for Advanced 3D Video Systems (EURASIP JIVP 2008) — read in full
+
+**Method.** Canny on the depth image (threshold 110, "found experimentally for the used test sets"), a 7-sample-wide
+unreliable strip along each edge split into a foreground and a background boundary layer. Main layers merged
+(front-most, or blended when projected depths agree within ε = 1.0), foreground boundary layer by depth test, background
+boundary layer **only where the view is still empty** — so mixed samples mostly drop out and no corona forms. Cracks:
+depth much larger than both neighbours (g > 40) → median colour. Big holes: filled line by line with the **constant
+colour of the background-side boundary pixel**, "better than an unconstrained linear interpolation"; fails when both
+sides are foreground. Afterwards the edges look "artificially inserted", so a 3-tap average is run across depth edges
+(|∇z| > 50). Temporal filling from other frames was considered and not done. No numbers, visual results only.
+
+**Checking R1.** The three-layer description is right ("a few px" = 7 samples in total).
+
+**For moebius.** Dropping mixed pixels needs a re-softening step afterwards; constant far-side colour beat interpolation.
+
+### Solh & AlRegib, Hierarchical Hole-Filling (IEEE JSTSP 6(5), 2012) — read in full
+
+**Method.** A pyramid: each Reduce step averages a 5×5 Gaussian window **over non-hole pixels only**, repeated until no
+holes remain; then Expand and Fill back down. Depth-adaptive variant: before the pyramid, weight colours by a smooth
+function of disparity (a little above 1 for the background, lower for the foreground; constants from the image's
+disparity range — formulas lost).
+
+**Evidence.** Middlebury, whole-image PSNR: 28.7–32.0 dB vs 26.2–29.7 for depth smoothing, horizontal interpolation and
+Criminisi; Ballet/Breakdance +0.9–2.0 dB; no flicker; 4.9 s vs 30 min for Criminisi in MATLAB. The depth-adaptive gain
+in the table is ±0.04 dB (the text says 0.1–0.3). Their own limitation: "slight blurry regions" around the filled areas.
+
+**Checking R1.** The push-pull description is right. Note that the depth weighting only **down-weights** the foreground;
+it does not exclude it.
+
+**For moebius.** Same family as our wash (normalised averaging), with the same measured character: blurred, but no
+flicker and no geometric distortion. Keep our far-rim-only seeding, which excludes the foreground outright.
+
+### Monster Mash (Dvorožňák, Sýkora, Curtis, Curless, Sorkine-Hornung, Salesin, ACM TOG 39(6), 2020) — read in full
+
+**Method.** Parts drawn as outlines with front/behind labels; the joined domain is inflated by a Poisson equation
+Δh = c with h = 0 on the drawn outlines, front and back with ±c, then h ← √h ("more pleasing semi-elliptical"); parts are
+put in depth order by ARAP-L (as-rigid-as-possible deformation with inequality constraints along drawn curves). The paper
+calls c "a user-specified scalar corresponding to a global amount of inflation". Texture: orthographic projection of the
+photo; hidden-side texture "an open problem". Stated limit: "limited control over the proportions in depth".
+
+**Checking R1.** The inflation equations are as R1 says; the default c = 2 is from the code (not checkable here); the
+0.71 × width arithmetic is correct and scale-free. **"The best-justified zero-tuning thickness rule" overstates it:** it
+is a self-scaling shape family with one user knob whose code default is 2.
+
+### Sun et al., An overview of free viewpoint DIBR (APSIPA ASC 2010) — read in full (not requested; in the archive)
+
+Useful items: Scharstein's **disparity gradient limit** of one pixel to tell a sampling gap (same surface) from a real
+hole (occlusion boundary) — a threshold with units, not a tuned one, and the same logic as our cliff tolerance in screen
+pixels; mirroring the scanline next to a hole beats spreading its neighbours; never spread across an occlusion
+boundary; score view synthesis by registration error with a k-th-ranked (generalised Hausdorff) distance, because a
+mean hides structured errors.
+
+### Liu, Lin & Hays, Near-Regular Texture Analysis and Manipulation (SIGGRAPH 2004) — supplied by mistake for Zitnick; read
+
+Near-regular textures modelled as a regular tiling deformed by geometry, lighting and colour fields; needs a
+user-marked lattice (1–18 min). Relevance is low, with one useful fact: general-purpose texture synthesis breaks the
+regularity of more than 40 % of regular-layout samples (their tech report) — why fences, bricks and tiles fail in
+LaMa/SD fills. Their fix needs manual input, so it is out for us.
+
+### Second-batch summary
+
+**Corrections to R1 (second batch):**
+
+| R1 said | The paper says |
+|---|---|
+| SLIDE: ρ = 1/(g·b_max) bounds plug depth and tunnelling analytically | ρ is an unstated scalar for "some maximum camera movement"; the bound is R1's derivation |
+| SLIDE: max-pool **by the blur radius** so mixed pixels land on the foreground | "slight Gaussian blur and max-pool", no sizes |
+| Kopf 2020 continues the depth edge into the hole "so the fill's depth profile is shaped rather than flat" | constraints bound sideways growth; new depth = neighbour average |
+| 3D Ken Burns: Laplacian 0.03 filter, 16-direction far-rim scan, bottom 3 %, 1.1× shift | none in the paper (code-level at best); the paper fills holes with a learned colour+depth network |
+| Tucker & Snavely's background image "is low-frequency — validating the membrane" | not said; it inpaints "a few pixels" |
+| Boosting: edge ramps constant in network-input pixels | not in the paper |
+| Zinger 2010: per-pixel reliability weight = distance to a depth edge | not in the paper; the distance weight is inside the hole fill only |
+| Monster Mash inflation is "the best-justified zero-tuning thickness rule" | c is a user-specified inflation amount (code default 2); depth proportions are a stated limitation |
+
+**New, useful for the current work:**
+- One Shot's +2.1 dB for connectivity-limited inpainting with the same network (task #59).
+- SLIDE's occlusion-mask training as the model-level fix for regrowth (the starwatcher legs).
+- Tucker & Snavely's case where whole-frame scores prefer the worse fill (a citation for scoring inside the hole only).
+- 3D Ken Burns: paint at the envelope extremes and lift the paint to geometry, which keeps frames temporally consistent.
+- Zinger, Müller and Solh all show the far-side fill's character: smooth, no foreground bleed, no flicker.
+- Scharstein's one-pixel disparity-gradient limit as a derived gap-vs-hole rule.
+
+**Still needed:**
+- Zitnick et al., "High-quality video view interpolation using a layered representation", ACM TOG 23(3):600–608,
+  SIGGRAPH 2004. The supplied file (ACM id 1015706.1015731) was a different article from the same issue.
+- Lower priority: Worldsheet, SynSin, Flash3D, SharpNet, Displacement Fields, AdaMPI, MINE, Spring, Shin et al. 2019,
+  Liba et al. 2020.
