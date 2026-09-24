@@ -364,3 +364,72 @@ S2's precision falls because the fill's own demand adds the floor that the fill 
 In the app (main `643fe49`):
 - The worker's hole, plate and wash are identical to the main thread on starwatcher (84 539 texels) and the troll (161 584). The SD tint equals the hole.
 - The troll's solve takes 64 s in the worker (25 s at §8): the P0 membrane, the larger hole's rounds and the shown trim. The page's longest freeze is unchanged at 14 s (the quick bake), because the solve is off the main thread.
+
+## 10. See-through measured as the screen draws it, and closed (user: "yes do everything you can"; app main `964a616`)
+
+**The measure was wrong first.**
+- §9 counted see-through on a 572-pixel canvas, where the picture is only 268 px wide, so one screen pixel covers about 3 texels. A gap narrower than that falls between pixel centres and disappears.
+- A layer probe in the page confirmed this: the page draws only the foreground, plate 1 and plate 2. At L42 plate 2 covered nothing, and the foreground's index matched the rim law triangle for triangle.
+- The new counter (`moebiusv2/harness/seethrough.js`) draws those three meshes exactly as the app does, at texel resolution:
+  - two triangles per cell, kept where the rim law joins all three edges;
+  - plate 1 by `bgRetearPlate`, plate 2 by `bgSourcePlate2`.
+  - It counts pixels nothing covers that are not connected to the frame's edge (the letterbox), over 8 poses at 0.9 of the envelope.
+- Inputs are each picture's depth as the app holds it (`_qbDQ`, dumped). The offline solve (`harness/srchole_offline.js`) reproduces the app's hole and plate exactly: 0 texels differ on the troll.
+
+**By that measure the §8 contact fix was a large regression, and §9 recovered most of it:**
+
+| interior see-through, 8 poses (texel px) | before §8 | §8 `0e18ce0` | §9 `643fe49` | **§10** |
+|---|---|---|---|---|
+| troll | 1 087 | 25 781 | 4 707 | **233** |
+| starwatcher | 307 | — | 2 391 | **230** |
+| Vermeer | 14 385 | — | 21 053 | **13 266** |
+| sunflowers | 7 513 | — | 11 859 | **8 356** |
+| S2 (kit) | 12 187 | — | 24 285 | **8 641** |
+
+**What §10 changed:**
+
+1. **The checks draw the renderer's triangles.** §8 and §9 drew each texel's quad as its bounding box. That covers sheared cells the renderer leaves open, and draws lone texels it never draws, so the checks thought gaps were closed that the screen showed open.
+
+2. **The demand is the fill's own.**
+   - The far-side guess (g − s_far·h) is gone. On the troll it missed wherever the fill moves differently from the gap's far side.
+   - On a ground seen at a grazing angle, where every row moves differently, it drew stripes of false demand beside each object.
+   - What remains is the texel a quick fill P0 draws in each gap, if that texel isn't its own source.
+
+3. **The plate tears only onto something.**
+   - `bgRetearPlate` bridges a torn triangle whose corners are all fill (a sheet between two fill surfaces), or whose source corners lie behind the fill.
+   - A torn triangle with a corner nearer than the fill (the foreground's own edge) still tears.
+   - The troll's remaining spots had been fill-to-fill tears at plate 2's edge (794 of 1 012 px at one pose).
+
+4. **Plate 2 is held along seams.** Behind a nearer part of the fill it is also pinned, along every seam, to the farther part beside it, not only to the farthest surface. On the troll, a 0.295 patch beside 0.176 background had plate 2 at 0.058, which slid off.
+
+5. **A patch pass (16 outer poses, two passes).**
+   - At every pixel a gap leaves open, the plate triangle that belongs there gets its missing corners.
+   - A corner the reach came to, but the not-behind rounds gave back, takes its own rim's far depth and colour, together with the connected band of such texels whose far side joins it. On the troll this was a 28-texel band behind a 0.17 → 0.22 rim.
+   - Any other corner takes the fill of the nearest hole texel, along a path of texels in front of it.
+   - It is skipped when the sky layer is on, since a gap there shows sky, never nothing.
+   - A blanket version of that rescue (every dropped demanded texel) brought the ground stripes back on S15, so the rescue acts only where a pose shows the gap.
+
+**Tried and rejected:**
+- Limiting the reach to texels no nearer than their rim's near side: 150 000 px of see-through on the troll, whose figures curve toward the viewer past their own rims.
+- Pinning P0 only at torn neighbours: the S15 stripes stayed, and recall fell to 0.64.
+- Box rasters for the demand with exact triangles for the checks: the troll went back to 2 989 px.
+- Keeping plate 2 untrimmed: no effect.
+
+**Costs:**
+- Solve time is up: troll 71 → 80 s, starwatcher 37 → 60 s, Vermeer about 175 s, all offline and single-threaded. In the app the solve is in the worker, so the page does not freeze.
+- The S15 hole grows from 52k to 70k texels. The ground bands beside the trunk and pole are wider; they are what the fill shows at the envelope's corners.
+- Kit (env45):
+
+| scene | precision | recall | weighted recall |
+|---|---|---|---|
+| S2 | 0.37 → 0.34 | 0.998 → 0.992 | 0.998 → 0.996 |
+| S15 | 0.59 → 0.42 | 0.874 → 0.849 | 0.903 → 0.828 |
+
+**Still open:**
+- The Vermeer keeps 1–3k px per pose. It is mostly one region above the bread basket where the shifts are large, and the hole's outer triangles at head-left, where the patch cannot extend the fill behind the source.
+- The sunflowers keep about 4k px at the upper corners.
+- S2's upper-corner band is content from below the frame's bottom edge at the envelope's corner (outpaint), and is the same in every build.
+
+In the app (main `964a616`):
+- The worker is identical to the main thread on starwatcher (86 498 texels) and the troll (170 558 texels, the same as the offline build). The SD tint equals the hole.
+- Solve: starwatcher 32 s, troll 90 s, in the worker. The page's longest freeze is 15–20 s, the quick bake.

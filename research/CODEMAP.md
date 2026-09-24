@@ -1233,7 +1233,7 @@ are appended as the read proceeds. "Fact" = read from code; "Note" = my inferenc
   (the object-rule arms set them and nothing cleared them). The `default` branch also deletes `_plateFlushExempt`.
 - The rule-5 removals are listed at the end of `S60_rule5_audit.md`.
 
-## 45. S62 (2026-09-23/24; `S62_source_anchored_hole.md`) — source mode: the hole anchored on the source (app main `643fe49`)
+## 45. S62 (2026-09-23/24; `S62_source_anchored_hole.md`) — source mode: the hole anchored on the source (app main `643fe49`; §10 additions at `964a616`, line numbers below are `643fe49`'s)
 
 Selected by `bgPlateHoleSel` = `source` (moebius.html:313, "hole depth: source (S62)"; default `perline`). Line numbers are moebius.js at `643fe49`.
 
@@ -1259,3 +1259,17 @@ Selected by `bgPlateHoleSel` = `source` (moebius.html:313, "hole depth: source (
   - `harness/srchole_worker_check.js`: worker vs main thread, SD tint, DUMP/BUNDLE/RETURN.
   - `harness/app_black.js`: see-through pixels on screen per pose; MB = a variant moebius.js.
   - `harness/truthkit/visplate.js`, `errvis.py`, `layers.py`: which plate texels any pose shows, and depth scored there.
+
+**§10 additions** (main `964a616`):
+- **Inside `bgSourceHole`:**
+  - `meshTris` / `drawMesh` / `triVerts`: the renderer's two triangles per cell, kept where the rim law joins all three edges; point-in-triangle coverage, nearest (or farthest) wins.
+  - The SEEN demand is P0's drawn triangles only; the far-side guess was removed.
+  - `demanded` is the post-vote set.
+  - The SHOWN trim draws triangles.
+  - Plate 2 is pinned along seams to the farther part (`st.plate2Seams`).
+  - **PATCH:** 16 outer poses, two passes. At open pixels, the missing corners of the plate triangle there are filled, by band rescue at the rim's far depth (`Fc`, `Fx`, `Pc`) or by a path fill from the hole. It is skipped with the sky layer (`st.patch`).
+- **`bgRetearPlate(pl, rl, pw, ph, hole, has2)`:** a torn triangle is bridged when all its corners are fill, or when its source corners lie behind the fill with no plate 2 or sky corner (`bridged` in its result).
+- **Harness:**
+  - `harness/srchole_offline.js`: the app's hole from its dumped depth, identical to the app.
+  - `harness/seethrough.js`: see-through as the app draws its meshes, at texel resolution; DIAG classifies causes.
+  - `harness/app_black.js` gains `EVAL` (JS run after the bake) and `POSES`.
