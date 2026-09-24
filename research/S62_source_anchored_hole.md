@@ -433,3 +433,48 @@ In the app (main `643fe49`):
 In the app (main `964a616`):
 - The worker is identical to the main thread on starwatcher (86 498 texels) and the troll (170 558 texels, the same as the offline build). The SD tint equals the hole.
 - Solve: starwatcher 32 s, troll 90 s, in the worker. The page's longest freeze is 15–20 s, the quick bake.
+
+## 11. Atlas cleanup, solve time, the Vermeer's see-through (user: "do 1, 2 and 3, then run SD on the bundles"; app main `460d816`)
+
+**1. Pinholes again, on the final hole** (`7cce9ef`).
+- The pinhole rule ran before the rounds, the shown trim and the patch. Those leave new islands of source inside the hole. The ones at the occluder's own depth are pieces of the figure standing inside its own disocclusion, which SD would be told to keep.
+- The rule now runs again at the end. A texel it joins takes the smooth continuation of the fill and wash around it, if that lies behind its source by two steps.
+- Troll: 224 texels joined (one fragment was 193 texels); pinholes 42 → 37. The 37 left are real content: they sit a median of zero steps from the source around them.
+- Specks (1–2-texel pieces of hole) are kept: each covers a gap a pose shows.
+
+**2. Solve time.**
+- The not-behind rounds were a third of the troll's solve: 14 global re-solves, dropping 3 053, 127, 73, 59, then 59 … 21 texels, 2.4 s each.
+- Now: four global rounds, then any texel the final solve leaves in front of its source goes back to it.
+- Stopping after four gives the same see-through, pinholes and clones on all five bench pictures. Stopping after two cost the Vermeer 491 px of see-through.
+- Offline, idle CPU: troll 72 → 51 s, Vermeer 99 → 88 s (with item 3's patch changes, which cost a few seconds back).
+
+**3. The Vermeer's see-through, found and closed.**
+- *What it was.* At head-left, the gap sat between the woman's moved outline and the inner edge of the wall fill behind her. The fill did not reach far enough under her: 12 texels short on one row.
+- *Why the patch missed it.*
+  - The patch draws every plate triangle and takes the farthest one under an open pixel. That set included the last column's two "triangles", which wrap to the next row's first texel. They are long and far, so they won the test across whole rows, and the patch grew the wrong corners.
+  - Even on the right triangle, the patch grew one corner per pass. A 12-texel gap needs 12 passes.
+  - Fix: `drawMesh` skips the last column.
+- *The texel that belongs there.* For an open pixel, the patch now also wants the texel the fill shows there: the pixel carried back by the fill's own shift. It is reached along a path through texels in front of the fill, so one pass closes a gap of any width.
+- *No ramps between surfaces.* A path carries one depth along its whole length, which is a wall in the atlas; troll walls went 16.9 → 26.3 per 1 000 hole texels. So the added texels take the smooth continuation of the fill around them.
+  - Linked across every neighbour, that drew a ramp between the wall behind the woman (0.01) and the fill under the bowl (0.6): 59 walls per 1 000.
+  - Linked only where the rim law joins (the rule that tears the mesh), each surface is smooth and the seam between them stays a tear.
+- *A gap is what the measure calls a gap.* The patch's old test walked along the head direction and called a pixel a gap if it met something on both sides. At a diagonal pose, the band that opens at the frame's bottom edge met the near ridge first and passed as a gap. On starwatcher that carried 18 000 texels of plain down through the ridge. Now a gap is an uncovered pixel not connected to the frame's edge, exactly as `seethrough.js` counts it.
+- *Tried and dropped.* Running the shown trim again on the patch's additions: it cut nothing on starwatcher (every added texel was on screen somewhere), and its cuts raised the Vermeer's walls from 9.3 to 14.7.
+
+**Result** (interior see-through at texel resolution, summed over 8 poses at 0.9 of the envelope; hole in texels; walls = adjacent hole texels more than one visible step apart, per 1 000 hole texels):
+
+| picture | see-through `964a616` → `460d816` | hole | walls |
+|---|---|---|---|
+| troll | 233 → **36** | 170 558 → 172 391 | 16.4 → 21.1 |
+| Vermeer | 13 266 → **488** | 319 305 → 344 016 | 6.9 → 9.9 |
+| starwatcher | 230 → **27** | 86 498 → 87 235 | 0.8 → 0.8 |
+| sunflowers | 8 356 → 7 854 | 132 731 → 134 082 | 23.1 → 23.7 |
+| S2 (kit) | 8 641 → 8 580 | 47 772 → 48 050 | 16.9 → 16.8 |
+
+- Kit (env45): S2 precision 0.342 → 0.339, recall 0.992 → 0.991; S15 precision 0.411 → 0.410, recall 0.849 → 0.849. The hole grew only where a pose shows it.
+- The troll's new walls are thin seam lines where two new wedges at the bottom corners meet the older fill, plus one 20 × 35-texel patch beside the figure. They are lines between surfaces, not scatter.
+- **Still open.**
+  - The sunflowers' 7 854 px and S2's 8 580 px are not holes. The measure counts pixels not connected to the frame's edge, but these lie beyond the plate's own edge: content from outside the picture, closed in by the foreground at the envelope's corners.
+    - The app's "margin" plate option (default off) extends the plate past the frame by clamp.
+    - A real fix is outpaint, not the hole.
+  - The Vermeer keeps 259 and 170 px at the two diagonal poses (±0.9, 0.87).

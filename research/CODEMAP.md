@@ -1273,3 +1273,16 @@ Selected by `bgPlateHoleSel` = `source` (moebius.html:313, "hole depth: source (
   - `harness/srchole_offline.js`: the app's hole from its dumped depth, identical to the app.
   - `harness/seethrough.js`: see-through as the app draws its meshes, at texel resolution; DIAG classifies causes.
   - `harness/app_black.js` gains `EVAL` (JS run after the bake) and `POSES`.
+
+**§11 additions** (main `460d816`, S62 §11):
+- **Inside `bgSourceHole`:**
+  - `drawMesh` skips the last column (its cells wrapped to the next row).
+  - The not-behind rounds stop after `GLOBAL_ROUNDS = 4`. After the final four-channel solve, a texel not behind its source by two steps goes back to source (`st.notBehindAfterFinal`).
+  - **PATCH:**
+    - An open pixel is uncovered and not connected to the frame's edge (flood per pose, `edg`).
+    - Wants are the farthest triangle's non-hole corners (`want = 1`, path ≤ `WASH_RUN`) and the texel the fill shows at the pixel, the pixel minus the fill's shift (`want = 2`, path ≤ 254 texels).
+    - Path texels (`pAdd`) take the harmonic continuation of the fill, linked only where `rl.joined` holds; unanchored groups keep their path value (`st.patch.smoothed`).
+  - **PINHOLES AGAIN:** `bgPinholeFilledMask` on the final hole; joined texels take the harmonic fill and wash when behind by two steps (`st.pinholesLate`).
+- **Harness:** `harness/sd_src_roundtrip.js`, with two modes:
+  - `MODE=export`: source bake, then `bundle.zip`.
+  - `MODE=view`: bake, then import `return/return_band_*.png` through `_importPlaneReturnFiles`, then six wide poses before and after.
