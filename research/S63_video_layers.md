@@ -4,6 +4,10 @@ Date: 2026-09-24. Question (user): with a moving camera, keep the layers continu
 SD and composite, instead of an SD pass per frame — or is there another way? Part A is our own first measurement on the
 one clip in the app repo; Part B is the literature pass (report written for this note, evidence-tagged per claim).
 
+**Corrections.** `S63b_paper_notes.md` reads five of the cited papers in full (αDepth, Omnimatte3D, SEE4D, Diffusion-VAS,
+DepthDirector) and corrects Part B where it relied on abstracts — notably, Omnimatte3D keeps a per-frame background
+held together by a consistency loss, not one world-anchored canvas.
+
 ## Part A — the coverage measurement on the gladiator clip
 
 **What it asks.** Of what is hidden behind the moving foreground at frame t, how much is *seen* in some other frame?
