@@ -239,3 +239,47 @@ the background").
 - The "SD regions" tint (the plate, its strips, and the foreground's dimming) now reads the hole. Tinted texels = hole
   texels (86 722 = 86 722, 0 differing), so the tint on screen is the bundle's inpaint mask.
 - The SD bundle export waits for a hole that is still solving, instead of writing the per-line plate.
+
+## 7. Source mode on its own (user: "do 1 and close all the gaps / features only the per-line path has"; app branch `s62-worker`)
+
+**The per-line build is skipped in source mode.**
+- In source mode the quick bake keeps only three things:
+  - the depth preparation that builds the source depth (edges, ink, dequantise, despeckle, smear snap);
+  - the foreground and its tear;
+  - the plate's mesh and textures.
+- Everything the hole replaces is skipped: the band, the plugs, the plane far side, the wash, plate 2, the step faces, the ordering clamps, the plate's own tear, and the post-bake fill. The plate's colour canvas starts as the source and the hole's wash is written into it.
+- A source bake no longer inherits an earlier per-line bake's fields. `_geoFarField`, `_bandReplace`, the carriers and the rest were being read from whatever the last per-line bake left behind.
+- Starwatcher before and after the skip gives the same bundle to the texel: source depth, plate depth, plate colour, inpaint mask, and occluder-removed picture.
+- The bake core went from 6.0 s to 3.8 s.
+- 7.3 s of the rest was an 8-bit read-back of the depth image that the 16-bit path drew and threw away. It now runs only when the 8-bit path needs it. That fix applies to per-line mode too.
+- Timing on the troll: the bake core is 4.2 s. The once-per-picture live sharpen still takes 2.5 s. The hole solve runs in the worker.
+- The edge sharpening never marked the foreground depth dirty. The foreground showed the sharpened edges only because later passes happened to mark it. It is marked now.
+
+**Objects.** `bgSourceHole` returns its own far field: the reach again with no budget, so each occluder is covered whole, and each texel takes the far depth of the rim that reaches it first. Objects (`_planeObjects`) are measured against that.
+- Starwatcher: 7 objects. Troll: 46.
+- `plane_object_ids.png`, `meta.plane_objects`, the context mask and the occluder-removed picture are written in source mode.
+- An external (SAM) object map no longer needs a far field. It was ignored whenever none existed.
+
+**Surfaces, the second layer, and sky** (`surfaces()` inside `bgSourceHole`).
+- The kept pins of each hole component are grouped by surface:
+  - Runs are 8-adjacent pins that the rim law joins: the straight-slope join on the axes, the ratio test on the diagonals.
+  - Runs whose median depths pass the ratio test are one surface.
+  - A surface seen along fewer than `WASH_RUN` (8) pins is no wider than an ink line and cannot be told from one. Its pins are dropped, like the blur's leftovers. On the troll this removed a 3-pin "surface" that had claimed a bright disk.
+- With one surface, nothing changes. Starwatcher, the Vermeer and the sunflowers have no component with two surfaces, and starwatcher's hole, plate and wash are byte-identical to before.
+- With two or more surfaces, the component is split by a random walker (Grady 2006). There is one harmonic per surface, set to 1 at its own pins and 0 at the others, and each texel goes to the surface whose harmonic is largest. Each part is then filled, depth and wash, from its own surface's pins only. Before, one membrane ramped between the surfaces.
+- The farthest surface continues behind the nearer parts as plate 2. This is one membrane over the whole component, pinned at that surface's pins, and it is kept where it lies behind plate 1 by two steps. It is the 2-D form of S4's arrival order.
+- Plate 2 is a second mesh, built the S4/S5 way: a triangle is kept if any corner carries the layer and the rim law joins its edges, all-sky triangles are left out, and it is class 4 in the SD view. The bundle gets `plane_plate2_*`.
+- Troll in the app: 3 components split, 82 679 plate-2 texels, 164 057 plate-2 triangles.
+- The split costs 12.6 s of the troll's 64 s worker solve. Walker labels only need the order of the harmonics, so that solve stops at a relative residual of 1e-4. Reusing labels across rounds is the next saving.
+- Sky, with sky at infinity on:
+  - The step-scaled rim law now joins sky only to sky, as the app's own rim law does. It used to fall through to the straight-slope join.
+  - Sky rims reach by the plane-at-infinity law.
+  - Sky is its own surface, so a part of the hole that continues the sky has sky depth, and its triangles are left to the sky layer (`bgRetearPlate` skips all-sky triangles).
+  - The sky layer's texture takes that part's wash.
+
+**SD return.** In source mode, `_importPlaneReturn` rebuilds the plate index on the returned depth with the same rule (`bgRetearPlate`). Before, the plate kept the bake's tears.
+
+**The SD stage on the new bundle** (starwatcher; SD 1.5 inpainting + depth ControlNet, CPU, 20 steps, 40 min).
+- Input: the whole astronaut lies inside the mask, so SD sees the picture with the figure already gone (PACO's arm (c), the contract S52 found best).
+- Colour: starry sky and the plain continue through the figure's place, with no trace of it. There are a few flaws: a faint dotted trace of the staff under the lamp, one small invented object on the plain, and a dark smudge at the frame's bottom edge.
+- Depth asked back through DA3 and fitted on the legal background: the plain in the hole comes back nearer than the plain beside it. The import removes one constant per component; whether that is enough is checked by the round trip.
