@@ -61,7 +61,14 @@ the panel runs it, at several grid densities:
   the boundary mode), so the misses are *between directions*: 17 × 5 has 40 perimeter directions, 65 × 17 has 160. A
   closed form that covers the envelope's perimeter continuously — the way a162's min-plus chamfer already covers the
   cone for the ordering invariant — is the proper replacement for the grid; the source-anchored hole's reach walk (16
-  directions) has the same directional sampling and should be measured the same way. Not built yet.
+  directions) has the same directional sampling and should be measured the same way.
+- **Tried and falsified: an adaptive perimeter sweep** (insert a midpoint pose between neighbours whenever it reveals a
+  texel neither reveals, stop where it adds none). On the default picture at 45 × 30 it never converged — every midpoint
+  revealed a few texels (a single-pose sweep's sampling alone produces "new" texels), the depth guard was hit 2 542 times,
+  5 092 poses, 2.3 h — and it recalled only 89.4 % of the 65 × 17 band while 32 619 band texels are seen only from
+  INTERIOR poses: the premise that the perimeter sees all the interior sees does not hold for this band. Removed from the
+  app (the user's rule: falsified work leaves the file). The fix is not more poses on the rim; it needs a formulation
+  that covers the whole envelope continuously, or accepts the dense grid's cost offline.
 - **At 80° × 80° nothing breaks in the bake**: no errors, 137 s, the plug margin grows exactly as tan 80°/tan 45°
   (570 → 3 225 texels per side; its strips are one cell across, so the geometry stays cheap). The band is less complete
   (79 % of the 33 × 9 band at 17 × 5), as the wider envelope spreads the same poses over more directions. What will
