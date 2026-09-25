@@ -83,7 +83,7 @@ view, and sets the face-tracking scalar to (0.7 m / estimated distance) × 3.0, 
 | "life-size" is impossible | a cathedral through a 30 cm portal | not an error: the portal is a window; m ≪ 1 is right, and only close-ups approach m ≈ 1 |
 | depth-model failure regions (sky edges, glass, water) | wrong d under a reference | references there are down-weighted; the sky is used only as infinity |
 
-## 5. Proposal (not built)
+## 5. Built (app main, after the user's go)
 
 - **References, per shot:**
   - Two clicks give an image-plane length, taken at the clicks' median disparity (in-panel, no `prompt()`).
@@ -101,3 +101,30 @@ view, and sets the face-tracking scalar to (0.7 m / estimated distance) × 3.0, 
 References for single-view metrology and the camera-height prior (Criminisi, Reid & Zisserman, "Single View Metrology",
 IJCV 2000; Hoiem, Efros & Hebert, "Putting Objects in Perspective", CVPR 2006) are named for the idea only; not yet
 read first-hand here.
+
+**As built** (`handleCanvasClickForScale`, `bgScaleSolve`, `bgMetricLawZ`; panel: Set Scale + preset + length + Clear +
+readout):
+- **Measuring:** Set Scale holds the view at rest. Two clicks are mapped through the rest frustum to source pixels, and
+  the reference is their Euclidean pixel length in portal units, at the clicks' mean disparity, with the typed or preset
+  real length. The presets are typical values, editable.
+- **Foreshortening:** a pair whose app distances differ by more than the join ratio 1.05 is flagged as not one surface.
+- **The solve:** α and β by least squares over all references, plus the sky as the point (d = 0, q = 0) when sky pixels
+  exist.
+  - One depth only and no sky: β = 0 is ASSUMED (the farthest point at infinity) and said to be wrong indoors.
+  - α ≤ 0 (nearer is not larger) is reported as a conflict, and the first reference alone is used.
+- **The lens:** the shot-lens select if set, else Camera Intrinsics (focal, sensor).
+- **The readout:** the scale at the subject plane (1 m = x cm on the portal), the subject's distance, the farthest
+  point's distance, per-reference residuals, and every assumption.
+- **Geometry:** under C / Cm the per-shot metric depth law replaces the volume law in the shared GLSL displacement and
+  in `volumeZOffForNormDepth`: z = D·((α·pn + β)/(α·d + β) − 1), capped at 999·D (C's parallax cap). The result is in
+  the SD bundle's meta (`sceneScale`).
+- **Removed:** the old tool's face-tracking scalar side-effect, its `prompt()` / `alert()`, and the axis-mixing 3-D
+  division.
+
+**Check** (`harness/scale_check.js`, a synthetic disparity field with a known line α = 0.2, β = 0.02):
+- One reference: flagged assumption, β = 0.
+- Two references (one horizontal, one vertical, at d = 0.8 and 0.3): α = 0.2000, β = 0.0200, residuals 0.
+- A contradictory pair: reported.
+- The lens from Camera Intrinsics: D = layerW·50/36, exactly.
+- The metric law under Cm: z(pn) = 0, monotone, far end finite (8.2 m).
+- The face-tracking scalar: unchanged.
