@@ -71,7 +71,7 @@ one on a different primitive), against a method floor measured on the pure pan (
 *earlier* frames (a streaming pass works). When the foreground is still and the camera moves a little, only the rim
 nearest the silhouette is ever seen, and the rest must be painted — once.
 
-## Experiment 2 — stability (running)
+## Experiment 2 — stability
 
 Three arms on the camera's own frames (blur included), all scored **inside the hole only** against the truth background:
 
@@ -83,14 +83,31 @@ Three arms on the camera's own frames (blur included), all scored **inside the h
 Scores: MAE, masked LPIPS on the hole's bounding box, and the **warp error** between consecutive frames (hole points
 present in both holes, moved with the true pose and depth), next to the truth's own warp error (its floor).
 
-| shot | A MAE / LPIPS / warp | B1 | B2 | truth warp |
+| shot | A: per-frame LaMa — MAE / LPIPS / warp | B1: copy, LaMa for the rest | B2: copy, paint once and carry | truth warp |
 |---|---|---|---|---|
 | walker_tripod | 0.0122 / 0.0046 / 0.0104 | 0 / 0 / 0 | 0 / 0 / 0 | 0 |
-| *(eight shots running; about an hour each under the shared CPU)* | | | | |
+| walker_handheld | 0.0121 / 0.0042 / 0.0122 | 0.0011 / 0.0008 / 0.0021 | 0.0011 / 0.0008 / 0.0020 | 0.0021 |
+| crowd_pan | 0.0122 / 0.0029 / 0.0108 | 0.0017 / 0.0008 / 0.0008 | 0.0017 / 0.0007 / 0.0006 | 0.0006 |
+| runner_blur | 0.0143 / 0.0102 / 0.0138 | 0.0031 / 0.0065 / 0.0003 | 0.0031 / 0.0063 / 0.0000 | 0.0000 |
+| truck_trunks | 0.0150 / 0.0356 / 0.0099 | 0.0039 / 0.0148 / 0.0027 | 0.0055 / 0.0576 / 0.0003 | 0.0005 |
+| push_in | 0.0145 / 0.0094 / 0.0052 | 0.0135 / 0.0098 / 0.0049 | 0.0262 / 0.0803 / 0.0004 | 0.0014 |
+| bokeh | 0.0146 / 0.0360 / 0.0035 | 0.0158 / 0.0427 / 0.0022 | 0.0217 / 0.0640 / 0.0003 | 0.0003 |
+| rack_focus | 0.0152 / 0.0472 / 0.0044 | 0.0149 / 0.0414 / 0.0018 | 0.0150 / 0.0474 / 0.0000 | 0.0000 |
+| pan | 0.0122 / 0.0048 / 0.0065 | 0.0122 / 0.0048 / 0.0065 | 0.0312 / 0.0484 / 0.0004 | 0.0008 |
 
-The arms were started before the one-surface fix, so B1/B2 gathered a few edge pixels they should not have; the effect
-is bounded by the coverage change above (≤ 1.5 points of pixels). On walker_tripod the copy is exact (a static, sharp background seen by other frames) and per-frame LaMa flickers by
-0.010 per frame where the truth does not flicker at all.
+(The arms started before the one-surface fix, so B1/B2 gathered a few edge pixels they should not have; bounded by the
+coverage change, ≤ 1.5 points of pixels.)
+
+**Reading.**
+- **Moving people: copy.** Where the foreground moves, copying from the frames that saw the background beats per-frame
+  LaMa by 5–10× in MAE and brings the flicker down to the truth's own (walker, crowd, runner). Per-frame LaMa flickers
+  0.010–0.014 per frame where the truth does not.
+- **Still subject: carrying fixes the flicker and costs quality.** B2 is flicker-free (warp 0.0000–0.0004, at the
+  truth's floor) but its MAE and LPIPS are up to 2.5× and 10× worse than per-frame LaMa (pan 0.031 / 0.048 against
+  0.012 / 0.005). The carry is CHAINED — frame t takes frame t−1's paint, resampled — so resampling blur accumulates over
+  the shot. The fix this points to: paint once in a reference frame and warp every frame from that one painting (one
+  resample, not t of them), and repaint only what the reference never covers.
+- Where nothing covers (pan, push_in, rack), B1 = A by construction (nothing to copy).
 
 ## What was not done
 
