@@ -309,3 +309,18 @@ of the revealed background.
 
 Tool: `python3 harness/atlas_lint.py <bundle.zip>` reports mask specks and pinholes, depth spikes, walls in visible
 steps and wash streaking for any exported SD bundle. It is advisory; your screen decides.
+
+## 12. Open calls, re-audited against the source-hole default (2026-09-25, S70 item 5)
+
+§10 and §11 are mostly settled: margin `auto` is the default (S62), the hybrid fill is moot under "clean wash, then SD",
+the source hole's wash is the membrane, it fills its own pinholes, and it replaced per-line / plain hole depth. The
+2× depth map needs re-measuring under the source hole before it is worth a look. What still needs your screen is on one
+page, with evidence and a verdict line to paste back: https://claude.ai/artifact/63UcSpXgvcz2nP4hKghCcX (private).
+
+1. Paint holes' default painter (SD from noise invents objects at Starwatcher's legs; LaMa + SD recommended).
+2. Seven plate options do nothing under the source hole (measured one bake each, `harness/select_live_check.js`):
+   fill membrane / mirror, pinholes, step faces, texture band tier, plate seams, far-field join. Grey them out?
+3. Ramp collapse still changes the bake under the source hole (safe: hole 172 264 → 181 419 texels): off or safe?
+4. The emergence test on every bake (S70 §4: 88.6 → 93.5 % of a 4 096-pose reference, +43 s)?
+5. Cut mapping (webcam): current / C / Cm.
+6. Head distance tracking, on by default: keep?
