@@ -155,7 +155,16 @@ poses.
 **Status.** The emergence test is in the app as an instrument (`bgSourceHole` o.seenMode = 'exact'), off by default, and
 not in the panel. An exact replacement for the pose sampling is therefore not achieved: the reveal *condition* is closed
 form, and its *visibility* is still sampled, only better aimed (per texel instead of per picture). Starwatcher and the
-Milkmaid are running on the same instrument; their rows will be added here.
+Milkmaid run on the same instrument:
+
+| picture | candidates | 32 poses: recall of 4 096 | emergence test: recall | added (verified) | beyond 4 096 |
+|---|---|---|---|---|---|
+| default (troll) | 248 175 | 88.6 % | 93.5 % | 10 960 | 1 026 |
+| Starwatcher | 87 222 | 99.3 % | 99.9 % | 507 | 4 |
+| Milkmaid | (rerunning after the 13:06 container restart) | | | | |
+
+On Starwatcher the 32 poses already see nearly everything (its reveals are narrow). The troll, with wide reveals at
+the outer reach, is where the sampling loses texels.
 
 ## 5. Depth first or colour first? The kit answer, light arms (`harness/depth_order_eval.py`)
 
