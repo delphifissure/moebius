@@ -199,3 +199,28 @@ Median over scenes, in metres:
   to the object layers, not to the background plate. The background keeps the rule's depth, and an object's own
   back takes the depth read off its painted colour. Whether a real painter keeps enough of the perfect painter's
   advantage is what the LaMa / SD arms (not yet run) must show.
+
+## 6. The painter: continue without inventing (user, 2026-09-25: "the dune needs to continue, and without hallucination. Negative prompt?")
+
+**The test** (`harness/painter_bench.py`): the starwatcher's figure is pasted into four pictures (itself, Hunters in the
+Snow, the wave, Shishkin), standing on the flattest far background; the hole is the band inside its silhouette (legs and
+staff whole, the body keeps an interior); the truth is the picture without it. Invention = texels that differ from the
+truth by more than the picture's own texture varies AND add edges the truth lacks, in pieces of at least 17 × 17 texels.
+(Two instruments were dropped on the way: grt_eval's round-trip holes are slivers where no object fits, and Florence-2
+object detection missed the creature SD painted at the starwatcher's legs.)
+
+**First result, LaMa only** (the SD arms are queued):
+
+| picture | figure visible to the painter: MAE / LPIPS / invented % of hole | figure removed first: MAE / LPIPS / invented |
+|---|---|---|
+| starwatcher (the dune) | 0.171 / 0.384 / 54.6 % | 0.039 / 0.098 / 0 |
+| Hunters in the Snow | 0.157 / 0.363 / 19.4 % | 0.104 / 0.278 / 0 |
+| wave | 0.272 / 0.385 / 0 | 0.159 / 0.314 / 0 |
+| Shishkin | 0.149 / 0.318 / 0 | 0.097 / 0.200 / 0 |
+
+With the figure beside the hole even LaMa regrows it (orange limbs in the band). Taken out of the painter's view first
+(its footprint washed from the background), nothing is invented on any picture and the error falls 30–77 %. The app's
+Paint holes already sends that picture (`sd_return.py`'s default image, plane_color_occluder_removed); the starwatcher
+runs shown to the user used the figure-visible plate (`--image plate`), which is where the creature came from. Queued: the
+SD arms (from noise, the stronger negative, LaMa + SD at 0.3 / 0.5, wash + SD) on both inputs, and the real starwatcher
+bundle repainted with the default image.
