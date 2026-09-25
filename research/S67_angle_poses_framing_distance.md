@@ -260,3 +260,35 @@ calibrated at 0.50 m, an eye that stays on the portal axis and only leans reads 
 so leaning in and out tilts the view by several degrees. Not yet tested on hardware: the metric mode needs the webcam's
 field of view (the a148 table, or the user's measured value) and the screen size to be right; the user's webcam run is
 the check.
+
+## 8. The cut mappings, measured on a two-shot cut, and all five in the panel (app main `91679fa`)
+
+`harness/truthkit/cut_check.py` (24 mm → 200 mm, a head-sized subject pinned at the portal, a mid object 1.5 m and a
+background 50 m behind it; viewer at 0.5 m, portal shown 0.16 m wide). What the viewer reads from motion parallax, head at
+x = +0.1 m:
+
+| mapping | head shape across the cut (1 = unchanged) | background parallax k (1 = true window) |
+|---|---|---|
+| A: head gain D_shot/D_rest (the earlier `_headByAngle`) | 1.00 | 24 mm 0.21 (reads ~13 cm behind the glass); 200 mm 1.70 (past infinity) |
+| B: eye at the shot distance, head in constant metres | 4.7× too round (24 mm) vs 0.56× (200 mm) | 0.96–0.99 |
+| C: true window, depth remapped in parallax space | 1.03 (the 24 mm head's nose flattened, sides deepened) | 0.94–0.99 |
+| Cm: true window, the shot's depth as it is | 1.00 | 0.98 |
+
+A is B with every parallax multiplied by a = D_shot/D_true, which is why its background breaks; B is a true window onto the
+scene with depth rescaled by D_true/D_shot. C blends them (g = g_B·(a + (1−a)·g_B) behind the glass, a·g_B in front);
+Cm keeps the depth and moves the rest eye to the true window, so the lens look lives in the picture and not in the
+parallax. §6's claim that the pinned frustum keeps the background world-fixed under A was wrong on screen.
+
+In the app: the headtracking panel's **Cut mapping** select (current — today's behaviour, the default — A, B, C, Cm)
+and **shot lens** select (rest 45 mm, 18–200 mm). `bgCutState()` gives each mode's rest eye and head gain; D_true is the
+face distance (z tracking, a known focal length) × W / the portal's physical width (the canvas width × the screen's
+pixel pitch), or the rest distance without a face. C's remap is applied in the shared GLSL displacement and in
+`volumeZOffForNormDepth`; the reveal field and rim law keep their private copies (a trial mode).
+`harness/cutmap_check.js`: current ignores the shot lens; A keeps 5.71° for a fixed head offset at 24 and 200 mm; B keeps
+2.00 cm; C and Cm sit at the true-window distance (0.369 m for a face at 0.5 m on the headless canvas); C's law keeps the
+pin plane and the depth order.
+
+**A bug the check found:** with z tracking on, the reprojection's reference eye followed the live camera (it is frozen
+only under the dolly, A208), so a lean re-placed the volume along the leaning eye's own rays and revealed nothing. The
+reference now stays at the rest distance whenever z tracking or a cut mapping sets one (lean 25 % out: eye 0.250 m,
+reference 0.200 m).
