@@ -37,7 +37,37 @@ largest at 45°. The reveal law's rim offsets are now D·tan(min(fadeEnd, 45°))
 up to 45° (so today's 45 × 30 is unchanged by construction), bounded beyond it (D·tan(fadeEnd) → ∞ at 90° while the
 seen gap returns to 0). This was S64's item (3).
 
-## 3. The bake at wider envelopes, and the sweep density  *(running — `harness/envelope_bake_check.js`)*
+## 3. The bake at wider envelopes, and the sweep density (`harness/envelope_bake_check.js`)
+
+The panel's default hole depth (per-line) builds its band from a CPU sweep over a 17 × 5 pose grid (`_plugGeoBand`:
+texels no pose reveals leave the band and return to their source depth). The plane bake of the default picture, as
+the panel runs it, at several grid densities:
+
+| envelope | grid | bake | band texels | vs the densest grid at that envelope |
+|---|---|---|---|---|
+| 45° × 30° | 17 × 5, by offset (today) | 108 s | 265 708 (30.5 % of the plate) | recall 86.6 %, precision 100 % |
+| 45° × 30° | 17 × 5, by angle | 125 s | 266 174 | recall 86.6 %, precision 99.8 % |
+| 45° × 30° | 33 × 9, by offset | 314 s | 291 249 | recall 94.9 %, precision 100 % |
+| 45° × 30° | 65 × 17, by offset (reference) | 1 035 s | 306 921 (35.3 %) | — |
+| 80° × 80° | 17 × 5, by angle | 137 s | 236 073 | recall 79.5 %, precision 100 % |
+| 80° × 80° | 33 × 9, by angle (reference) | 388 s | 297 127 | — |
+
+- **The band is nested and under-sampled.** Denser grids only add texels (precision 100 %), and the increments shrink
+  (+25.5 k, then +15.7 k) without converging by 65 × 17 — a geometric extrapolation puts the limit near 330 k, i.e. the
+  default grid holds roughly 80 % of the band. The missing texels are revealed only between grid poses; they return to
+  their source depth, so at those in-between poses they show the foreground stretched instead of the far fill. Sampling
+  finer costs linearly in poses (17 × 5 → 65 × 17 is 10× the bake time) and still does not close it.
+- **Why, and the fix it points to.** Along any direction from rest the revealed set grows monotonically (the premise of
+  the boundary mode), so the misses are *between directions*: 17 × 5 has 40 perimeter directions, 65 × 17 has 160. A
+  closed form that covers the envelope's perimeter continuously — the way a162's min-plus chamfer already covers the
+  cone for the ordering invariant — is the proper replacement for the grid; the source-anchored hole's reach walk (16
+  directions) has the same directional sampling and should be measured the same way. Not built yet.
+- **At 80° × 80° nothing breaks in the bake**: no errors, 137 s, the plug margin grows exactly as tan 80°/tan 45°
+  (570 → 3 225 texels per side; its strips are one cell across, so the geometry stays cheap). The band is less complete
+  (79 % of the 33 × 9 band at 17 × 5), as the wider envelope spreads the same poses over more directions. What will
+  break is the SD bundle's beyond-the-frame canvas, which is the glass margin: (pw + 2·3 709) px wide at 80°, unbounded at
+  90° — §4 says it should be the angle store instead. Pose spacing by angle vs by offset makes no difference to the band
+  at 45° × 30° (§1's +1.3 points of raw coverage is inside the noise of what the band keeps).
 
 ## 4. The strip beyond the frame stored by angle — known-answer prototype (`harness/angle_strip.py`)
 
@@ -134,6 +164,32 @@ tan(φ_ref/2)/tan(φ_i/2): 0.4 at 18 mm, 3.2 at 144 mm, relative to 45 mm.
 With the webcam at the portal, the face's image position measures tanθ_real directly given the webcam's field of view,
 so the lateral mapping is E_virtual,x = D_i·tanθ_real and does not need the viewer's distance; the lean-in mapping is
 z_virtual = D_i·d_real/d_intended and needs only the ratio.
+
+Stated as one rule: **each shot is the real scene scaled uniformly by m_i**, chosen so the frame at the subject plane
+fills the portal (m_i = W / (2·Z_subject·tan(φ_i/2))); the virtual eye sits where the scaled camera sat
+(m_i·Z_subject = D_i, the centre of projection); the viewer's head reaches it by D_i/d_real. The pinned subject then
+has no parallax against the portal frame, so the viewer places it at the screen's distance at its on-screen size in
+every shot — a close-up head reads head-sized on a laptop whether it was shot from 17 cm at 24 mm or from 1.4 m at
+200 mm — while its relief and the background re-perspective with the lens (wide: pronounced roundness, a swinging
+background; long: flat relief, a background that stays close). Example, a 30 cm laptop portal, a head filling the
+frame, the viewer at 50 cm: the eye sits at 0.20 m (24 mm) or 1.67 m (200 mm); a 10 cm head move is 4 cm or 33 cm of
+virtual eye motion, 11.3° either way.
+
+**Built, behind `window._headByAngle` (off by default).** `setShotLens(hfov)` puts the eye at the shot's centre of
+projection (W/2)/tan(hfov/2) (cleared: back to the rest distance); the head gain becomes D_shot/D_rest in place of
+A65's lens gain, for the face track and the gyro alike; with head-Z on, the lean scales the shot's distance.
+`harness/headbyangle_check.js`, a fixed face offset at 24 / 45 / 85 / 200 mm shots:
+
+| shot | eye distance | flag off: eye move, angle | flag on: eye move, angle |
+|---|---|---|---|
+| 24 mm | 0.107 m | 4.00 cm, 20.56° | 2.13 cm, 11.31° |
+| 45 mm (rest) | 0.200 m | 4.00 cm, 11.31° | 4.00 cm, 11.31° |
+| 85 mm | 0.378 m | 4.00 cm, 6.04° | 7.56 cm, 11.31° |
+| 200 mm | 0.889 m | 4.00 cm, 2.58° | 17.78 cm, 11.31° |
+
+(same result at the two smaller offsets; flag on without a shot lens is identical to off.) Not yet done: the per-shot
+depth scale (the volume as metric depth × m_i rather than the fixed 0.02 / 0.04 m), which the shared object's shape
+across a cut needs; and a two-shot cut on the truth kit to verify the whole behaviour, not only the mapping.
 
 ## 7. Distance from the face mesh
 
