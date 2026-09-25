@@ -155,7 +155,7 @@ poses.
 **Status.** The emergence test is in the app as an instrument (`bgSourceHole` o.seenMode = 'exact'), off by default, and
 not in the panel. An exact replacement for the pose sampling is therefore not achieved: the reveal *condition* is closed
 form, and its *visibility* is still sampled, only better aimed (per texel instead of per picture). Starwatcher and the
-Milkmaid are queued on the same instrument (§6).
+Milkmaid are running on the same instrument; their rows will be added here.
 
 ## 5. Depth first or colour first? The kit answer, light arms (`harness/depth_order_eval.py`)
 
