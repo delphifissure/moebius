@@ -166,6 +166,27 @@ Milkmaid run on the same instrument:
 On Starwatcher the 32 poses already see nearly everything (its reveals are narrow). The troll, with wide reveals at
 the outer reach, is where the sampling loses texels.
 
+**Made cheaper (user, 2026-09-25).** On the troll the test took 54 s: 46 s growing the screen's rectangles over the whole
+picture, level by level (its reach is 776 texels because sky texels in the hole carry a negative shift), and 8 s of
+verification. Two changes:
+- **The screen on a coarse grid.** Each 4 × 4 block keeps its boundary texel of largest shift, the rectangles grow a
+  block at a time, and the comparison gets the slack that keeps it conservative: offsets differ from block offsets by
+  under 4 texels per axis, so dE by under 4 / env. Every texel the full-resolution screen passes still passes. The
+  verification decides as before.
+- **An exact skip in the verification march.** Each 8 × 8 tile carries its range of shifts; the march jumps over any
+  stretch where the line cannot meet the surface inside the tile.
+
+| screen grid | screen | verification | total | verified texels added |
+|---|---|---|---|---|
+| full resolution (before) | 46.0 s | 8.2 s | 54.3 s | 10 960 |
+| 2 × 2 blocks | 5.7 s | 1.7 s | 7.5 s | 10 922 |
+| 4 × 4 blocks (default) | 0.8 s | 1.8 s | 2.7 s | 10 518 |
+
+The texels differ a little in both directions (4 × 4 against full: 868 only in the new set, 1 310 only in the old). A
+coarser screen picks a different occluder edge per texel, so different poses are tried. Every added texel is still
+verified open at a stated pose. Net −0.2 % of the 4 096-pose set, against the +4.9 points the test adds. The times are
+this sandbox's CPU while the background queue runs.
+
 ## 5. Depth first or colour first? The kit answer, light arms (`harness/depth_order_eval.py`)
 
 This is from the previous round's item 3. The kit probes were re-dumped under the current law (19 scenes, 07:46–08:12), then the
@@ -209,7 +230,10 @@ truth by more than the picture's own texture varies AND add edges the truth lack
 (Two instruments were dropped on the way: grt_eval's round-trip holes are slivers where no object fits, and Florence-2
 object detection missed the creature SD painted at the starwatcher's legs.)
 
-**First result, LaMa only** (the SD arms are queued):
+**First result, LaMa only** (the SD arms are queued). The user spotted that this first fixture had lost the figure's
+boots and part of its legs (cut at row 545 to keep the dune out of the occluder mask); the fixture now runs from the staff
+to the boots, with the dune removed below the ankles by its own colour (dE above the dune's 95th-percentile spread),
+and the full run uses it. The table below is from the clipped figure:
 
 | picture | figure visible to the painter: MAE / LPIPS / invented % of hole | figure removed first: MAE / LPIPS / invented |
 |---|---|---|
