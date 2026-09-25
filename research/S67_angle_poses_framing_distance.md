@@ -39,7 +39,49 @@ seen gap returns to 0). This was S64's item (3).
 
 ## 3. The bake at wider envelopes, and the sweep density  *(running — `harness/envelope_bake_check.js`)*
 
-## 4. The strip beyond the frame stored by angle — known-answer prototype  *(running — `harness/angle_strip.py`)*
+## 4. The strip beyond the frame stored by angle — known-answer prototype (`harness/angle_strip.py`)
+
+A wide picture stands in for the far plane: its central half is "the photograph", the quarters on either side are the
+truth beyond the frame. At head angle θ the window shows the far plane shifted by s = σ·tanθ (content at one depth moves
+by a translation in screen pixels), σ chosen so the truth runs out exactly at θ_max. The eye sees the screen
+foreshortened (cos²θ along the offset, cosθ across), so every score is taken on the outpainted part of the view at that
+**seen** size: MAE and the gradient-energy ratio (detail; < 1 smoother than the truth). The outpainted part is only ever
+seen (σ/2)·sin2θ wide, never more than σ/2 — the strip is small on screen at every angle.
+
+Arms, one painter (LaMa) for all, nothing chosen per picture: **G** paint on the glass, store on the glass (full storage,
+the reference); **U** paint directly in the angle store (u = σ·atan(s/σ)); **M** paint the plane ring by ring outward,
+each ring on the plane downscaled by cos θ_k; **A** M's paint kept in the angle store. Five paintings (Hunters in the
+Snow, La Grande Jatte, Shishkin, The Great Wave, Paris Street; Rainy Day), 1008 px wide; medians:
+
+| θ_max = 85° (σ 22 px) | 15° | 30° | 45° | 60° | 70° | 80° | 85° |
+|---|---|---|---|---|---|---|---|
+| G  MAE / detail | 0.071 / 0.83 | 0.084 / 0.82 | 0.085 / 0.80 | 0.083 / 0.70 | 0.092 / 0.59 | 0.085 / 0.51 | 0.097 / 0.50 |
+| U  (13 % of G's storage) | 0.069 / 0.83 | 0.082 / 0.84 | 0.086 / 0.83 | 0.086 / 0.81 | 0.093 / 0.77 | 0.090 / 0.67 | 0.101 / 0.75 |
+| M | 0.073 / 0.91 | 0.085 / 0.91 | 0.088 / 0.75 | 0.095 / 0.71 | 0.118 / 0.61 | 0.158 / 0.90 | 0.192 / 1.15 |
+| A | 0.073 / 0.78 | 0.082 / 0.76 | 0.086 / 0.66 | 0.095 / 0.67 | 0.118 / 0.60 | 0.158 / 0.90 | 0.192 / 1.14 |
+
+| θ_max = 70° (σ 92 px) | 15° | 30° | 45° | 60° | 70° |
+|---|---|---|---|---|---|
+| G | 0.095 / 0.81 | 0.116 / 0.70 | 0.115 / 0.61 | 0.118 / 0.51 | 0.126 / 0.37 |
+| U  (45 % of G's storage) | 0.094 / 0.75 | 0.115 / 0.67 | 0.116 / 0.59 | 0.119 / 0.50 | 0.123 / 0.43 |
+| M | 0.094 / 0.83 | 0.116 / 0.85 | 0.113 / 0.67 | 0.176 / 0.57 | 0.216 / 0.47 |
+| A | 0.091 / 0.71 | 0.111 / 0.64 | 0.112 / 0.59 | 0.176 / 0.53 | 0.216 / 0.45 |
+
+Storage per side: 33 angle texels against 252 glass texels at 85° (and 1 263 glass texels would be needed at 89°, 34 by
+angle at 90°); 113 against 252 at 70° (5 254 vs 144 at 89° / 90°).
+
+**Reading.**
+- **Store by angle and paint by angle (U).** Its seen error equals the full glass store's within 0.005 at every angle in
+  both runs (per picture it wins about half the time), it keeps as much or more detail — at 85° the glass paint falls to
+  0.50 of the true detail where U keeps 0.75 — and it costs 13 % (85°) and 45 % (70°) of the storage, finite at 90°.
+  The squeeze the angle parametrisation applies to the painted content is undone exactly by the foreshortening at the
+  angle it is seen from, which is why the seen error does not suffer.
+- **The ring-by-ring plane paint fails past 60°** (MAE 0.16–0.22 against 0.09–0.13): each outer ring is painted on a
+  small, downscaled canvas and upsampled, and the seams and the upsampling both show. The scheme I expected to be the
+  correct one is dropped.
+- For the bundle: the beyond-the-frame canvas the SD stage paints should be the angle store (width σ·θ_max per side,
+  σ·π/2 at 90°), not the glass margin (σ·tanθ_max, unbounded). One painter and five paintings so far; the SD and klein
+  arms belong here too once the queue reaches them.
 
 ## 5. Framing: the intended viewing distance
 
