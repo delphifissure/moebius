@@ -79,9 +79,24 @@ Measured with x265 (bundled ffmpeg) on three synthetic video shots (480 × 270, 
   spherical-harmonic colour to degree 3: 48), i.e. 236 bytes. A million Gaussians is 236 MB for one static scene before
   compression. Published compression and 4D-splat sizes are not quoted here: not read first-hand.
 
-## 4. Video: paint once, without the chain (running)
+## 4. Video: paint once, without the chain
 
-S65's stability arms showed that carrying paint frame to frame (arm B2) removes flicker but loses quality, up to 10× the
-LPIPS of per-frame LaMa on still shots, because the carry is chained. Arm B3 (`vid_exp.py`) instead stores the paint in
-world space and reprojects it from its first painting every frame. It is running on pan, push_in and truck_trunks
-against B2.
+S65's stability arms showed that carrying paint frame to frame (arm B2) removes flicker but loses quality, because the
+carry is chained: each frame is a resample of the previous one. Arm B3 (`vid_exp.py`) stores the paint in world space
+and reprojects it from its first painting every frame. Scores are MAE / LPIPS / frame-to-frame warp error:
+
+| shot | A: per-frame LaMa (S65) | B2: chained carry | B3: world-space store | truth warp |
+|---|---|---|---|---|
+| pan | 0.0122 / 0.0048 / 0.0065 | 0.0312 / 0.0484 / 0.0004 | **0.0126 / 0.0066 / 0.0024** | 0.0008 |
+| truck_trunks | 0.0150 / 0.0356 / 0.0099 | 0.0060 / 0.0633 / 0.0003 | **0.0046 / 0.0410 / 0.0010** | 0.0005 |
+| push_in | 0.0145 / 0.0094 / 0.0052 | 0.0262 / 0.0803 / 0.0004 | 0.0203 / 0.0823 / 0.0092 | 0.0014 |
+
+(B2 in this run: truck_trunks 0.0060 / 0.0633 against S65's 0.0055 / 0.0576, as the coverage now uses the
+one-surface fix.)
+
+- **Pan and truck: B3 keeps per-frame quality or better and most of the stability.** On the pan it matches per-frame
+  LaMa's quality with 2.7× less flicker. On the truck it beats both other arms on MAE, with flicker at twice the truth's.
+- **Push-in: B3 is worse, and the reason is structural.** The store is splatted one point per pixel, and as the camera
+  pushes in, the stored points spread apart. The gaps between them are handed back to LaMa every frame, which is the
+  flicker. The fix is to splat each stored point at its projected footprint (or keep the store as a mesh), so
+  magnification opens no gaps. That is the next change to B3.
