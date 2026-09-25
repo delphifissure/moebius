@@ -161,17 +161,21 @@ a head move that is 45° at 45 mm becomes 17° at 144 mm and 68° at 18 mm), and
 goes the other way (∝ 1/f where ∝ f is required). The requirement is S1's convention (a), gain D_i/D_ref =
 tan(φ_ref/2)/tan(φ_i/2): 0.4 at 18 mm, 3.2 at 144 mm, relative to 45 mm.
 
-With the webcam at the portal, the face's image position measures tanθ_real directly given the webcam's field of view,
-so the lateral mapping is E_virtual,x = D_i·tanθ_real and does not need the viewer's distance; the lean-in mapping is
-z_virtual = D_i·d_real/d_intended and needs only the ratio.
+The webcam does **not** make the viewer's distance unnecessary (an earlier draft of this paragraph said it did). The
+face's image offset is an angle from the webcam, and the webcam sits off the portal (on a laptop at the top edge of the
+screen) while the app's window may sit anywhere on the screen; both offsets subtend angles that change with the viewer's
+distance. The exact eye position relative to the portal centre needs d (§7): P = ((u−c_x)·d/f_x + x_off,
+(v−c_y)·d/f_y + y_off, d), and the virtual eye is P·D_i/d_intended.
 
 Stated as one rule: **each shot is the real scene scaled uniformly by m_i**, chosen so the frame at the subject plane
 fills the portal (m_i = W / (2·Z_subject·tan(φ_i/2))); the virtual eye sits where the scaled camera sat
 (m_i·Z_subject = D_i, the centre of projection); the viewer's head reaches it by D_i/d_real. The pinned subject then
 has no parallax against the portal frame, so the viewer places it at the screen's distance at its on-screen size in
 every shot — a close-up head reads head-sized on a laptop whether it was shot from 17 cm at 24 mm or from 1.4 m at
-200 mm — while its relief and the background re-perspective with the lens (wide: pronounced roundness, a swinging
-background; long: flat relief, a background that stays close). Example, a 30 cm laptop portal, a head filling the
+200 mm — while its relief and the background re-perspective with the lens. The background is world-fixed in every shot
+(the pinned off-axis frustum makes the portal a true window; toe-in would move the subject off its place in the frame
+and bend the background): long lenses compress it — it feels closer and larger (big clouds), with less parallax
+against the subject — and wide lenses expand it — farther and smaller, with more parallax against the subject. Example, a 30 cm laptop portal, a head filling the
 frame, the viewer at 50 cm: the eye sits at 0.20 m (24 mm) or 1.67 m (200 mm); a 10 cm head move is 4 cm or 33 cm of
 virtual eye motion, 11.3° either way.
 
@@ -238,3 +242,21 @@ a webcam):
 that the landmark placement drifts (the 2-D span errs identically, so it is not the depth component) and the iris
 holds better. Not yet tested: head turns (the frames are frontal), the frame-rate cost of the iris model, and absolute
 metres — those need the user's webcam (lean to a few measured distances once, read the HUD).
+
+**The metric eye (`window._headZ = 2`).** With the distance known, the eye is placed in metres relative to the portal
+centre (`bgMetricEye`, pure): from the iris-midpoint's image position, the 3-D IPD span, the webcam's focal length, the
+webcam's position relative to the screen centre (`window._camOffsetM`; default the top-centre edge of the screen, an
+approximation that ignores the bezel) and the app window's position on the screen (from `physicalScreenDiagonalInches`,
+the existing setting). The virtual eye is P·D_shot/d_intended (held to the dolly's range); the rest-pose baseline, which
+only a fixed distance justifies, is not used; the shot's frustum stays pinned. `harness/metric_eye_check.js` (15.6"
+1440 × 900 screen, webcam at its top edge, 80° webcam, 640 × 480): 27 known eye positions (x ±0.2 m, y ±0.1 m, z
+0.35–0.7 m) recovered to 1·10⁻¹⁶ m. The same geometry prices today's mapping (the webcam angle zeroed at a rest pose):
+calibrated at 0.50 m, an eye that stays on the portal axis and only leans reads as looking
+
+| distance | 0.30 m | 0.35 | 0.40 | 0.50 | 0.60 | 0.70 |
+|---|---|---|---|---|---|---|
+| vertical angle read by the webcam-angle mapping (true: 0°) | −7.97° | −5.14° | −3.01° | 0 | +2.00° | +3.43° |
+
+so leaning in and out tilts the view by several degrees. Not yet tested on hardware: the metric mode needs the webcam's
+field of view (the a148 table, or the user's measured value) and the screen size to be right; the user's webcam run is
+the check.
