@@ -83,7 +83,7 @@ view, and sets the face-tracking scalar to (0.7 m / estimated distance) × 3.0, 
 | "life-size" is impossible | a cathedral through a 30 cm portal | not an error: the portal is a window; m ≪ 1 is right, and only close-ups approach m ≈ 1 |
 | depth-model failure regions (sky edges, glass, water) | wrong d under a reference | references there are down-weighted; the sky is used only as infinity |
 
-## 5. Built (app main, after the user's go)
+## 5. Proposal
 
 - **References, per shot:**
   - Two clicks give an image-plane length, taken at the clicks' median disparity (in-panel, no `prompt()`).
@@ -102,8 +102,9 @@ References for single-view metrology and the camera-height prior (Criminisi, Rei
 IJCV 2000; Hoiem, Efros & Hebert, "Putting Objects in Perspective", CVPR 2006) are named for the idea only; not yet
 read first-hand here.
 
-**As built** (`handleCanvasClickForScale`, `bgScaleSolve`, `bgMetricLawZ`; panel: Set Scale + preset + length + Clear +
-readout):
+## 6. As built (app main `5303818`, after the user's go)
+
+(`handleCanvasClickForScale`, `bgScaleSolve`, `bgMetricLawZ`; panel: Set Scale + preset + length + Clear + readout)
 - **Measuring:** Set Scale holds the view at rest. Two clicks are mapped through the rest frustum to source pixels, and
   the reference is their Euclidean pixel length in portal units, at the clicks' mean disparity, with the typed or preset
   real length. The presets are typical values, editable.
@@ -128,3 +129,9 @@ readout):
 - The lens from Camera Intrinsics: D = layerW·50/36, exactly.
 - The metric law under Cm: z(pn) = 0, monotone, far end finite (8.2 m).
 - The face-tracking scalar: unchanged.
+
+**Not built yet** (from §5):
+- Detected references offered as candidates (MediaPipe faces for film).
+- EXIF and a depth-axis length as lens sources.
+- Robust outlier rejection: the fit is plain least squares with conflict detection only.
+- References stored per shot, and carried across cuts.
