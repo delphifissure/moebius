@@ -98,5 +98,15 @@ one-surface fix.)
   LaMa's quality with 2.7× less flicker. On the truck it beats both other arms on MAE, with flicker at twice the truth's.
 - **Push-in: B3 is worse, and the reason is structural.** The store is splatted one point per pixel, and as the camera
   pushes in, the stored points spread apart. The gaps between them are handed back to LaMa every frame, which is the
-  flicker. The fix is to splat each stored point at its projected footprint (or keep the store as a mesh), so
-  magnification opens no gaps. That is the next change to B3.
+  flicker. The fix is to splat each stored point at its projected footprint, so magnification opens no gaps.
+- **With footprints** (each stored point splatted over ceil(z_painted / z_now) pixels square):
+
+| shot | B3, one pixel per point | B3 with footprints |
+|---|---|---|
+| push_in | 0.0203 / 0.0823 / 0.0092 | **0.0157 / 0.0240 / 0.0041** |
+| pan | 0.0126 / 0.0066 / 0.0024 | 0.0126 / 0.0062 / 0.0022 |
+| truck_trunks | 0.0046 / 0.0410 / 0.0010 | 0.0046 / 0.0410 / 0.0010 |
+
+  Push-in's flicker falls by more than half and its LPIPS by 3.4×, now below per-frame LaMa's flicker (0.0052) at close
+  to its quality; the other two shots are unchanged. B3 with footprints is the paint-once method for video: copy what
+  other frames saw, paint the rest once in world space, reproject it from that painting.
