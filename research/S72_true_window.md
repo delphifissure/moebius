@@ -79,3 +79,18 @@ which is what the user asked for.
 - **In the app.** A geometry step on the paint server (MoGe, 11–14 s on this CPU) and a "true window" plate option
   that applies the returned parameters.
 - **Everything downstream** (band, painting, gallery) re-run under the true window.
+
+## 4. UX principle: engagement is frontal (the user, 2026-09-26)
+
+"If you're in a gallery, you approach the art you're interested in because you see it at a crappy angle, and that's
+ok ... in practice it's pretty normal to see things with keystoning and still choose to engage — and once they do, they
+can engage in a 6DoF way."
+
+Consequences for the design:
+- **Quality is weighted by angle.** The engaged zone (roughly ±20°, and leaning in / out) must be right: geometry,
+  fill, depth. The 42° views are stress tests, not the main experience; tw_view.js now renders 20° beside 42°.
+- **Wide angles may degrade gracefully** toward a keystoned flat picture (the app's view fade toward the envelope edge,
+  bgViewFadeEndDeg, is the existing mechanism). Reducing depth at the extremes is a legitimate choice, where filling a
+  picture-width of never-seen content is not.
+- **Depth budgets are set where people look**, and may fall off with angle.
+- **Approach is the engagement gesture**: z motion (leaning in, the dolly zoom) deserves as much testing as lateral motion.
